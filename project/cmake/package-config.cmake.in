@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+# If you have public dependencies, declare them like this:
+# include(CMakeFindDependencyMacro)
+# find_dependency(SomeRequiredPackage CONFIG REQUIRED)
+
+# Load the exported targets of this package
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
