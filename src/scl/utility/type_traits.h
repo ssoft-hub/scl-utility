@@ -14,5 +14,6 @@
  */
 
 #include <scl/utility/type_traits/forward_like.h>
+#include <scl/utility/type_traits/member_like.h>
 
 /** @} */ // end of group scl_utility_type_traits
