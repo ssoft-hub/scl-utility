@@ -9,13 +9,13 @@ namespace ScL { namespace Detail
     template < typename _Type, typename _Refer >
     struct SimilarReferHelper
     {
-        static_assert( ::std::is_reference< _Refer >::value, "The template parameter _Refer must to be a reference type." );
+        static_assert( ::std::is_reference< _Refer >{}, "The template parameter _Refer must to be a reference type." );
 
         using ValueFromRefer = ::std::remove_reference_t< _Refer >;
-        static constexpr bool is_lvalue = ::std::is_lvalue_reference< _Refer >::value;
-        static constexpr bool is_rvalue = ::std::is_rvalue_reference< _Refer >::value;
-        static constexpr bool is_const = ::std::is_const< ValueFromRefer >::value;
-        static constexpr bool is_volatile = ::std::is_volatile< ValueFromRefer >::value;
+        static constexpr bool is_lvalue = ::std::is_lvalue_reference< _Refer >{};
+        static constexpr bool is_rvalue = ::std::is_rvalue_reference< _Refer >{};
+        static constexpr bool is_const = ::std::is_const< ValueFromRefer >{};
+        static constexpr bool is_volatile = ::std::is_volatile< ValueFromRefer >{};
 
         using VCheckedType = ::std::conditional_t< is_volatile, ::std::add_volatile_t< _Type >, _Type >;
         using CVCheckedType = ::std::conditional_t< is_const, ::std::add_const_t< VCheckedType >, VCheckedType >;
@@ -28,8 +28,8 @@ namespace ScL { namespace Detail
         // NOTE: _Type может изначально иметь const/volatile свойства, в этом
         // случае результат может не соответствовать этим свойствам для _Refer.
 
-        //static_assert( ::std::is_reference< _Type >::value
-        //    || ::ScL::Feature::is_similar< Type, _Refer >, "Result Type must to be similar _Refer" );
+        //static_assert( ::std::is_reference< _Type >{}
+        //    || ::ScL::Feature::is_similar< Type, _Refer >{}, "Result Type must to be similar _Refer" );
     };
 }}
 
