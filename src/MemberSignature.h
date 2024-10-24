@@ -2,6 +2,8 @@
 #ifndef SCL_UTILITY_SIMILAR_METHOD_H
 #define SCL_UTILITY_SIMILAR_METHOD_H
 
+#include <type_traits>
+
 namespace ScL { namespace Detail
 {
     template < typename _Type, typename _Method >
