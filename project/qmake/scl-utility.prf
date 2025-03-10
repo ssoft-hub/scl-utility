@@ -6,6 +6,6 @@ INCLUDEPATH *= \
 DEPENDPATH *= \
     $${PWD}/../../include \
 
-CONFIG *= c++14
+CONFIG *= c++17
 
 DEPENDS *= \
