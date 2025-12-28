@@ -6,6 +6,7 @@
  */
 
 #include <scl/utility/preprocessor.h>
+#include <scl/utility/type_traits.h>
 
 /**
  * @namespace scl
