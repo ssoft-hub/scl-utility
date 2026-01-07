@@ -1,0 +1,50 @@
+stages: [lint]
+
+variables:
+  SCL_SRC_DIR: src
+
+clang-tidy:
+  stage: lint
+  image: silkeh/clang:21
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
+  script:
+    - |
+      find $SCL_SRC_DIR \( -name '*.h' -o -name '*.hpp' \) | while IFS= read -r f; do
+        clang-tidy "$f" --quiet --warnings-as-errors='*' -- -std=c++20 -xc++ -I$SCL_SRC_DIR || exit 1
+      done
+
+clang-format:
+  stage: lint
+  image: silkeh/clang:21
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
+  script:
+    - find $SCL_SRC_DIR -name '*.h' -o -name '*.hpp' | xargs clang-format
+        --dry-run
+        --Werror
+
+cppcheck:
+  stage: lint
+  image: ubuntu:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
+  before_script:
+    - apt-get update && apt-get install -y cppcheck
+    - cppcheck --version
+  script:
+    - |
+      find $SCL_SRC_DIR \( -name '*.h' -o -name '*.hpp' \) -exec cppcheck \
+        --enable=warning,style,performance,portability \
+        --std=c++20 \
+        --language=c++ \
+        --inline-suppr \
+        --error-exitcode=1 \
+        --suppress=missingIncludeSystem \
+        --suppress=unusedFunction \
+        -I$SCL_SRC_DIR \
+        -UDOXYGEN \
+        {} +
