@@ -14,6 +14,7 @@
  */
 
 #include <scl/utility/meta/enum.h>
+#include <scl/utility/meta/symbol.h>
 #include <scl/utility/meta/type.h>
 
 /** @} */ // end of group scl_utility_meta
