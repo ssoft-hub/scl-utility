@@ -13,6 +13,10 @@
  * @{
  */
 
+#include <scl/utility/type_traits/detection.h>
+#include <scl/utility/type_traits/detection/function.h>
+#include <scl/utility/type_traits/detection/method.h>
+#include <scl/utility/type_traits/detection/operator.h>
 #include <scl/utility/type_traits/forward_like.h>
 #include <scl/utility/type_traits/member_like.h>
 
