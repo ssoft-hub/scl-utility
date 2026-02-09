@@ -1,0 +1,19 @@
+# Cppcheck suppressions for scl-utility module
+#
+# Usage (headers):
+#   cppcheck --enable=all --std=c++20 --language=c++ \
+#     --suppressions-list=.cppcheck -I./src -UDOXYGEN \
+#     src/scl/utility/*.h
+#
+# Usage (tests):
+#   find test -name "*.cpp" | xargs cppcheck --enable=all --std=c++20 \
+#     --language=c++ --suppressions-list=.cppcheck -I./src -UDOXYGEN
+
+# Suppress missing system includes
+missingIncludeSystem
+
+# Suppress unused function warnings (header-only library)
+unusedFunction
+
+# Suppress unused struct members in tests (used via pointer-to-member)
+unusedStructMember
