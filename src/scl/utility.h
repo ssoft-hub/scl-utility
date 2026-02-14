@@ -5,6 +5,7 @@
  * @brief Includes all ScL.Utility headers.
  */
 
+#include <scl/utility/meta.h>
 #include <scl/utility/preprocessor.h>
 #include <scl/utility/type_traits.h>
 
