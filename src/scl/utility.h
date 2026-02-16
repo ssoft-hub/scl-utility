@@ -20,7 +20,7 @@
  * @section intro Overview
  *
  * ScL.Utility is a header-only C++20 module providing common utilities not
- * available in the standard library. It is part of the ScL toolkit and has
+ * available in the standard library. It is part of the ScL Toolkit and has
  * no external dependencies.
  *
  * @section start Quick start
