@@ -100,4 +100,4 @@ static_assert(float_v0 == 0);
 ## Notes
 
 - The `SCL_FORWARD` macro is used internally to handle template tags that contain commas.
-- This technique relies on stateful metaprogramming via ADL. While widely supported by major compilers (GCC, Clang, MSVC), it is based on underspecified behavior in the C++ standard ([CWG 2118](http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#2118)).
+- This technique relies on stateful metaprogramming via ADL, supported by MSVC, GCC, and Clang.

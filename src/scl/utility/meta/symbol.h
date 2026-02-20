@@ -24,7 +24,7 @@ inline void lah4l4tjla6_f() {}
 namespace scl::detail
 {
     template <auto S>
-    constexpr ::std::string_view symbol_pattern_text()
+    constexpr ::std::string_view symbol_pattern_text() noexcept
     {
 #ifdef _MSC_VER
         return __FUNCSIG__;
@@ -37,7 +37,7 @@ namespace scl::detail
 
 #ifdef _MSC_VER
     // MSVC-specific: use bracket extraction like type_name
-    constexpr ::std::size_t symbol_prefix_length()
+    constexpr ::std::size_t symbol_prefix_length() noexcept
     {
         constexpr auto text = symbol_pattern_text<lah4l4tjla6_f>();
         constexpr auto close_pattern = text.rfind(">(");
@@ -48,7 +48,7 @@ namespace scl::detail
         return (open_bracket != ::std::string_view::npos) ? open_bracket + 1 : 0;
     }
 
-    constexpr auto symbol_suffix_length()
+    constexpr auto symbol_suffix_length() noexcept
     {
         constexpr auto text = symbol_pattern_text<lah4l4tjla6_f>();
         constexpr auto close_pattern = text.rfind(">(");
@@ -57,7 +57,7 @@ namespace scl::detail
 
     // Helper to strip MSVC function signature decorations
     // Format: "void __cdecl Namespace::func(args)" -> "Namespace::func"
-    constexpr ::std::string_view strip_msvc_function_decorations(::std::string_view name)
+    constexpr ::std::string_view strip_msvc_function_decorations(::std::string_view name) noexcept
     {
         // Find the last space before the function name (after __cdecl/__stdcall/etc)
         auto last_space = name.find_last_of(' ');
@@ -76,12 +76,12 @@ namespace scl::detail
     }
 #else
     // GCC/Clang: use marker search
-    constexpr auto symbol_prefix_length()
+    constexpr auto symbol_prefix_length() noexcept
     {
         return symbol_pattern_text<lah4l4tjla6_f>().find("lah4l4tjla6_f");
     }
 
-    constexpr auto symbol_suffix_length()
+    constexpr auto symbol_suffix_length() noexcept
     {
         constexpr auto text = symbol_pattern_text<lah4l4tjla6_f>();
         return text.length() - symbol_prefix_length() - ::std::string_view("lah4l4tjla6_f").length();
@@ -113,7 +113,7 @@ namespace scl
      * @endcode
      */
     template <auto S>
-    constexpr ::std::string_view symbol_name()
+    constexpr ::std::string_view symbol_name() noexcept
     {
         constexpr auto text = detail::symbol_pattern_text<S>();
         constexpr auto prefix_length = detail::symbol_prefix_length();
@@ -153,7 +153,7 @@ namespace scl
      * @endcode
      */
     template <auto S>
-    constexpr ::std::string_view symbol_short_name()
+    constexpr ::std::string_view symbol_short_name() noexcept
     {
         constexpr auto result = symbol_name<S>();
         constexpr auto pos = result.find_last_of(':');

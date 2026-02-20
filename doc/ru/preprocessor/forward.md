@@ -19,7 +19,7 @@
 ## Примеры использования
 
 ```cpp
-#include <scl/preprocessor.h>
+#include <scl/utility/preprocessor/forward.h>
 
 // Проброс аргументов функции
 #define CALL(fn, ...) fn(__VA_ARGS__)
