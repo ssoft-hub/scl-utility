@@ -15,14 +15,16 @@ Contents:
 Retrieves the qualified string representation of an enumeration member `V` at compile-time.
 
 - Header: `#include <scl/utility/meta/enum.h>`
-- Declaration: `template <auto V> requires Enum<decltype(V)> constexpr std::string_view enum_name() noexcept;`
+- Declaration: `template <auto V> requires std::is_enum_v<decltype(V)> constexpr std::string_view enum_name() noexcept;`
 
 ### Semantics
 
-- **Cross-platform Normalization:** 
-  MSVC often includes the `enum ` prefix in its function signatures. This utility automatically detects and removes it to ensure the result is consistent with GCC and Clang.
-- **Qualified Result:** 
-  Depending on the compiler and enum type (scoped vs. unscoped), the result typically includes the type name (e.g., `Color::Red`).
+- **Cross-platform Normalization:**
+  MSVC often includes the `enum ` prefix in its function signatures. This utility automatically
+  detects and removes it to ensure the result is consistent with GCC and Clang.
+- **Qualified Result:**
+  Depending on the compiler and enum type (scoped vs. unscoped), the result typically includes
+  the type name (e.g., `Color::Red`).
 
 ### Examples
 
@@ -46,7 +48,7 @@ static_assert(scl::enum_name<Active>() == "Active");
 Retrieves only the identifier of the enum member `V`, stripping any type or namespace qualifiers.
 
 - Header: `#include <scl/utility/meta/enum.h>`
-- Declaration: `template <auto V> requires Enum<decltype(V)> constexpr std::string_view enum_short_name() noexcept;`
+- Declaration: `template <auto V> requires std::is_enum_v<decltype(V)> constexpr std::string_view enum_short_name() noexcept;`
 
 ### Example
 
