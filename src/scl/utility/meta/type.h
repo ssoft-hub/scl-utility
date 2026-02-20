@@ -25,7 +25,7 @@ struct p8qim3n2a_t
 namespace scl::detail
 {
     // Helper to find the last "::" that is NOT inside angle brackets
-    constexpr auto find_last_scope_operator(::std::string_view str)
+    constexpr auto find_last_scope_operator(::std::string_view str) noexcept
     {
         auto last_pos = ::std::string_view::npos;
         int bracket_depth = 0;
@@ -42,7 +42,7 @@ namespace scl::detail
     }
 
     template <typename T>
-    constexpr ::std::string_view type_name_pattern_text()
+    constexpr ::std::string_view type_name_pattern_text() noexcept
     {
 #ifdef _MSC_VER
         return __FUNCSIG__;
@@ -57,7 +57,7 @@ namespace scl::detail
     // MSVC-specific extraction using angle brackets
     // Format: "ReturnType __cdecl FunctionName<TYPE>(void)"
     // We need to find the last < before >(void) pattern
-    constexpr ::std::size_t type_name_pattern_prefix_length()
+    constexpr ::std::size_t type_name_pattern_prefix_length() noexcept
     {
         constexpr auto text = type_name_pattern_text<p8qim3n2a_t>();
         // Find the closing pattern >( first
@@ -70,7 +70,7 @@ namespace scl::detail
         return (open_bracket != ::std::string_view::npos) ? open_bracket + 1 : 0;
     }
 
-    constexpr ::std::size_t type_name_pattern_suffix_length()
+    constexpr ::std::size_t type_name_pattern_suffix_length() noexcept
     {
         constexpr auto text = type_name_pattern_text<p8qim3n2a_t>();
         // Find the closing > followed by (void) pattern
@@ -79,13 +79,13 @@ namespace scl::detail
     }
 #else
     // GCC/Clang-specific extraction using marker search
-    constexpr auto type_name_pattern_prefix_length()
+    constexpr auto type_name_pattern_prefix_length() noexcept
     {
         constexpr auto prefix_length = type_name_pattern_text<p8qim3n2a_t>().find("p8qim3n2a_t");
         return prefix_length;
     }
 
-    constexpr auto type_name_pattern_suffix_length()
+    constexpr auto type_name_pattern_suffix_length() noexcept
     {
         constexpr auto suffix = type_name_pattern_text<p8qim3n2a_t>().length() -
             type_name_pattern_prefix_length() - ::std::string_view("p8qim3n2a_t").length();
@@ -121,7 +121,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
-    constexpr auto type_name()
+    constexpr auto type_name() noexcept
     {
         constexpr auto pattern_text = detail::type_name_pattern_text<T>();
         constexpr auto prefix_length = detail::type_name_pattern_prefix_length();
@@ -153,7 +153,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
-    constexpr auto type_short_name()
+    constexpr auto type_short_name() noexcept
     {
         constexpr auto result = type_name<T>();
 
