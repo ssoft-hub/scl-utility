@@ -15,14 +15,16 @@
 Возвращает квалифицированное строковое представление члена перечисления `V` на этапе компиляции.
 
 - Заголовок: `#include <scl/utility/meta/enum.h>`
-- Объявление: `template <auto V> requires Enum<decltype(V)> constexpr std::string_view enum_name() noexcept;`
+- Объявление: `template <auto V> requires std::is_enum_v<decltype(V)> constexpr std::string_view enum_name() noexcept;`
 
 ### Семантика
 
 - **Кроссплатформенная нормализация:**
-  MSVC часто включает префикс `enum ` в сигнатуры функций. Утилита автоматически обнаруживает и удаляет его для согласованности с GCC и Clang.
+  MSVC часто включает префикс `enum ` в сигнатуры функций. Утилита автоматически обнаруживает
+  и удаляет его для согласованности с GCC и Clang.
 - **Квалифицированный результат:**
-  В зависимости от компилятора и типа перечисления (scoped или unscoped) результат обычно включает имя типа (например, `Color::Red`).
+  В зависимости от компилятора и типа перечисления (scoped или unscoped) результат обычно
+  включает имя типа (например, `Color::Red`).
 
 ### Примеры
 
@@ -43,10 +45,11 @@ static_assert(scl::enum_name<Active>() == "Active");
 
 ## `enum_short_name<V>`
 
-Возвращает только идентификатор члена перечисления `V`, удаляя все квалификаторы типа и пространства имён.
+Возвращает только идентификатор члена перечисления `V`, удаляя все квалификаторы типа и
+пространства имён.
 
 - Заголовок: `#include <scl/utility/meta/enum.h>`
-- Объявление: `template <auto V> requires Enum<decltype(V)> constexpr std::string_view enum_short_name() noexcept;`
+- Объявление: `template <auto V> requires std::is_enum_v<decltype(V)> constexpr std::string_view enum_short_name() noexcept;`
 
 ### Пример
 
