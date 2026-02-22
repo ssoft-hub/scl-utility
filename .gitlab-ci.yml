@@ -1,4 +1,4 @@
-stages: [lint]
+stages: [lint, mirror]
 
 variables:
   SCL_SRC_DIR: src
@@ -48,3 +48,23 @@ cppcheck:
         -I$SCL_SRC_DIR \
         -UDOXYGEN \
         {} +
+
+# ---------------------
+# Mirror to GitHub
+# ---------------------
+mirror:github:
+  stage: mirror
+  image:
+      name: alpine/git
+      entrypoint: [""]
+  rules:
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+  variables:
+    GIT_STRATEGY: clone
+    # Set in GitLab CI/CD group variables (ssoft-scl):
+    #   GITHUB_TOKEN       - GitHub PAT with Contents: Write (masked)
+    # Set in GitLab CI/CD project variables:
+    #   GITHUB_MIRROR_URL  - https://github.com/ssoft-hub/scl-utility.git
+  script:
+    - sh script/ci/mirror_github.sh
