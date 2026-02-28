@@ -3,10 +3,6 @@
 #include <string_view>
 #include <type_traits>
 
-#ifdef __cpp_lib_source_location
-#include <source_location>
-#endif
-
 /**
  * @file
  * @brief Compile-time enumeration introspection utilities (C++20).
@@ -34,8 +30,6 @@ namespace scl::detail
     {
 #ifdef _MSC_VER
         return __FUNCSIG__;
-#elif defined __cpp_lib_source_location
-        return ::std::source_location::current().function_name();
 #else
         return __PRETTY_FUNCTION__;
 #endif

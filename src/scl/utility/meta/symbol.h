@@ -2,10 +2,6 @@
 
 #include <string_view>
 
-#ifdef __cpp_lib_source_location
-#include <source_location>
-#endif
-
 /**
  * @file
  * @brief Compile-time symbol (function, method, property) name extraction (C++20).
@@ -26,16 +22,14 @@ namespace scl::detail
     template <auto S>
     constexpr ::std::string_view symbol_pattern_text() noexcept
     {
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
         return __FUNCSIG__;
-#elif defined __cpp_lib_source_location
-        return ::std::source_location::current().function_name();
 #else
         return __PRETTY_FUNCTION__;
 #endif
     }
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
     // MSVC-specific: use bracket extraction like type_name
     constexpr ::std::size_t symbol_prefix_length() noexcept
     {
@@ -59,18 +53,13 @@ namespace scl::detail
     // Format: "void __cdecl Namespace::func(args)" -> "Namespace::func"
     constexpr ::std::string_view strip_msvc_function_decorations(::std::string_view name) noexcept
     {
-        // Find the last space before the function name (after __cdecl/__stdcall/etc)
         auto last_space = name.find_last_of(' ');
         if (last_space != ::std::string_view::npos)
         {
             auto after_space = name.substr(last_space + 1);
-            // Check if this looks like a function name (contains :: or just identifier before '(')
             auto paren = after_space.find('(');
             if (paren != ::std::string_view::npos)
-            {
-                // Return just the name before '('
                 return after_space.substr(0, paren);
-            }
         }
         return name;
     }
@@ -121,7 +110,7 @@ namespace scl
 
         constexpr auto result = text.substr(prefix_length, text.length() - prefix_length - suffix_length);
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
         // MSVC includes function signature like "void __cdecl Name(args)"
         constexpr auto cleaned = detail::strip_msvc_function_decorations(result);
 #else
