@@ -1,5 +1,9 @@
 # ScL.Utility
 
+[![GitLab Pipeline](https://gitlab.com/ssoft-scl/scl-utility/badges/main/pipeline.svg)](https://gitlab.com/ssoft-scl/scl-utility/-/pipelines)
+[![GitLab Pages](https://img.shields.io/badge/pages-gitlab-orange)](https://ssoft-scl.gitlab.io/scl-utility/)
+[![GitHub Pages](https://img.shields.io/badge/pages-github-blue)](https://ssoft-hub.github.io/scl-utility/)
+
 Common C++20 utilities not available in the standard library.
 
 ScL.Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, and extended type traits. Licensed under [The Unlicense](LICENSE.md).
