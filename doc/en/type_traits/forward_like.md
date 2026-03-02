@@ -92,7 +92,7 @@ properties, making generic code cleaner and more expressive.
 ### Example
 
 ```cpp
-#include <scl/utility/type_traits/firward_like.h>
+#include <scl/utility/type_traits/forward_like.h>
 #include <iostream>
 #include <string>
 

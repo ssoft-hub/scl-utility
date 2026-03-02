@@ -3,10 +3,6 @@
 #include <string_view>
 #include <type_traits>
 
-#ifdef __cpp_lib_source_location
-#include <source_location>
-#endif
-
 /**
  * @file
  * @brief Compile-time enumeration introspection utilities (C++20).
@@ -30,18 +26,16 @@ namespace scl::detail
 {
     template <auto V>
         requires ::std::is_enum_v<decltype(V)>
-    constexpr ::std::string_view enum_name_pattern_text()
+    constexpr ::std::string_view enum_name_pattern_text() noexcept
     {
 #ifdef _MSC_VER
         return __FUNCSIG__;
-#elif defined __cpp_lib_source_location
-        return ::std::source_location::current().function_name();
 #else
         return __PRETTY_FUNCTION__;
 #endif
     }
 
-    constexpr auto enum_prefix_lenght()
+    constexpr auto enum_prefix_lenght() noexcept
     {
         constexpr auto msvc_prefix_length =
             enum_name_pattern_text<we5r256sg_e::we5r256sg_v>().find("enum we5r256sg_e::we5r256sg_v");
@@ -58,7 +52,7 @@ namespace scl::detail
             return 0;
     }
 
-    constexpr auto enum_suffix_lenght()
+    constexpr auto enum_suffix_lenght() noexcept
     {
         constexpr auto text = enum_name_pattern_text<we5r256sg_v>(); // NOLINT(cppcoreguidelines-use-enum-class)
         return text.length() - enum_prefix_lenght() - ::std::string_view("we5r256sg_v").length();
@@ -87,7 +81,7 @@ namespace scl
      */
     template <auto V>
         requires ::std::is_enum_v<decltype(V)>
-    constexpr ::std::string_view enum_name()
+    constexpr ::std::string_view enum_name() noexcept
     {
         constexpr auto text = detail::enum_name_pattern_text<V>();
         constexpr auto prefix_length = detail::enum_prefix_lenght();
@@ -119,7 +113,7 @@ namespace scl
      */
     template <auto V>
         requires ::std::is_enum_v<decltype(V)>
-    constexpr ::std::string_view enum_short_name()
+    constexpr ::std::string_view enum_short_name() noexcept
     {
         constexpr auto result = enum_name<V>();
         constexpr auto pos = result.find_last_of(':');

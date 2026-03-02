@@ -14,20 +14,22 @@ Contents:
 
 Retrieves the qualified string name of a symbol (global function, member function, or data member).
 
-This utility provides a unified way to extract identifiers for various C++ entities passed as non-type template parameters.
+This utility provides a unified way to extract identifiers for various C++ entities passed as
+non-type template parameters.
 
 - Header: `#include <scl/utility/meta/symbol.h>`
 - Declaration: `template <auto S> constexpr std::string_view symbol_name() noexcept;`
 
 ### Semantics
 
-- **Aggressive Cleanup:** 
+- **Aggressive Cleanup:**
   The utility automatically removes compiler-specific "noise" such as:
   - Address-of operators (`&`).
   - Surrounding parentheses and extra whitespace (common in MSVC for global variables).
   - Type information injected into the signature by MSVC.
-- **Member Support:** 
-  Works for both pointer-to-member-functions (`&Class::Method`) and pointer-to-data-members (`&Class::Field`).
+- **Member Support:**
+  Works for both pointer-to-member-functions (`&Class::Method`) and
+  pointer-to-data-members (`&Class::Field`).
 
 ### Examples
 
@@ -54,7 +56,8 @@ static_assert(scl::symbol_name<&sys::Clock::ticks>() == "sys::Clock::ticks");
 
 ### Typical Use Cases
 
-Implementation of serialization frameworks, automatic command-line argument mapping, or debuggers where the string name of a class field or function is required at compile-time.
+Implementation of serialization frameworks, automatic command-line argument mapping, or debuggers
+where the string name of a class field or function is required at compile-time.
 
 ---
 

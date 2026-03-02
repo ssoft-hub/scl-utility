@@ -51,7 +51,7 @@ TEST(TypeNameTest, FundamentalTypes)
  */
 TEST(TypeNameTest, UserDefinedTypes)
 {
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
     EXPECT_EQ(::scl::type_name<SimpleStruct>(), "struct SimpleStruct");
     EXPECT_EQ(::scl::type_name<SimpleClass>(), "class SimpleClass");
 #else
@@ -71,7 +71,7 @@ TEST(TypeNameTest, UserDefinedTypes)
  */
 TEST(TypeNameTest, NamespacedTypes)
 {
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
     EXPECT_EQ(::scl::type_name<Namespace::Struct>(), "struct Namespace::Struct");
 #else
     EXPECT_EQ(::scl::type_name<Namespace::Struct>(), "Namespace::Struct");
@@ -89,12 +89,16 @@ TEST(TypeNameTest, TemplateTypes)
     using T = Namespace::TemplateStruct<Namespace::Struct>;
     using TT = Namespace::TemplateClass<T>;
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
     EXPECT_EQ(::scl::type_name<T>(), "struct Namespace::TemplateStruct<struct Namespace::Struct>");
     // MSVC adds space before > in nested templates: "> >" instead of ">>"
     EXPECT_EQ(::scl::type_name<TT>(),
         "class Namespace::TemplateClass<struct Namespace::TemplateStruct<struct Namespace::Struct> >");
+#elif defined(__clang__)
+    EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
+    EXPECT_EQ(::scl::type_name<TT>(), "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct>>");
 #else
+    // GCC adds space before > in nested templates
     EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
     EXPECT_EQ(::scl::type_name<TT>(), "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct> >");
 #endif

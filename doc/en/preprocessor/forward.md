@@ -19,7 +19,7 @@ time.
 ## Usage
 
 ```cpp
-#include <scl/preprocessor.h>
+#include <scl/utility/preprocessor/forward.h>
 
 // Forwarding function arguments
 #define CALL(fn, ...) fn(__VA_ARGS__)
