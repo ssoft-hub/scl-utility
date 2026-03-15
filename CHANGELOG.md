@@ -4,6 +4,20 @@ All notable changes to the ScL.Utility module will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.3] - 2026-03-15
+
+### Fixed
+
+- **forward_like** — `add_reference_like_t` now treats non-reference `Base` the same as
+  rvalue reference, matching C++23 `std::forward_like` semantics. Previously a non-reference
+  `Base` produced a non-reference result, which caused `executor_access::get` to return by
+  value via a forwarding reference and triggered a Clang error (dangling rvalue-reference
+  member in `wrapper_guard`).
+- **CMake** — deferred `gtest_discover_tests` to test time (`DISCOVERY_MODE PRE_TEST`) for
+  MinGW compatibility.
+
+---
+
 ## [0.1.2] - 2026-03-02
 
 ### Fixed
