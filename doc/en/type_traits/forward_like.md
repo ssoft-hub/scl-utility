@@ -29,8 +29,9 @@ category with that of `Base`.
   cv-qualifiers on `Type` are preserved, resulting in a union.
 
 - **Reference Application (Replacement):**
-  The reference category (`&` or `&&`) is determined solely by `Base`. The original reference
-  on `Type` is ignored, and reference collapsing does not apply.
+  The reference category is determined solely by `Base`. If `Base` is an lvalue reference,
+  the result is an lvalue reference; otherwise (rvalue reference or non-reference) the result
+  is an rvalue reference. The original reference on `Type` is ignored.
 
 - **Special Cases:**
   A reference is not applied if the underlying `Type` is `void`. For arrays, cv-qualifiers
@@ -43,14 +44,14 @@ category with that of `Base`.
 
 using ::scl::forward_like_t;
 
-// CV-qualifiers are overlaid (union)
-static_assert(std::is_same_v<forward_like_t<const int, volatile double>, const volatile double>);
-static_assert(std::is_same_v<forward_like_t<int, const double>, const double>);
+// CV-qualifiers are overlaid (union); non-reference Base → rvalue reference result
+static_assert(std::is_same_v<forward_like_t<const int, volatile double>, const volatile double &&>);
+static_assert(std::is_same_v<forward_like_t<int, const double>, const double &&>);
 
 // Reference category is replaced (copied from Base)
 static_assert(std::is_same_v<forward_like_t<int&, double&&>, double&>);      // & replaces &&
 static_assert(std::is_same_v<forward_like_t<int&&, double&>, double&&>);      // && replaces &
-static_assert(std::is_same_v<forward_like_t<int, double&>, double>);        // no-ref replaces &
+static_assert(std::is_same_v<forward_like_t<int, double&>, double &&>);       // non-ref Base → &&
 
 // Hybrid Behavior
 static_assert(std::is_same_v<forward_like_t<const int&, volatile double>, const volatile double&>);
@@ -59,7 +60,7 @@ static_assert(std::is_same_v<forward_like_t<const int&, volatile double>, const 
 static_assert(std::is_same_v<forward_like_t<const int&, void>, const void>); // ref not applied
 
 // Arrays
-static_assert(std::is_same_v<forward_like_t<const int, int volatile[3]>, const volatile int[3]>);
+static_assert(std::is_same_v<forward_like_t<const int, int volatile[3]>, const volatile int (&&)[3]>);
 static_assert(std::is_same_v<forward_like_t<int&&, int const(&)[3]>, int const(&&)[3]>);
 ```
 
