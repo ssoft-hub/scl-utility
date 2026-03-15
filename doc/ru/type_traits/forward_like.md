@@ -32,9 +32,9 @@ volatile и тип ссылки (& или &&), от одного типа объ
   к `Type`. Имеющиеся у `Type` квалификаторы сохраняются, происходит их объединение.
 
 - **Применение ссылки (замена):**
-  Ссылочная категория (`&` или `&&`) полностью определяется типом `Base`. Существующая
-  у `Type` ссылка игнорируется и заменяется. Правила схлопывания ссылок здесь не
-  применяются.
+  Ссылочная категория полностью определяется типом `Base`. Если `Base` — lvalue-ссылка,
+  результат является lvalue-ссылкой; в остальных случаях (rvalue-ссылка или не-ссылка) —
+  rvalue-ссылкой. Существующая у `Type` ссылка игнорируется.
 
 - **Особые случаи:**
   Если `Type` является `void`, ссылка к нему не применяется, но cv-квалификаторы
@@ -48,25 +48,25 @@ volatile и тип ссылки (& или &&), от одного типа объ
 
 using ::scl::forward_like_t;
 
-// CV-квалификаторы добавляются (объединяются)
-static_assert(std::is_same_v<forward_like_t<const int, double>, const double>);
-static_assert(std::is_same_v<forward_like_t<const int, volatile double>, const volatile double>);
-static_assert(std::is_same_v<forward_like_t<int, const double>, const double>);
+// CV-квалификаторы добавляются (объединяются); не-ссылочный Base → rvalue-ссылка
+static_assert(std::is_same_v<forward_like_t<const int, double>, const double &&>);
+static_assert(std::is_same_v<forward_like_t<const int, volatile double>, const volatile double &&>);
+static_assert(std::is_same_v<forward_like_t<int, const double>, const double &&>);
 
 // Ссылочная категория заменяется (копируется из Base)
-static_assert(std::is_same_v<forward_like_t<int&, double&&>, double&>); // && у double заменяется на &
-static_assert(std::is_same_v<forward_like_t<int&&, double&>, double&&>); // & у double заменяется на &&
-static_assert(std::is_same_v<forward_like_t<int, double&>, double>);    // & у double удаляется
+static_assert(std::is_same_v<forward_like_t<int&, double&&>, double&>);   // && у double заменяется на &
+static_assert(std::is_same_v<forward_like_t<int&&, double&>, double&&>);  // & у double заменяется на &&
+static_assert(std::is_same_v<forward_like_t<int, double&>, double &&>);   // не-ссылочный Base → &&
 
 // Гибридное поведение
 static_assert(std::is_same_v<forward_like_t<const int&, volatile double&&>, const volatile double&>);
 
 // Особый случай для void
 static_assert(std::is_same_v<forward_like_t<const int&, void>, const void>);
-static_assert(std::is_same_v<forward_like_t<int&&, const void>, const void>); // Ссылка не применяется
+static_assert(std::is_same_v<forward_like_t<int&&, const void>, const void>); // Ссылка не применяется к void
 
 // Массивы
-static_assert(std::is_same_v<forward_like_t<const int, int volatile[3]>, int const volatile[3]>);
+static_assert(std::is_same_v<forward_like_t<const int, int volatile[3]>, int const volatile (&&)[3]>);
 static_assert(std::is_same_v<forward_like_t<int&, int[3]>, int (&)[3]>);
 static_assert(std::is_same_v<forward_like_t<int&&, int const(&)[3]>, int const (&&)[3]>);
 ```
