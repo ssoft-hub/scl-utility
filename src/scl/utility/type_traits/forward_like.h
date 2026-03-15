@@ -26,14 +26,13 @@ namespace scl::detail
     template <typename From, typename To>
     using add_cv_from_t = add_const_from_t<From, add_volatile_from_t<From, To>>;
 
-    // Copy ref from From onto To: if From is &, add &, if && add &&, else no reference.
-    //s Don't add reference to void.
+    // Copy ref from From onto To: lvalue ref → &, otherwise (rvalue ref or non-reference) → &&.
+    // Matches std::forward_like semantics: the result is always a reference.
+    // Don't add reference to void.
     template <typename From, typename To>
     using add_reference_like_t = ::std::conditional_t<::std::is_lvalue_reference_v<From>,
         ::std::conditional_t<::std::is_void_v<To>, To, ::std::add_lvalue_reference_t<To>>,
-        ::std::conditional_t<::std::is_rvalue_reference_v<From>,
-            ::std::conditional_t<::std::is_void_v<To>, To, ::std::add_rvalue_reference_t<To>>,
-            To>>;
+        ::std::conditional_t<::std::is_void_v<To>, To, ::std::add_rvalue_reference_t<To>>>;
 
 } // namespace scl::detail
 
@@ -51,17 +50,17 @@ namespace scl
      *      Applies `const` and `volatile` from `Base` onto `remove_reference_t<Type>`.
      *      (i.e. union of qualifiers, not replacement)
      * - Reference:
-     *      Applies reference category of `Base` (if any).
-     *      If `Base` is lvalue ref, result is lvalue ref; if rvalue ref, rvalue ref; else no reference.
+     *      If `Base` is lvalue ref, result is lvalue ref; otherwise rvalue ref.
+     *      The result is always a reference (matching ::std::forward_like).
      *      Reference is omitted for void.
      *
      * @par Examples
      * @code{.cpp}
      *    using P0 = forward_like_t<int const &, double>            // double const &
      *    using P1 = forward_like_t<int &&, float const>            // float const &&
-     *    using P2 = forward_like_t<int volatile, char>             // char volatile
+     *    using P2 = forward_like_t<int volatile, char>             // char volatile &&
      *    using P3 = forward_like_t<int const volatile &, short>    // short const volatile &
-     *    using P4 = forward_like_t<int, double&&>                  // double
+     *    using P4 = forward_like_t<int, double&&>                  // double &&
      * @endcode
      */
     template <typename Base, typename Type>
