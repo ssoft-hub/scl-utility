@@ -50,9 +50,6 @@ cppcheck:
         {} +
 
 # ---------------------
-# Mirror to GitHub
-# ---------------------
-# ---------------------
 # Documentation
 # ---------------------
 pages:
@@ -69,6 +66,9 @@ pages:
     paths:
       - public
 
+# ---------------------
+# Mirror to GitHub
+# ---------------------
 mirror:github:
   stage: publish
   image:
