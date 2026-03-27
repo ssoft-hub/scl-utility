@@ -1,14 +1,6 @@
-#include <gtest/gtest.h>
+#include <gtest_utils.h>
 
 #include <scl/utility/type_traits/detection/function.h>
-
-#define TEST_EXPECT_TRUE(X) \
-    static_assert(X, #X);   \
-    EXPECT_TRUE(X);
-
-#define TEST_EXPECT_FALSE(X) \
-    static_assert(!(X), #X); \
-    EXPECT_FALSE(X);
 
 namespace
 {
@@ -25,13 +17,13 @@ namespace
 TEST(FunctionDetectionTest, PositiveCases)
 {
     // No arguments
-    TEST_EXPECT_TRUE(has_void_func_function_v<>);
-    TEST_EXPECT_TRUE(has_void_func_function_exact_v<>);
+    STATIC_EXPECT_TRUE(has_void_func_function_v<>);
+    STATIC_EXPECT_TRUE(has_void_func_function_exact_v<>);
 
     // Multiple arguments
-    TEST_EXPECT_TRUE((has_multiply_function_v<int, int>));
-    TEST_EXPECT_TRUE((has_multiply_function_v<double, double>));
-    TEST_EXPECT_TRUE((has_multiply_function_exact_v<int, int>));
+    STATIC_EXPECT_TRUE((has_multiply_function_v<int, int>));
+    STATIC_EXPECT_TRUE((has_multiply_function_v<double, double>));
+    STATIC_EXPECT_TRUE((has_multiply_function_exact_v<int, int>));
 
     // Type verification
     using RetType = multiply_function_t<int, int>;
@@ -44,22 +36,22 @@ TEST(FunctionDetectionTest, PositiveCases)
 TEST(FunctionDetectionTest, NegativeCases)
 {
     // Wrong number of arguments
-    TEST_EXPECT_FALSE(has_void_func_function_v<int>);
-    TEST_EXPECT_FALSE(has_multiply_function_v<int>);
+    STATIC_EXPECT_FALSE(has_void_func_function_v<int>);
+    STATIC_EXPECT_FALSE(has_multiply_function_v<int>);
 
     // Incompatible argument types
-    TEST_EXPECT_FALSE((has_multiply_function_v<int, char const *>));
+    STATIC_EXPECT_FALSE((has_multiply_function_v<int, char const *>));
 
     // Exact detection should also fail for mismatched types
-    TEST_EXPECT_FALSE((has_multiply_function_exact_v<double, double>));
-    TEST_EXPECT_FALSE(has_void_func_function_exact_v<double>);
+    STATIC_EXPECT_FALSE((has_multiply_function_exact_v<double, double>));
+    STATIC_EXPECT_FALSE(has_void_func_function_exact_v<double>);
 }
 
 TEST(FunctionDetectionTest, DetectionBeforeDefinition)
 {
     // Found via marker
-    TEST_EXPECT_TRUE((has_multiply_function_exact_v<int, int>));
-    TEST_EXPECT_FALSE((has_multiply_function_exact_v<double, double>));
+    STATIC_EXPECT_TRUE((has_multiply_function_exact_v<int, int>));
+    STATIC_EXPECT_FALSE((has_multiply_function_exact_v<double, double>));
 }
 
 int multiply(double a, double b) { return static_cast<int>(a * b); }
@@ -72,6 +64,6 @@ namespace test
 TEST(FunctionDetectionTest, DetectionAfterDefinition)
 {
     // Found via AdlType marker
-    TEST_EXPECT_TRUE((test::has_multiply_function_exact_v<int, int>));
-    TEST_EXPECT_TRUE((test::has_multiply_function_exact_v<double, double>));
+    STATIC_EXPECT_TRUE((test::has_multiply_function_exact_v<int, int>));
+    STATIC_EXPECT_TRUE((test::has_multiply_function_exact_v<double, double>));
 }

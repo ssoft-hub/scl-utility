@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <gtest_utils.h>
 
 #include <scl/utility/type_traits/detection.h>
 
