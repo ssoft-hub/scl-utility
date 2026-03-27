@@ -6,7 +6,7 @@
 
 Common C++20 utilities not available in the standard library.
 
-ScL.Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, and extended type traits. Licensed under [The Unlicense](LICENSE.md).
+ScL.Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, extended type traits, and non-cryptographic hash utilities. Licensed under [The Unlicense](LICENSE.md).
 
 ## Features
 
@@ -22,6 +22,12 @@ ScL.Utility is a header-only module of the ScL Toolkit providing compile-time me
   - `forward_like` — forward with value category of another type
   - `member_like` — member pointer trait decomposition
   - `overload_cast<Args...>` — overloaded function pointer disambiguation
+- **Hash** — non-cryptographic compile-time hash utilities (`#include <scl/utility/hash.h>`):
+  - `fnv1a`, `djb2`, `sdbm` — 64-bit hashes over any byte range; chainable
+  - `jenkins_ota` — 32-bit Jenkins one-at-a-time hash
+  - `siphash` — SipHash-2-4 64-bit keyed hash (hash-flooding resistant)
+  - `key<Hasher>` — strongly-typed digest; usable as `switch`/`case` label,
+    STL unordered container key, and non-type template parameter (C++20 NTTP)
 
 ## Requirements
 
