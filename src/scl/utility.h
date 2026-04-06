@@ -5,6 +5,7 @@
  * @brief Includes all ScL.Utility headers.
  */
 
+#include <scl/utility/attribute.h>
 #include <scl/utility/meta.h>
 #include <scl/utility/preprocessor.h>
 #include <scl/utility/type_traits.h>
@@ -44,4 +45,7 @@
  *   (SCL_COUNTER_VALUE / SCL_COUNTER_NEXT).
  * - **Type traits** (@ref scl_utility_type_traits) — detection idiom,
  *   forward_like, member pointer decomposition, and overload_cast.
+ * - **Attribute** (@ref scl_utility_attribute) — portable macros for
+ *   [[no_unique_address]], optimizer hints (SCL_ASSUME, SCL_UNREACHABLE),
+ *   and inlining control (SCL_FORCE_INLINE, SCL_NOINLINE).
  */

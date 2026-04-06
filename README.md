@@ -1,4 +1,4 @@
-# ScL.Utility
+# ScL Utility
 
 [![GitLab Pipeline](https://gitlab.com/ssoft-scl/scl-utility/badges/main/pipeline.svg)](https://gitlab.com/ssoft-scl/scl-utility/-/pipelines)
 [![GitLab Pages](https://img.shields.io/badge/pages-gitlab-orange)](https://ssoft-scl.gitlab.io/scl-utility/)
@@ -6,10 +6,15 @@
 
 Common C++20 utilities not available in the standard library.
 
-ScL.Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, extended type traits, and non-cryptographic hash utilities. Licensed under [The Unlicense](LICENSE.md).
+ScL Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, extended type traits, and non-cryptographic hash utilities. Licensed under [The Unlicense](LICENSE.md).
 
 ## Features
 
+- **Attribute** — portable compiler attribute macros:
+  - `SCL_NO_UNIQUE_ADDRESS` — portable `[[no_unique_address]]` (MSVC/GCC/Clang)
+  - `SCL_ASSUME(expr)` — optimizer hint: expression is always true
+  - `SCL_UNREACHABLE()` — mark unreachable code path
+  - `SCL_FORCE_INLINE` / `SCL_NOINLINE` — inlining control
 - **Meta** — compile-time name extraction without RTTI:
   - `type_name<T>` / `type_short_name<T>` — human-readable type names
   - `enum_name<V>` / `enum_short_name<V>` — enum member names
