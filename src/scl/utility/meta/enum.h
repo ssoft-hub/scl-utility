@@ -25,8 +25,8 @@ enum we5r256sg_e // NOLINT(cppcoreguidelines-use-enum-class, performance-enum-si
 namespace scl::detail
 {
     template <auto V>
-        requires ::std::is_enum_v<decltype(V)>
     constexpr ::std::string_view enum_name_pattern_text() noexcept
+        requires ::std::is_enum_v<decltype(V)>
     {
 #ifdef _MSC_VER
         return __FUNCSIG__;
@@ -80,8 +80,8 @@ namespace scl
      * @endcode
      */
     template <auto V>
-        requires ::std::is_enum_v<decltype(V)>
     constexpr ::std::string_view enum_name() noexcept
+        requires ::std::is_enum_v<decltype(V)>
     {
         constexpr auto text = detail::enum_name_pattern_text<V>();
         constexpr auto prefix_length = detail::enum_prefix_lenght();
@@ -112,8 +112,8 @@ namespace scl
      * @endcode
      */
     template <auto V>
-        requires ::std::is_enum_v<decltype(V)>
     constexpr ::std::string_view enum_short_name() noexcept
+        requires ::std::is_enum_v<decltype(V)>
     {
         constexpr auto result = enum_name<V>();
         constexpr auto pos = result.find_last_of(':');
