@@ -28,6 +28,14 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 ## Компоненты
 
+### Attribute — портабельные макросы атрибутов компилятора
+
+| Компонент | Заголовок | Описание |
+|-----------|-----------|----------|
+| [SCL_NO_UNIQUE_ADDRESS](attribute/no_unique_address.md) | `<scl/utility/attribute/no_unique_address.h>` | Портабельный `[[no_unique_address]]` для MSVC/GCC/Clang |
+| [SCL_ASSUME / SCL_UNREACHABLE](attribute/assume.md) | `<scl/utility/attribute/assume.h>` | Подсказки оптимизатору: предположение и недостижимый код |
+| [SCL_FORCE_INLINE / SCL_NOINLINE](attribute/inline.md) | `<scl/utility/attribute/inline.h>` | Управление встраиванием функций |
+
 ### Meta — рефлексия на этапе компиляции
 
 | Компонент | Заголовок | Описание |

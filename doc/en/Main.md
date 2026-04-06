@@ -27,6 +27,14 @@ Then include the umbrella header or individual component headers:
 
 ## Components
 
+### Attribute — portable compiler attribute macros
+
+| Component | Header | Description |
+|-----------|--------|-------------|
+| [SCL_NO_UNIQUE_ADDRESS](attribute/no_unique_address.md) | `<scl/utility/attribute/no_unique_address.h>` | Portable `[[no_unique_address]]` for MSVC/GCC/Clang |
+| [SCL_ASSUME / SCL_UNREACHABLE](attribute/assume.md) | `<scl/utility/attribute/assume.h>` | Optimizer hints: assumption and unreachable marker |
+| [SCL_FORCE_INLINE / SCL_NOINLINE](attribute/inline.md) | `<scl/utility/attribute/inline.h>` | Inlining control |
+
 ### Meta — compile-time reflection
 
 | Component | Header | Description |
