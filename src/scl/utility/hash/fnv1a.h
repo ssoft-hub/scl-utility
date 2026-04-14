@@ -47,8 +47,8 @@ namespace scl::hash
     /// static_assert(h != 0);
     /// @endcode
     template <::std::ranges::range Range>
-        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
     constexpr ::std::uint64_t fnv1a(Range const & range, ::std::uint64_t h = 14695981039346656037ull)
+        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
     {
         for (auto const c : range)
         {
@@ -64,8 +64,8 @@ namespace scl::hash
         using result_type = ::std::uint64_t;
 
         template <::std::ranges::range Range>
-            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
         constexpr result_type operator()(Range const & range) const noexcept
+            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
         {
             return ::scl::hash::fnv1a(range);
         }

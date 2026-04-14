@@ -48,8 +48,8 @@ namespace scl::hash
     /// static_assert(h != 0);
     /// @endcode
     template <::std::ranges::range Range>
-        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
     constexpr ::std::uint32_t jenkins_ota(Range const & range)
+        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
     {
         ::std::uint32_t h = 0;
 
@@ -74,8 +74,8 @@ namespace scl::hash
         using result_type = ::std::uint32_t;
 
         template <::std::ranges::range Range>
-            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
         constexpr result_type operator()(Range const & range) const noexcept
+            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
         {
             return ::scl::hash::jenkins_ota(range);
         }

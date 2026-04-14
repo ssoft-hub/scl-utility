@@ -93,8 +93,8 @@ namespace scl::hash
         ///                are convertible to `std::uint8_t`.
         /// @param  range  Input range (e.g. `std::string`, `std::span<std::byte>`).
         template <::std::ranges::range Range>
-            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
         explicit constexpr key(Range const & range) noexcept
+            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
             : value{Hasher{}(range)}
         {}
 
