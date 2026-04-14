@@ -10,11 +10,22 @@ ScL Utility is a header-only module of the ScL Toolkit providing compile-time me
 
 ## Features
 
-- **Attribute** — portable compiler attribute macros:
+- **Attribute** — portable compiler attribute macros (`#include <scl/utility/attribute.h>`):
   - `SCL_NO_UNIQUE_ADDRESS` — portable `[[no_unique_address]]` (MSVC/GCC/Clang)
   - `SCL_ASSUME(expr)` — optimizer hint: expression is always true
   - `SCL_UNREACHABLE()` — mark unreachable code path
   - `SCL_FORCE_INLINE` / `SCL_NOINLINE` — inlining control
+  - `SCL_NORETURN` — mark functions that never return
+  - `SCL_DEPRECATED` / `SCL_DEPRECATED_MSG(msg)` — deprecation warnings
+  - `SCL_FALLTHROUGH` — suppress implicit-fallthrough warning in `switch`
+  - `SCL_NODISCARD` / `SCL_NODISCARD_MSG(msg)` — warn on discarded return value
+  - `SCL_MAYBE_UNUSED` — suppress unused-entity warnings
+  - `SCL_LIKELY` / `SCL_UNLIKELY` — C++20 statement branch hints
+  - `SCL_LIKELY_EXPR(expr)` / `SCL_UNLIKELY_EXPR(expr)` — expression branch hints via `__builtin_expect`
+  - `SCL_HOT` / `SCL_COLD` — function frequency hints
+  - `SCL_LIFETIMEBOUND` — dangling-reference detection (`[[clang::lifetimebound]]`)
+  - `SCL_UNSEQUENCED` / `SCL_REPRODUCIBLE` — purity annotations (C++26 semantics, GCC/Clang)
+  - `SCL_INDETERMINATE` — C++26 opt-in to indeterminate storage
 - **Meta** — compile-time name extraction without RTTI:
   - `type_name<T>` / `type_short_name<T>` — human-readable type names
   - `enum_name<V>` / `enum_short_name<V>` — enum member names
