@@ -4,6 +4,38 @@ All notable changes to the ScL.Utility module will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **Attribute** — six new portable attribute macros:
+  - `SCL_NORETURN` — `[[noreturn]]` (C++11) with MSVC/GCC/Clang fallbacks.
+  - `SCL_DEPRECATED` / `SCL_DEPRECATED_MSG(msg)` — `[[deprecated]]` /
+    `[[deprecated(msg)]]` (C++14) with MSVC and GCC/Clang fallbacks.
+  - `SCL_FALLTHROUGH` — `[[fallthrough]]` (C++17) with GCC attribute fallback
+    and `((void)0)` no-op.
+  - `SCL_NODISCARD` / `SCL_NODISCARD_MSG(msg)` — `[[nodiscard]]` (C++17) and
+    `[[nodiscard(msg)]]` (C++20) with `warn_unused_result` fallback.
+  - `SCL_MAYBE_UNUSED` — `[[maybe_unused]]` (C++17) with `__attribute__((unused))` fallback.
+  - `SCL_LIKELY` / `SCL_UNLIKELY` — C++20 `[[likely]]`/`[[unlikely]]` statement
+    attributes; empty fallback on older compilers.
+  - `SCL_LIKELY_EXPR(expr)` / `SCL_UNLIKELY_EXPR(expr)` — expression-level
+    branch hints via `__builtin_expect`; identity fallback on MSVC.
+  - `SCL_UNSEQUENCED` — pure no-global-read function annotation;
+    `[[gnu::const]]` / `__attribute__((const))` on GCC/Clang, maps to C++26
+    `[[unsequenced]]` semantics.
+  - `SCL_REPRODUCIBLE` — pure read-only-global function annotation;
+    `[[gnu::pure]]` / `__attribute__((pure))` on GCC/Clang, maps to C++26
+    `[[reproducible]]` semantics.
+  - `SCL_INDETERMINATE` — C++26 `[[indeterminate]]` opt-in to uninitialised
+    storage; empty fallback.
+  - `SCL_HOT` / `SCL_COLD` — function-frequency hints via `[[gnu::hot]]` /
+    `[[gnu::cold]]`; empty fallback on MSVC.
+  - `SCL_LIFETIMEBOUND` — dangling-reference detection via
+    `[[clang::lifetimebound]]`; empty fallback on GCC and MSVC.
+
+---
+
 ## [0.1.3] - 2026-03-15
 
 ### Fixed
