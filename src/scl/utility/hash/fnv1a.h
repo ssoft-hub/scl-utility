@@ -2,6 +2,7 @@
 
 /// @file fnv1a.h
 /// @brief FNV-1a (Fowler-Noll-Vo, variant 1a) 64-bit hash algorithm.
+/// @ingroup scl_utility_hash
 
 #include <concepts>
 #include <cstdint>
@@ -11,6 +12,7 @@
 namespace scl::hash
 {
     /// @brief Computes an FNV-1a 64-bit hash over an arbitrary byte range.
+    /// @ingroup scl_utility_hash
     ///
     /// Implements the FNV-1a variant of the Fowler-Noll-Vo non-cryptographic
     /// hash algorithm with 64-bit width. For each element @c c in the range,
@@ -59,6 +61,7 @@ namespace scl::hash
     }
 
     /// @brief Callable wrapper around @ref fnv1a for use with @ref scl::hash::key.
+    /// @ingroup scl_utility_hash
     struct fnv1a_hasher
     {
         using result_type = ::std::uint64_t;

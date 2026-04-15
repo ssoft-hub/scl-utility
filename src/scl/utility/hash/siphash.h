@@ -2,6 +2,7 @@
 
 /// @file siphash.h
 /// @brief SipHash-2-4: 64-bit keyed hash designed for string hashing in hash tables.
+/// @ingroup scl_utility_hash
 
 #include <bit>
 #include <concepts>
@@ -12,6 +13,7 @@
 namespace scl::hash
 {
     /// @brief 128-bit secret key for SipHash.
+    /// @ingroup scl_utility_hash
     ///
     /// For **hash-flooding protection** (e.g. in `std::unordered_map`), initialise
     /// with a random value at program startup. For **compile-time identifiers** and
@@ -46,6 +48,7 @@ namespace scl::hash
     } // namespace detail
 
     /// @brief Default key for non-security-sensitive use.
+    /// @ingroup scl_utility_hash
     ///
     /// These are the standard test-vector key bytes from the SipHash paper
     /// (Aumasson & Bernstein, 2012): bytes 0x00–0x0f in little-endian order.
@@ -56,6 +59,7 @@ namespace scl::hash
     };
 
     /// @brief Computes a SipHash-2-4 64-bit hash over an arbitrary byte range.
+    /// @ingroup scl_utility_hash
     ///
     /// SipHash-2-4 (2 compression rounds, 4 finalization rounds) is a fast,
     /// short-input hash with a 128-bit secret key. It was designed by Jean-Philippe
@@ -148,6 +152,7 @@ namespace scl::hash
     }
 
     /// @brief Callable wrapper around @ref siphash for use with @ref scl::hash::key.
+    /// @ingroup scl_utility_hash
     ///
     /// The secret key is embedded as a non-type template parameter, so two
     /// instantiations with different keys are distinct types.

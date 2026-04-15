@@ -2,6 +2,7 @@
 
 /// @file
 /// @brief Strongly-typed hash digest parameterized by a hash function.
+/// @ingroup scl_utility_hash
 
 #include <scl/utility/hash/siphash.h>
 
@@ -14,6 +15,7 @@ namespace scl::hash::concepts
 {
     /// @brief Concept satisfied by any default-constructible callable that maps
     ///        a byte range to an integral digest and exposes a `result_type` typedef.
+    /// @ingroup scl_utility_hash
     ///
     /// Used to constrain the `Hasher` parameter of @ref scl::hash::key.
     // clang-format off
@@ -26,7 +28,8 @@ namespace scl::hash::concepts
 
 namespace scl::hash
 {
-    /// @brief Strongly-typed FNV-1a hash digest parameterized by a hash function.
+    /// @brief Strongly-typed hash digest parameterized by a hash function.
+    /// @ingroup scl_utility_hash
     ///
     /// Wraps the digest produced by @p Hasher in a named type, preventing
     /// accidental mixing of raw integers with hash values. The `value_type` and
@@ -108,6 +111,7 @@ namespace scl::hash
 } // namespace scl::hash
 
 /// @brief `std::hash` partial specialisation for all `scl::hash::key<Hasher>`.
+/// @ingroup scl_utility_hash
 template <typename Hasher>
 struct std::hash<::scl::hash::key<Hasher>>
 {
