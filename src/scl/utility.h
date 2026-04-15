@@ -2,7 +2,7 @@
 
 /**
  * @file
- * @brief Includes all ScL.Utility headers.
+ * @brief Includes all ScL Utility headers.
  */
 
 #include <scl/utility/attribute.h>
@@ -16,11 +16,11 @@
  */
 
 /**
- * @mainpage ScL.Utility
+ * @mainpage ScL Utility
  *
  * @section intro Overview
  *
- * ScL.Utility is a header-only C++20 module providing common utilities not
+ * ScL Utility is a header-only C++20 module providing common utilities not
  * available in the standard library. It is part of the ScL Toolkit and has
  * no external dependencies.
  *

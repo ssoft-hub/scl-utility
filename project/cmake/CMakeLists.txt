@@ -8,6 +8,7 @@
 get_filename_component(SCL_UTILITY_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 
 set(MODULE utility)
+set(SCL_UTILITY_VERSION "0.1.4")
 
 # ---- Make headers visible in IDE ----
 set(SCL_UTILITY_SRC_DIR "${SCL_UTILITY_ROOT}/src")

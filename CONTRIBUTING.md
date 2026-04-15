@@ -1,4 +1,4 @@
-# Contributing to ScL.Utility
+# Contributing to ScL Utility
 
 ## Building and testing
 

@@ -1,8 +1,8 @@
-# ScL.Utility
+# ScL Utility
 
 Common C++20 utilities not available in the standard library.
 
-ScL.Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, and extended type traits.
+ScL Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, and extended type traits.
 
 ## Requirements
 
