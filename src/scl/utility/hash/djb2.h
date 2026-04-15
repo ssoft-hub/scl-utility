@@ -2,6 +2,7 @@
 
 /// @file djb2.h
 /// @brief djb2a — Daniel J. Bernstein's hash (XOR variant), 64-bit.
+/// @ingroup scl_utility_hash
 
 #include <concepts>
 #include <cstdint>
@@ -11,6 +12,7 @@
 namespace scl::hash
 {
     /// @brief Computes a djb2a 64-bit hash over an arbitrary byte range.
+    /// @ingroup scl_utility_hash
     ///
     /// Implements the XOR variant of Daniel J. Bernstein's djb2 hash
     /// (sometimes written as djb2a or "xor" variant). For each element @c c:
@@ -56,6 +58,7 @@ namespace scl::hash
     }
 
     /// @brief Callable wrapper around @ref djb2 for use with @ref scl::hash::key.
+    /// @ingroup scl_utility_hash
     struct djb2_hasher
     {
         using result_type = ::std::uint64_t;

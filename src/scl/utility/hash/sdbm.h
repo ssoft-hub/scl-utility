@@ -2,6 +2,7 @@
 
 /// @file sdbm.h
 /// @brief SDBM hash algorithm, 64-bit.
+/// @ingroup scl_utility_hash
 
 #include <concepts>
 #include <cstdint>
@@ -11,6 +12,7 @@
 namespace scl::hash
 {
     /// @brief Computes an SDBM 64-bit hash over an arbitrary byte range.
+    /// @ingroup scl_utility_hash
     ///
     /// Implements the SDBM hash algorithm (originating from the sdbm database
     /// library). For each element @c c:
@@ -54,6 +56,7 @@ namespace scl::hash
     }
 
     /// @brief Callable wrapper around @ref sdbm for use with @ref scl::hash::key.
+    /// @ingroup scl_utility_hash
     struct sdbm_hasher
     {
         using result_type = ::std::uint64_t;

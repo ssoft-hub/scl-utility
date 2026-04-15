@@ -2,6 +2,7 @@
 
 /// @file jenkins_ota.h
 /// @brief Jenkins one-at-a-time (OTA) hash algorithm, 32-bit.
+/// @ingroup scl_utility_hash
 
 #include <concepts>
 #include <cstdint>
@@ -11,6 +12,7 @@
 namespace scl::hash
 {
     /// @brief Computes a Jenkins one-at-a-time (OTA) 32-bit hash.
+    /// @ingroup scl_utility_hash
     ///
     /// Implements Bob Jenkins' one-at-a-time hash algorithm. Each byte is
     /// mixed into the accumulator with bit-shifts and XOR operations, followed
@@ -68,6 +70,7 @@ namespace scl::hash
     }
 
     /// @brief Callable wrapper around @ref jenkins_ota for use with @ref scl::hash::key.
+    /// @ingroup scl_utility_hash
     /// @note `value_type` deduced as `std::uint32_t` (Jenkins OAT is 32-bit).
     struct jenkins_ota_hasher
     {
