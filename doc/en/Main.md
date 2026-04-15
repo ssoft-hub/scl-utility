@@ -27,6 +27,24 @@ Then include the umbrella header or individual component headers:
 
 ## Components
 
+### Attribute — portable compiler attribute macros
+
+| Component | Header | Description |
+|-----------|--------|-------------|
+| [SCL_NO_UNIQUE_ADDRESS](attribute/no_unique_address.md) | `<scl/utility/attribute/no_unique_address.h>` | Portable `[[no_unique_address]]` for MSVC/GCC/Clang |
+| [SCL_ASSUME / SCL_UNREACHABLE](attribute/assume.md) | `<scl/utility/attribute/assume.h>` | Optimizer hints: assumption and unreachable marker |
+| [SCL_FORCE_INLINE / SCL_NOINLINE](attribute/inline.md) | `<scl/utility/attribute/inline.h>` | Inlining control |
+| [SCL_NORETURN](attribute/noreturn.md) | `<scl/utility/attribute/noreturn.h>` | Mark a function that never returns |
+| [SCL_DEPRECATED / SCL_DEPRECATED_MSG](attribute/deprecated.md) | `<scl/utility/attribute/deprecated.h>` | Deprecation annotations |
+| [SCL_FALLTHROUGH](attribute/fallthrough.md) | `<scl/utility/attribute/fallthrough.h>` | Intentional switch fall-through marker |
+| [SCL_NODISCARD / SCL_NODISCARD_MSG](attribute/nodiscard.md) | `<scl/utility/attribute/nodiscard.h>` | Warn on discarded return value |
+| [SCL_MAYBE_UNUSED](attribute/maybe_unused.md) | `<scl/utility/attribute/maybe_unused.h>` | Suppress unused-entity warnings |
+| [SCL_LIKELY / SCL_UNLIKELY / SCL_LIKELY_EXPR / SCL_UNLIKELY_EXPR](attribute/likely.md) | `<scl/utility/attribute/likely.h>` | Branch-prediction hints |
+| [SCL_UNSEQUENCED / SCL_REPRODUCIBLE](attribute/unsequenced.md) | `<scl/utility/attribute/unsequenced.h>` | Pure-function annotations (C++26 / gnu::const / gnu::pure) |
+| [SCL_INDETERMINATE](attribute/indeterminate.md) | `<scl/utility/attribute/indeterminate.h>` | Opt-in to indeterminate (uninitialised) storage (C++26) |
+| [SCL_HOT / SCL_COLD](attribute/hotcold.md) | `<scl/utility/attribute/hotcold.h>` | Function-frequency hints for hot/cold code paths |
+| [SCL_LIFETIMEBOUND](attribute/lifetimebound.md) | `<scl/utility/attribute/lifetimebound.h>` | Dangling-reference detection via lifetime-bound parameter annotation |
+
 ### Meta — compile-time reflection
 
 | Component | Header | Description |

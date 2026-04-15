@@ -28,6 +28,24 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 ## Компоненты
 
+### Attribute — портабельные макросы атрибутов компилятора
+
+| Компонент | Заголовок | Описание |
+|-----------|-----------|----------|
+| [SCL_NO_UNIQUE_ADDRESS](attribute/no_unique_address.md) | `<scl/utility/attribute/no_unique_address.h>` | Портабельный `[[no_unique_address]]` для MSVC/GCC/Clang |
+| [SCL_ASSUME / SCL_UNREACHABLE](attribute/assume.md) | `<scl/utility/attribute/assume.h>` | Подсказки оптимизатору: предположение и недостижимый код |
+| [SCL_FORCE_INLINE / SCL_NOINLINE](attribute/inline.md) | `<scl/utility/attribute/inline.h>` | Управление встраиванием функций |
+| [SCL_NORETURN](attribute/noreturn.md) | `<scl/utility/attribute/noreturn.h>` | Пометка функции, не возвращающей управление |
+| [SCL_DEPRECATED / SCL_DEPRECATED_MSG](attribute/deprecated.md) | `<scl/utility/attribute/deprecated.h>` | Аннотации устаревших сущностей |
+| [SCL_FALLTHROUGH](attribute/fallthrough.md) | `<scl/utility/attribute/fallthrough.h>` | Пометка намеренного провала между ветками switch |
+| [SCL_NODISCARD / SCL_NODISCARD_MSG](attribute/nodiscard.md) | `<scl/utility/attribute/nodiscard.h>` | Предупреждение об игнорировании возвращаемого значения |
+| [SCL_MAYBE_UNUSED](attribute/maybe_unused.md) | `<scl/utility/attribute/maybe_unused.h>` | Подавление предупреждений о неиспользуемых сущностях |
+| [SCL_LIKELY / SCL_UNLIKELY / SCL_LIKELY_EXPR / SCL_UNLIKELY_EXPR](attribute/likely.md) | `<scl/utility/attribute/likely.h>` | Подсказки предсказателю ветвлений |
+| [SCL_UNSEQUENCED / SCL_REPRODUCIBLE](attribute/unsequenced.md) | `<scl/utility/attribute/unsequenced.h>` | Аннотации чистых функций (C++26 / gnu::const / gnu::pure) |
+| [SCL_INDETERMINATE](attribute/indeterminate.md) | `<scl/utility/attribute/indeterminate.h>` | Явный выбор неопределённого хранилища (C++26) |
+| [SCL_HOT / SCL_COLD](attribute/hotcold.md) | `<scl/utility/attribute/hotcold.h>` | Подсказки о частоте вызова функции |
+| [SCL_LIFETIMEBOUND](attribute/lifetimebound.md) | `<scl/utility/attribute/lifetimebound.h>` | Обнаружение висячих ссылок через аннотацию времени жизни параметра |
+
 ### Meta — рефлексия на этапе компиляции
 
 | Компонент | Заголовок | Описание |

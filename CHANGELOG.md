@@ -4,6 +4,54 @@ All notable changes to the ScL.Utility module will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **Attribute** — portable compiler attribute macros (`#include <scl/utility/attribute.h>`):
+  - `SCL_NO_UNIQUE_ADDRESS` — portable `[[no_unique_address]]`; uses
+    `[[msvc::no_unique_address]]` on MSVC, `[[no_unique_address]]` elsewhere.
+  - `SCL_ASSUME(expr)` — optimizer hint that `expr` is always true;
+    `__assume` on MSVC, `__builtin_assume` on Clang, `if (!(expr)) __builtin_unreachable()` on GCC.
+  - `SCL_UNREACHABLE()` — marks a code path as unreachable;
+    `__assume(0)` on MSVC, `__builtin_unreachable()` on GCC/Clang.
+  - `SCL_FORCE_INLINE` / `SCL_NOINLINE` — inlining control via
+    `__forceinline`/`__declspec(noinline)` on MSVC, `__attribute__` on GCC/Clang.
+  - `SCL_NORETURN` — `[[noreturn]]` (C++11) with MSVC/GCC/Clang fallbacks.
+  - `SCL_DEPRECATED` / `SCL_DEPRECATED_MSG(msg)` — `[[deprecated]]` /
+    `[[deprecated(msg)]]` (C++14) with MSVC and GCC/Clang fallbacks.
+  - `SCL_FALLTHROUGH` — `[[fallthrough]]` (C++17) with GCC attribute fallback
+    and `((void)0)` no-op.
+  - `SCL_NODISCARD` / `SCL_NODISCARD_MSG(msg)` — `[[nodiscard]]` (C++17) and
+    `[[nodiscard(msg)]]` (C++20) with `warn_unused_result` fallback.
+  - `SCL_MAYBE_UNUSED` — `[[maybe_unused]]` (C++17) with `__attribute__((unused))` fallback.
+  - `SCL_LIKELY` / `SCL_UNLIKELY` — C++20 `[[likely]]`/`[[unlikely]]` statement
+    attributes; empty fallback on older compilers.
+  - `SCL_LIKELY_EXPR(expr)` / `SCL_UNLIKELY_EXPR(expr)` — expression-level
+    branch hints via `__builtin_expect`; identity fallback on MSVC.
+  - `SCL_UNSEQUENCED` — pure no-global-read function annotation;
+    `[[gnu::const]]` / `__attribute__((const))` on GCC/Clang, maps to C++26
+    `[[unsequenced]]` semantics.
+  - `SCL_REPRODUCIBLE` — pure read-only-global function annotation;
+    `[[gnu::pure]]` / `__attribute__((pure))` on GCC/Clang, maps to C++26
+    `[[reproducible]]` semantics.
+  - `SCL_INDETERMINATE` — C++26 `[[indeterminate]]` opt-in to uninitialised
+    storage; empty fallback.
+  - `SCL_HOT` / `SCL_COLD` — function-frequency hints via `[[gnu::hot]]` /
+    `[[gnu::cold]]`; empty fallback on MSVC.
+  - `SCL_LIFETIMEBOUND` — dangling-reference detection via
+    `[[clang::lifetimebound]]`; empty fallback on GCC and MSVC.
+- **Hash** — non-cryptographic compile-time hash utilities (`#include <scl/utility/hash.h>`):
+  - `fnv1a`, `djb2`, `sdbm` — 64-bit hashes over any byte range; chainable
+    via `operator()`.
+  - `jenkins_ota` — 32-bit Jenkins one-at-a-time hash.
+  - `siphash` — SipHash-2-4 64-bit keyed hash (hash-flooding resistant).
+  - `key<Hasher>` — strongly-typed digest wrapping a hash value; usable as
+    `switch`/`case` label, STL unordered container key, and non-type template
+    parameter (C++20 NTTP).
+
+---
+
 ## [0.1.3] - 2026-03-15
 
 ### Fixed
