@@ -27,9 +27,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-git fetch --all --tags --prune
+git fetch --all --tags --prune --prune-tags
+git update-ref -d refs/remotes/origin/pages 2>/dev/null || true
 git remote remove github 2>/dev/null || true
 git remote add github "$GITHUB_AUTH_URL"
+git fetch github refs/heads/gh-pages:refs/remotes/origin/gh-pages 2>/dev/null || true
 git push github 'refs/remotes/origin/*:refs/heads/*' --force --prune
 git push github ':refs/heads/HEAD' 2>/dev/null || true
 git push github --tags --prune
