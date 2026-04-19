@@ -1,6 +1,6 @@
 # ScL Utility
 
-[![GitLab Pipeline](https://gitlab.com/ssoft-scl/scl-utility/badges/main/pipeline.svg)](https://gitlab.com/ssoft-scl/scl-utility/-/pipelines)
+[![GitLab Pipeline](https://gitlab.com/ssoft-scl/scl-utility/badges/dev/pipeline.svg)](https://gitlab.com/ssoft-scl/scl-utility/-/pipelines)
 [![GitLab Pages](https://img.shields.io/badge/pages-gitlab-orange)](https://ssoft-scl.gitlab.io/scl-utility/)
 [![GitHub Pages](https://img.shields.io/badge/pages-github-blue)](https://ssoft-hub.github.io/scl-utility/)
 
@@ -81,8 +81,8 @@ int main() {
 
 ## Doxygen
 
-- [GitLab Pages](https://ssoft-scl.gitlab.io/scl-utility/)
-- [GitHub Pages](https://ssoft-hub.github.io/scl-utility/)
+- [GitLab Pages](https://ssoft-scl.gitlab.io/scl-utility/dev/)
+- [GitHub Pages](https://ssoft-hub.github.io/scl-utility/dev/)
 
 ## Documentation
 
