@@ -4,6 +4,27 @@ All notable changes to the ScL Utility module will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `AGENTS.md` — development guidelines for contributors and agents:
+  code conventions, branching rules, required pre-commit checks
+  (clang-format, clang-tidy, cppcheck), commit message format,
+  Doxygen documentation requirements, and compatibility constraints.
+
+### CI
+
+- `script/ci/deploy_versioned_docs.sh` — builds versioned Doxygen HTML for
+  all version tags (immutable) and `dev` (latest); injects version-selector
+  nav bar; manages `versions.json` and root `index.html` on the pages branch.
+- `.gitlab-ci.yml` pages job: switched to `archlinux:latest` for up-to-date
+  Doxygen; triggers on version tags; deploys via `deploy_versioned_docs.sh`.
+- `.github/workflows/docs.yml`: runs in `archlinux:latest` container; installs
+  git before checkout; deploys to `gh-pages` via `deploy_versioned_docs.sh`.
+- `script/ci/mirror_github.sh`: exclude `pages` branch from GitHub mirror;
+  preserve `gh-pages` from `--prune`; add `--prune-tags`.
+
 ## [0.1.4] - 2026-04-15
 
 ### Added
