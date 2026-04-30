@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Runtime** — runtime type name extraction via RTTI (`#include <scl/utility/runtime.h>`):
+  - `::scl::type_name(obj)` — demangled fully qualified name of the dynamic type;
+    uses `abi::__cxa_demangle` on GCC/Clang, `typeid().name()` as-is on MSVC.
+  - `::scl::type_short_name(obj)` — unqualified identifier only (no namespaces, no template arguments).
+  - Both functions support polymorphism and are available only when RTTI is enabled.
+
 - `AGENTS.md` — development guidelines for contributors and agents:
   code conventions, branching rules, required pre-commit checks
   (clang-format, clang-tidy, cppcheck), commit message format,
