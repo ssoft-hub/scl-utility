@@ -1,24 +1,23 @@
-# Build one executable per subdirectory under module/utility/example/*
+# Build one executable per .cpp file under module/utility/example/*
 
 get_filename_component(SCL_UTILITY_EXAMPLE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../example" ABSOLUTE)
 
 if (EXISTS "${SCL_UTILITY_EXAMPLE_DIR}")
-    file(GLOB SCL_UTILITY_EXAMPLE_SUBDIRS LIST_DIRECTORIES true "${SCL_UTILITY_EXAMPLE_DIR}/*")
+    file(GLOB_RECURSE SCL_UTILITY_EXAMPLE_SRCS CONFIGURE_DEPENDS
+        "${SCL_UTILITY_EXAMPLE_DIR}/*.c"
+        "${SCL_UTILITY_EXAMPLE_DIR}/*.cc"
+        "${SCL_UTILITY_EXAMPLE_DIR}/*.cpp"
+    )
 
-    foreach(subdir IN LISTS SCL_UTILITY_EXAMPLE_SUBDIRS)
-        if (IS_DIRECTORY "${subdir}")
-            get_filename_component(name "${subdir}" NAME)
-            file(GLOB_RECURSE srcs CONFIGURE_DEPENDS
-                "${subdir}/*.h" "${subdir}/*.hh" "${subdir}/*.hpp"
-                "${subdir}/*.c" "${subdir}/*.cc" "${subdir}/*.cpp"
-            )
+    foreach(src IN LISTS SCL_UTILITY_EXAMPLE_SRCS)
+        get_filename_component(stem "${src}" NAME_WE)
+        file(RELATIVE_PATH rel "${SCL_UTILITY_EXAMPLE_DIR}" "${src}")
+        get_filename_component(subdir "${rel}" DIRECTORY)
+        string(REPLACE "/" "_" subdir_slug "${subdir}")
+        set(tgt "utility_${subdir_slug}_${stem}")
 
-            if (srcs)
-                set(tgt "utility_${name}_example")
-                add_executable(${tgt} ${srcs})
-                target_link_libraries(${tgt} PRIVATE scl::utility)
-                target_compile_features(${tgt} PRIVATE cxx_std_20)
-            endif()
-        endif()
+        add_executable(${tgt} "${src}")
+        target_link_libraries(${tgt} PRIVATE scl::utility)
+        target_compile_features(${tgt} PRIVATE cxx_std_20)
     endforeach()
 endif()
