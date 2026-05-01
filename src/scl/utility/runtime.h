@@ -15,6 +15,7 @@
  * @{
  */
 
+#include <scl/utility/runtime/enum.h>
 #include <scl/utility/runtime/type.h>
 
 /** @} */ // end of group scl_utility_runtime
