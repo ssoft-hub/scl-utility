@@ -54,6 +54,19 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [enum_name](meta/enum_name.md) | `<scl/utility/meta/enum.h>` | Извлечение имени члена перечисления на этапе компиляции |
 | [symbol_name](meta/symbol_name.md) | `<scl/utility/meta/symbol.h>` | Извлечение имени функции/члена на этапе компиляции |
 
+### Runtime — утилиты для времени выполнения
+
+| Компонент | Заголовок | Описание |
+|-----------|-----------|----------|
+| [type_name(obj)](runtime/type_name.md) | `<scl/utility/runtime/type.h>` | Имя типа через RTTI с поддержкой полиморфизма |
+| [enum_value(v)](runtime/enum_value.md) | `<scl/utility/runtime/enum.h>` | Значение перечисления как `"TypeName::N"`; RTTI не требуется |
+
+### Hash — некриптографические хеш-утилиты
+
+| Компонент | Заголовок | Описание |
+|-----------|-----------|----------|
+| [key](hash/key.md) | `<scl/utility/hash.h>` | Строго типизированный хеш-дайджест: метка switch, ключ контейнера, NTTP |
+
 ### Preprocessor — макроутилиты
 
 | Компонент | Заголовок | Описание |

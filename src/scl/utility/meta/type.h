@@ -20,21 +20,37 @@ struct p8qim3n2a_t
 
 namespace scl::detail
 {
-    // Helper to find the last "::" that is NOT inside angle brackets
     constexpr auto find_last_scope_operator(::std::string_view str) noexcept
     {
         auto last_pos = ::std::string_view::npos;
         int bracket_depth = 0;
+        ::std::size_t i = 0;
 
-        for (::std::size_t i = 0; i < str.size(); ++i)
-            if (str[i] == '<')
+        for (char const ch : str)
+        {
+            if (ch == '<')
                 ++bracket_depth;
-            else if (str[i] == '>')
+            else if (ch == '>')
                 --bracket_depth;
-            else if (bracket_depth == 0 && str[i] == ':' && i + 1 < str.size() && str[i + 1] == ':')
+            else if (bracket_depth == 0 && ch == ':' && i + 1 < str.size() && str.substr(i + 1).front() == ':')
                 last_pos = i;
-
+            ++i;
+        }
         return last_pos;
+    }
+
+    constexpr ::std::string_view short_name_from(::std::string_view full) noexcept
+    {
+        auto const last_pos = find_last_scope_operator(full);
+        auto const after = (last_pos != ::std::string_view::npos) ? full.substr(last_pos + 2) : full;
+        auto const stripped = after.starts_with("struct ") ? after.substr(7)
+            : after.starts_with("class ")                  ? after.substr(6)
+            : after.starts_with("union ")                  ? after.substr(6)
+            : after.starts_with("enum ")
+            ? after.substr(5)
+            : after;
+        auto const tmpl = stripped.find('<');
+        return (tmpl != ::std::string_view::npos) ? stripped.substr(0, tmpl) : stripped;
     }
 
     template <typename T>
@@ -149,28 +165,7 @@ namespace scl
     template <typename T>
     constexpr auto type_short_name() noexcept
     {
-        constexpr auto result = type_name<T>();
-
-        // Find the last "::" that is NOT inside template arguments (angle brackets)
-        constexpr auto last_scope_pos = detail::find_last_scope_operator(result);
-
-        constexpr auto after_scope =
-            (last_scope_pos != ::std::string_view::npos) ? result.substr(last_scope_pos + 2) : result;
-
-        // Remove struct/class/union prefix from short name
-        constexpr auto without_prefix = after_scope.starts_with("struct ") ? after_scope.substr(7)
-            : after_scope.starts_with("class ")                            ? after_scope.substr(6)
-            : after_scope.starts_with("union ")                            ? after_scope.substr(6)
-            : after_scope.starts_with("enum ")
-            ? after_scope.substr(5)
-            : after_scope;
-
-        // Remove template arguments (everything from '<' onwards)
-        constexpr auto template_start = without_prefix.find('<');
-        if constexpr (template_start != ::std::string_view::npos)
-            return without_prefix.substr(0, template_start);
-        else
-            return without_prefix;
+        return detail::short_name_from(type_name<T>());
     }
 
 } // namespace scl
