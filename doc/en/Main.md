@@ -53,6 +53,19 @@ Then include the umbrella header or individual component headers:
 | [enum_name](meta/enum_name.md) | `<scl/utility/meta/enum.h>` | Compile-time enum member name extraction |
 | [symbol_name](meta/symbol_name.md) | `<scl/utility/meta/symbol.h>` | Compile-time function/member name extraction |
 
+### Runtime — runtime type and enum utilities
+
+| Component | Header | Description |
+|-----------|--------|-------------|
+| [type_name(obj)](runtime/type_name.md) | `<scl/utility/runtime/type.h>` | Runtime type name via RTTI; supports polymorphism |
+| [enum_value(v)](runtime/enum_value.md) | `<scl/utility/runtime/enum.h>` | Enum value as `"TypeName::N"`; no RTTI required |
+
+### Hash — non-cryptographic hash utilities
+
+| Component | Header | Description |
+|-----------|--------|-------------|
+| [key](hash/key.md) | `<scl/utility/hash.h>` | Strongly-typed hash digest; usable as switch label, map key, and NTTP |
+
 ### Preprocessor — macro utilities
 
 | Component | Header | Description |
