@@ -10,6 +10,7 @@
  *     numeric value cast to the enum's underlying type.
  */
 
+#include <scl/utility/concepts/type_category.h>
 #include <scl/utility/meta/type.h>
 
 #include <string>
@@ -43,9 +44,8 @@ namespace scl
      * ::scl::enum_value(Flags::B);    // "Flags::2"
      * @endcode
      */
-    template <typename E>
+    template <concepts::enum_type E>
     ::std::string enum_value(E value)
-        requires ::std::is_enum_v<E>
     {
 #ifdef __cpp_lib_format
         return ::std::format("{}::{}", ::scl::type_short_name<E>(),
