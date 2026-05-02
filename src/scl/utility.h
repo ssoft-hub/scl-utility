@@ -6,6 +6,7 @@
  */
 
 #include <scl/utility/attribute.h>
+#include <scl/utility/concepts.h>
 #include <scl/utility/meta.h>
 #include <scl/utility/preprocessor.h>
 #include <scl/utility/type_traits.h>
@@ -38,6 +39,9 @@
  *
  * @section features Features
  *
+ * - **Concepts** (@ref scl_utility_concepts) — concept wrappers for
+ *   std type traits that have no std concept equivalent: reference, qualifier,
+ *   type-category, and type-property classifiers.
  * - **Meta** (@ref scl_utility_meta) — compile-time type, enum, and symbol
  *   name extraction without RTTI.
  * - **Preprocessor** (@ref scl_utility_preprocessor) — macro utilities
