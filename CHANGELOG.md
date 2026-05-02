@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Concepts** — type-classifying concept wrappers for std type traits that have no
+  std concept equivalent (`#include <scl/utility/concepts.h>`):
+  - `scl::concepts::reference`, `lvalue_reference`, `rvalue_reference`
+  - `scl::concepts::const_type`, `volatile_type`, `cv_type`
+  - `scl::concepts::enum_type`, `void_type`, `pointer`, `null_pointer`
+  - `scl::concepts::member_pointer`, `member_object_pointer`, `member_function_pointer`
+  - `scl::concepts::array_type`, `bounded_array`, `unbounded_array`
+  - `scl::concepts::function_type`, `class_type`, `union_type`
+  - `scl::concepts::fundamental`, `arithmetic`, `scalar`, `object_type`, `compound`
+  - `scl::concepts::trivial`, `trivially_copyable`, `standard_layout`
+  - `scl::concepts::empty_type`, `polymorphic`, `abstract_type`, `final_type`, `aggregate`
+
 - **Runtime** — runtime type name extraction via RTTI (`#include <scl/utility/runtime.h>`):
   - `::scl::type_name(obj)` — demangled fully qualified name of the dynamic type;
     uses `abi::__cxa_demangle` on GCC/Clang, `typeid().name()` as-is on MSVC.
