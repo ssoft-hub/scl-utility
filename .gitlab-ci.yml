@@ -10,10 +10,7 @@ clang-tidy:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
   script:
-    - |
-      find $SCL_SRC_DIR \( -name '*.h' -o -name '*.hpp' \) | while IFS= read -r f; do
-        clang-tidy "$f" --quiet --warnings-as-errors='*' -- -std=c++20 -xc++ -I$SCL_SRC_DIR || exit 1
-      done
+    - bash script/lint/clang_tidy.sh
 
 clang-format:
   stage: lint
@@ -22,13 +19,11 @@ clang-format:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
   script:
-    - find $SCL_SRC_DIR -name '*.h' -o -name '*.hpp' | xargs clang-format
-        --dry-run
-        --Werror
+    - bash script/lint/clang_format.sh
 
 cppcheck:
   stage: lint
-  image: ubuntu:latest
+  image: ubuntu:24.04
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
@@ -36,18 +31,7 @@ cppcheck:
     - apt-get update && apt-get install -y cppcheck
     - cppcheck --version
   script:
-    - |
-      find $SCL_SRC_DIR \( -name '*.h' -o -name '*.hpp' \) -exec cppcheck \
-        --enable=warning,style,performance,portability \
-        --std=c++20 \
-        --language=c++ \
-        --inline-suppr \
-        --error-exitcode=1 \
-        --suppress=missingIncludeSystem \
-        --suppress=unusedFunction \
-        -I$SCL_SRC_DIR \
-        -UDOXYGEN \
-        {} +
+    - bash script/lint/cppcheck.sh
 
 # ---------------------
 # Documentation
