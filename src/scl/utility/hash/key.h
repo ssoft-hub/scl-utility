@@ -85,7 +85,7 @@ namespace scl::hash
         using hasher_type = Hasher;
 
         /// @brief Underlying integer type — deduced from the hasher's `result_type`.
-        using value_type = typename Hasher::result_type;
+        using value_type = Hasher::result_type;
 
         /// @brief Raw digest value.
         value_type value{};
@@ -113,6 +113,7 @@ namespace scl::hash
 /// @brief `std::hash` partial specialisation for all `scl::hash::key<Hasher>`.
 /// @ingroup scl_utility_hash
 template <typename Hasher>
+// NOLINTNEXTLINE(bugprone-std-namespace-modification)
 struct std::hash<::scl::hash::key<Hasher>>
 {
     constexpr ::std::size_t operator()(::scl::hash::key<Hasher> const & k) const noexcept
