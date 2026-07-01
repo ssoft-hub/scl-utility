@@ -15,10 +15,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Run clang-tidy
-        run: |
-          find src \( -name '*.h' -o -name '*.hpp' \) | while IFS= read -r f; do
-            clang-tidy "$f" --quiet --warnings-as-errors='*' -- -std=c++20 -xc++ -Isrc || exit 1
-          done
+        run: bash script/lint/clang_tidy.sh
 
   clang-format:
     runs-on: ubuntu-latest
@@ -27,13 +24,10 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Check formatting
-        run: |
-          find src -name '*.h' -o -name '*.hpp' | xargs clang-format \
-            --dry-run \
-            --Werror
+        run: bash script/lint/clang_format.sh
 
   cppcheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
 
@@ -43,15 +37,4 @@ jobs:
           cppcheck --version
 
       - name: Run cppcheck
-        run: |
-          find src \( -name '*.h' -o -name '*.hpp' \) -exec cppcheck \
-            --enable=warning,style,performance,portability \
-            --std=c++20 \
-            --language=c++ \
-            --inline-suppr \
-            --error-exitcode=1 \
-            --suppress=missingIncludeSystem \
-            --suppress=unusedFunction \
-            -Isrc \
-            -UDOXYGEN \
-            {} +
+        run: bash script/lint/cppcheck.sh
