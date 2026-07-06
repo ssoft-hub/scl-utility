@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed a compiler crash (`SIGSEGV` in clang's `Sema`) building
+  `utility_type_traits_gtest` on macOS, caused by an oversized test
+  translation unit forcing too many template instantiations at once.
+
 ### Added
 
 - **Concepts** — type-classifying concept wrappers for std type traits that have no
