@@ -15,7 +15,8 @@ Checks: >
   -readability-braces-around-statements,
   -cppcoreguidelines-macro-usage,
   -bugprone-macro-parentheses,
-  -readability-uppercase-literal-suffix
+  -readability-uppercase-literal-suffix,
+  -readability-redundant-typename
 
 WarningsAsErrors: '*'
 
