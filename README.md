@@ -4,9 +4,9 @@
 [![GitLab Pages](https://img.shields.io/badge/pages-gitlab-orange)](https://ssoft-scl.gitlab.io/scl-utility/)
 [![GitHub Pages](https://img.shields.io/badge/pages-github-blue)](https://ssoft-hub.github.io/scl-utility/)
 
-Common C++20 utilities not available in the standard library.
+Common C++ utilities not available in the standard library.
 
-ScL Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, extended type traits, and non-cryptographic hash utilities. Licensed under [The Unlicense](LICENSE.md).
+ScL Utility is a header-only module of the ScL Toolkit providing compile-time meta-programming helpers, preprocessor utilities, extended type traits, non-cryptographic hash utilities, and parent-child tree hierarchy structures. Licensed under [The Unlicense](LICENSE.md).
 
 ## Features
 
@@ -38,6 +38,13 @@ ScL Utility is a header-only module of the ScL Toolkit providing compile-time me
   - `forward_like` — forward with value category of another type
   - `member_like` — member pointer trait decomposition
   - `overload_cast<Args...>` — overloaded function pointer disambiguation
+- **Hierarchy** — parent-child tree structures (`#include <scl/utility/hierarchy.h>`):
+  - `node<Payload, Allocator>` — tree node owning children in `std::list`
+  - `tree<Payload, Observer, Allocator>` — root-level node list with observer notifications
+  - `observer_tuple<Tree, Observers...>` — fan-out adapter for N observers via `std::apply`
+  - Free algorithm functions: `has_parent`, `parent_of`, `is_parent_of`, `is_ancestor_of`,
+    `are_sibling`, `are_identical` — adapt to any type via ADL (`adl_parent`,
+    `adl_has_parent`, `adl_identity`)
 - **Hash** — non-cryptographic compile-time hash utilities (`#include <scl/utility/hash.h>`):
   - `fnv1a`, `djb2`, `sdbm` — 64-bit hashes over any byte range; chainable
   - `jenkins_ota` — 32-bit Jenkins one-at-a-time hash

@@ -14,6 +14,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Hierarchy** — parent-child tree structures (`#include <scl/utility/hierarchy.h>`):
+  - `scl::hierarchy::node<Payload, Allocator>` — a tree node that owns its children
+    in a `std::list`; copy deep-clones, move is O(1).
+    Provides `push_back`, `push_front`, `insert`, `emplace` variants, `erase`
+    (single + range), `take`/`take_first`/`take_last`, 6 `transfer` splice overloads,
+    and standard iteration. All methods carry computed `noexcept(…)` specifiers
+    with `requires` constraints.
+  - `scl::hierarchy::tree<Payload, Observer, Allocator>` — a root-level node list
+    that notifies an `Observer` on insert, erase, clear, and payload change.
+    `reference`/`const_reference` proxy types expose the same API as `node`.
+  - `scl::hierarchy::observer_tuple<Tree, Observers...>` — fan-out adapter that
+    forwards each notification to N inner observers via `std::apply`.
+  - Free algorithm functions (`#include <scl/utility/hierarchy/algorithm.h>`):
+    `are_identical`, `has_parent`, `parent_of`, `is_parent_of`, `is_ancestor_of`,
+    `are_sibling` — adapt to any type via ADL (`adl_parent`,
+    `adl_has_parent`, `adl_identity`).
+
 - **Concepts** — type-classifying concept wrappers for std type traits that have no
   std concept equivalent (`#include <scl/utility/concepts.h>`):
   - `scl::concepts::reference`, `lvalue_reference`, `rvalue_reference`
