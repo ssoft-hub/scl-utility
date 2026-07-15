@@ -14,6 +14,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Flags** — type-safe bitmask over a scoped enum (`#include <scl/utility/flags.h>`):
+  - `scl::flags<Enum, bit_count>` — a bitmask where each flag occupies the bit at
+    its enumerator ordinal, backed by `std::array<std::byte>` so every operation
+    is usable in constant evaluation (unlike `std::bitset` before C++23). A
+    non-scoped `enum` is rejected by `static_assert`; an ordinal `>= bit_count`
+    throws `std::out_of_range` (ill-formed in constant evaluation).
+  - Construction from zero or more flags, `operator[]` membership test, equality,
+    bitwise `~ | & ^` and compound `|= &= ^=` (flags and single-flag forms).
+  - `all_of`/`any_of`/`none_of` predicates in variadic-flag and `flags`
+    (subset/intersection/disjoint) forms; whole-mask `any`/`none`/`all`.
+  - A bidirectional range over the set flags (`begin`/`end`/`rbegin`/`rend`,
+    `size`, nested `const_iterator`) that composes with `<ranges>`.
+
 - **Hierarchy** — parent-child tree structures (`#include <scl/utility/hierarchy.h>`):
   - `scl::hierarchy::node<Payload, Allocator>` — a tree node that owns its children
     in a `std::list`; copy deep-clones, move is O(1).
