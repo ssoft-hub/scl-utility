@@ -7,6 +7,7 @@
 
 #include <scl/utility/attribute.h>
 #include <scl/utility/concepts.h>
+#include <scl/utility/flags.h>
 #include <scl/utility/hierarchy.h>
 #include <scl/utility/meta.h>
 #include <scl/utility/preprocessor.h>
