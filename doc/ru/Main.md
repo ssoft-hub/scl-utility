@@ -28,6 +28,12 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 ## Компоненты
 
+### Any — невладеющие read-only представления над `std::any`
+
+| Компонент | Заголовок | Описание |
+|-----------|-----------|----------|
+| [any_view](any/any_view.md) | `<scl/utility/any/any_view.h>` | Хранимое read-only представление над `std::any` или типизированным lvalue; принимает только lvalue |
+
 ### Attribute — портабельные макросы атрибутов компилятора
 
 | Компонент | Заголовок | Описание |

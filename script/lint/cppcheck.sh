@@ -22,6 +22,7 @@ grep -v '^\s*#' .cppcheck | grep -v '^\s*$' | tr -d '\r' > "$SUPP_LIST"
 
 find "$SCL_SRC_DIR" \( -name '*.h' -o -name '*.hpp' \) -exec "$CPPCHECK" \
     --enable=warning,style,performance,portability \
+    --check-level=exhaustive \
     --std=c++20 \
     --language=c++ \
     --inline-suppr \
