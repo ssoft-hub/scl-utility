@@ -66,6 +66,12 @@ Then include the umbrella header or individual component headers:
 |-----------|--------|-------------|
 | [key](hash/key.md) | `<scl/utility/hash.h>` | Strongly-typed hash digest; usable as switch label, map key, and NTTP |
 
+### Flags — type-safe bitmask over a scoped enum
+
+| Component | Header | Description |
+|-----------|--------|-------------|
+| [flags](flags/flags.md) | `<scl/utility/flags.h>` | Bitmask over a scoped enum; bitwise ops, set predicates, and a bidirectional range over the set flags |
+
 ### Preprocessor — macro utilities
 
 | Component | Header | Description |

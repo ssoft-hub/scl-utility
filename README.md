@@ -51,6 +51,13 @@ ScL Utility is a header-only module of the ScL Toolkit providing compile-time me
   - `siphash` — SipHash-2-4 64-bit keyed hash (hash-flooding resistant)
   - `key<Hasher>` — strongly-typed digest; usable as `switch`/`case` label,
     STL unordered container key, and non-type template parameter (C++20 NTTP)
+- **Flags** — type-safe bitmask over a scoped enum (`#include <scl/utility/flags.h>`):
+  - `flags<Enum, bit_count>` — one bit per enumerator ordinal; `constexpr`-capable
+  - bitwise `~ | & ^` and compound `|= &= ^=` (flags and single-flag forms),
+    `operator[]` membership test
+  - `all_of`/`any_of`/`none_of` predicates (variadic flag packs and whole-mask
+    subset/intersection/disjoint forms), whole-mask `any`/`none`/`all`
+  - a bidirectional range over the set flags (`begin`/`end`/`rbegin`/`rend`, `size`)
 
 ## Requirements
 
