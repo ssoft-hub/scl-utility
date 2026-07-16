@@ -135,6 +135,9 @@ TEST(FlagsTest, WholeMaskQueries)
     STATIC_EXPECT_FALSE(tiny(One).all());
 
     STATIC_EXPECT_TRUE(tiny(One, Two).all());
+
+    STATIC_EXPECT_FALSE(static_cast<bool>(tiny{}));
+    STATIC_EXPECT_TRUE(static_cast<bool>(tiny(One)));
 }
 
 TEST(FlagsTest, RangeConceptsAndSize)

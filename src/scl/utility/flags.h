@@ -133,6 +133,12 @@ namespace scl
         }
 
         [[nodiscard]]
+        constexpr explicit operator bool() const noexcept
+        {
+            return any();
+        }
+
+        [[nodiscard]]
         constexpr flags operator~() const noexcept
         {
             flags result;
@@ -534,6 +540,10 @@ namespace scl
 /// @fn scl::flags::all() const
 /// @brief Returns `true` when every one of the `bit_count` bits is set.
 /// @return `true` if all bits (the full storage width) are set.
+
+/// @fn scl::flags::operator bool() const
+/// @brief Contextually converts to `true` when at least one flag is set.
+/// @return `any()`; explicit, so it participates only in boolean contexts.
 
 // -----------------------------------------------------------------------------
 // Bitwise operators
