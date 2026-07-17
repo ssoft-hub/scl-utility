@@ -44,6 +44,7 @@ clang-format -i <files>
 clang-tidy <file> -- -std=c++20 -xc++ -Isrc
 cppcheck --enable=warning,style,performance,portability \
   --check-level=exhaustive \
+  --max-configs=32 \
   --std=c++20 --language=c++ --inline-suppr \
   --error-exitcode=1 --suppress=missingIncludeSystem \
   -Isrc -UDOXYGEN <files>

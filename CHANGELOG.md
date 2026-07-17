@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **Any** — a non-owning, read-only view over a `std::any` or a typed lvalue
+- **Any** — non-owning views over a `std::any` or a typed value
   (`#include <scl/utility/any.h>`):
   - `scl::any_view` — two pointers wide and trivially copyable; constructs from a
     typed lvalue (the RTTI-free *raw* backing, whose `type_name`/`type_key`/
@@ -30,14 +30,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     out the `scl::type_key` of the viewed type by pointer (`nullptr` for an empty
     view), so identity is exact even across a module boundary and same-named
     anonymous-namespace types from different translation units never collide.
+  - `scl::any_arg` — the parameter-only companion: binds lvalues and rvalues of
+    any constness and is valid for the duration of the call. No default state and
+    no assignment; converts implicitly to `any_view` for delegation; same
+    backings and identity queries. Unlike the view it also grants write access —
+    `any_cast<T>(arg*)` or `any_cast<T &>` on a referent bound without
+    cv-qualifiers, the boxed object of a non-`const` `std::any` included — and
+    only it does: a referent taken from an `any_view` is narrowed to the read
+    access the view promises. Its casts are also constant-evaluable on the C++20
+    baseline, where a view's need P2738 (C++26): an argument reaches its referent
+    through an anchor the caller materialises per binding, so the argument must be
+    a parameter and there is no `constexpr any_arg` variable. The anchor is a
+    descriptor itself and only constant evaluation reads it, so the type stays two
+    pointers wide and its run-time behaviour is a view's. Where `__cpp_constexpr`
+    reports P2738, the anchor is not compiled at all and both bounds lift: a cast
+    folds for an `any_arg` in any position and over a referent adopted from an
+    `any_view`, with no change at the call site and none to the layout.
   - `scl::any_cast<T>` — pointer form (`noexcept`, `nullptr` on mismatch) and a
-    throwing value/reference form where `T const &` binds with no copy and a
-    non-`const` reference is ill-formed. A cast must carry every cv-qualifier the
-    referent was bound with, so a `volatile` object is read as `T volatile` — and
-    the view itself may be `volatile`-qualified, which is a qualifier the request
-    must cover too. A `std::any` argument converts implicitly, so one `any_cast`
-    serves both backings. Recovering the object is a runtime step on C++20
-    (constant-evaluable under P2738/C++26), as with `std::any_cast`.
+    throwing value/reference form where `T const &` binds with no copy. A cast
+    must carry every cv-qualifier the referent was bound with, so a `volatile`
+    object is read as `T volatile`, and a write — which carries none — reaches
+    only an unqualified referent. The coverage rule reaches the handle itself: a
+    `const`/`volatile` `any_view`/`any_arg` carries those as qualifiers too, so a
+    `const any_arg` cannot escalate to a write regardless of the referent's own
+    qualifiers, and a `volatile` handle requires `volatile` in the request the
+    same way a `volatile` referent does. A `std::any` argument converts
+    implicitly, so one `any_cast` serves both backings. Recovering the object is
+    a runtime step on C++20 (constant-evaluable under P2738/C++26), as with
+    `std::any_cast`.
   - `scl::bad_any_cast` — thrown on mismatch; derives from `std::bad_cast` in
     every configuration, never `std::bad_any_cast`, so the type stays
     RTTI-independent and safe to link across mixed RTTI/-fno-rtti builds.

@@ -33,6 +33,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | Компонент | Заголовок | Описание |
 |-----------|-----------|----------|
 | [any_view](any/any_view.md) | `<scl/utility/any/any_view.h>` | Хранимое read-only представление над `std::any` или типизированным lvalue; принимает только lvalue |
+| [any_arg](any/any_arg.md) | `<scl/utility/any/any_arg.h>` | Представление для позиции параметра, принимает и rvalue; действительно в пределах вызова |
 
 ### Attribute — портабельные макросы атрибутов компилятора
 

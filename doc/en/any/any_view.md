@@ -168,9 +168,14 @@ That limit belongs to the binding rather than to type erasure. The view refers t
 an lvalue of any type, so the only thing it can erase that lvalue's address to is
 `void const *`, and recovering a typed pointer from `void` is constant-evaluable
 only on compilers implementing P2738 (C++26). Erasing to a common base class
-instead stays constant-evaluable on C++20 — but that requires choosing the layout
-of what is stored, which only an owning backing can do. For a view over an
-object it did not create, C++26 is the earliest the cast can fold.
+instead stays constant-evaluable on C++20, but that requires an object of that
+class to exist alongside the referent, and something has to keep it alive for as
+long as the handle. The parameter-only companion
+[`any_arg`](any_arg.md#constant-evaluation) can: its caller materialises one per
+binding, and a call outlives its own arguments. A view is storable, so nothing
+bounds how long it must stay valid, and no such object can be provided. For a
+stored view over an object it did not create, C++26 is the earliest the cast can
+fold.
 
 ### Identity across module boundaries
 
