@@ -25,7 +25,8 @@ Returns the demangled fully qualified name of the **dynamic** type of `obj` as a
 - **Demangling:** On GCC and Clang the mangled name from `typeid` is demangled via
   `abi::__cxa_demangle`. On MSVC `typeid().name()` is already human-readable and returned as-is.
 - **RTTI guard:** Both functions are compiled out when RTTI is disabled.
-  Check for the macro `SCL_DETAIL_HAS_RTTI` if conditional compilation is needed.
+  Branch on `SCL_HAS_RTTI` (`<scl/utility/preprocessor/rtti.h>`) if conditional
+  compilation is needed; it is always defined, so interrogate it with `#if`.
 
 ### Examples
 

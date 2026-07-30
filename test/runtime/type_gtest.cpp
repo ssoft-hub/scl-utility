@@ -4,7 +4,7 @@
 
 #include <scl/utility/runtime/type.h>
 
-#if defined(SCL_DETAIL_HAS_RTTI)
+#if SCL_HAS_RTTI
 
 struct SimpleStruct
 {};
@@ -103,4 +103,4 @@ TEST(RuntimeTypeTest, SkippedWithoutRtti)
     GTEST_SKIP() << "RTTI disabled — scl::type_name and scl::type_short_name are not available";
 }
 
-#endif // SCL_DETAIL_HAS_RTTI
+#endif // SCL_HAS_RTTI
