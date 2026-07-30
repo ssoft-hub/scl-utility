@@ -53,6 +53,8 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [type_name](meta/type_name.md) | `<scl/utility/meta/type.h>` | Извлечение имени типа на этапе компиляции |
 | [enum_name](meta/enum_name.md) | `<scl/utility/meta/enum.h>` | Извлечение имени члена перечисления на этапе компиляции |
 | [symbol_name](meta/symbol_name.md) | `<scl/utility/meta/symbol.h>` | Извлечение имени функции/члена на этапе компиляции |
+| [type_key](meta/type_key.md) | `<scl/utility/meta/type_key.h>` | Ключ идентичности типа без RTTI, различающий TU-локальные типы |
+| [is_tu_local](meta/type_key.md#is_tu_local) | `<scl/utility/meta/tu_local.h>` | Определение типов, объявленных в анонимном пространстве имён |
 
 ### Runtime — утилиты для времени выполнения
 
