@@ -16,15 +16,9 @@
  * Both functions are only available when RTTI is enabled.
  */
 
-#if defined(_CPPRTTI) || defined(__GXX_RTTI)
-#define SCL_DETAIL_HAS_RTTI 1
-#elif defined(__has_feature)
-#if __has_feature(cxx_rtti)
-#define SCL_DETAIL_HAS_RTTI 1
-#endif
-#endif
+#include <scl/utility/preprocessor/rtti.h>
 
-#if defined(SCL_DETAIL_HAS_RTTI) || defined(DOXYGEN)
+#if SCL_HAS_RTTI || defined(DOXYGEN)
 
 #include <memory>
 #include <string>
@@ -107,4 +101,4 @@ namespace scl
 
 } // namespace scl
 
-#endif // SCL_DETAIL_HAS_RTTI || DOXYGEN
+#endif // SCL_HAS_RTTI || DOXYGEN

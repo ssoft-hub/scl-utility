@@ -14,6 +14,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Preprocessor** — RTTI availability as public API
+  (`#include <scl/utility/preprocessor/rtti.h>`):
+  - `SCL_HAS_RTTI` — `1` when the translation unit is compiled with RTTI, `0`
+    otherwise, derived from `_CPPRTTI`, `__GXX_RTTI` or `__has_feature(cxx_rtti)`.
+    The language has no standard feature-test macro for RTTI, and ScL declarations
+    needing `typeid` are gated on this one, so portable user code branches on the
+    same macro. Always defined, so `#if` interrogates it and `-Wundef` catches a
+    misspelling. Detection moved here out of `runtime/type.h`, where it used to be
+    a side effect of including an unrelated header.
+
 - **Flags** — type-safe bitmask over a scoped enum (`#include <scl/utility/flags.h>`):
   - `scl::flags<Enum, bit_count>` — a bitmask where each flag occupies the bit at
     its enumerator ordinal, backed by `std::array<std::byte>` so every operation

@@ -47,7 +47,7 @@ static void show_static()
     ::std::cout << "[compile-time] type_name       : " << ct_full << '\n';
     ::std::cout << "[compile-time] type_short_name : " << ct_short << '\n';
 
-#if defined(SCL_DETAIL_HAS_RTTI)
+#if SCL_HAS_RTTI
     // Runtime: deduces T = app::Derived from the argument; same result here.
     ::std::cout << "[runtime     ] type_name       : " << ::scl::type_name(d) << '\n';
     ::std::cout << "[runtime     ] type_short_name : " << ::scl::type_short_name(d) << '\n';
@@ -60,7 +60,7 @@ static void show_static()
 
 static void show_polymorphic()
 {
-#if defined(SCL_DETAIL_HAS_RTTI)
+#if SCL_HAS_RTTI
     ::std::unique_ptr<app::Base> p = ::std::make_unique<app::Derived>();
 
     // Compile-time only knows the static type at the pointer declaration.
@@ -91,7 +91,7 @@ static void show_template()
     ::std::cout << "[compile-time] type_name       : " << ct_full << '\n';  // app::Task<int>
     ::std::cout << "[compile-time] type_short_name : " << ct_short << '\n'; // Task
 
-#if defined(SCL_DETAIL_HAS_RTTI)
+#if SCL_HAS_RTTI
     ::std::unique_ptr<app::Base> p = ::std::make_unique<app::Task<int>>();
 
     ::std::cout << "[runtime     ] type_name       : " << ::scl::type_name(*p) << '\n'; // app::Task<int>
