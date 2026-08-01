@@ -52,6 +52,8 @@ Then include the umbrella header or individual component headers:
 | [type_name](meta/type_name.md) | `<scl/utility/meta/type.h>` | Compile-time type name extraction |
 | [enum_name](meta/enum_name.md) | `<scl/utility/meta/enum.h>` | Compile-time enum member name extraction |
 | [symbol_name](meta/symbol_name.md) | `<scl/utility/meta/symbol.h>` | Compile-time function/member name extraction |
+| [type_key](meta/type_key.md) | `<scl/utility/meta/type_key.h>` | RTTI-free type identity key distinguishing TU-local types |
+| [is_tu_local](meta/type_key.md#is_tu_local) | `<scl/utility/meta/tu_local.h>` | Detects types declared in an anonymous namespace |
 
 ### Runtime — runtime type and enum utilities
 

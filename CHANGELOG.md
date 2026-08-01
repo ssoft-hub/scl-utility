@@ -12,7 +12,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `utility_type_traits_gtest` on macOS, caused by an oversized test
   translation unit forcing too many template instantiations at once.
 
+### Changed
+
+- Test infrastructure: sources named `*_shared.cpp` under `test/<subdir>/` now build
+  into a companion `SHARED` library linked into the subdirectory's test targets,
+  enabling tests across a real module (DLL/so) boundary.
+
 ### Added
+
+- **Meta** — RTTI-free type identity key (`#include <scl/utility/meta/type_key.h>`):
+  - `scl::type_key` — equality-comparable identity key of a type: the pair of its
+    `type_name<T>()` string and a per-translation-unit discriminator, encapsulated
+    behind a class (private members, deleted default constructor, `name()` accessor;
+    `type_key_of` is the sole factory, so hand-built keys cannot exist). For
+    namespace-scope types it never falsely matches (same-named anonymous-namespace
+    types from different TUs carry different per-TU anchors) and never falsely rejects
+    (an external type compares by name across shared-library boundaries, immune to
+    unmerged inline instantiations on Windows). Fully usable in constant expressions;
+    intentionally unordered, hashing deferred until a real consumer exists. A key must
+    not outlive the module that produced it.
+  - `scl::type_key_of<T>()` — returns a reference to the per-type `inline constexpr`
+    key, so equality against a stored reference short-circuits on address identity;
+    keys from another module fall back to content comparison. The key itself is
+    non-copyable and non-movable (reference semantics, as `std::type_info`):
+    consumers hold `type_key const &` or `type_key const *`.
+  - `scl::is_tu_local<T>` / `is_tu_local_v` (`#include <scl/utility/meta/tu_local.h>`) —
+    detects types declared in an anonymous namespace (including as a component of a
+    compound type). The compiler's anonymous-namespace marker is derived at compile
+    time from probe types rather than hardcoded, and the search skips string and
+    character literal contents, so a string non-type template parameter spelling the
+    marker cannot misclassify an external type.
 
 - **Preprocessor** — RTTI availability as public API
   (`#include <scl/utility/preprocessor/rtti.h>`):
