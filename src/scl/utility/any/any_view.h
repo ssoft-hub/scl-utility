@@ -71,6 +71,14 @@ namespace scl
         using base_type::type_name;
 
     private:
+        // any_arg reaches this to hand over a referent it already narrowed with
+        // any_base::const_descriptor.
+        constexpr explicit any_view(void const volatile * object, base_type::descriptor_type const * descriptor) noexcept
+            : base_type{object, descriptor}
+        {}
+
+        friend class any_arg;
+
         // An explicit object parameter in the base deduces this type, not the base, and
         // private inheritance would otherwise refuse that conversion.
         friend class detail::any_base;
@@ -153,14 +161,19 @@ namespace scl
 /// lvalue reference (`any_cast<T const &>` binds with no copy); a non-`const` or
 /// rvalue reference cast is ill-formed.
 ///
+/// To also accept rvalue arguments "in place" — valid only for the duration of a
+/// call — use the parameter-only companion @ref scl::any_arg.
+///
 /// @note @ref scl::any_cast is a runtime operation on the C++20 baseline, as with
 ///       `std::any_cast`; the identity queries above remain `constexpr`. The limit
 ///       is one of binding rather than of erasure: the view refers to an lvalue of
 ///       any type, so the only thing it can erase that lvalue's address to is
 ///       `void const *`, and recovering a typed pointer from `void` is
-///       constant-evaluable only on compilers implementing P2738 (C++26). A backing
-///       that owned what it stores would choose the layout, could erase to a common
-///       base class instead, and would cast in constant evaluation on C++20 already.
+///       constant-evaluable only on compilers implementing P2738 (C++26). Erasing to
+///       a common base class instead is constant-evaluable on C++20, but it needs an
+///       object of that class kept alive alongside the referent for as long as the
+///       handle - which a storable view cannot bound and @ref scl::any_arg, being a
+///       parameter, can.
 ///
 /// @warning The view does not own or extend the lifetime of the referenced object.
 ///          It stays valid only while that object lives — the same caveat as

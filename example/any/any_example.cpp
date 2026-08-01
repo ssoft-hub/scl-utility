@@ -1,6 +1,5 @@
-/// @file any_view_example.cpp
-/// @brief Demonstrates scl::any_view — a non-owning, read-only view over a
-///        std::any or a typed lvalue.
+/// @file any_example.cpp
+/// @brief Demonstrates the ScL Any views — scl::any_view and scl::any_arg.
 ///
 /// scl::any_view is to std::any what std::string_view is to std::string: it
 /// refers to an existing value without copying it, so one function can accept a
@@ -9,6 +8,10 @@
 /// carries a compile-time type name); a std::any forms the "std::any" backing
 /// (RTTI builds only). scl::any_cast recovers the value by pointer (nullptr on
 /// mismatch, never throws), by copy, or by const reference (zero-copy).
+///
+/// scl::any_arg is the parameter-position companion: it also binds rvalues, is
+/// valid only for the duration of the call, and — unlike the view — grants write
+/// access when the argument was bound to an unqualified object.
 
 #include <scl/utility/any.h>
 #include <scl/utility/preprocessor/rtti.h>
@@ -73,6 +76,66 @@ static void show_identity()
 }
 
 // ============================================================================
+// Pattern 4 — any_arg: a parameter that also binds temporaries
+// ============================================================================
+
+static void describe(::scl::any_arg value)
+{
+    // `const` asks to read; the unqualified spelling would ask to write instead.
+    if (auto const * text = ::scl::any_cast<::std::string const>(&value))
+        ::std::cout << "  std::string: \"" << *text << "\" (no copy)\n";
+    else
+        ::std::cout << "  something else (type_name=\"" << value.type_name() << "\")\n";
+}
+
+static void log_view(::scl::any_view value)
+{
+    ::std::cout << "  delegated, has_value=" << value.has_value() << '\n';
+}
+
+static ::std::string keep(::scl::any_arg value)
+{
+    // The argument may be a temporary that dies once this call returns, so copy the
+    // payload out; keeping the any_arg — or an any_view converted from it — would dangle.
+    return ::scl::any_cast<::std::string>(value);
+}
+
+// ============================================================================
+// Pattern 5 — an argument grants write access, a view never does
+// ============================================================================
+
+static void bump(::scl::any_arg value)
+{
+    if (auto * number = ::scl::any_cast<int>(&value))
+        ++*number;
+    else
+        ::std::cout << "  refused: the referent is not a writable int\n";
+}
+
+// ============================================================================
+// Pattern 6 — an argument's casts fold at compile time
+// ============================================================================
+
+// The cast reaches the referent through an anchor the caller creates per binding,
+// and a call outlives its own arguments. So this folds where the same code over an
+// any_view would wait for P2738 (C++26).
+static constexpr int doubled(::scl::any_arg value)
+{
+    auto const * number = ::scl::any_cast<int const>(&value);
+    return (number != nullptr) ? *number * 2 : 0;
+}
+
+static void show_constant_evaluation()
+{
+    // Block scope, not namespace scope: GCC 13.1 rejects comparing the address of a
+    // temporary with nullptr inside a constant expression evaluated at namespace scope,
+    // and the argument above binds one. Clang and MSVC accept either placement.
+    static_assert(doubled(21) == 42, "an argument casts during constant evaluation");
+
+    ::std::cout << "  doubled(21) folded to " << doubled(21) << " at compile time\n";
+}
+
+// ============================================================================
 // main
 // ============================================================================
 
@@ -99,6 +162,29 @@ int main(int, char **)
 
     ::std::cout << "\n=== Identity queries ===\n";
     show_identity();
+
+    ::std::cout << "\n=== any_arg: temporaries bind ===\n";
+    describe(greeting);                   // lvalue
+    describe(::std::string{"temporary"}); // rvalue — outlives the call
+    describe(42);
+#if SCL_HAS_RTTI
+    describe(::std::any{greeting}); // temporary std::any
+#endif
+
+    ::std::cout << "\n=== Delegation to an any_view API ===\n";
+    log_view(::scl::any_arg{::std::string{"delegated"}}); // implicit conversion
+
+    ::std::cout << "\n=== Copying a value out of a temporary ===\n";
+    ::std::cout << "  kept == \"" << keep(::std::string{"kept beyond the call"}) << "\"\n";
+
+    ::std::cout << "\n=== Write access through an argument ===\n";
+    bump(number);
+    ::std::cout << "  number == " << number << '\n'; // 43
+    int const frozen = 1;
+    bump(frozen); // const referent: refused
+
+    ::std::cout << "\n=== Casting during constant evaluation ===\n";
+    show_constant_evaluation();
 
     return {};
 }
