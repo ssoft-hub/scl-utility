@@ -43,6 +43,7 @@ clang-format -i <files>
 # Static analysis
 clang-tidy <file> -- -std=c++20 -xc++ -Isrc
 cppcheck --enable=warning,style,performance,portability \
+  --check-level=exhaustive \
   --std=c++20 --language=c++ --inline-suppr \
   --error-exitcode=1 --suppress=missingIncludeSystem \
   -Isrc -UDOXYGEN <files>

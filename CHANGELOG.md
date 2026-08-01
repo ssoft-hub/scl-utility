@@ -20,6 +20,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Any** — a non-owning, read-only view over a `std::any` or a typed lvalue
+  (`#include <scl/utility/any.h>`):
+  - `scl::any_view` — two pointers wide and trivially copyable; constructs from a
+    typed lvalue (the RTTI-free *raw* backing, whose `type_name`/`type_key`/
+    `has_value` are usable in constant evaluation) or, in RTTI builds, from a
+    `std::any` (the *std::any* backing, which delegates casts to `std::any_cast`).
+    Rvalues are rejected so a view never outlives its source. `type_key()` hands
+    out the `scl::type_key` of the viewed type by pointer (`nullptr` for an empty
+    view), so identity is exact even across a module boundary and same-named
+    anonymous-namespace types from different translation units never collide.
+  - `scl::any_cast<T>` — pointer form (`noexcept`, `nullptr` on mismatch) and a
+    throwing value/reference form where `T const &` binds with no copy and a
+    non-`const` reference is ill-formed. A cast must carry every cv-qualifier the
+    referent was bound with, so a `volatile` object is read as `T volatile` — and
+    the view itself may be `volatile`-qualified, which is a qualifier the request
+    must cover too. A `std::any` argument converts implicitly, so one `any_cast`
+    serves both backings. Recovering the object is a runtime step on C++20
+    (constant-evaluable under P2738/C++26), as with `std::any_cast`.
+  - `scl::bad_any_cast` — thrown on mismatch; derives from `std::bad_cast` in
+    every configuration, never `std::bad_any_cast`, so the type stays
+    RTTI-independent and safe to link across mixed RTTI/-fno-rtti builds.
+
 - **Meta** — RTTI-free type identity key (`#include <scl/utility/meta/type_key.h>`):
   - `scl::type_key` — equality-comparable identity key of a type: the pair of its
     `type_name<T>()` string and a per-translation-unit discriminator, encapsulated

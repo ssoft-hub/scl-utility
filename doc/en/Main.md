@@ -27,6 +27,12 @@ Then include the umbrella header or individual component headers:
 
 ## Components
 
+### Any — non-owning read-only views over `std::any`
+
+| Component | Header | Description |
+|-----------|--------|-------------|
+| [any_view](any/any_view.md) | `<scl/utility/any/any_view.h>` | Storable read-only view over a `std::any` or a typed lvalue; accepts lvalues only |
+
 ### Attribute — portable compiler attribute macros
 
 | Component | Header | Description |
