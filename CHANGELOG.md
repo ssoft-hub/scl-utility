@@ -11,6 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Fixed a compiler crash (`SIGSEGV` in clang's `Sema`) building
   `utility_type_traits_gtest` on macOS, caused by an oversized test
   translation unit forcing too many template instantiations at once.
+- Fixed the type-traits test build under Clang 18 on Linux, where a compiler
+  crash (`SIGSEGV` in clang's `Sema`) took `utility_type_traits_gtest` out of
+  the `clang-x64` and `clang-x64-no-rtti` builds entirely. Clang crashes while
+  diagnosing a postfix `++`/`--` detection whose candidate set holds both a
+  deleted member operator and a free two-argument one; the test helpers now keep
+  the free operators in a namespace of their own, so only the type they belong
+  to reaches them.
 
 ### Changed
 

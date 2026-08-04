@@ -226,40 +226,48 @@ namespace test
         int operator->*(int) const &;
     };
 
-    struct WithGlobal
-    {};
+    // Isolated from the other helper types: Clang 18 crashes on a postfix ++/-- detection whose
+    // candidate set holds a deleted member operator and a free one at once, so a type declaring
+    // a deleted postfix ++/-- does not belong here.
+    namespace with_global
+    {
+        struct WithGlobal
+        {};
 
-    // Forward declarations
-    int * operator&(WithGlobal &);
-    int operator*(WithGlobal);
-    int operator+(WithGlobal);
-    int operator-(WithGlobal);
-    WithGlobal & operator++(WithGlobal &);
-    WithGlobal & operator--(WithGlobal &);
-    int operator~(WithGlobal);
-    bool operator!(WithGlobal);
-    WithGlobal operator++(WithGlobal &, int);
-    WithGlobal operator--(WithGlobal &, int);
-    int operator+(WithGlobal, int);
-    int operator-(WithGlobal, int);
-    int operator*(WithGlobal, int);
-    int operator/(WithGlobal, int);
-    int operator%(WithGlobal, int);
-    bool operator==(WithGlobal, int);
-    bool operator!=(WithGlobal, int);
-    bool operator<(WithGlobal, int);
-    bool operator>(WithGlobal, int);
-    bool operator<=(WithGlobal, int);
-    bool operator>=(WithGlobal, int);
-    int operator<<(WithGlobal, int);
-    int operator>>(WithGlobal, int);
-    int operator&(WithGlobal, int);
-    int operator|(WithGlobal, int);
-    int operator^(WithGlobal, int);
-    bool operator&&(WithGlobal, int);
-    bool operator||(WithGlobal, int);
-    int operator,(WithGlobal, int);
-    int operator->*(WithGlobal, int);
+        // Forward declarations
+        int * operator&(WithGlobal &);
+        int operator*(WithGlobal);
+        int operator+(WithGlobal);
+        int operator-(WithGlobal);
+        WithGlobal & operator++(WithGlobal &);
+        WithGlobal & operator--(WithGlobal &);
+        int operator~(WithGlobal);
+        bool operator!(WithGlobal);
+        WithGlobal operator++(WithGlobal &, int);
+        WithGlobal operator--(WithGlobal &, int);
+        int operator+(WithGlobal, int);
+        int operator-(WithGlobal, int);
+        int operator*(WithGlobal, int);
+        int operator/(WithGlobal, int);
+        int operator%(WithGlobal, int);
+        bool operator==(WithGlobal, int);
+        bool operator!=(WithGlobal, int);
+        bool operator<(WithGlobal, int);
+        bool operator>(WithGlobal, int);
+        bool operator<=(WithGlobal, int);
+        bool operator>=(WithGlobal, int);
+        int operator<<(WithGlobal, int);
+        int operator>>(WithGlobal, int);
+        int operator&(WithGlobal, int);
+        int operator|(WithGlobal, int);
+        int operator^(WithGlobal, int);
+        bool operator&&(WithGlobal, int);
+        bool operator||(WithGlobal, int);
+        int operator,(WithGlobal, int);
+        int operator->*(WithGlobal, int);
+    } // namespace with_global
+
+    using with_global::WithGlobal;
 
     struct NoOperators
     {
