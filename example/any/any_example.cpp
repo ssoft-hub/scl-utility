@@ -136,6 +136,39 @@ static void show_constant_evaluation()
 }
 
 // ============================================================================
+// Pattern 7 — any_switch: one chain instead of a cascade of casts
+// ============================================================================
+
+// The chain holds no subject, so it is built once and applied to as many values
+// as the caller has. Each branch names its type once; the first match runs.
+static auto const describe_switch =
+    ::scl::any_switch<::std::string>()
+        .in_case<void>("nothing at all")
+        .in_case<int>([](int number) { return "int " + ::std::to_string(number); })
+        .in_case<::std::string const &>([](::std::string const & text) {
+    return "string \"" + text + "\"";
+}).or_else([](::scl::any_arg other) {
+    return "something else (" + ::std::string{other.type_name()} + ")";
+});
+
+static void show_switch()
+{
+    ::std::string text{"Hello Any!"};
+    int number = 42;
+    double ratio = 1.5;
+    ::scl::any_view const nothing{};
+
+    ::std::cout << "  " << *describe_switch.apply(text) << '\n';
+    ::std::cout << "  " << *describe_switch.apply(number) << '\n';
+    ::std::cout << "  " << *describe_switch.apply(ratio) << '\n';
+    ::std::cout << "  " << *describe_switch.apply(nothing) << '\n';
+
+    // Asking without running a branch: an empty result cannot tell a miss from a
+    // branch that produced nothing, and a void chain returns no result at all.
+    ::std::cout << "  covered? " << describe_switch.has_case(number) << '\n'; // 1
+}
+
+// ============================================================================
 // main
 // ============================================================================
 
@@ -185,6 +218,9 @@ int main(int, char **)
 
     ::std::cout << "\n=== Casting during constant evaluation ===\n";
     show_constant_evaluation();
+
+    ::std::cout << "\n=== One chain instead of a cascade of casts ===\n";
+    show_switch();
 
     return {};
 }

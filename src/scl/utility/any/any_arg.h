@@ -373,6 +373,9 @@ namespace scl
 /// foo(std::string{"temporary"});            // rvalue — outlives the call, OK
 /// foo(std::any{text});                      // temporary std::any (RTTI builds)
 /// @endcode
+///
+/// @see scl::any_view — the storable companion
+/// @see scl::any_switch — a branch chain over the same subject, one branch per type
 
 /// @typedef scl::any_arg::name
 /// @brief Type-name string produced by @ref scl::any_arg::type_name.
