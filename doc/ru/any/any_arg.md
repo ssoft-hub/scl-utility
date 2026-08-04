@@ -283,4 +283,5 @@ void foo(scl::any_arg value)
 ## Смотрите также
 
 - [any_view](any_view.md) — хранимый компаньон
+- [any_switch](any_switch.md) — цепочка ветвей над тем же значением, по ветви на тип
 - [Английская документация](../../en/any/any_arg.md)

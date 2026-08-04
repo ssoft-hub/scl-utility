@@ -61,6 +61,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - `scl::bad_any_cast` — thrown on mismatch; derives from `std::bad_cast` in
     every configuration, never `std::bad_any_cast`, so the type stays
     RTTI-independent and safe to link across mixed RTTI/-fno-rtti builds.
+  - `scl::any_switch<Result = void>` — a branch chain replacing a cascade of
+    `any_cast` probes: every branch names its type once, the first match runs, and
+    the fallback belongs to the same chain. `in_case<T>` selects by the
+    qualifier-coverage rule of `any_cast` (`volatile` included), `in_case<void>`
+    matches an empty value, and a `std::any` subject is unwrapped so the branches
+    see the boxed type. A branch takes an invocable of no arguments or of the matched
+    value, and — for a named `Result`, a `void` chain having nothing to convert one
+    into — a ready value; `in_case<T>()` with neither is a branch that matches and
+    does nothing. Either form may produce a `Result` or the `std::optional<Result>`
+    holding one — an empty optional meaning it ran
+    and produced nothing — which is what lets one chain stand as a branch of
+    another, as a case of it or as its fallback, with an unmatched subject
+    falling through as an empty result rather than a wrong one. The optional `or_else` catches what no
+    case caught and reads the subject as an `any_arg`. A case an earlier one already
+    covers — judged by what it matches, not how it is spelled, so `in_case<T &>`
+    after `in_case<T>` or `in_case<T const &>` counts — a second `or_else`, and an
+    `in_case` after one are compile errors, so no branch can silently never run.
+    The chain holds no subject: `apply(subject)` — spelled `chain(subject)` just as
+    well, since a chain is callable — runs at most one branch and
+    returns `std::optional<Result>` (nothing for `Result = void`), and
+    `has_case(subject)` performs the selection only, `noexcept` and with no branch
+    run. So one chain serves any number of subjects, outlives none of them, and
+    — the subject being a parameter — selects and runs during constant evaluation
+    on the C++20 baseline.
 
 - **Meta** — RTTI-free type identity key (`#include <scl/utility/meta/type_key.h>`):
   - `scl::type_key` — equality-comparable identity key of a type: the pair of its

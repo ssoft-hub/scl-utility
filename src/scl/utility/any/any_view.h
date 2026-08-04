@@ -194,6 +194,9 @@ namespace scl
 /// std::any boxed{text};
 /// bar(boxed);                              // std::any backing (RTTI builds)
 /// @endcode
+///
+/// @see scl::any_arg — the parameter-only companion, which also grants write access
+/// @see scl::any_switch — a branch chain reading a view without a cascade of casts
 
 /// @typedef scl::any_view::name
 /// @brief Type-name string produced by @ref scl::any_view::type_name.

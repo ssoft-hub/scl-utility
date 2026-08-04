@@ -195,5 +195,7 @@ Two limits of the key carry over unchanged:
 
 ## See also
 
+- [any_arg](any_arg.md) — the parameter-only companion, which also grants write access
+- [any_switch](any_switch.md) — a branch chain reading a view without a cascade of casts
 - [type_key](../meta/type_key.md) — the identity key behind `type_key()`
 - [Russian documentation](../../ru/any/any_view.md)
