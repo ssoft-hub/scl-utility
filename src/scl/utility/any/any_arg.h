@@ -63,7 +63,7 @@ namespace scl
     // Wrapper is deduced so that the caller's own cv-qualification reaches accepts(): a
     // const handle cannot escalate to a write the handle itself does not carry.
     template <typename Type, typename Wrapper>
-        requires ::std::is_object_v<Type> && ::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>
+        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>)
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(Wrapper * arg) noexcept;
 
@@ -84,13 +84,13 @@ namespace scl
 #if SCL_HAS_RTTI || defined(DOXYGEN)
         // std::any has no volatile-qualified members, so a volatile std::any is excluded
         // rather than bound as one nothing could later reach.
-        template <typename Type>
-            requires detail::is_std_any_v<::std::remove_cvref_t<Type>> &&
-            (!::std::is_volatile_v<::std::remove_reference_t<Type>>)
+        template <typename Any>
+            requires(detail::is_std_any_v<::std::remove_cvref_t<Any>>) &&
+            (!::std::is_volatile_v<::std::remove_reference_t<Any>>)
         // cppcheck-suppress noExplicitConstructor
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
-        constexpr any_arg(Type && value SCL_LIFETIMEBOUND) noexcept
-            : base_type{::std::addressof(value), &detail::any_view_descriptor_of<::std::remove_reference_t<Type> &>}
+        constexpr any_arg(Any && value SCL_LIFETIMEBOUND) noexcept
+            : base_type{::std::addressof(value), &detail::any_view_descriptor_of<::std::remove_reference_t<Any> &>}
         {}
 #endif
 
@@ -178,12 +178,12 @@ namespace scl
         friend class detail::any_base;
 
         template <typename Type, typename Wrapper>
-            requires ::std::is_object_v<Type> && ::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>
+            requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>)
         friend constexpr Type * any_cast(Wrapper * arg) noexcept;
     };
 
     template <typename Type, typename Wrapper>
-        requires ::std::is_object_v<Type> && ::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>
+        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>)
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(Wrapper * arg) noexcept
     {
@@ -220,8 +220,8 @@ namespace scl
     // implicitly, and admitting that conversion here would hand write access to a view
     // that promises none.
     template <typename Type, typename Argument>
-        requires ::std::same_as<::std::remove_cv_t<Argument>, any_arg> &&
-        ::std::is_lvalue_reference_v<Type> && (!::std::is_const_v<::std::remove_reference_t<Type>>)
+        requires(::std::same_as<::std::remove_cv_t<Argument>, any_arg>) &&
+        (::std::is_lvalue_reference_v<Type>) && (!::std::is_const_v<::std::remove_reference_t<Type>>)
     [[nodiscard]]
     constexpr Type any_cast(Argument & arg SCL_LIFETIMEBOUND)
     {
@@ -237,7 +237,7 @@ namespace scl
     // as the view does.
     // Not lifetime-bound: the result is a copy, and it outlives the argument by design.
     template <typename Type, typename Argument>
-        requires ::std::same_as<::std::remove_cv_t<Argument>, any_arg> && ::std::is_object_v<Type>
+        requires(::std::same_as<::std::remove_cv_t<Argument>, any_arg>) && (::std::is_object_v<Type>)
     [[nodiscard]]
     constexpr Type any_cast(Argument & arg)
     {
@@ -248,8 +248,8 @@ namespace scl
     }
 
     template <typename Type, typename Argument>
-        requires ::std::same_as<::std::remove_cv_t<Argument>, any_arg> &&
-        ::std::is_lvalue_reference_v<Type> && ::std::is_const_v<::std::remove_reference_t<Type>>
+        requires(::std::same_as<::std::remove_cv_t<Argument>, any_arg>) &&
+        (::std::is_lvalue_reference_v<Type>) && (::std::is_const_v<::std::remove_reference_t<Type>>)
     [[nodiscard]]
     constexpr Type any_cast(Argument & arg SCL_LIFETIMEBOUND)
     {
@@ -261,6 +261,23 @@ namespace scl
         return *pointer;
     }
 } // namespace scl
+
+// =============================================================================
+// Documentation-only declarations
+// =============================================================================
+
+#ifdef DOXYGEN
+namespace scl
+{
+    class any_arg
+    {
+    public:
+        constexpr bool has_value() const noexcept;
+        constexpr ::scl::type_key const * type_key() const noexcept;
+        constexpr name type_name() const noexcept;
+    };
+} // namespace scl
+#endif
 
 // =============================================================================
 // Documentation
@@ -380,7 +397,7 @@ namespace scl
 /// @typedef scl::any_arg::name
 /// @brief Type-name string produced by @ref scl::any_arg::type_name.
 
-/// @fn scl::any_arg::any_arg(Type && value)
+/// @fn scl::any_arg::any_arg(Any && value)
 /// @brief Constructs a view over the object held in @p value without copying it.
 ///
 /// Binds a `std::any` of any constness — a temporary included, since the argument
@@ -389,7 +406,7 @@ namespace scl
 /// participate: `std::any` has no volatile-qualified members, so nothing could
 /// reach the object afterwards.
 ///
-/// @tparam Type  Deduced (forwarding) reference type of the `std::any`.
+/// @tparam Any    Deduced (forwarding) reference type of the `std::any`.
 /// @param  value  The `std::any` to view. Only available when RTTI is enabled.
 
 /// @fn scl::any_arg::any_arg(any_view const & view)

@@ -635,7 +635,7 @@ namespace scl::hierarchy
 /// assert(&dst.back().parent()  == &dst);
 /// @endcode
 
-/// @fn scl::hierarchy::node::node(Arguments &&...)
+/// @fn scl::hierarchy::node::node(Arguments &&... arguments)
 /// @brief Constructs the payload in-place by forwarding @p arguments.
 ///
 /// The node is created with no children and no parent.  Enabled only when
@@ -989,12 +989,12 @@ namespace scl::hierarchy
 /// @param from   Source node.  Must not alias `*this`.
 
 /// @fn scl::hierarchy::node::transfer(const_iterator, reference, const_iterator)
-/// @brief Moves the single child at @p first in @p from to where
+/// @brief Moves the single child at @p it in @p from to where
 ///        @p where.  O(1).
 ///
 /// @param where      Insertion point in this node.
 /// @param from       Source node.
-/// @param first      Iterator to the child to transfer.
+/// @param it         Iterator to the child to transfer.
 
 /// @fn scl::hierarchy::node::transfer(const_iterator, reference, const_iterator, const_iterator)
 /// @brief Moves children in [@p from_first, @p from_last) from @p from_node to

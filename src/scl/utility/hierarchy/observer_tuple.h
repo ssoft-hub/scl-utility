@@ -54,6 +54,16 @@ namespace scl::hierarchy
             return ::std::get<I>(m_observers);
         }
 
+        /// @brief Returns a mutable reference to the inner observer of type @p T.
+        ///
+        /// @tparam T  One of the `Observers...` types. Ill-formed if `T` does not
+        ///            appear exactly once in the pack — same rule as `std::get<T>`.
+        /// @return    The inner observer of type `T`.
+        ///
+        /// @par Example
+        /// @code
+        /// auto & c = t.get_observer().get<counter<decltype(t)>>();
+        /// @endcode
         template <typename T>
         [[nodiscard]]
         constexpr decltype(auto) get() noexcept
@@ -61,6 +71,9 @@ namespace scl::hierarchy
             return ::std::get<T>(m_observers);
         }
 
+        /// @brief Returns an immutable reference to the inner observer of type @p T.
+        /// @tparam T  One of the `Observers...` types. Ill-formed if `T` does not
+        ///            appear exactly once in the pack — same rule as `std::get<T>`.
         template <typename T>
         [[nodiscard]]
         constexpr decltype(auto) get() const noexcept
@@ -204,23 +217,6 @@ namespace scl::hierarchy
 /// @brief Returns an immutable reference to the @p I -th inner observer.
 /// @tparam I  Zero-based index into the `Observers...` pack.
 /// @return    The inner observer at index `I`, exactly as `std::get<I>` would.
-
-/// @fn scl::hierarchy::observer_tuple::get(T)
-/// @brief Returns a mutable reference to the inner observer of type @p T.
-///
-/// @tparam T  One of the `Observers...` types. Ill-formed if `T` does not
-///            appear exactly once in the pack — same rule as `std::get<T>`.
-/// @return    The inner observer of type `T`.
-///
-/// @par Example
-/// @code
-/// auto & c = t.get_observer().get<counter<decltype(t)>>();
-/// @endcode
-
-/// @fn scl::hierarchy::observer_tuple::get(T) const
-/// @brief Returns an immutable reference to the inner observer of type @p T.
-/// @tparam T  One of the `Observers...` types. Ill-formed if `T` does not
-///            appear exactly once in the pack — same rule as `std::get<T>`.
 
 // -----------------------------------------------------------------------------
 // Observer contract (fan-out implementation)

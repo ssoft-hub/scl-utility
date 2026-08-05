@@ -7,10 +7,10 @@
  * @brief Compile-time symbol (function, method, property) name extraction (C++20).
  * @ingroup scl_utility_meta
  * @details
- * - ::scl::symbol_name<S>:
+ * - `::scl::symbol_name<S>`:
  *     Extracts the fully qualified name of the symbol S (global function, class method, or data member).
  *     Performs aggressive cleanup of compiler decorations, address operators (&), parentheses, and whitespace.
- * - ::scl::symbol_short_name<S>:
+ * - `::scl::symbol_short_name<S>`:
  *     Extracts only the terminal identifier of the symbol S.
  *     Useful for reflection-like tasks where only the member or function name is required.
  */

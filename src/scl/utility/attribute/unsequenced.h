@@ -61,7 +61,7 @@
  * @details
  * Corresponds to the C++26 @c [[reproducible]] attribute and the GCC/Clang
  * @c [[gnu::pure]] / @c __attribute__((pure)) extensions.
- * Weaker than @ref SCL_UNSEQUENCED: the function may read global or
+ * Weaker than @ref SCL_UNSEQUENCED — the function may read global or
  * pointer-reachable memory but must not modify any state observable outside it.
  *
  * **Usage — wrap the entire return-type + declarator:**

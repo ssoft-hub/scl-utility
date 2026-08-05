@@ -21,6 +21,18 @@ clang-format:
   script:
     - bash script/lint/clang_format.sh
 
+doxygen:
+  stage: lint
+  image: archlinux:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
+  before_script:
+    - pacman -Sy --noconfirm doxygen
+    - doxygen --version
+  script:
+    - bash script/lint/doxygen.sh
+
 cppcheck:
   stage: lint
   image: ubuntu:24.04
