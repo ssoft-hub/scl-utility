@@ -51,7 +51,7 @@ namespace scl::hash
     /// - **STL-compatible** — `std::hash<key<Hasher>>` is specialised for use in
     ///   `std::unordered_map` / `std::unordered_set`.
     ///
-    /// @tparam Hasher  A type satisfying @ref scl::hash::byte_hasher.
+    /// @tparam Hasher  A type satisfying @ref scl::hash::concepts::byte_hasher.
     ///                 Defaults to `fnv1a_hasher`.
     ///
     /// @par Compile-time example (default FNV-1a hasher)

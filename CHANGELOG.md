@@ -12,6 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   generated reference: each `scl::any_cast` overload carries its own description, and
   `has_value` / `type_name` / `type_key` are listed and described on `scl::any_view` and
   `scl::any_arg` instead of being left off the class page.
+- Doxygen builds the reference with no diagnostics at all: the `scl_utility` group every
+  module group belongs to is defined, `@ref scl::hash::concepts::byte_hasher` and
+  `@ref SCL_UNSEQUENCED` resolve, `node::transfer` documents the parameter it actually
+  takes, and `std::hash<scl::hash::key>` is placed in the reference rather than reported
+  as unplaceable.
 
 - Fixed a compiler crash (`SIGSEGV` in clang's `Sema`) building
   `utility_type_traits_gtest` on macOS, caused by an oversized test

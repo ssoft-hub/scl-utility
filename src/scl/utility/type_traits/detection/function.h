@@ -1,6 +1,6 @@
 /**
  * @ingroup scl_utility_type_traits
- * @file function_detection.hpp
+ * @file
  * @brief Provides macros for generating global/free function detection traits.
  */
 

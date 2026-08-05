@@ -15,6 +15,12 @@
 #include <scl/utility/type_traits.h>
 
 /**
+ * @defgroup scl_utility ScL Utility
+ * @brief Compile-time meta-programming helpers, preprocessor utilities, extended
+ *        type traits and hash utilities.
+ */
+
+/**
  * @namespace scl
  * @brief Root namespace of ScL project
  */
