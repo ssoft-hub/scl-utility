@@ -193,6 +193,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### CI
 
+- `script/lint/doxygen.sh` — new lint job in both pipelines: fails on every Doxygen
+  diagnostic, so neither a block that reaches no entity nor a stale `@param` name can
+  reach the published reference.
 - `script/ci/deploy_versioned_docs.sh` — builds versioned Doxygen HTML for
   all version tags (immutable) and `dev` (latest); injects version-selector
   nav bar; manages `versions.json` and root `index.html` on the pages branch.

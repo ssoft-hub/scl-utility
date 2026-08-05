@@ -48,6 +48,9 @@ cppcheck --enable=warning,style,performance,portability \
   --std=c++20 --language=c++ --inline-suppr \
   --error-exitcode=1 --suppress=missingIncludeSystem \
   -Isrc -UDOXYGEN <files>
+
+# Documentation blocks reach their target
+bash script/lint/doxygen.sh
 ```
 
 ## Branching
@@ -114,6 +117,67 @@ constexpr uint64_t fnv1a(Iter first, Iter last) noexcept;
 
 /// @}
 ```
+
+### Out-of-line blocks
+
+A header keeps its class bodies clean: the blocks live in the `Documentation` section at
+the end of the file and name their target with `@class` / `@fn` / `@typedef` / `@var`.
+Doxygen matches such a block by the target's rendered signature, and a block that matches
+nothing is dropped — the entity reaches the reference with no description at all. Spell the
+declaration the way Doxygen renders it, parameter names included: `node(Arguments &&...)`
+matches nothing, `node(Arguments &&... arguments)` matches. Run `script/lint/doxygen.sh`
+(a lint job in both CI pipelines) after touching a public header; it fails on every Doxygen
+diagnostic, an unattached block and a stale `@param` name alike.
+
+Attribute macros are expanded by Doxygen, so `@fn` spells the clean declaration —
+`SCL_HOT` and `SCL_LIFETIMEBOUND` never appear in it. The Doxyfile expands every macro
+(`MACRO_EXPANSION = YES` with `EXPAND_ONLY_PREDEF = NO`) using the definition found in the
+source, reached through `INCLUDE_PATH`, so a new attribute macro needs no entry anywhere
+and the macros keep their own `@def` pages — which a `PREDEFINED` override would take
+away, its `#ifndef` guard hiding the definition it documents.
+
+Four shapes defeat out-of-line matching in Doxygen 1.15 and 1.16. The first three have a
+fix on the declaration side:
+
+- **Two overloads whose parameter lists render the same are one entity.** Parameter
+  *names* do not disambiguate, so `any_cast(Wrapper * view)` in one header and
+  `any_cast(Wrapper * arg)` in another collapse into a single member and one of the two
+  blocks is dropped without a warning. Give the deduced template parameters distinct names
+  (`View` against `Wrapper`) so the rendered signatures differ.
+- **A `requires` clause needs each conjunct parenthesised** — `requires(A) && (B)`, not
+  `requires A && B`. Doxygen drops the leading `::` of a conjunct that follows `&&`, and
+  the mangled clause no longer matches the declaration it came from.
+- **A function template whose return type is a dependent east-const pointer or reference
+  (`Type const *`) must not be both declared and defined.** Doxygen renders the two with
+  different spacing and fails to pair them; a `friend` declaration inside the class is
+  declaration enough, so the separate namespace-scope one can go.
+- **An overload set told apart only by its template parameter list cannot be addressed
+  from outside at all.** `get<I>()` against `get<T>()` render identically, and no `@fn`
+  spelling separates them — a template argument list in the name is accepted and silently
+  ignored. Document those overloads in place, directly above the declaration.
+
+A member re-exported from a private base with `using` has no unique target either: the
+base declares each as a `const` / `const volatile` pair, and the member is left out of the
+class page entirely. Keep the `using`, and declare the member for Doxygen alone in a single
+`Documentation-only declarations` block at the end of the header, which reopens the class:
+
+```cpp
+#ifdef DOXYGEN
+namespace scl
+{
+    class any_view
+    {
+    public:
+        constexpr bool has_value() const noexcept;
+    };
+} // namespace scl
+#endif
+```
+
+`WARN_AS_ERROR` stays `NO`, and the gate greps the report instead: `WARN_AS_ERROR` would
+also fail on `WARN_IF_UNDOCUMENTED`, and members that never had a block are a coverage gap
+with its own gate to come — a different defect from a block that was written and then lost.
+Everything Doxygen does report is a finding, so the report is expected to stay empty.
 
 ## Do Not
 - Add runtime dependencies

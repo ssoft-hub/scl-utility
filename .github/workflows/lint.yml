@@ -26,6 +26,23 @@ jobs:
       - name: Check formatting
         run: bash script/lint/clang_format.sh
 
+  doxygen:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install git
+        run: pacman -Sy --noconfirm git ca-certificates
+
+      - uses: actions/checkout@v6
+
+      - name: Install doxygen
+        run: |
+          pacman -S --noconfirm doxygen
+          doxygen --version
+
+      - name: Run doxygen lint
+        run: bash script/lint/doxygen.sh
+
   cppcheck:
     runs-on: ubuntu-24.04
     steps:
