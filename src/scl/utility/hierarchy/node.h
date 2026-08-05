@@ -635,7 +635,7 @@ namespace scl::hierarchy
 /// assert(&dst.back().parent()  == &dst);
 /// @endcode
 
-/// @fn scl::hierarchy::node::node(Arguments &&...)
+/// @fn scl::hierarchy::node::node(Arguments &&... arguments)
 /// @brief Constructs the payload in-place by forwarding @p arguments.
 ///
 /// The node is created with no children and no parent.  Enabled only when

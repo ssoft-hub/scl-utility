@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Documentation blocks that silently failed to reach their target now appear in the
+  generated reference: each `scl::any_cast` overload carries its own description, and
+  `has_value` / `type_name` / `type_key` are listed and described on `scl::any_view` and
+  `scl::any_arg` instead of being left off the class page.
+
 - Fixed a compiler crash (`SIGSEGV` in clang's `Sema`) building
   `utility_type_traits_gtest` on macOS, caused by an oversized test
   translation unit forcing too many template instantiations at once.

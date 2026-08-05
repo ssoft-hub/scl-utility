@@ -23,12 +23,6 @@ namespace scl
 {
     class any_view;
 
-    // Wrapper is deduced so that the caller's own cv-qualification reaches accepts().
-    template <typename Type, typename Wrapper>
-        requires ::std::is_object_v<Type> && ::std::same_as<::std::remove_cv_t<Wrapper>, any_view>
-    [[nodiscard]]
-    SCL_HOT constexpr Type const * any_cast(Wrapper * view) noexcept;
-
     // Never std::bad_any_cast under RTTI: a base type that depends on SCL_HAS_RTTI
     // is an ODR trap for a binary linking RTTI and -fno-rtti translation units.
     struct bad_any_cast : ::std::bad_cast
@@ -83,15 +77,16 @@ namespace scl
         // private inheritance would otherwise refuse that conversion.
         friend class detail::any_base;
 
-        template <typename Type, typename Wrapper>
-            requires ::std::is_object_v<Type> && ::std::same_as<::std::remove_cv_t<Wrapper>, any_view>
-        friend constexpr Type const * any_cast(Wrapper * view) noexcept;
+        template <typename Type, typename View>
+            requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<View>, any_view>)
+        friend constexpr Type const * any_cast(View * view) noexcept;
     };
 
-    template <typename Type, typename Wrapper>
-        requires ::std::is_object_v<Type> && ::std::same_as<::std::remove_cv_t<Wrapper>, any_view>
+    // View is deduced so that the caller's own cv-qualification reaches accepts().
+    template <typename Type, typename View>
+        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<View>, any_view>)
     [[nodiscard]]
-    SCL_HOT constexpr Type const * any_cast(Wrapper * view) noexcept
+    SCL_HOT constexpr Type const * any_cast(View * view) noexcept
     {
         using bare = ::std::remove_cvref_t<Type>;
 
@@ -126,6 +121,23 @@ namespace scl
         return static_cast<Type>(*pointer);
     }
 } // namespace scl
+
+// =============================================================================
+// Documentation-only declarations
+// =============================================================================
+
+#ifdef DOXYGEN
+namespace scl
+{
+    class any_view
+    {
+    public:
+        constexpr bool has_value() const noexcept;
+        constexpr ::scl::type_key const * type_key() const noexcept;
+        constexpr name type_name() const noexcept;
+    };
+} // namespace scl
+#endif
 
 // =============================================================================
 // Documentation
@@ -251,7 +263,7 @@ namespace scl
 ///         `type_name()`, the std::any backing identifies itself and not the boxed
 ///         type; probe that with @ref scl::any_cast.
 
-/// @fn scl::any_cast(Wrapper * view)
+/// @fn scl::any_cast(View * view)
 /// @ingroup scl_utility_any
 /// @brief Returns a pointer to the viewed object when its type matches, else null.
 ///
@@ -267,7 +279,7 @@ namespace scl
 /// `any_cast<T>`, on top of whatever the referent's own qualifiers require.
 ///
 /// @tparam Type     The expected object type; a reference type is rejected.
-/// @tparam Wrapper  Deduced `any_view`, possibly `volatile`-qualified — that
+/// @tparam View     Deduced `any_view`, possibly `volatile`-qualified — that
 ///                  qualification is itself a requirement the request must cover.
 /// @param  view  The view to read (may be null).
 /// @return `const Type *` to the viewed object on a type match; `nullptr` on
