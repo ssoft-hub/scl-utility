@@ -27,8 +27,8 @@ namespace scl::detail
     template <typename Default, typename AlwaysVoid, template <typename...> class Operation, typename... Arguments>
     struct detector
     {
-        using value_t = ::std::false_type; ///< Indicates detection failed
-        using type = Default;              ///< Falls back to Default type
+        using value_t = ::std::false_type;
+        using type = Default;
     };
 
     /**
@@ -44,8 +44,8 @@ namespace scl::detail
     template <typename Default, template <typename...> class Operation, typename... Arguments>
     struct detector<Default, ::std::void_t<Operation<Arguments...>>, Operation, Arguments...>
     {
-        using value_t = ::std::true_type;     ///< Indicates detection succeeded
-        using type = Operation<Arguments...>; ///< Resolved to actual type
+        using value_t = ::std::true_type;
+        using type = Operation<Arguments...>;
     };
 
 } // namespace scl::detail

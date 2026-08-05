@@ -87,32 +87,19 @@ namespace scl::hash
     template <concepts::byte_hasher Hasher = siphash_hasher<>>
     struct key
     {
-        /// @brief The hasher type used to produce this digest.
         using hasher_type = Hasher;
-
-        /// @brief Underlying integer type — deduced from the hasher's `result_type`.
         using value_type = Hasher::result_type;
 
-        /// @brief Raw digest value.
         value_type value{};
 
-        /**
-         * @brief Constructs the digest by hashing @p range with @p Hasher.
-         *
-         * @tparam Range  Any type satisfying `std::ranges::range` whose elements
-         *                are convertible to `std::uint8_t`.
-         * @param  range  Input range (e.g. `std::string`, `std::span<std::byte>`).
-         */
         template <::std::ranges::range Range>
         explicit constexpr key(Range const & range) noexcept
             requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
             : value{Hasher{}(range)}
         {}
 
-        /// @brief Implicit conversion to the raw integer digest.
         constexpr operator value_type() const noexcept { return value; }
 
-        /// @brief Three-way comparison (generates ==, !=, <, <=, >, >=).
         friend constexpr auto operator<=>(key const &, key const &) noexcept = default;
     };
 
@@ -131,3 +118,41 @@ struct std::hash<::scl::hash::key<Hasher>>
         return ::std::hash<typename ::scl::hash::key<Hasher>::value_type>{}(k.value);
     }
 };
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @typedef scl::hash::key::hasher_type
+ * @brief The hasher type used to produce this digest.
+ */
+
+/**
+ * @typedef scl::hash::key::value_type
+ * @brief Underlying integer type — deduced from the hasher's `result_type`.
+ */
+
+/**
+ * @var scl::hash::key::value
+ * @brief Raw digest value.
+ */
+
+/**
+ * @fn scl::hash::key::key(Range const & range)
+ * @brief Constructs the digest by hashing @p range with @p Hasher.
+ *
+ * @tparam Range  Any type satisfying `std::ranges::range` whose elements
+ *                are convertible to `std::uint8_t`.
+ * @param  range  Input range (e.g. `std::string`, `std::span<std::byte>`).
+ */
+
+/**
+ * @fn scl::hash::key::operator value_type() const
+ * @brief Implicit conversion to the raw integer digest.
+ */
+
+/**
+ * @fn scl::hash::key::operator<=>(key const &, key const &)
+ * @brief Three-way comparison (generates ==, !=, <, <=, >, >=).
+ */

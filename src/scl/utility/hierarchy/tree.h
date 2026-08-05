@@ -117,7 +117,6 @@ namespace scl::hierarchy
         };
 
     public:
-        /// @brief Mutable iterator over sibling nodes.
         class iterator
         {
             friend class tree;
@@ -177,7 +176,6 @@ namespace scl::hierarchy
             }
         };
 
-        /// @brief Const iterator over sibling nodes.
         class const_iterator
         {
             friend class tree;
@@ -258,7 +256,6 @@ namespace scl::hierarchy
         using reverse_iterator = ::std::reverse_iterator<iterator>;
         using const_reverse_iterator = ::std::reverse_iterator<const_iterator>;
 
-        /// @brief Mutable proxy over a tree node.
         class reference
         {
             friend class tree;
@@ -635,7 +632,6 @@ namespace scl::hierarchy
             }
         };
 
-        /// @brief Const proxy over a tree node.
         class const_reference
         {
             friend class tree;

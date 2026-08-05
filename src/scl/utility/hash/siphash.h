@@ -30,7 +30,6 @@ namespace scl::hash
 
     namespace detail
     {
-        /// @brief Single SipHash mixing round.
         constexpr void
         sip_round(::std::uint64_t & v0, ::std::uint64_t & v1, ::std::uint64_t & v2, ::std::uint64_t & v3) noexcept
         {
