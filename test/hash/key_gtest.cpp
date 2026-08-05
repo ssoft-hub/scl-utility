@@ -221,16 +221,19 @@ struct nttp_handler
 {
     static constexpr int value = 0;
 };
+
 template <>
 struct nttp_handler<key<>{"alpha"}>
 {
     static constexpr int value = 1;
 };
+
 template <>
 struct nttp_handler<key<>{"beta"}>
 {
     static constexpr int value = 2;
 };
+
 template <>
 struct nttp_handler<key<>{"gamma"}>
 {

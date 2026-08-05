@@ -12,27 +12,34 @@ namespace
     {
         int x;
     };
+
     struct NonTrivial
     {
         ::std::string s;
     };
+
     struct Empty
     {};
+
     struct PolymorphicBase
     {
         virtual ~PolymorphicBase() = default;
     };
+
     struct Abstract
     {
         virtual void f() = 0;
     };
+
     struct Final final
     {};
+
     struct Standard
     {
         int x;
         float y;
     };
+
     union AggregateUnion
     {
         int i;
