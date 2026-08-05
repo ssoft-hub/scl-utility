@@ -1,8 +1,10 @@
 #pragma once
 
-/// @file base.h
-/// @brief Shared storage and type-identity machinery for the ScL Any views.
-/// @ingroup scl_utility_any
+/**
+ * @file base.h
+ * @brief Shared storage and type-identity machinery for the ScL Any views.
+ * @ingroup scl_utility_any
+ */
 
 #include <scl/utility/meta/type_key.h>
 #include <scl/utility/preprocessor/rtti.h>

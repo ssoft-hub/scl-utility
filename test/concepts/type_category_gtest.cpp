@@ -13,11 +13,13 @@ namespace
         a,
         b
     };
+
     union U
     {
         int i;
         float f;
     };
+
     struct S
     {};
 } // namespace

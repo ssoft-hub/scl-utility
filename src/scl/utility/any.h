@@ -1,8 +1,10 @@
 #pragma once
 
-/// @file any.h
-/// @brief Aggregates the ScL Any utilities.
-/// @ingroup scl_utility_any
+/**
+ * @file any.h
+ * @brief Aggregates the ScL Any utilities.
+ * @ingroup scl_utility_any
+ */
 
 /**
  * @defgroup scl_utility_any ScL Any

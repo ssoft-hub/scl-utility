@@ -1,10 +1,12 @@
-/// @file flags_example.cpp
-/// @brief Demonstrates scl::flags — a type-safe bitmask over a scoped enum.
-///
-/// scl::flags<Enum> stores one bit per enumerator (bit index == enumerator
-/// ordinal). It combines flags through bitwise operators without casting to the
-/// underlying integer, answers subset/intersection questions, and iterates the
-/// set flags as a bidirectional range. Everything is constexpr-capable.
+/**
+ * @file flags_example.cpp
+ * @brief Demonstrates scl::flags — a type-safe bitmask over a scoped enum.
+ *
+ * scl::flags<Enum> stores one bit per enumerator (bit index == enumerator
+ * ordinal). It combines flags through bitwise operators without casting to the
+ * underlying integer, answers subset/intersection questions, and iterates the
+ * set flags as a bidirectional range. Everything is constexpr-capable.
+ */
 
 #include <scl/utility/flags.h>
 

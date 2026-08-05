@@ -1,14 +1,16 @@
-/// @file key_nttp.cpp
-/// @brief Demonstrates scl::hash::key<> as a non-type template parameter (NTTP).
-///
-/// In C++20 a class type may be used as an NTTP if it is a *structural type*:
-/// all non-static data members must be public and of structural types.
-/// scl::hash::key<> stores a single integral value, so it qualifies.
-///
-/// This enables three useful compile-time patterns:
-///   1. Distinct types tagged by a string literal.
-///   2. Template specialisation selected by a string value.
-///   3. Generic dispatch functions keyed on compile-time strings.
+/**
+ * @file key_nttp.cpp
+ * @brief Demonstrates scl::hash::key<> as a non-type template parameter (NTTP).
+ *
+ * In C++20 a class type may be used as an NTTP if it is a *structural type*:
+ * all non-static data members must be public and of structural types.
+ * scl::hash::key<> stores a single integral value, so it qualifies.
+ *
+ * This enables three useful compile-time patterns:
+ *   1. Distinct types tagged by a string literal.
+ *   2. Template specialisation selected by a string value.
+ *   3. Generic dispatch functions keyed on compile-time strings.
+ */
 
 #include <scl/utility/hash/key.h>
 

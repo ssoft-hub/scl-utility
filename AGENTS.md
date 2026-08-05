@@ -95,6 +95,8 @@ Key is passed as two uint64_t values to avoid struct padding issues.
 ## Doxygen Documentation
 Every public header, class, struct, function, and type alias must have a Doxygen comment. Language: **English only**.
 
+- A block spanning more than one line is written as `/** */`, one `*` per line; `///` is
+  left to a comment that says everything in a single line, and `///<` to a trailing one
 - Use `@brief` for one-line description
 - Use `@tparam`, `@param`, `@return` where applicable
 - Every entity must declare `@ingroup <group>` matching its thematic group

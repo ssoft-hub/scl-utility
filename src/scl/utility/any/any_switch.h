@@ -1,8 +1,10 @@
 #pragma once
 
-/// @file any_switch.h
-/// @brief Branch chain running one branch, chosen by the type an erased value holds.
-/// @ingroup scl_utility_any
+/**
+ * @file any_switch.h
+ * @brief Branch chain running one branch, chosen by the type an erased value holds.
+ * @ingroup scl_utility_any
+ */
 
 #include <scl/utility/any/any_arg.h>
 
@@ -393,213 +395,233 @@ namespace scl
 // Documentation
 // =============================================================================
 
-/// @class scl::any_switch
-/// @ingroup scl_utility_any
-/// @brief Branch chain running one branch, chosen by the type an erased value holds
-///
-/// Reading an erased value with @ref scl::any_cast alone is a cascade of probes:
-/// one call per candidate type, each with its own `if`, and a fallback spelled
-/// separately. `any_switch` collapses that into one expression — every branch
-/// names its type once, the first match runs, and the fallback belongs to the
-/// same chain. It is the visitor `std::any` never had, and it reads every subject
-/// @ref scl::any_arg accepts: a typed lvalue or rvalue, an @ref scl::any_view, or
-/// a `std::any` on an RTTI build.
-///
-/// The chain holds no subject. `in_case` and `or_else` describe the branches;
-/// @ref scl::any_switch::apply runs them over the subject it is given, and
-/// @ref scl::any_switch::has_case asks whether there is one to run. So one chain
-/// serves any number of subjects, none of them has to outlive it, and a chain is
-/// an ordinary object: keep it in a variable, a member or a container, return it
-/// from a function, apply it wherever the subject turns up.
-///
-/// A case selects by the qualifier-coverage rule of @ref scl::any_cast, mirrored
-/// in full: `in_case<T>` and `in_case<T const &>` match a `T` or a `T const`
-/// referent, `in_case<T &>` an unqualified one, and `volatile` participates the
-/// same way. `in_case<void>` matches an empty value. `in_case<std::any>` does not
-/// match the box, exactly as `any_cast<std::any>` does not — a `std::any` subject
-/// is unwrapped and the branches see the boxed type.
-///
-/// What `in_case` takes after its case is an invocable, or — for a named `Result`,
-/// there being nothing for a `void` chain to convert it into — a ready value. An
-/// invocable is called with the matched value where it takes one, called with
-/// nothing where it takes none. The value it is called with is what its case asks
-/// for: `in_case<T const &>` binds without a copy, `in_case<T &>` reaches the
-/// caller's object, and `in_case<T>` hands over a value the parameter copies.
-/// `or_else` takes the same, with @ref scl::any_arg as the one argument its
-/// invocable form may name. Where both calls compile — the only parameter carrying a
-/// default argument, say — the matched value is the one passed.
-///
-/// A branch produces a `Result` or the `std::optional<Result>` holding one — an
-/// invocable and a ready value alike — and an empty optional means the branch ran and
-/// produced nothing. That second form is what lets one chain stand as a branch of
-/// another: a chain is callable and answers `std::optional<Result>`, so it fits a
-/// case of an outer chain or its fallback, and an unmatched subject falls through as
-/// an empty result rather than a wrong one. `Result` is tried first, so a chain over
-/// an optional `Result` keeps its meaning.
-///
-/// @note @ref scl::any_switch::has_case answers for the chain it is asked, not for a
-///       chain nested inside a branch of it: a fallback covers every subject, whatever
-///       the chain behind it then decides.
-///
-/// A case an earlier one already covers is a compile error rather than a branch
-/// that never runs, and coverage follows what a case matches rather than how it is
-/// spelled: `in_case<T>` and `in_case<T const &>` cover the same referents, and
-/// both of them cover `in_case<T &>`, which asks for less. Order therefore
-/// decides — `in_case<T &>` written after either of them is rejected, while
-/// written before them it keeps the unqualified referent for itself. For the same
-/// reason a second `or_else`, and any `in_case` written after one, are compile
-/// errors too.
-///
-/// @tparam Result    What a branch produces. `void` — the default — is a chain that
-///                   runs its branches for their effect and returns nothing.
-/// @tparam Branches  The branches accumulated so far; grown by `in_case` and
-///                   `or_else`, never spelled at a use.
-///
-/// `any_switch<>{}` starts a chain that produces nothing; `any_switch<Result>{}` one
-/// that produces a @p Result. A chain with no branch matches nothing, so a bare chain
-/// is only a starting point for `in_case` and `or_else`.
-///
-/// @note Building the chain runs nothing: no selection, no branch, no result. A
-///       branch argument that is a *value* is the one thing no chain defers -
-///       `or_else(compute())` evaluates `compute()` where it is written, since
-///       that is an ordinary function argument. Pass an invocable where building
-///       the value is expensive.
-///
-/// @note The chain is a literal type wherever its branches are, and the subject
-///       reaches `apply` as a parameter — the one position where an
-///       @ref scl::any_arg cast folds on the C++20 baseline. A `constexpr` chain
-///       applied in a constant expression therefore selects and runs at compile
-///       time, with none of the restrictions a stored `any_arg` carries.
-///
-/// @warning The chain catches nothing and wraps nothing: a branch that throws
-///          throws out of `apply`, in the caller's frame. What can still dangle is
-///          a branch capturing by reference, and it dangles the way any captured
-///          reference does.
-///
-/// @par Example
-/// @code
-/// constexpr auto matcher = scl::any_switch<std::string>()
-///     .in_case<void>("has no value")
-///     .in_case<int>([](int number) { return std::to_string(number); })
-///     .in_case<std::string const &>([](std::string const & text) { return text; })
-///     .or_else("undefined");
-///
-/// std::optional<std::string> result = matcher.apply(value);   // no precondition
-/// bool covered = matcher.has_case(value);                     // runs no branch
-/// @endcode
-///
-/// @see scl::any_arg — the subject type every branch reads through
-/// @see scl::any_view — the storable read-only view, also accepted as a subject
+/**
+ * @class scl::any_switch
+ * @ingroup scl_utility_any
+ * @brief Branch chain running one branch, chosen by the type an erased value holds
+ *
+ * Reading an erased value with @ref scl::any_cast alone is a cascade of probes:
+ * one call per candidate type, each with its own `if`, and a fallback spelled
+ * separately. `any_switch` collapses that into one expression — every branch
+ * names its type once, the first match runs, and the fallback belongs to the
+ * same chain. It is the visitor `std::any` never had, and it reads every subject
+ * @ref scl::any_arg accepts: a typed lvalue or rvalue, an @ref scl::any_view, or
+ * a `std::any` on an RTTI build.
+ *
+ * The chain holds no subject. `in_case` and `or_else` describe the branches;
+ * @ref scl::any_switch::apply runs them over the subject it is given, and
+ * @ref scl::any_switch::has_case asks whether there is one to run. So one chain
+ * serves any number of subjects, none of them has to outlive it, and a chain is
+ * an ordinary object: keep it in a variable, a member or a container, return it
+ * from a function, apply it wherever the subject turns up.
+ *
+ * A case selects by the qualifier-coverage rule of @ref scl::any_cast, mirrored
+ * in full: `in_case<T>` and `in_case<T const &>` match a `T` or a `T const`
+ * referent, `in_case<T &>` an unqualified one, and `volatile` participates the
+ * same way. `in_case<void>` matches an empty value. `in_case<std::any>` does not
+ * match the box, exactly as `any_cast<std::any>` does not — a `std::any` subject
+ * is unwrapped and the branches see the boxed type.
+ *
+ * What `in_case` takes after its case is an invocable, or — for a named `Result`,
+ * there being nothing for a `void` chain to convert it into — a ready value. An
+ * invocable is called with the matched value where it takes one, called with
+ * nothing where it takes none. The value it is called with is what its case asks
+ * for: `in_case<T const &>` binds without a copy, `in_case<T &>` reaches the
+ * caller's object, and `in_case<T>` hands over a value the parameter copies.
+ * `or_else` takes the same, with @ref scl::any_arg as the one argument its
+ * invocable form may name. Where both calls compile — the only parameter carrying a
+ * default argument, say — the matched value is the one passed.
+ *
+ * A branch produces a `Result` or the `std::optional<Result>` holding one — an
+ * invocable and a ready value alike — and an empty optional means the branch ran and
+ * produced nothing. That second form is what lets one chain stand as a branch of
+ * another: a chain is callable and answers `std::optional<Result>`, so it fits a
+ * case of an outer chain or its fallback, and an unmatched subject falls through as
+ * an empty result rather than a wrong one. `Result` is tried first, so a chain over
+ * an optional `Result` keeps its meaning.
+ *
+ * @note @ref scl::any_switch::has_case answers for the chain it is asked, not for a
+ *       chain nested inside a branch of it: a fallback covers every subject, whatever
+ *       the chain behind it then decides.
+ *
+ * A case an earlier one already covers is a compile error rather than a branch
+ * that never runs, and coverage follows what a case matches rather than how it is
+ * spelled: `in_case<T>` and `in_case<T const &>` cover the same referents, and
+ * both of them cover `in_case<T &>`, which asks for less. Order therefore
+ * decides — `in_case<T &>` written after either of them is rejected, while
+ * written before them it keeps the unqualified referent for itself. For the same
+ * reason a second `or_else`, and any `in_case` written after one, are compile
+ * errors too.
+ *
+ * @tparam Result    What a branch produces. `void` — the default — is a chain that
+ *                   runs its branches for their effect and returns nothing.
+ * @tparam Branches  The branches accumulated so far; grown by `in_case` and
+ *                   `or_else`, never spelled at a use.
+ *
+ * `any_switch<>{}` starts a chain that produces nothing; `any_switch<Result>{}` one
+ * that produces a @p Result. A chain with no branch matches nothing, so a bare chain
+ * is only a starting point for `in_case` and `or_else`.
+ *
+ * @note Building the chain runs nothing: no selection, no branch, no result. A
+ *       branch argument that is a *value* is the one thing no chain defers -
+ *       `or_else(compute())` evaluates `compute()` where it is written, since
+ *       that is an ordinary function argument. Pass an invocable where building
+ *       the value is expensive.
+ *
+ * @note The chain is a literal type wherever its branches are, and the subject
+ *       reaches `apply` as a parameter — the one position where an
+ *       @ref scl::any_arg cast folds on the C++20 baseline. A `constexpr` chain
+ *       applied in a constant expression therefore selects and runs at compile
+ *       time, with none of the restrictions a stored `any_arg` carries.
+ *
+ * @warning The chain catches nothing and wraps nothing: a branch that throws
+ *          throws out of `apply`, in the caller's frame. What can still dangle is
+ *          a branch capturing by reference, and it dangles the way any captured
+ *          reference does.
+ *
+ * @par Example
+ * @code
+ * constexpr auto matcher = scl::any_switch<std::string>()
+ *     .in_case<void>("has no value")
+ *     .in_case<int>([](int number) { return std::to_string(number); })
+ *     .in_case<std::string const &>([](std::string const & text) { return text; })
+ *     .or_else("undefined");
+ *
+ * std::optional<std::string> result = matcher.apply(value);   // no precondition
+ * bool covered = matcher.has_case(value);                     // runs no branch
+ * @endcode
+ *
+ * @see scl::any_arg — the subject type every branch reads through
+ * @see scl::any_view — the storable read-only view, also accepted as a subject
+ */
 
-/// @typedef scl::any_switch::result_type
-/// @brief What @ref scl::any_switch::apply returns.
-///
-/// `std::optional<Result>`, or `void` for a chain that produces nothing.
+/**
+ * @typedef scl::any_switch::result_type
+ * @brief What @ref scl::any_switch::apply returns.
+ *
+ * `std::optional<Result>`, or `void` for a chain that produces nothing.
+ */
 
-/// @fn scl::any_switch::in_case(Handler && handler) const
-/// @brief Returns a chain with one more case at the end of it.
-///
-/// @tparam Case     The type this branch selects: an object type, an lvalue
-///                  reference to one, or `void` for the empty value. An rvalue
-///                  reference is rejected — nothing here is movable-from.
-/// @tparam Handler  Deduced from @p handler; never spelled at a call.
-/// @param  handler  What this branch produces: an invocable taking no argument or one
-///                  argument constructible from @p Case, or — for a named `Result` —
-///                  a value convertible to `Result` or to `std::optional<Result>`.
-///                  Either way it must produce one of those two.
-///                  Another `any_switch` qualifies, which is how chains nest. Stored by
-///                  value in the returned chain, and called only by
-///                  @ref scl::any_switch::apply.
-/// @return A chain carrying every branch of this one, plus this case.
+/**
+ * @fn scl::any_switch::in_case(Handler && handler) const
+ * @brief Returns a chain with one more case at the end of it.
+ *
+ * @tparam Case     The type this branch selects: an object type, an lvalue
+ *                  reference to one, or `void` for the empty value. An rvalue
+ *                  reference is rejected — nothing here is movable-from.
+ * @tparam Handler  Deduced from @p handler; never spelled at a call.
+ * @param  handler  What this branch produces: an invocable taking no argument or one
+ *                  argument constructible from @p Case, or — for a named `Result` —
+ *                  a value convertible to `Result` or to `std::optional<Result>`.
+ *                  Either way it must produce one of those two.
+ *                  Another `any_switch` qualifies, which is how chains nest. Stored by
+ *                  value in the returned chain, and called only by
+ *                  @ref scl::any_switch::apply.
+ * @return A chain carrying every branch of this one, plus this case.
+ */
 
-/// @fn scl::any_switch::in_case() const
-/// @brief Returns a chain with one more case that matches and does nothing.
-///
-/// Doing nothing is a complete branch only where nothing is the result, so this
-/// form belongs to `Result = void` and is a compile error for a named `Result`.
-/// It is how a type is claimed away from the fallback without writing an empty
-/// branch for it.
-///
-/// @tparam Case  The type this branch selects, as in the form above.
-/// @return A chain carrying every branch of this one, plus this case.
+/**
+ * @fn scl::any_switch::in_case() const
+ * @brief Returns a chain with one more case that matches and does nothing.
+ *
+ * Doing nothing is a complete branch only where nothing is the result, so this
+ * form belongs to `Result = void` and is a compile error for a named `Result`.
+ * It is how a type is claimed away from the fallback without writing an empty
+ * branch for it.
+ *
+ * @tparam Case  The type this branch selects, as in the form above.
+ * @return A chain carrying every branch of this one, plus this case.
+ */
 
-/// @fn scl::any_switch::or_else(Handler && handler) const
-/// @brief Returns a chain with the fallback branch attached.
-///
-/// The fallback catches everything no case caught — an empty value included when
-/// the chain has no `in_case<void>`. It is an ordinary branch: it returns the
-/// chain, not a result. Since it catches everything, nothing may follow it and
-/// nothing may repeat it.
-///
-/// @tparam Handler  Deduced from @p handler; never spelled at a call.
-/// @param  handler  What the fallback produces: an invocable taking no argument or the
-///                  subject as @ref scl::any_arg, or — for a named `Result` — a value
-///                  convertible to `Result` or to `std::optional<Result>`. Another `any_switch` qualifies, which
-///                  is how a chain delegates what it did not catch. Stored by value in
-///                  the returned chain.
-/// @return A chain carrying every branch of this one, plus the fallback.
+/**
+ * @fn scl::any_switch::or_else(Handler && handler) const
+ * @brief Returns a chain with the fallback branch attached.
+ *
+ * The fallback catches everything no case caught — an empty value included when
+ * the chain has no `in_case<void>`. It is an ordinary branch: it returns the
+ * chain, not a result. Since it catches everything, nothing may follow it and
+ * nothing may repeat it.
+ *
+ * @tparam Handler  Deduced from @p handler; never spelled at a call.
+ * @param  handler  What the fallback produces: an invocable taking no argument or the
+ *                  subject as @ref scl::any_arg, or — for a named `Result` — a value
+ *                  convertible to `Result` or to `std::optional<Result>`. Another `any_switch` qualifies, which
+ *                  is how a chain delegates what it did not catch. Stored by value in
+ *                  the returned chain.
+ * @return A chain carrying every branch of this one, plus the fallback.
+ */
 
-/// @fn scl::any_switch::apply(any_arg subject) const
-/// @brief Runs the first branch that matches @p subject, and no other.
-///
-/// Selection follows the order the cases are written. `apply` may be called any
-/// number of times, over as many subjects as the caller has, and does the whole
-/// thing again each time: the chain describes the branches and holds no result, so
-/// a branch with a side effect fires once per call. It carries no precondition -
-/// no branch matching is an ordinary outcome, reported by the result.
-///
-/// It is `noexcept` when the branches it may run are and moving the result cannot
-/// throw, and `const` wherever those
-/// branches are callable on a `const` chain; a chain holding a `mutable` invocable
-/// applies through a non-`const` one.
-///
-/// @param  subject  The value to read — anything @ref scl::any_arg accepts.
-/// @return `std::optional<Result>`, empty when no branch matched; nothing at all
-///         when `Result` is `void`, where an unmatched subject simply runs nothing.
+/**
+ * @fn scl::any_switch::apply(any_arg subject) const
+ * @brief Runs the first branch that matches @p subject, and no other.
+ *
+ * Selection follows the order the cases are written. `apply` may be called any
+ * number of times, over as many subjects as the caller has, and does the whole
+ * thing again each time: the chain describes the branches and holds no result, so
+ * a branch with a side effect fires once per call. It carries no precondition -
+ * no branch matching is an ordinary outcome, reported by the result.
+ *
+ * It is `noexcept` when the branches it may run are and moving the result cannot
+ * throw, and `const` wherever those
+ * branches are callable on a `const` chain; a chain holding a `mutable` invocable
+ * applies through a non-`const` one.
+ *
+ * @param  subject  The value to read — anything @ref scl::any_arg accepts.
+ * @return `std::optional<Result>`, empty when no branch matched; nothing at all
+ *         when `Result` is `void`, where an unmatched subject simply runs nothing.
+ */
 
-/// @fn scl::any_switch::apply(any_arg subject)
-/// @brief Runs the first branch that matches @p subject, and no other.
-///
-/// The form a chain holding a `mutable` invocable applies through; identical to the
-/// `const` form in every other respect.
-///
-/// @param  subject  The value to read — anything @ref scl::any_arg accepts.
-/// @return What the `const` form returns.
+/**
+ * @fn scl::any_switch::apply(any_arg subject)
+ * @brief Runs the first branch that matches @p subject, and no other.
+ *
+ * The form a chain holding a `mutable` invocable applies through; identical to the
+ * `const` form in every other respect.
+ *
+ * @param  subject  The value to read — anything @ref scl::any_arg accepts.
+ * @return What the `const` form returns.
+ */
 
-/// @fn scl::any_switch::operator()(any_arg subject) const
-/// @brief Runs the chain over @p subject — @ref scl::any_switch::apply by another
-///        spelling.
-///
-/// Identical in every respect: same selection, same result, same `const` and
-/// `noexcept` forms. It exists so a chain can be handed to anything that takes a
-/// callable — an algorithm, a `std::function`, a parameter expecting a transform —
-/// without wrapping it in a lambda that only calls `apply`.
-///
-/// It is a call, not a conversion: a chain still converts to nothing at all, and
-/// reading its result stays explicit.
-///
-/// @param  subject  The value to read — anything @ref scl::any_arg accepts.
-/// @return What @ref scl::any_switch::apply returns.
+/**
+ * @fn scl::any_switch::operator()(any_arg subject) const
+ * @brief Runs the chain over @p subject — @ref scl::any_switch::apply by another
+ *        spelling.
+ *
+ * Identical in every respect: same selection, same result, same `const` and
+ * `noexcept` forms. It exists so a chain can be handed to anything that takes a
+ * callable — an algorithm, a `std::function`, a parameter expecting a transform —
+ * without wrapping it in a lambda that only calls `apply`.
+ *
+ * It is a call, not a conversion: a chain still converts to nothing at all, and
+ * reading its result stays explicit.
+ *
+ * @param  subject  The value to read — anything @ref scl::any_arg accepts.
+ * @return What @ref scl::any_switch::apply returns.
+ */
 
-/// @fn scl::any_switch::operator()(any_arg subject)
-/// @brief Runs the chain over @p subject — @ref scl::any_switch::apply by another
-///        spelling.
-///
-/// The form a chain holding a `mutable` invocable calls through; identical to the
-/// `const` form in every other respect.
-///
-/// @param  subject  The value to read — anything @ref scl::any_arg accepts.
-/// @return What @ref scl::any_switch::apply returns.
+/**
+ * @fn scl::any_switch::operator()(any_arg subject)
+ * @brief Runs the chain over @p subject — @ref scl::any_switch::apply by another
+ *        spelling.
+ *
+ * The form a chain holding a `mutable` invocable calls through; identical to the
+ * `const` form in every other respect.
+ *
+ * @param  subject  The value to read — anything @ref scl::any_arg accepts.
+ * @return What @ref scl::any_switch::apply returns.
+ */
 
-/// @fn scl::any_switch::has_case(any_arg subject) const
-/// @brief Reports whether some branch matches @p subject.
-///
-/// It performs the selection and stops there — no branch is run, so no side
-/// effect fires. It exists for what `apply` cannot answer: whether a branch
-/// matched. An empty result does not say — a matched branch producing an empty
-/// `std::optional` reads the same — and a `void` chain returns nothing at all. It
-/// also asks before a branch with a side effect, or an expensive one.
-///
-/// @param  subject  The value to test — anything @ref scl::any_arg accepts.
-/// @return `true` when a branch matches, which a chain with a fallback always
-///         does; `false` otherwise.
+/**
+ * @fn scl::any_switch::has_case(any_arg subject) const
+ * @brief Reports whether some branch matches @p subject.
+ *
+ * It performs the selection and stops there — no branch is run, so no side
+ * effect fires. It exists for what `apply` cannot answer: whether a branch
+ * matched. An empty result does not say — a matched branch producing an empty
+ * `std::optional` reads the same — and a `void` chain returns nothing at all. It
+ * also asks before a branch with a side effect, or an expensive one.
+ *
+ * @param  subject  The value to test — anything @ref scl::any_arg accepts.
+ * @return `true` when a branch matches, which a chain with a fallback always
+ *         does; `false` otherwise.
+ */

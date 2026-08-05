@@ -1,14 +1,16 @@
-/// @file type_name.cpp
-/// @brief Compares compile-time and runtime type name extraction.
-///
-/// Compile-time:  scl::type_name<T>()       — T is a template parameter; no object required;
-///                                             result is a constexpr std::string_view.
-/// Runtime:       scl::type_name(obj)        — T is deduced from the object; supports polymorphism
-///                                             via RTTI; result is a std::string (heap-allocated).
-///
-/// When T is statically known, both approaches produce the same name.
-/// When an object is accessed through a base pointer only the runtime variant
-/// resolves to the actual dynamic type.
+/**
+ * @file type_name.cpp
+ * @brief Compares compile-time and runtime type name extraction.
+ *
+ * Compile-time:  scl::type_name<T>()       — T is a template parameter; no object required;
+ *                                             result is a constexpr std::string_view.
+ * Runtime:       scl::type_name(obj)        — T is deduced from the object; supports polymorphism
+ *                                             via RTTI; result is a std::string (heap-allocated).
+ *
+ * When T is statically known, both approaches produce the same name.
+ * When an object is accessed through a base pointer only the runtime variant
+ * resolves to the actual dynamic type.
+ */
 
 #include <scl/utility/meta/type.h>
 #include <scl/utility/runtime/type.h>
