@@ -1,18 +1,20 @@
-/// @file tree_example.cpp
-/// @brief Demonstrates scl::hierarchy::tree<> with composed observers keeping
-///        two independent indexes in sync across structural moves.
-///
-/// tree<> routes every structural or payload mutation through an Observer
-/// policy, and observer_tuple<> lets that policy be several independent
-/// observers instead of one. This example maintains a task board — tasks can
-/// have subtasks — with two observers composed via observer_tuple:
-///   - assignee_index_observer groups task titles by assignee.
-///   - status_count_observer counts tasks by status ("todo", "in-progress", ...).
-/// Reassigning or re-statusing a task (set_value) updates both indexes via
-/// on_change. Moving a whole subtask subtree to a different parent
-/// (reference::transfer) updates both indexes too — on_erase/on_insert
-/// cascade through every moved descendant, not just the node named in the
-/// call, so the indexes never go stale.
+/**
+ * @file tree_example.cpp
+ * @brief Demonstrates scl::hierarchy::tree<> with composed observers keeping
+ *        two independent indexes in sync across structural moves.
+ *
+ * tree<> routes every structural or payload mutation through an Observer
+ * policy, and observer_tuple<> lets that policy be several independent
+ * observers instead of one. This example maintains a task board — tasks can
+ * have subtasks — with two observers composed via observer_tuple:
+ *   - assignee_index_observer groups task titles by assignee.
+ *   - status_count_observer counts tasks by status ("todo", "in-progress", ...).
+ * Reassigning or re-statusing a task (set_value) updates both indexes via
+ * on_change. Moving a whole subtask subtree to a different parent
+ * (reference::transfer) updates both indexes too — on_erase/on_insert
+ * cascade through every moved descendant, not just the node named in the
+ * call, so the indexes never go stale.
+ */
 
 #include <scl/utility/hierarchy/observer_tuple.h>
 #include <scl/utility/hierarchy/tree.h>

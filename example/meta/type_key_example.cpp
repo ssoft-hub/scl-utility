@@ -1,13 +1,15 @@
-/// @file type_key_example.cpp
-/// @brief Demonstrates a user-side hashable handle for scl::type_key.
-///
-/// scl::type_key ships without hashing support on purpose: the right digest
-/// depends on the consumer. This example shows the safe recipe — a small
-/// copyable handle that caches a digest derived from key.name() only, never
-/// from addresses. Addresses differ between modules for the same type (and
-/// between TUs for same-named anonymous-namespace types), so an address-based
-/// digest would break the "equal keys have equal hashes" contract that any
-/// hash container relies on.
+/**
+ * @file type_key_example.cpp
+ * @brief Demonstrates a user-side hashable handle for scl::type_key.
+ *
+ * scl::type_key ships without hashing support on purpose: the right digest
+ * depends on the consumer. This example shows the safe recipe — a small
+ * copyable handle that caches a digest derived from key.name() only, never
+ * from addresses. Addresses differ between modules for the same type (and
+ * between TUs for same-named anonymous-namespace types), so an address-based
+ * digest would break the "equal keys have equal hashes" contract that any
+ * hash container relies on.
+ */
 
 #include <scl/utility/hash/fnv1a.h>
 #include <scl/utility/meta/type_key.h>

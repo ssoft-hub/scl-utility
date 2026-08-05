@@ -1,17 +1,19 @@
-/// @file any_example.cpp
-/// @brief Demonstrates the ScL Any views — scl::any_view and scl::any_arg.
-///
-/// scl::any_view is to std::any what std::string_view is to std::string: it
-/// refers to an existing value without copying it, so one function can accept a
-/// heterogeneous read-only argument at no allocation cost. It is two pointers
-/// wide and trivially copyable. A typed lvalue forms the "raw" backing (no RTTI,
-/// carries a compile-time type name); a std::any forms the "std::any" backing
-/// (RTTI builds only). scl::any_cast recovers the value by pointer (nullptr on
-/// mismatch, never throws), by copy, or by const reference (zero-copy).
-///
-/// scl::any_arg is the parameter-position companion: it also binds rvalues, is
-/// valid only for the duration of the call, and — unlike the view — grants write
-/// access when the argument was bound to an unqualified object.
+/**
+ * @file any_example.cpp
+ * @brief Demonstrates the ScL Any views — scl::any_view and scl::any_arg.
+ *
+ * scl::any_view is to std::any what std::string_view is to std::string: it
+ * refers to an existing value without copying it, so one function can accept a
+ * heterogeneous read-only argument at no allocation cost. It is two pointers
+ * wide and trivially copyable. A typed lvalue forms the "raw" backing (no RTTI,
+ * carries a compile-time type name); a std::any forms the "std::any" backing
+ * (RTTI builds only). scl::any_cast recovers the value by pointer (nullptr on
+ * mismatch, never throws), by copy, or by const reference (zero-copy).
+ *
+ * scl::any_arg is the parameter-position companion: it also binds rvalues, is
+ * valid only for the duration of the call, and — unlike the view — grants write
+ * access when the argument was bound to an unqualified object.
+ */
 
 #include <scl/utility/any.h>
 #include <scl/utility/preprocessor/rtti.h>

@@ -1,11 +1,13 @@
-/// @file node_example.cpp
-/// @brief Demonstrates scl::hierarchy::node<> with an in-memory organization chart.
-///
-/// node<> owns a tree of typed children and tracks each child's parent
-/// automatically — insertion sets the parent pointer, erase/take clears it.
-/// This example builds a small org chart, queries it with the free algorithm
-/// functions from algorithm.h, and reorganizes it with take() (detach +
-/// reattach) and transfer() (zero-copy subtree move).
+/**
+ * @file node_example.cpp
+ * @brief Demonstrates scl::hierarchy::node<> with an in-memory organization chart.
+ *
+ * node<> owns a tree of typed children and tracks each child's parent
+ * automatically — insertion sets the parent pointer, erase/take clears it.
+ * This example builds a small org chart, queries it with the free algorithm
+ * functions from algorithm.h, and reorganizes it with take() (detach +
+ * reattach) and transfer() (zero-copy subtree move).
+ */
 
 #include <scl/utility/hierarchy/algorithm.h>
 #include <scl/utility/hierarchy/node.h>

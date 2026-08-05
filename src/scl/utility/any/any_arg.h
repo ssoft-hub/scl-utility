@@ -1,8 +1,10 @@
 #pragma once
 
-/// @file any_arg.h
-/// @brief Parameter-only view over a `std::any` or a typed value.
-/// @ingroup scl_utility_any
+/**
+ * @file any_arg.h
+ * @brief Parameter-only view over a `std::any` or a typed value.
+ * @ingroup scl_utility_any
+ */
 
 #include <scl/utility/any/any_view.h>
 #include <scl/utility/attribute/hotcold.h>
@@ -283,228 +285,250 @@ namespace scl
 // Documentation
 // =============================================================================
 
-/// @class scl::any_arg
-/// @ingroup scl_utility_any
-/// @brief Parameter-only view over an object held in a `std::any`, a typed value,
-///        or an existing @ref scl::any_view
-///
-/// `any_arg` is the parameter-position companion of @ref scl::any_view — it binds
-/// lvalues **and** rvalues of any constness, and is valid only for the duration
-/// of the call it is passed into. Use it as a by-value function parameter to
-/// accept a heterogeneous argument — including a temporary — at no allocation
-/// cost. Like a view it is two pointers wide — the referent and its descriptor —
-/// and trivially copyable.
-///
-/// The backings and identity queries are those of @ref scl::any_view — a typed
-/// value forms the RTTI-free raw backing, a `std::any` forms the RTTI-gated
-/// std::any backing, and an `any_view` contributes its referent (the new `any_arg`
-/// refers to the same object). An implicit conversion to `any_view` lets a callee
-/// delegate onward.
-///
-/// @warning Migrate a parameter from `any_view` to `any_arg` by changing its type,
-///          not by adding an `any_arg` overload alongside the existing `any_view`
-///          one: both convert implicitly from the same typed lvalue, so a call
-///          passing one becomes ambiguous between the two overloads.
-///
-/// Access is wider than a view's, and the difference is where the request's
-/// qualification comes from. A view only reads, so its pointer cast always adds
-/// `const` and yields `Type const *`. An argument takes the request as written:
-/// `any_cast<T>(&arg)` yields `T *` and `any_cast<T const>(&arg)` yields `T const *`,
-/// each granted only when the request covers the qualifiers the referent was bound
-/// with — the same coverage rule, with writing simply carrying no qualifier at all.
-/// The reference form spells the same choice with a reference type: `any_cast<T &>`
-/// writes, `any_cast<T const &>` reads.
-///
-/// The coverage rule reaches the handle itself, not just the referent: `arg`'s own
-/// `const` and/or `volatile` are qualifiers the request must also cover. A
-/// `const any_arg` therefore cannot escalate to a write regardless of how unqualified
-/// its referent is, and a `volatile any_arg` requires `volatile` in the request the
-/// same way a `volatile` referent does.
-///
-/// A `const any_arg` thus reads exactly like an @ref scl::any_view, but it is not a
-/// replacement for one: top-level `const` on a by-value parameter is not part of the
-/// function type, so a read-only contract spelled that way is invisible to the
-/// caller, and a `const any_arg` still binds a temporary where the view's deleted
-/// rvalue constructors are a compile error on every compiler.
-///
-/// Write access is unreachable through an `any_view` — the implicit `any_view` to
-/// `any_arg` conversion does not open it, so the view stays read-only.
-///
-/// Storage is discouraged at the API level: there is no default constructor and
-/// no assignment. The copy constructor remains, as by-value parameter passing
-/// requires it. The deleted default constructor is not an emptiness guarantee —
-/// `has_value()` still reports `false` for an empty `std::any` or a referent
-/// adopted from an empty `any_view` — it rules out the one value nothing could
-/// ever fill: with no assignment, a default-constructed `any_arg` would stay
-/// empty forever.
-///
-/// Unlike a view's, an argument's casts are constant-evaluable on the C++20 baseline,
-/// where a view's wait for P2738 (C++26). The cast reaches the referent through an
-/// object the caller materialises per binding, so the capability is bounded by the
-/// lifetime an argument already has, and it costs no width: that object is a
-/// descriptor too, and rides in the pointer a view already spends on one.
-///
-/// @note Constant evaluation therefore answers for an argument that is a *parameter*.
-///       For an `any_arg` that is anything else — a local variable, a member, an
-///       element of an aggregate — a cast, and an identity query with it, stops during
-///       constant evaluation with a diagnostic rather than answering wrongly. There is
-///       no `constexpr any_arg` *variable* either, and the std::any backing and a
-///       referent adopted from an `any_view` keep run-time casts, as the view's are.
-///
-/// @note None of that reaches run time, where the descriptor is the static one: every
-///       position works, every query answers, and the cost is a view's.
-///
-/// @note Nor does any of it outlive the baseline that forced it. Where `__cpp_constexpr`
-///       reports P2738 (C++26), the header declares the plain binding a view makes, the
-///       mechanism is not compiled at all, and every restriction listed above lifts:
-///       a cast then folds for an `any_arg` in any position, over a referent adopted
-///       from an `any_view`, and at namespace scope on every compiler. Nothing has to
-///       change at the call site, and neither the width nor the layout of this type
-///       depends on the standard — only the declaration of a constructor parameter no
-///       caller ever passes, so a binary must still be built against one `-std`
-///       throughout, as one built against a standard library is.
-///
-/// @warning An `any_arg` does not own or extend the lifetime of its referent.
-///          Bound to a temporary, the referent dies at the end of the full
-///          expression containing the call — keeping the `any_arg` (or an
-///          `any_view` converted from it) beyond the call dangles. Constructor
-///          parameters are lifetime-bound (@ref SCL_LIFETIMEBOUND), so Clang
-///          reports an `any_arg` escaping the scope of its referent directly
-///          (a local variable, a return statement). That diagnostic does not
-///          reach through an intervening container — `std::vector<any_arg>`,
-///          `std::optional<any_arg>` — so storing one there compiles silently
-///          and dangles the moment the original argument's storage is reused.
-///          To keep the value, copy it out with @ref scl::any_cast.
-///
-/// @par Example
-/// @code
-/// void foo(scl::any_arg value)
-/// {
-///     if (auto const * text = scl::any_cast<std::string>(&value))
-///         use(*text);                       // no copy
-///     inner(value);                         // delegate to void inner(scl::any_view)
-/// }
-///
-/// std::string text{"Hello Any!"};
-/// foo(text);                                // lvalue
-/// foo(std::string{"temporary"});            // rvalue — outlives the call, OK
-/// foo(std::any{text});                      // temporary std::any (RTTI builds)
-/// @endcode
-///
-/// @see scl::any_view — the storable companion
-/// @see scl::any_switch — a branch chain over the same subject, one branch per type
+/**
+ * @class scl::any_arg
+ * @ingroup scl_utility_any
+ * @brief Parameter-only view over an object held in a `std::any`, a typed value,
+ *        or an existing @ref scl::any_view
+ *
+ * `any_arg` is the parameter-position companion of @ref scl::any_view — it binds
+ * lvalues **and** rvalues of any constness, and is valid only for the duration
+ * of the call it is passed into. Use it as a by-value function parameter to
+ * accept a heterogeneous argument — including a temporary — at no allocation
+ * cost. Like a view it is two pointers wide — the referent and its descriptor —
+ * and trivially copyable.
+ *
+ * The backings and identity queries are those of @ref scl::any_view — a typed
+ * value forms the RTTI-free raw backing, a `std::any` forms the RTTI-gated
+ * std::any backing, and an `any_view` contributes its referent (the new `any_arg`
+ * refers to the same object). An implicit conversion to `any_view` lets a callee
+ * delegate onward.
+ *
+ * @warning Migrate a parameter from `any_view` to `any_arg` by changing its type,
+ *          not by adding an `any_arg` overload alongside the existing `any_view`
+ *          one: both convert implicitly from the same typed lvalue, so a call
+ *          passing one becomes ambiguous between the two overloads.
+ *
+ * Access is wider than a view's, and the difference is where the request's
+ * qualification comes from. A view only reads, so its pointer cast always adds
+ * `const` and yields `Type const *`. An argument takes the request as written:
+ * `any_cast<T>(&arg)` yields `T *` and `any_cast<T const>(&arg)` yields `T const *`,
+ * each granted only when the request covers the qualifiers the referent was bound
+ * with — the same coverage rule, with writing simply carrying no qualifier at all.
+ * The reference form spells the same choice with a reference type: `any_cast<T &>`
+ * writes, `any_cast<T const &>` reads.
+ *
+ * The coverage rule reaches the handle itself, not just the referent: `arg`'s own
+ * `const` and/or `volatile` are qualifiers the request must also cover. A
+ * `const any_arg` therefore cannot escalate to a write regardless of how unqualified
+ * its referent is, and a `volatile any_arg` requires `volatile` in the request the
+ * same way a `volatile` referent does.
+ *
+ * A `const any_arg` thus reads exactly like an @ref scl::any_view, but it is not a
+ * replacement for one: top-level `const` on a by-value parameter is not part of the
+ * function type, so a read-only contract spelled that way is invisible to the
+ * caller, and a `const any_arg` still binds a temporary where the view's deleted
+ * rvalue constructors are a compile error on every compiler.
+ *
+ * Write access is unreachable through an `any_view` — the implicit `any_view` to
+ * `any_arg` conversion does not open it, so the view stays read-only.
+ *
+ * Storage is discouraged at the API level: there is no default constructor and
+ * no assignment. The copy constructor remains, as by-value parameter passing
+ * requires it. The deleted default constructor is not an emptiness guarantee —
+ * `has_value()` still reports `false` for an empty `std::any` or a referent
+ * adopted from an empty `any_view` — it rules out the one value nothing could
+ * ever fill: with no assignment, a default-constructed `any_arg` would stay
+ * empty forever.
+ *
+ * Unlike a view's, an argument's casts are constant-evaluable on the C++20 baseline,
+ * where a view's wait for P2738 (C++26). The cast reaches the referent through an
+ * object the caller materialises per binding, so the capability is bounded by the
+ * lifetime an argument already has, and it costs no width: that object is a
+ * descriptor too, and rides in the pointer a view already spends on one.
+ *
+ * @note Constant evaluation therefore answers for an argument that is a *parameter*.
+ *       For an `any_arg` that is anything else — a local variable, a member, an
+ *       element of an aggregate — a cast, and an identity query with it, stops during
+ *       constant evaluation with a diagnostic rather than answering wrongly. There is
+ *       no `constexpr any_arg` *variable* either, and the std::any backing and a
+ *       referent adopted from an `any_view` keep run-time casts, as the view's are.
+ *
+ * @note None of that reaches run time, where the descriptor is the static one: every
+ *       position works, every query answers, and the cost is a view's.
+ *
+ * @note Nor does any of it outlive the baseline that forced it. Where `__cpp_constexpr`
+ *       reports P2738 (C++26), the header declares the plain binding a view makes, the
+ *       mechanism is not compiled at all, and every restriction listed above lifts:
+ *       a cast then folds for an `any_arg` in any position, over a referent adopted
+ *       from an `any_view`, and at namespace scope on every compiler. Nothing has to
+ *       change at the call site, and neither the width nor the layout of this type
+ *       depends on the standard — only the declaration of a constructor parameter no
+ *       caller ever passes, so a binary must still be built against one `-std`
+ *       throughout, as one built against a standard library is.
+ *
+ * @warning An `any_arg` does not own or extend the lifetime of its referent.
+ *          Bound to a temporary, the referent dies at the end of the full
+ *          expression containing the call — keeping the `any_arg` (or an
+ *          `any_view` converted from it) beyond the call dangles. Constructor
+ *          parameters are lifetime-bound (@ref SCL_LIFETIMEBOUND), so Clang
+ *          reports an `any_arg` escaping the scope of its referent directly
+ *          (a local variable, a return statement). That diagnostic does not
+ *          reach through an intervening container — `std::vector<any_arg>`,
+ *          `std::optional<any_arg>` — so storing one there compiles silently
+ *          and dangles the moment the original argument's storage is reused.
+ *          To keep the value, copy it out with @ref scl::any_cast.
+ *
+ * @par Example
+ * @code
+ * void foo(scl::any_arg value)
+ * {
+ *     if (auto const * text = scl::any_cast<std::string>(&value))
+ *         use(*text);                       // no copy
+ *     inner(value);                         // delegate to void inner(scl::any_view)
+ * }
+ *
+ * std::string text{"Hello Any!"};
+ * foo(text);                                // lvalue
+ * foo(std::string{"temporary"});            // rvalue — outlives the call, OK
+ * foo(std::any{text});                      // temporary std::any (RTTI builds)
+ * @endcode
+ *
+ * @see scl::any_view — the storable companion
+ * @see scl::any_switch — a branch chain over the same subject, one branch per type
+ */
 
-/// @typedef scl::any_arg::name
-/// @brief Type-name string produced by @ref scl::any_arg::type_name.
+/**
+ * @typedef scl::any_arg::name
+ * @brief Type-name string produced by @ref scl::any_arg::type_name.
+ */
 
-/// @fn scl::any_arg::any_arg(Any && value)
-/// @brief Constructs a view over the object held in @p value without copying it.
-///
-/// Binds a `std::any` of any constness — a temporary included, since the argument
-/// outlives the call — and records that constness, so a non-`const` `std::any`
-/// answers write requests for its boxed object. A `volatile std::any` does not
-/// participate: `std::any` has no volatile-qualified members, so nothing could
-/// reach the object afterwards.
-///
-/// @tparam Any    Deduced (forwarding) reference type of the `std::any`.
-/// @param  value  The `std::any` to view. Only available when RTTI is enabled.
+/**
+ * @fn scl::any_arg::any_arg(Any && value)
+ * @brief Constructs a view over the object held in @p value without copying it.
+ *
+ * Binds a `std::any` of any constness — a temporary included, since the argument
+ * outlives the call — and records that constness, so a non-`const` `std::any`
+ * answers write requests for its boxed object. A `volatile std::any` does not
+ * participate: `std::any` has no volatile-qualified members, so nothing could
+ * reach the object afterwards.
+ *
+ * @tparam Any    Deduced (forwarding) reference type of the `std::any`.
+ * @param  value  The `std::any` to view. Only available when RTTI is enabled.
+ */
 
-/// @fn scl::any_arg::any_arg(any_view const & view)
-/// @brief Adopts the referent of an existing view.
-///
-/// A view promises read access only, so the referent is adopted narrowed to it:
-/// write requests are refused however the object was originally bound.
-///
-/// @param view  The view whose referent to adopt; the `any_arg` refers to the
-///              same object, not to the view.
+/**
+ * @fn scl::any_arg::any_arg(any_view const & view)
+ * @brief Adopts the referent of an existing view.
+ *
+ * A view promises read access only, so the referent is adopted narrowed to it:
+ * write requests are refused however the object was originally bound.
+ *
+ * @param view  The view whose referent to adopt; the `any_arg` refers to the
+ *              same object, not to the view.
+ */
 
-/// @fn scl::any_arg::any_arg(Type && object)
-/// @brief Constructs a view over a typed value without copying it.
-///
-/// Binds lvalues and rvalues of any constness — the parameter-only contract makes
-/// a temporary safe, as it outlives the call — and excludes `std::any` and the
-/// ScL Any views themselves. The object is referenced in place; its type is
-/// captured for later @ref scl::any_cast.
-///
-/// @tparam Type  Deduced (forwarding) reference type of the viewed value.
-/// @param  object  The value to view.
+/**
+ * @fn scl::any_arg::any_arg(Type && object)
+ * @brief Constructs a view over a typed value without copying it.
+ *
+ * Binds lvalues and rvalues of any constness — the parameter-only contract makes
+ * a temporary safe, as it outlives the call — and excludes `std::any` and the
+ * ScL Any views themselves. The object is referenced in place; its type is
+ * captured for later @ref scl::any_cast.
+ *
+ * @tparam Type  Deduced (forwarding) reference type of the viewed value.
+ * @param  object  The value to view.
+ */
 
-/// @fn scl::any_arg::operator any_view() const
-/// @brief Converts to an @ref scl::any_view over the same referent, so a callee
-///        can delegate onward.
-///
-/// The view receives the `const`-qualified form of the binding, so write access
-/// does not survive the round trip through a view.
+/**
+ * @fn scl::any_arg::operator any_view() const
+ * @brief Converts to an @ref scl::any_view over the same referent, so a callee
+ *        can delegate onward.
+ *
+ * The view receives the `const`-qualified form of the binding, so write access
+ * does not survive the round trip through a view.
+ */
 
-/// @fn scl::any_arg::has_value() const
-/// @brief Reports whether the view refers to a live value.
-/// @return `false` for a view over an empty `std::any` or an argument adopted
-///         from an empty `any_view`; `true` otherwise.
+/**
+ * @fn scl::any_arg::has_value() const
+ * @brief Reports whether the view refers to a live value.
+ * @return `false` for a view over an empty `std::any` or an argument adopted
+ *         from an empty `any_view`; `true` otherwise.
+ */
 
-/// @fn scl::any_arg::type_name() const
-/// @brief Returns the compile-time name of the viewed type.
-/// @return `type_name<T>()` for the raw backing; `type_name<std::any>()` for the
-///         std::any backing, which names the backing rather than the boxed type.
+/**
+ * @fn scl::any_arg::type_name() const
+ * @brief Returns the compile-time name of the viewed type.
+ * @return `type_name<T>()` for the raw backing; `type_name<std::any>()` for the
+ *         std::any backing, which names the backing rather than the boxed type.
+ */
 
-/// @fn scl::any_arg::type_key() const
-/// @brief Returns the identity key of the viewed type.
-/// @return The @ref scl::type_key of the viewed type — the very object
-///         @ref scl::type_key_of returns for it, so comparison is a pointer
-///         comparison; `nullptr` for an argument that adopted the referent of an
-///         empty @ref scl::any_view, exactly as @ref scl::any_view::type_key.
+/**
+ * @fn scl::any_arg::type_key() const
+ * @brief Returns the identity key of the viewed type.
+ * @return The @ref scl::type_key of the viewed type — the very object
+ *         @ref scl::type_key_of returns for it, so comparison is a pointer
+ *         comparison; `nullptr` for an argument that adopted the referent of an
+ *         empty @ref scl::any_view, exactly as @ref scl::any_view::type_key.
+ */
 
-/// @fn scl::any_cast(Wrapper * arg)
-/// @ingroup scl_utility_any
-/// @brief Returns a `Type *` to the viewed object when the request is granted, else
-///        null.
-///
-/// Unlike @ref scl::any_view, an argument takes the request literally: `Type` states
-/// the qualification wanted and the result is `Type *`. So `any_cast<T>` asks to
-/// write and `any_cast<T const>` asks to read, and either is granted only when the
-/// request carries every cv-qualifier the referent was bound with — *and* every
-/// cv-qualifier of `arg` itself. A `const any_arg` cannot escalate to a write the
-/// handle does not carry, regardless of how unqualified the referent is; a
-/// `volatile any_arg` likewise requires `Type` to carry `volatile`.
-///
-/// @code
-/// int *       w = scl::any_cast<int>(&arg);       // writable referent, non-const handle
-/// int const * r = scl::any_cast<int const>(&arg); // also a const referent or handle
-/// @endcode
-///
-/// The std::any backing follows the same rule: a write reaches the boxed object when
-/// the `std::any` itself was bound non-`const`.
-///
-/// @tparam Type     The requested object type with its qualification; a reference
-///                  type is rejected.
-/// @tparam Wrapper  Deduced `any_arg`, possibly `const`- and/or `volatile`-qualified —
-///                  that qualification is itself a requirement the request must cover.
-/// @param  arg  The argument view to read (may be null).
-/// @return `Type *` to the viewed object on a type match whose qualifiers the request
-///         covers; `nullptr` otherwise, or on a null pointer. Never throws. The
-///         pointer refers to the viewed object, so it stays valid while that object
-///         lives.
+/**
+ * @fn scl::any_cast(Wrapper * arg)
+ * @ingroup scl_utility_any
+ * @brief Returns a `Type *` to the viewed object when the request is granted, else
+ *        null.
+ *
+ * Unlike @ref scl::any_view, an argument takes the request literally: `Type` states
+ * the qualification wanted and the result is `Type *`. So `any_cast<T>` asks to
+ * write and `any_cast<T const>` asks to read, and either is granted only when the
+ * request carries every cv-qualifier the referent was bound with — *and* every
+ * cv-qualifier of `arg` itself. A `const any_arg` cannot escalate to a write the
+ * handle does not carry, regardless of how unqualified the referent is; a
+ * `volatile any_arg` likewise requires `Type` to carry `volatile`.
+ *
+ * @code
+ * int *       w = scl::any_cast<int>(&arg);       // writable referent, non-const handle
+ * int const * r = scl::any_cast<int const>(&arg); // also a const referent or handle
+ * @endcode
+ *
+ * The std::any backing follows the same rule: a write reaches the boxed object when
+ * the `std::any` itself was bound non-`const`.
+ *
+ * @tparam Type     The requested object type with its qualification; a reference
+ *                  type is rejected.
+ * @tparam Wrapper  Deduced `any_arg`, possibly `const`- and/or `volatile`-qualified —
+ *                  that qualification is itself a requirement the request must cover.
+ * @param  arg  The argument view to read (may be null).
+ * @return `Type *` to the viewed object on a type match whose qualifiers the request
+ *         covers; `nullptr` otherwise, or on a null pointer. Never throws. The
+ *         pointer refers to the viewed object, so it stays valid while that object
+ *         lives.
+ */
 
-/// @fn scl::any_cast(Argument & arg)
-/// @ingroup scl_utility_any
-/// @brief Returns the viewed object by value, by `const` reference, or by mutable
-///        reference, or throws.
-///
-/// Three forms share this shape, told apart by @p Type: an object type copies the
-/// value out, a `const` lvalue reference binds it without copying, and a non-`const`
-/// lvalue reference writes through it. Reading supplies the `const` itself, exactly
-/// as @ref scl::any_view does; writing is granted under the coverage rule stated on
-/// the pointer form.
-///
-/// The argument type is deduced and constrained to `any_arg` itself: an `any_view`
-/// converts to an `any_arg` implicitly, and admitting that conversion here would
-/// hand write access to a view that promises none. Spelling the reading forms for
-/// `any_arg` rather than leaving them to that conversion is also what keeps them
-/// usable in constant evaluation, which the conversion to a view gives up.
-///
-/// @tparam Type      The requested result type — an object type, a `const` lvalue
-///                   reference, or a non-`const` lvalue reference.
-/// @tparam Argument  Deduced; must be `scl::any_arg`.
-/// @param  arg  The argument view to read or write through.
-/// @return The viewed object as @p Type.
-/// @throws scl::bad_any_cast  If the viewed type does not match, or the request does
-///                            not cover the qualifiers of the referent or the handle.
+/**
+ * @fn scl::any_cast(Argument & arg)
+ * @ingroup scl_utility_any
+ * @brief Returns the viewed object by value, by `const` reference, or by mutable
+ *        reference, or throws.
+ *
+ * Three forms share this shape, told apart by @p Type: an object type copies the
+ * value out, a `const` lvalue reference binds it without copying, and a non-`const`
+ * lvalue reference writes through it. Reading supplies the `const` itself, exactly
+ * as @ref scl::any_view does; writing is granted under the coverage rule stated on
+ * the pointer form.
+ *
+ * The argument type is deduced and constrained to `any_arg` itself: an `any_view`
+ * converts to an `any_arg` implicitly, and admitting that conversion here would
+ * hand write access to a view that promises none. Spelling the reading forms for
+ * `any_arg` rather than leaving them to that conversion is also what keeps them
+ * usable in constant evaluation, which the conversion to a view gives up.
+ *
+ * @tparam Type      The requested result type — an object type, a `const` lvalue
+ *                   reference, or a non-`const` lvalue reference.
+ * @tparam Argument  Deduced; must be `scl::any_arg`.
+ * @param  arg  The argument view to read or write through.
+ * @return The viewed object as @p Type.
+ * @throws scl::bad_any_cast  If the viewed type does not match, or the request does
+ *                            not cover the qualifiers of the referent or the handle.
+ */

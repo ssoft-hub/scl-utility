@@ -1,8 +1,10 @@
 #pragma once
 
-/// @file tree.h
-/// @brief Observer-aware multi-root tree.
-/// @ingroup scl_utility_hierarchy
+/**
+ * @file tree.h
+ * @brief Observer-aware multi-root tree.
+ * @ingroup scl_utility_hierarchy
+ */
 
 #include <scl/utility/hierarchy/algorithm.h>
 #include <scl/utility/hierarchy/node.h>
@@ -13,14 +15,16 @@
 
 namespace scl::hierarchy::concepts
 {
-    /// @brief Observer policy usable by @ref scl::hierarchy::tree.
-    /// @ingroup scl_utility_hierarchy
-    ///
-    /// A conforming observer receives the four notifications the tree routes every
-    /// structural or payload mutation through.
-    ///
-    /// @tparam Observer  The observer type (typically `Observer<tree>`).
-    /// @tparam Tree      The tree instantiation whose iterator and payload types are used.
+    /**
+     * @brief Observer policy usable by @ref scl::hierarchy::tree.
+     * @ingroup scl_utility_hierarchy
+     *
+     * A conforming observer receives the four notifications the tree routes every
+     * structural or payload mutation through.
+     *
+     * @tparam Observer  The observer type (typically `Observer<tree>`).
+     * @tparam Tree      The tree instantiation whose iterator and payload types are used.
+     */
     template <typename Observer, typename Tree>
     concept observer =
         requires(Observer & obs, Tree::iterator item, Tree::const_iterator const_item, Tree::const_payload_reference value) {
@@ -62,11 +66,13 @@ namespace scl::hierarchy::concepts
 
 namespace scl::hierarchy
 {
-    /// @brief Observer-aware multi-root tree.
-    /// @ingroup scl_utility_hierarchy
-    /// @tparam Payload   Payload type stored in each node.
-    /// @tparam Observer  Observer policy template instantiated as `Observer<tree>`.
-    /// @tparam Allocator Allocator template forwarded to the underlying node list.
+    /**
+     * @brief Observer-aware multi-root tree.
+     * @ingroup scl_utility_hierarchy
+     * @tparam Payload   Payload type stored in each node.
+     * @tparam Observer  Observer policy template instantiated as `Observer<tree>`.
+     * @tparam Allocator Allocator template forwarded to the underlying node list.
+     */
     template <typename Payload, template <typename> class Observer, template <typename> class Allocator = ::std::allocator>
     class tree
     {
@@ -1151,523 +1157,693 @@ namespace scl::hierarchy
 // tree — class overview
 // -----------------------------------------------------------------------------
 
-/// @class scl::hierarchy::tree
-/// @ingroup scl_utility_hierarchy
-/// @brief Owns a root-level list of `node<Payload, Allocator>` instances and
-///        routes every structural or payload mutation through an `Observer` policy.
-///
-/// "Multi-root" means exactly this: the tree holds a *list* of root nodes (a
-/// forest), not a single mandatory root — `push_back`/`push_front` each add an
-/// independent root subtree.
-///
-/// Nodes are never accessed directly; every access goes through a `reference`
-/// (mutable) or `const_reference` (read-only) proxy, which pairs a reference to
-/// the tree with a reference to a node — so a node cannot be mutated without the
-/// tree observing it. Composing several observers into one is `observer_tuple`
-/// (`observer_tuple.h`).
-///
-/// The `Observer` template parameter is checked against
-/// @ref scl::hierarchy::concepts::observer at instantiation — a non-conforming
-/// type fails to compile with a clear message, not a wall of substitution errors.
-/// A conforming observer implements:
-/// @code
-/// template <typename Tree>
-/// struct my_observer {
-///     void on_insert(typename Tree::iterator);              // after a node is inserted
-///     void on_erase (typename Tree::const_iterator);        // before a node is erased
-///     void on_clear ();                                     // before the tree is cleared
-///     void on_change(typename Tree::const_payload_reference old_value,
-///                    typename Tree::const_payload_reference new_value);
-/// };
-/// @endcode
-/// `on_insert` fires top-down (a parent before its children, when a subtree is
-/// inserted); `on_erase` fires bottom-up (the deepest descendant first).
-///
-/// @tparam Payload   Payload type stored in each node.
-/// @tparam Observer  Observer policy template instantiated as `Observer<tree>`.
-/// @tparam Allocator Allocator template forwarded to the underlying node list.
-///
-/// @par A simple observer
-/// @code
-/// template <typename Tree>
-/// struct logger {
-///     void on_insert(typename Tree::iterator it)
-///     { std::cout << "insert: " << (*it).value() << '\n'; }
-///     void on_erase(typename Tree::const_iterator it)
-///     { std::cout << "erase: " << (*it).value() << '\n'; }
-///     void on_clear() { std::cout << "clear\n"; }
-///     void on_change(int old_v, int new_v)
-///     { std::cout << "change: " << old_v << " -> " << new_v << '\n'; }
-/// };
-///
-/// scl::hierarchy::tree<int, logger> t;
-/// auto root = t.push_back(1);    // insert: 1
-/// (*root).push_back(2);          // insert: 2
-/// (*root).set_value(10);         // change: 1 -> 10
-/// t.clear();                     // clear
-/// @endcode
-///
-/// @par Querying the hierarchy through a reference
-/// The free algorithm functions in `algorithm.h` find `reference`/`const_reference`
-/// via ADL — call them directly, no unwrapping needed:
-/// @code
-/// scl::hierarchy::tree<std::string, logger> t;
-/// auto root  = t.push_back("root");
-/// auto child = (*root).push_back("child");
-/// auto grand = (*child).push_back("grand");
-///
-/// assert(scl::hierarchy::is_ancestor_of(*root, *grand));
-/// assert(scl::hierarchy::are_sibling(*child, *child));
-/// @endcode
-///
-/// @par remove() detaches by identity, from parent or root list
-/// @code
-/// scl::hierarchy::tree<int, logger> t;
-/// auto root  = t.push_back(1);          // insert: 1
-/// auto child = (*root).push_back(2);    // insert: 2
-///
-/// t.remove(child);    // child has a parent -> erased through (*root), not through t
-/// assert((*root).empty());
-///
-/// t.remove(root);      // root has no parent -> erased from the root list directly
-/// assert(t.empty());
-/// @endcode
-///
-/// @note A cross-tree `transfer()` fires `on_erase` on the source tree and
-///       `on_insert` on the destination tree.
-/// @note `reference`/`const_reference` are proxies, not owning handles — they
-///       stay valid exactly as long as the underlying node does.
+/**
+ * @class scl::hierarchy::tree
+ * @ingroup scl_utility_hierarchy
+ * @brief Owns a root-level list of `node<Payload, Allocator>` instances and
+ *        routes every structural or payload mutation through an `Observer` policy.
+ *
+ * "Multi-root" means exactly this: the tree holds a *list* of root nodes (a
+ * forest), not a single mandatory root — `push_back`/`push_front` each add an
+ * independent root subtree.
+ *
+ * Nodes are never accessed directly; every access goes through a `reference`
+ * (mutable) or `const_reference` (read-only) proxy, which pairs a reference to
+ * the tree with a reference to a node — so a node cannot be mutated without the
+ * tree observing it. Composing several observers into one is `observer_tuple`
+ * (`observer_tuple.h`).
+ *
+ * The `Observer` template parameter is checked against
+ * @ref scl::hierarchy::concepts::observer at instantiation — a non-conforming
+ * type fails to compile with a clear message, not a wall of substitution errors.
+ * A conforming observer implements:
+ * @code
+ * template <typename Tree>
+ * struct my_observer {
+ *     void on_insert(typename Tree::iterator);              // after a node is inserted
+ *     void on_erase (typename Tree::const_iterator);        // before a node is erased
+ *     void on_clear ();                                     // before the tree is cleared
+ *     void on_change(typename Tree::const_payload_reference old_value,
+ *                    typename Tree::const_payload_reference new_value);
+ * };
+ * @endcode
+ * `on_insert` fires top-down (a parent before its children, when a subtree is
+ * inserted); `on_erase` fires bottom-up (the deepest descendant first).
+ *
+ * @tparam Payload   Payload type stored in each node.
+ * @tparam Observer  Observer policy template instantiated as `Observer<tree>`.
+ * @tparam Allocator Allocator template forwarded to the underlying node list.
+ *
+ * @par A simple observer
+ * @code
+ * template <typename Tree>
+ * struct logger {
+ *     void on_insert(typename Tree::iterator it)
+ *     { std::cout << "insert: " << (*it).value() << '\n'; }
+ *     void on_erase(typename Tree::const_iterator it)
+ *     { std::cout << "erase: " << (*it).value() << '\n'; }
+ *     void on_clear() { std::cout << "clear\n"; }
+ *     void on_change(int old_v, int new_v)
+ *     { std::cout << "change: " << old_v << " -> " << new_v << '\n'; }
+ * };
+ *
+ * scl::hierarchy::tree<int, logger> t;
+ * auto root = t.push_back(1);    // insert: 1
+ * (*root).push_back(2);          // insert: 2
+ * (*root).set_value(10);         // change: 1 -> 10
+ * t.clear();                     // clear
+ * @endcode
+ *
+ * @par Querying the hierarchy through a reference
+ * The free algorithm functions in `algorithm.h` find `reference`/`const_reference`
+ * via ADL — call them directly, no unwrapping needed:
+ * @code
+ * scl::hierarchy::tree<std::string, logger> t;
+ * auto root  = t.push_back("root");
+ * auto child = (*root).push_back("child");
+ * auto grand = (*child).push_back("grand");
+ *
+ * assert(scl::hierarchy::is_ancestor_of(*root, *grand));
+ * assert(scl::hierarchy::are_sibling(*child, *child));
+ * @endcode
+ *
+ * @par remove() detaches by identity, from parent or root list
+ * @code
+ * scl::hierarchy::tree<int, logger> t;
+ * auto root  = t.push_back(1);          // insert: 1
+ * auto child = (*root).push_back(2);    // insert: 2
+ *
+ * t.remove(child);    // child has a parent -> erased through (*root), not through t
+ * assert((*root).empty());
+ *
+ * t.remove(root);      // root has no parent -> erased from the root list directly
+ * assert(t.empty());
+ * @endcode
+ *
+ * @note A cross-tree `transfer()` fires `on_erase` on the source tree and
+ *       `on_insert` on the destination tree.
+ * @note `reference`/`const_reference` are proxies, not owning handles — they
+ *       stay valid exactly as long as the underlying node does.
+ */
 
 // -----------------------------------------------------------------------------
 // tree — type aliases
 // -----------------------------------------------------------------------------
 
-/// @typedef scl::hierarchy::tree::payload
-/// @brief Payload type stored in each node (same as template parameter `Payload`).
+/**
+ * @typedef scl::hierarchy::tree::payload
+ * @brief Payload type stored in each node (same as template parameter `Payload`).
+ */
 
-/// @typedef scl::hierarchy::tree::observer
-/// @brief The observer type, `Observer<tree>`.
+/**
+ * @typedef scl::hierarchy::tree::observer
+ * @brief The observer type, `Observer<tree>`.
+ */
 
-/// @typedef scl::hierarchy::tree::node
-/// @brief The underlying `scl::hierarchy::node<Payload, Allocator>` type.
+/**
+ * @typedef scl::hierarchy::tree::node
+ * @brief The underlying `scl::hierarchy::node<Payload, Allocator>` type.
+ */
 
-/// @typedef scl::hierarchy::tree::value_type
-/// @brief STL element type of the root list — `reference`, not `payload`.
+/**
+ * @typedef scl::hierarchy::tree::value_type
+ * @brief STL element type of the root list — `reference`, not `payload`.
+ */
 
 // -----------------------------------------------------------------------------
 // tree — observer access
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::get_observer()
-/// @brief Returns a mutable reference to the observer.
+/**
+ * @fn scl::hierarchy::tree::get_observer()
+ * @brief Returns a mutable reference to the observer.
+ */
 
-/// @fn scl::hierarchy::tree::get_observer() const
-/// @brief Returns an immutable reference to the observer.
+/**
+ * @fn scl::hierarchy::tree::get_observer() const
+ * @brief Returns an immutable reference to the observer.
+ */
 
 // -----------------------------------------------------------------------------
 // tree — root queries
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::empty() const
-/// @brief Returns `true` when the tree has no root nodes.
+/**
+ * @fn scl::hierarchy::tree::empty() const
+ * @brief Returns `true` when the tree has no root nodes.
+ */
 
-/// @fn scl::hierarchy::tree::size() const
-/// @brief Returns the number of root nodes.
+/**
+ * @fn scl::hierarchy::tree::size() const
+ * @brief Returns the number of root nodes.
+ */
 
-/// @fn scl::hierarchy::tree::front()
-/// @brief Returns a proxy over the first root node.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::front()
+ * @brief Returns a proxy over the first root node.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::front() const
-/// @brief Returns a proxy over the first root node.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::front() const
+ * @brief Returns a proxy over the first root node.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::back()
-/// @brief Returns a proxy over the last root node.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::back()
+ * @brief Returns a proxy over the last root node.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::back() const
-/// @brief Returns a proxy over the last root node.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::back() const
+ * @brief Returns a proxy over the last root node.
+ * @pre `!empty()`
+ */
 
 // -----------------------------------------------------------------------------
 // tree — root insertion
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::push_back(Argument &&)
-/// @brief Appends a new root at the back.
-/// @return Iterator to the appended root; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::push_back(Argument &&)
+ * @brief Appends a new root at the back.
+ * @return Iterator to the appended root; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::emplace_back(Arguments &&...)
-/// @brief Constructs a root payload in-place at the back.
-/// @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::emplace_back(Arguments &&...)
+ * @brief Constructs a root payload in-place at the back.
+ * @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::push_front(Argument &&)
-/// @brief Prepends a new root at the front.
-/// @return Iterator to the prepended root; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::push_front(Argument &&)
+ * @brief Prepends a new root at the front.
+ * @return Iterator to the prepended root; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::emplace_front(Arguments &&...)
-/// @brief Constructs a root payload in-place at the front.
-/// @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::emplace_front(Arguments &&...)
+ * @brief Constructs a root payload in-place at the front.
+ * @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::insert(const_iterator, Argument &&)
-/// @brief Inserts a new root at @p where.
-/// @return Iterator to the inserted root; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::insert(const_iterator, Argument &&)
+ * @brief Inserts a new root at @p where.
+ * @return Iterator to the inserted root; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::emplace(const_iterator, Arguments &&...)
-/// @brief Constructs a root payload in-place at @p where.
-/// @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::emplace(const_iterator, Arguments &&...)
+ * @brief Constructs a root payload in-place at @p where.
+ * @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
+ */
 
 // -----------------------------------------------------------------------------
 // tree — root removal
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::pop_back()
-/// @brief Removes the last root.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::pop_back()
+ * @brief Removes the last root.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::pop_front()
-/// @brief Removes the first root.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::pop_front()
+ * @brief Removes the first root.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::erase(Iterator)
-/// @brief Erases the root at @p position; notifies the observer (`on_erase`,
-///        bottom-up).
-/// @pre    @p position has no parent (it is a root).
-/// @return Iterator to the root that followed the erased one, or `end()`.
+/**
+ * @fn scl::hierarchy::tree::erase(Iterator)
+ * @brief Erases the root at @p position; notifies the observer (`on_erase`,
+ *        bottom-up).
+ * @pre    @p position has no parent (it is a root).
+ * @return Iterator to the root that followed the erased one, or `end()`.
+ */
 
-/// @fn scl::hierarchy::tree::erase(Iterator, Iterator)
-/// @brief Erases roots in [@p first, @p last); notifies the observer (`on_erase`,
-///        bottom-up, once per erased node).
-/// @pre    @p first has no parent (it is a root).
-/// @return Iterator to the root that followed the last erased one, or `end()`.
+/**
+ * @fn scl::hierarchy::tree::erase(Iterator, Iterator)
+ * @brief Erases roots in [@p first, @p last); notifies the observer (`on_erase`,
+ *        bottom-up, once per erased node).
+ * @pre    @p first has no parent (it is a root).
+ * @return Iterator to the root that followed the last erased one, or `end()`.
+ */
 
-/// @fn scl::hierarchy::tree::clear()
-/// @brief Removes all root nodes and their subtrees; notifies the observer
-///        (`on_clear`) — unlike `reference::clear()`, does not fire `on_erase`
-///        per node.
-/// @post `empty()` returns `true`.
+/**
+ * @fn scl::hierarchy::tree::clear()
+ * @brief Removes all root nodes and their subtrees; notifies the observer
+ *        (`on_clear`) — unlike `reference::clear()`, does not fire `on_erase`
+ *        per node.
+ * @post `empty()` returns `true`.
+ */
 
-/// @fn scl::hierarchy::tree::remove(Iterator)
-/// @brief Removes the node at @p position from its parent or the root list —
-///        whichever it currently lives in; the caller doesn't need to know which.
+/**
+ * @fn scl::hierarchy::tree::remove(Iterator)
+ * @brief Removes the node at @p position from its parent or the root list —
+ *        whichever it currently lives in; the caller doesn't need to know which.
+ */
 
 // -----------------------------------------------------------------------------
 // tree — transfer (O(1) splice, root level)
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::transfer(tree &)
-/// @brief Moves all roots of @p from to the back of this tree's root list. O(1).
-///        Cross-tree: fires `on_erase` on the source and `on_insert` on the
-///        destination, once per moved node.
+/**
+ * @fn scl::hierarchy::tree::transfer(tree &)
+ * @brief Moves all roots of @p from to the back of this tree's root list. O(1).
+ *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
+ *        destination, once per moved node.
+ */
 
-/// @fn scl::hierarchy::tree::transfer(const_iterator, tree &)
-/// @brief Moves all roots of @p from to where @p where. O(1).
-///        Cross-tree: fires `on_erase` on the source and `on_insert` on the
-///        destination, once per moved node.
+/**
+ * @fn scl::hierarchy::tree::transfer(const_iterator, tree &)
+ * @brief Moves all roots of @p from to where @p where. O(1).
+ *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
+ *        destination, once per moved node.
+ */
 
-/// @fn scl::hierarchy::tree::transfer(tree &, const_iterator)
-/// @brief Moves the single root at @p first in @p from to the back of this
-///        tree's root list. O(1). Cross-tree: fires `on_erase` on the source and
-///        `on_insert` on the destination.
+/**
+ * @fn scl::hierarchy::tree::transfer(tree &, const_iterator)
+ * @brief Moves the single root at @p first in @p from to the back of this
+ *        tree's root list. O(1). Cross-tree: fires `on_erase` on the source and
+ *        `on_insert` on the destination.
+ */
 
-/// @fn scl::hierarchy::tree::transfer(const_iterator, tree &, const_iterator)
-/// @brief Moves the single root at @p first in @p from to where @p where. O(1).
-///        Cross-tree: fires `on_erase` on the source and `on_insert` on the
-///        destination.
+/**
+ * @fn scl::hierarchy::tree::transfer(const_iterator, tree &, const_iterator)
+ * @brief Moves the single root at @p first in @p from to where @p where. O(1).
+ *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
+ *        destination.
+ */
 
-/// @fn scl::hierarchy::tree::transfer(tree &, const_iterator, const_iterator)
-/// @brief Moves roots in [@p first, @p last) from @p from to the back of this
-///        tree's root list. O(distance). Cross-tree: fires `on_erase` on the
-///        source and `on_insert` on the destination, once per moved node.
+/**
+ * @fn scl::hierarchy::tree::transfer(tree &, const_iterator, const_iterator)
+ * @brief Moves roots in [@p first, @p last) from @p from to the back of this
+ *        tree's root list. O(distance). Cross-tree: fires `on_erase` on the
+ *        source and `on_insert` on the destination, once per moved node.
+ */
 
-/// @fn scl::hierarchy::tree::transfer(const_iterator, tree &, const_iterator, const_iterator)
-/// @brief Moves roots in [@p first, @p last) from @p from to where @p where.
-///        O(distance). Cross-tree: fires `on_erase` on the source and
-///        `on_insert` on the destination, once per moved node.
+/**
+ * @fn scl::hierarchy::tree::transfer(const_iterator, tree &, const_iterator, const_iterator)
+ * @brief Moves roots in [@p first, @p last) from @p from to where @p where.
+ *        O(distance). Cross-tree: fires `on_erase` on the source and
+ *        `on_insert` on the destination, once per moved node.
+ */
 
-/// @par Transfer between references
-/// @code
-/// scl::hierarchy::tree<int, logger> t;
-/// auto r1 = t.push_back(0);
-/// auto r2 = t.push_back(0);
-/// (*r1).push_back(1);
-/// (*r1).push_back(2);
-///
-/// (*r2).transfer(*r1);  // move all children of r1 into r2
-/// assert((*r1).empty());
-/// assert((*r2).size() == 2);
-/// @endcode
+/**
+ * @par Transfer between references
+ * @code
+ * scl::hierarchy::tree<int, logger> t;
+ * auto r1 = t.push_back(0);
+ * auto r2 = t.push_back(0);
+ * (*r1).push_back(1);
+ * (*r1).push_back(2);
+ *
+ * (*r2).transfer(*r1);  // move all children of r1 into r2
+ * assert((*r1).empty());
+ * assert((*r2).size() == 2);
+ * @endcode
+ */
 
 // -----------------------------------------------------------------------------
 // tree — iteration
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::begin()
-/// @brief Returns a mutable iterator to the first root node.
+/**
+ * @fn scl::hierarchy::tree::begin()
+ * @brief Returns a mutable iterator to the first root node.
+ */
 
-/// @fn scl::hierarchy::tree::end()
-/// @brief Returns a mutable past-the-end sentinel for the root list.
+/**
+ * @fn scl::hierarchy::tree::end()
+ * @brief Returns a mutable past-the-end sentinel for the root list.
+ */
 
 // -----------------------------------------------------------------------------
 // tree::iterator / tree::const_iterator
 // -----------------------------------------------------------------------------
 
-/// @class scl::hierarchy::tree::iterator
-/// @brief Mutable bidirectional iterator over sibling nodes. Dereferences to a
-///        `reference` proxy, not the underlying node.
+/**
+ * @class scl::hierarchy::tree::iterator
+ * @brief Mutable bidirectional iterator over sibling nodes. Dereferences to a
+ *        `reference` proxy, not the underlying node.
+ */
 
-/// @class scl::hierarchy::tree::const_iterator
-/// @brief Immutable bidirectional iterator over sibling nodes. Dereferences to a
-///        `const_reference` proxy. Implicitly constructible from `iterator`.
+/**
+ * @class scl::hierarchy::tree::const_iterator
+ * @brief Immutable bidirectional iterator over sibling nodes. Dereferences to a
+ *        `const_reference` proxy. Implicitly constructible from `iterator`.
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — class overview
 // -----------------------------------------------------------------------------
 
-/// @class scl::hierarchy::tree::reference
-/// @brief Mutable proxy over a tree node — pairs a reference to the owning
-///        `tree` with a reference to the underlying `node`, so every mutation
-///        routes through the tree's observer.
-///
-/// Never constructed directly: obtained by dereferencing a `tree::iterator`, or
-/// returned from a `tree`/`reference` insertion method. Mirrors `node`'s full
-/// child-management API (`push_back`, `emplace`, `erase`, `take`, `transfer`,
-/// iterators, …), plus `set_value()` (which fires `on_change`) and `leaf()`
-/// (the underlying `node`, usable with the free algorithm functions in
-/// `algorithm.h` without unwrapping — see `adl_parent`/`adl_has_parent`/
-/// `adl_identity` above).
-///
-/// @par Extracting and re-inserting a subtree
-/// @code
-/// scl::hierarchy::tree<std::string, logger> t;
-/// auto world = t.push_back("World");
-/// auto model = (*world).push_back("Model1");
-///
-/// auto raw = (*world).take(model);        // detach; fires on_erase
-/// std::cout << "Taken: " << raw.get() << '\n';
-/// auto reinserted = (*world).push_back(raw.get());   // fires on_insert
-/// @endcode
+/**
+ * @class scl::hierarchy::tree::reference
+ * @brief Mutable proxy over a tree node — pairs a reference to the owning
+ *        `tree` with a reference to the underlying `node`, so every mutation
+ *        routes through the tree's observer.
+ *
+ * Never constructed directly: obtained by dereferencing a `tree::iterator`, or
+ * returned from a `tree`/`reference` insertion method. Mirrors `node`'s full
+ * child-management API (`push_back`, `emplace`, `erase`, `take`, `transfer`,
+ * iterators, …), plus `set_value()` (which fires `on_change`) and `leaf()`
+ * (the underlying `node`, usable with the free algorithm functions in
+ * `algorithm.h` without unwrapping — see `adl_parent`/`adl_has_parent`/
+ * `adl_identity` above).
+ *
+ * @par Extracting and re-inserting a subtree
+ * @code
+ * scl::hierarchy::tree<std::string, logger> t;
+ * auto world = t.push_back("World");
+ * auto model = (*world).push_back("Model1");
+ *
+ * auto raw = (*world).take(model);        // detach; fires on_erase
+ * std::cout << "Taken: " << raw.get() << '\n';
+ * auto reinserted = (*world).push_back(raw.get());   // fires on_insert
+ * @endcode
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — type aliases
 // -----------------------------------------------------------------------------
 
-/// @typedef scl::hierarchy::tree::reference::node_reference
-/// @brief Mutable reference to the underlying `node` (`node &`).
+/**
+ * @typedef scl::hierarchy::tree::reference::node_reference
+ * @brief Mutable reference to the underlying `node` (`node &`).
+ */
 
-/// @typedef scl::hierarchy::tree::reference::const_node_reference
-/// @brief Immutable reference to the underlying `node` (`node const &`).
+/**
+ * @typedef scl::hierarchy::tree::reference::const_node_reference
+ * @brief Immutable reference to the underlying `node` (`node const &`).
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — identity and payload
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::reference::tree()
-/// @brief Returns the tree this node belongs to.
+/**
+ * @fn scl::hierarchy::tree::reference::tree()
+ * @brief Returns the tree this node belongs to.
+ */
 
-/// @fn scl::hierarchy::tree::reference::set_value(Arguments &&...)
-/// @brief Replaces the payload and notifies the observer (`on_change`).
+/**
+ * @fn scl::hierarchy::tree::reference::set_value(Arguments &&...)
+ * @brief Replaces the payload and notifies the observer (`on_change`).
+ */
 
-/// @fn scl::hierarchy::tree::reference::value() const
-/// @brief Returns a const reference to the node's payload.
+/**
+ * @fn scl::hierarchy::tree::reference::value() const
+ * @brief Returns a const reference to the node's payload.
+ */
 
-/// @fn scl::hierarchy::tree::reference::leaf() const
-/// @brief Returns the underlying node this proxy wraps.
+/**
+ * @fn scl::hierarchy::tree::reference::leaf() const
+ * @brief Returns the underlying node this proxy wraps.
+ */
 
-/// @fn scl::hierarchy::tree::reference::operator==(const_reference) const
-/// @brief Returns `true` when @p other denotes the same node — identity, not value.
+/**
+ * @fn scl::hierarchy::tree::reference::operator==(const_reference) const
+ * @brief Returns `true` when @p other denotes the same node — identity, not value.
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — parent access
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::reference::has_parent() const
-/// @brief Returns `true` when this node is attached to a parent.
+/**
+ * @fn scl::hierarchy::tree::reference::has_parent() const
+ * @brief Returns `true` when this node is attached to a parent.
+ */
 
-/// @fn scl::hierarchy::tree::reference::parent()
-/// @brief Returns a proxy over the parent node.
-/// @pre `has_parent()`
+/**
+ * @fn scl::hierarchy::tree::reference::parent()
+ * @brief Returns a proxy over the parent node.
+ * @pre `has_parent()`
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — child queries
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::reference::empty() const
-/// @brief Returns `true` when this node has no direct children.
+/**
+ * @fn scl::hierarchy::tree::reference::empty() const
+ * @brief Returns `true` when this node has no direct children.
+ */
 
-/// @fn scl::hierarchy::tree::reference::size() const
-/// @brief Returns the number of direct children.
+/**
+ * @fn scl::hierarchy::tree::reference::size() const
+ * @brief Returns the number of direct children.
+ */
 
-/// @fn scl::hierarchy::tree::reference::front()
-/// @brief Returns a proxy over the first direct child.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::reference::front()
+ * @brief Returns a proxy over the first direct child.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::reference::back()
-/// @brief Returns a proxy over the last direct child.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::reference::back()
+ * @brief Returns a proxy over the last direct child.
+ * @pre `!empty()`
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — insertion
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::reference::emplace(const_iterator, Arguments &&...)
-/// @brief Constructs a child in-place at @p where.
-/// @return Iterator to the newly constructed child; notifies the observer
-///         (`on_insert`, top-down when the child brings its own subtree).
+/**
+ * @fn scl::hierarchy::tree::reference::emplace(const_iterator, Arguments &&...)
+ * @brief Constructs a child in-place at @p where.
+ * @return Iterator to the newly constructed child; notifies the observer
+ *         (`on_insert`, top-down when the child brings its own subtree).
+ */
 
-/// @fn scl::hierarchy::tree::reference::push_back(Argument &&)
-/// @brief Appends a child at the back.
-/// @return Iterator to the appended child; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::reference::push_back(Argument &&)
+ * @brief Appends a child at the back.
+ * @return Iterator to the appended child; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::reference::emplace_back(Arguments &&...)
-/// @brief Constructs a child payload in-place at the back.
-/// @return Iterator to the newly constructed child; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::reference::emplace_back(Arguments &&...)
+ * @brief Constructs a child payload in-place at the back.
+ * @return Iterator to the newly constructed child; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::reference::push_front(Argument &&)
-/// @brief Prepends a child at the front.
-/// @return Iterator to the prepended child; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::reference::push_front(Argument &&)
+ * @brief Prepends a child at the front.
+ * @return Iterator to the prepended child; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::reference::emplace_front(Arguments &&...)
-/// @brief Constructs a child payload in-place at the front.
-/// @return Iterator to the newly constructed child; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::reference::emplace_front(Arguments &&...)
+ * @brief Constructs a child payload in-place at the front.
+ * @return Iterator to the newly constructed child; notifies the observer (`on_insert`).
+ */
 
-/// @fn scl::hierarchy::tree::reference::insert(const_iterator, Argument &&)
-/// @brief Inserts a child at @p where.
-/// @return Iterator to the inserted child; notifies the observer (`on_insert`).
+/**
+ * @fn scl::hierarchy::tree::reference::insert(const_iterator, Argument &&)
+ * @brief Inserts a child at @p where.
+ * @return Iterator to the inserted child; notifies the observer (`on_insert`).
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — removal and extraction
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::reference::pop_back()
-/// @brief Removes the last child.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::reference::pop_back()
+ * @brief Removes the last child.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::reference::pop_front()
-/// @brief Removes the first child.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::reference::pop_front()
+ * @brief Removes the first child.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::reference::erase(Iterator)
-/// @brief Erases the child at @p position; notifies the observer (`on_erase`,
-///        bottom-up).
-/// @return Iterator to the child that followed the erased one, or `end()`.
+/**
+ * @fn scl::hierarchy::tree::reference::erase(Iterator)
+ * @brief Erases the child at @p position; notifies the observer (`on_erase`,
+ *        bottom-up).
+ * @return Iterator to the child that followed the erased one, or `end()`.
+ */
 
-/// @fn scl::hierarchy::tree::reference::erase(Iterator, Iterator)
-/// @brief Erases children in [@p first, @p last); notifies the observer
-///        (`on_erase`, bottom-up, once per erased node).
-/// @return Iterator to the child that followed the last erased one, or `end()`.
+/**
+ * @fn scl::hierarchy::tree::reference::erase(Iterator, Iterator)
+ * @brief Erases children in [@p first, @p last); notifies the observer
+ *        (`on_erase`, bottom-up, once per erased node).
+ * @return Iterator to the child that followed the last erased one, or `end()`.
+ */
 
-/// @fn scl::hierarchy::tree::reference::clear()
-/// @brief Removes all direct children; notifies the observer once per child
-///        (`on_erase`, bottom-up) — unlike `tree::clear()`, does not fire `on_clear`.
+/**
+ * @fn scl::hierarchy::tree::reference::clear()
+ * @brief Removes all direct children; notifies the observer once per child
+ *        (`on_erase`, bottom-up) — unlike `tree::clear()`, does not fire `on_clear`.
+ */
 
-/// @fn scl::hierarchy::tree::reference::take(const_iterator)
-/// @brief Detaches the child at @p position and returns it as a free-standing
-///        node; notifies the observer (`on_erase`, bottom-up).
-/// @param  position  Valid iterator to a direct child of this node.
-/// @return The extracted child node (moved out, no parent).
+/**
+ * @fn scl::hierarchy::tree::reference::take(const_iterator)
+ * @brief Detaches the child at @p position and returns it as a free-standing
+ *        node; notifies the observer (`on_erase`, bottom-up).
+ * @param  position  Valid iterator to a direct child of this node.
+ * @return The extracted child node (moved out, no parent).
+ */
 
-/// @fn scl::hierarchy::tree::reference::take_first()
-/// @brief Detaches and returns the first child.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::reference::take_first()
+ * @brief Detaches and returns the first child.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::reference::take_last()
-/// @brief Detaches and returns the last child.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::reference::take_last()
+ * @brief Detaches and returns the last child.
+ * @pre `!empty()`
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — transfer (O(1) splice)
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::reference::transfer(reference)
-/// @brief Moves all children of @p from to the back of this node's child list.
-///        O(1). Cross-tree: fires `on_erase` on the source and `on_insert` on
-///        the destination, once per moved node.
+/**
+ * @fn scl::hierarchy::tree::reference::transfer(reference)
+ * @brief Moves all children of @p from to the back of this node's child list.
+ *        O(1). Cross-tree: fires `on_erase` on the source and `on_insert` on
+ *        the destination, once per moved node.
+ */
 
-/// @fn scl::hierarchy::tree::reference::transfer(const_iterator, reference)
-/// @brief Moves all children of @p from to where @p where. O(1).
-///        Cross-tree: fires `on_erase` on the source and `on_insert` on the
-///        destination, once per moved node.
+/**
+ * @fn scl::hierarchy::tree::reference::transfer(const_iterator, reference)
+ * @brief Moves all children of @p from to where @p where. O(1).
+ *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
+ *        destination, once per moved node.
+ */
 
-/// @fn scl::hierarchy::tree::reference::transfer(reference, const_iterator)
-/// @brief Moves the single child at @p first in @p from to the back of this
-///        node's child list. O(1). Cross-tree: fires `on_erase` on the source
-///        and `on_insert` on the destination.
+/**
+ * @fn scl::hierarchy::tree::reference::transfer(reference, const_iterator)
+ * @brief Moves the single child at @p first in @p from to the back of this
+ *        node's child list. O(1). Cross-tree: fires `on_erase` on the source
+ *        and `on_insert` on the destination.
+ */
 
-/// @fn scl::hierarchy::tree::reference::transfer(const_iterator, reference, const_iterator)
-/// @brief Moves the single child at @p first in @p from to where @p where. O(1).
-///        Cross-tree: fires `on_erase` on the source and `on_insert` on the
-///        destination.
+/**
+ * @fn scl::hierarchy::tree::reference::transfer(const_iterator, reference, const_iterator)
+ * @brief Moves the single child at @p first in @p from to where @p where. O(1).
+ *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
+ *        destination.
+ */
 
-/// @fn scl::hierarchy::tree::reference::transfer(reference, const_iterator, const_iterator)
-/// @brief Moves children in [@p first, @p last) from @p from to the back of
-///        this node's child list. O(distance). Cross-tree: fires `on_erase`
-///        on the source and `on_insert` on the destination, once per moved node.
+/**
+ * @fn scl::hierarchy::tree::reference::transfer(reference, const_iterator, const_iterator)
+ * @brief Moves children in [@p first, @p last) from @p from to the back of
+ *        this node's child list. O(distance). Cross-tree: fires `on_erase`
+ *        on the source and `on_insert` on the destination, once per moved node.
+ */
 
-/// @fn scl::hierarchy::tree::reference::transfer(const_iterator, reference, const_iterator, const_iterator)
-/// @brief Moves children in [@p first, @p last) from @p from to where @p where.
-///        O(distance). Cross-tree: fires `on_erase` on the source and
-///        `on_insert` on the destination, once per moved node.
+/**
+ * @fn scl::hierarchy::tree::reference::transfer(const_iterator, reference, const_iterator, const_iterator)
+ * @brief Moves children in [@p first, @p last) from @p from to where @p where.
+ *        O(distance). Cross-tree: fires `on_erase` on the source and
+ *        `on_insert` on the destination, once per moved node.
+ */
 
 // -----------------------------------------------------------------------------
 // tree::reference — iteration
 // -----------------------------------------------------------------------------
 
-/// @fn scl::hierarchy::tree::reference::begin()
-/// @brief Returns a mutable iterator to the first direct child.
+/**
+ * @fn scl::hierarchy::tree::reference::begin()
+ * @brief Returns a mutable iterator to the first direct child.
+ */
 
-/// @fn scl::hierarchy::tree::reference::end()
-/// @brief Returns a mutable past-the-end sentinel for the direct child list.
+/**
+ * @fn scl::hierarchy::tree::reference::end()
+ * @brief Returns a mutable past-the-end sentinel for the direct child list.
+ */
 
 // -----------------------------------------------------------------------------
 // tree::const_reference
 // -----------------------------------------------------------------------------
 
-/// @class scl::hierarchy::tree::const_reference
-/// @brief The read-only counterpart of `reference`.
-///
-/// Obtained by dereferencing a `tree::const_iterator` or converting from a
-/// `reference`. Mirrors `reference`'s read-only subset — `value`, `tree`, `leaf`,
-/// `has_parent`, `parent`, `empty`, `size`, `front`, `back`, `operator==`, and
-/// the iterators. There is no mutation, insertion, removal, or transfer on
-/// `const_reference`.
+/**
+ * @class scl::hierarchy::tree::const_reference
+ * @brief The read-only counterpart of `reference`.
+ *
+ * Obtained by dereferencing a `tree::const_iterator` or converting from a
+ * `reference`. Mirrors `reference`'s read-only subset — `value`, `tree`, `leaf`,
+ * `has_parent`, `parent`, `empty`, `size`, `front`, `back`, `operator==`, and
+ * the iterators. There is no mutation, insertion, removal, or transfer on
+ * `const_reference`.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::const_reference(reference)
-/// @brief Converts a mutable `reference` to a `const_reference`, over the same node.
+/**
+ * @fn scl::hierarchy::tree::const_reference::const_reference(reference)
+ * @brief Converts a mutable `reference` to a `const_reference`, over the same node.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::tree() const
-/// @brief Returns the tree this node belongs to.
+/**
+ * @fn scl::hierarchy::tree::const_reference::tree() const
+ * @brief Returns the tree this node belongs to.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::value() const
-/// @brief Returns a const reference to the node's payload.
+/**
+ * @fn scl::hierarchy::tree::const_reference::value() const
+ * @brief Returns a const reference to the node's payload.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::has_parent() const
-/// @brief Returns `true` when this node is attached to a parent.
+/**
+ * @fn scl::hierarchy::tree::const_reference::has_parent() const
+ * @brief Returns `true` when this node is attached to a parent.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::parent() const
-/// @brief Returns a proxy over the parent node.
-/// @pre `has_parent()`
+/**
+ * @fn scl::hierarchy::tree::const_reference::parent() const
+ * @brief Returns a proxy over the parent node.
+ * @pre `has_parent()`
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::operator==(const_reference) const
-/// @brief Returns `true` when @p other denotes the same node — identity, not value.
+/**
+ * @fn scl::hierarchy::tree::const_reference::operator==(const_reference) const
+ * @brief Returns `true` when @p other denotes the same node — identity, not value.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::empty() const
-/// @brief Returns `true` when this node has no direct children.
+/**
+ * @fn scl::hierarchy::tree::const_reference::empty() const
+ * @brief Returns `true` when this node has no direct children.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::size() const
-/// @brief Returns the number of direct children.
+/**
+ * @fn scl::hierarchy::tree::const_reference::size() const
+ * @brief Returns the number of direct children.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::leaf() const
-/// @brief Returns the underlying node this proxy wraps.
+/**
+ * @fn scl::hierarchy::tree::const_reference::leaf() const
+ * @brief Returns the underlying node this proxy wraps.
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::front() const
-/// @brief Returns a proxy over the first direct child.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::const_reference::front() const
+ * @brief Returns a proxy over the first direct child.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::back() const
-/// @brief Returns a proxy over the last direct child.
-/// @pre `!empty()`
+/**
+ * @fn scl::hierarchy::tree::const_reference::back() const
+ * @brief Returns a proxy over the last direct child.
+ * @pre `!empty()`
+ */
 
-/// @fn scl::hierarchy::tree::const_reference::begin() const
-/// @brief Returns an immutable iterator to the first direct child.
+/**
+ * @fn scl::hierarchy::tree::const_reference::begin() const
+ * @brief Returns an immutable iterator to the first direct child.
+ */

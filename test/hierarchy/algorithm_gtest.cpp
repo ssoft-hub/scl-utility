@@ -7,9 +7,11 @@
 
 namespace
 {
-    /// Minimal node-like type: enough parent/child structure to exercise the
-    /// hierarchy algorithms without pulling in scl::hierarchy::node. A std::list
-    /// backs the children so their addresses (and parent back-pointers) stay stable.
+    /**
+     * Minimal node-like type: enough parent/child structure to exercise the
+     * hierarchy algorithms without pulling in scl::hierarchy::node. A std::list
+     * backs the children so their addresses (and parent back-pointers) stay stable.
+     */
     struct mock_node
     {
     public:

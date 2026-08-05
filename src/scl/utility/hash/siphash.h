@@ -1,8 +1,10 @@
 #pragma once
 
-/// @file siphash.h
-/// @brief SipHash-2-4: 64-bit keyed hash designed for string hashing in hash tables.
-/// @ingroup scl_utility_hash
+/**
+ * @file siphash.h
+ * @brief SipHash-2-4: 64-bit keyed hash designed for string hashing in hash tables.
+ * @ingroup scl_utility_hash
+ */
 
 #include <bit>
 #include <concepts>
@@ -12,12 +14,14 @@
 
 namespace scl::hash
 {
-    /// @brief 128-bit secret key for SipHash.
-    /// @ingroup scl_utility_hash
-    ///
-    /// For **hash-flooding protection** (e.g. in `std::unordered_map`), initialise
-    /// with a random value at program startup. For **compile-time identifiers** and
-    /// `switch`/`case` dispatch, a fixed key is sufficient.
+    /**
+     * @brief 128-bit secret key for SipHash.
+     * @ingroup scl_utility_hash
+     *
+     * For **hash-flooding protection** (e.g. in `std::unordered_map`), initialise
+     * with a random value at program startup. For **compile-time identifiers** and
+     * `switch`/`case` dispatch, a fixed key is sufficient.
+     */
     struct siphash_key
     {
         ::std::uint64_t k0{};
@@ -47,61 +51,65 @@ namespace scl::hash
         }
     } // namespace detail
 
-    /// @brief Default key for non-security-sensitive use.
-    /// @ingroup scl_utility_hash
-    ///
-    /// These are the standard test-vector key bytes from the SipHash paper
-    /// (Aumasson & Bernstein, 2012): bytes 0x00–0x0f in little-endian order.
-    /// **Do not use this key where hash-flooding resistance is required.**
+    /**
+     * @brief Default key for non-security-sensitive use.
+     * @ingroup scl_utility_hash
+     *
+     * These are the standard test-vector key bytes from the SipHash paper
+     * (Aumasson & Bernstein, 2012): bytes 0x00–0x0f in little-endian order.
+     * **Do not use this key where hash-flooding resistance is required.**
+     */
     inline constexpr siphash_key siphash_default_key{
         .k0 = 0x0706050403020100ull, // bytes 00..07
         .k1 = 0x0f0e0d0c0b0a0908ull  // bytes 08..0f
     };
 
-    /// @brief Computes a SipHash-2-4 64-bit hash over an arbitrary byte range.
-    /// @ingroup scl_utility_hash
-    ///
-    /// SipHash-2-4 (2 compression rounds, 4 finalization rounds) is a fast,
-    /// short-input hash with a 128-bit secret key. It was designed by Jean-Philippe
-    /// Aumasson and Daniel J. Bernstein specifically to replace ad-hoc string hash
-    /// functions in hash tables, providing both good distribution and resistance to
-    /// hash-flooding attacks.
-    ///
-    /// It is used as the default string hash in Python (≥ 3.4), Rust, Ruby, and Perl.
-    ///
-    /// The algorithm processes input in 8-byte (64-bit) little-endian blocks:
-    /// @code
-    ///   // Compression (c = 2 rounds per block):
-    ///   v3 ^= block;
-    ///   SipRound × 2;
-    ///   v0 ^= block;
-    ///
-    ///   // Finalization (d = 4 rounds):
-    ///   v2 ^= 0xff;
-    ///   SipRound × 4;
-    ///   return v0 ^ v1 ^ v2 ^ v3;
-    /// @endcode
-    ///
-    /// The function is `constexpr`, allowing compile-time hash computation.
-    ///
-    /// @tparam Range  Any type satisfying `std::ranges::range` whose elements
-    ///                are convertible to `std::uint8_t` — e.g. a string literal,
-    ///                `std::string_view`, `std::string`, `std::span<std::byte>`.
-    /// @param  range  Input range to hash.
-    /// @note   String literals (e.g. `"hello"`) include the null terminator in the
-    ///         hash. Use `std::string_view{"hello"}` to hash only the characters.
-    /// @param  key    128-bit secret key. Defaults to @ref siphash_default_key.
-    ///                For security-sensitive use, provide a randomly generated key.
-    /// @return 64-bit SipHash-2-4 digest.
-    ///
-    /// @par Compile-time example
-    /// @code
-    /// constexpr scl::hash::siphash_key my_key{0xdeadbeefcafeull, 0xabad1deaull};
-    /// constexpr auto h = scl::hash::siphash("hello", my_key);
-    /// static_assert(h != 0);
-    /// @endcode
-    ///
-    /// @see https://www.131002.net/siphash/ — original paper and reference vectors
+    /**
+     * @brief Computes a SipHash-2-4 64-bit hash over an arbitrary byte range.
+     * @ingroup scl_utility_hash
+     *
+     * SipHash-2-4 (2 compression rounds, 4 finalization rounds) is a fast,
+     * short-input hash with a 128-bit secret key. It was designed by Jean-Philippe
+     * Aumasson and Daniel J. Bernstein specifically to replace ad-hoc string hash
+     * functions in hash tables, providing both good distribution and resistance to
+     * hash-flooding attacks.
+     *
+     * It is used as the default string hash in Python (≥ 3.4), Rust, Ruby, and Perl.
+     *
+     * The algorithm processes input in 8-byte (64-bit) little-endian blocks:
+     * @code
+     *   // Compression (c = 2 rounds per block):
+     *   v3 ^= block;
+     *   SipRound × 2;
+     *   v0 ^= block;
+     *
+     *   // Finalization (d = 4 rounds):
+     *   v2 ^= 0xff;
+     *   SipRound × 4;
+     *   return v0 ^ v1 ^ v2 ^ v3;
+     * @endcode
+     *
+     * The function is `constexpr`, allowing compile-time hash computation.
+     *
+     * @tparam Range  Any type satisfying `std::ranges::range` whose elements
+     *                are convertible to `std::uint8_t` — e.g. a string literal,
+     *                `std::string_view`, `std::string`, `std::span<std::byte>`.
+     * @param  range  Input range to hash.
+     * @note   String literals (e.g. `"hello"`) include the null terminator in the
+     *         hash. Use `std::string_view{"hello"}` to hash only the characters.
+     * @param  key    128-bit secret key. Defaults to @ref siphash_default_key.
+     *                For security-sensitive use, provide a randomly generated key.
+     * @return 64-bit SipHash-2-4 digest.
+     *
+     * @par Compile-time example
+     * @code
+     * constexpr scl::hash::siphash_key my_key{0xdeadbeefcafeull, 0xabad1deaull};
+     * constexpr auto h = scl::hash::siphash("hello", my_key);
+     * static_assert(h != 0);
+     * @endcode
+     *
+     * @see https://www.131002.net/siphash/ — original paper and reference vectors
+     */
     template <::std::ranges::range Range>
     constexpr ::std::uint64_t siphash(Range const & range, siphash_key const key = siphash_default_key)
         requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
@@ -151,13 +159,15 @@ namespace scl::hash
         return v0 ^ v1 ^ v2 ^ v3;
     }
 
-    /// @brief Callable wrapper around @ref siphash for use with @ref scl::hash::key.
-    /// @ingroup scl_utility_hash
-    ///
-    /// The secret key is embedded as a non-type template parameter, so two
-    /// instantiations with different keys are distinct types.
-    ///
-    /// @tparam Key  128-bit SipHash key. Defaults to @ref siphash_default_key.
+    /**
+     * @brief Callable wrapper around @ref siphash for use with @ref scl::hash::key.
+     * @ingroup scl_utility_hash
+     *
+     * The secret key is embedded as a non-type template parameter, so two
+     * instantiations with different keys are distinct types.
+     *
+     * @tparam Key  128-bit SipHash key. Defaults to @ref siphash_default_key.
+     */
     template <siphash_key Key = siphash_default_key>
     struct siphash_hasher
     {

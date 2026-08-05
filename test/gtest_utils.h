@@ -2,11 +2,13 @@
 
 #include <gtest/gtest.h>
 
-/// @file gtest_utils.h
-/// @brief Shared test utilities for scl::utility tests.
-///
-/// Each macro verifies an expression both at compile time (`static_assert`)
-/// and at runtime (corresponding GTest `EXPECT_*` macro).
+/**
+ * @file gtest_utils.h
+ * @brief Shared test utilities for scl::utility tests.
+ *
+ * Each macro verifies an expression both at compile time (`static_assert`)
+ * and at runtime (corresponding GTest `EXPECT_*` macro).
+ */
 
 /// @brief `static_assert(expr)` + `EXPECT_TRUE(expr)`
 #define STATIC_EXPECT_TRUE(expr)  \

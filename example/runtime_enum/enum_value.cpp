@@ -1,12 +1,14 @@
-/// @file enum_value.cpp
-/// @brief Demonstrates scl::enum_value for runtime enum representation.
-///
-/// Compile-time:  scl::enum_name<V>()    — returns the member identifier as a string_view
-///                                         (e.g. "Red"); requires a valid named enumerator as
-///                                         a non-type template parameter.
-/// Runtime:       scl::enum_value(v)     — returns "TypeName::N" where N is the underlying
-///                                         numeric value; works for any value including
-///                                         out-of-range ones that have no named enumerator.
+/**
+ * @file enum_value.cpp
+ * @brief Demonstrates scl::enum_value for runtime enum representation.
+ *
+ * Compile-time:  scl::enum_name<V>()    — returns the member identifier as a string_view
+ *                                         (e.g. "Red"); requires a valid named enumerator as
+ *                                         a non-type template parameter.
+ * Runtime:       scl::enum_value(v)     — returns "TypeName::N" where N is the underlying
+ *                                         numeric value; works for any value including
+ *                                         out-of-range ones that have no named enumerator.
+ */
 
 #include <scl/utility/meta/enum.h>
 #include <scl/utility/runtime/enum.h>
