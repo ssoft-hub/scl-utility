@@ -203,11 +203,11 @@ namespace scl
         constexpr any_switch() noexcept = default;
 
         template <typename Case, typename Handler>
+        [[nodiscard]]
+        constexpr auto in_case(Handler && handler) const
             requires detail::any_switch_case<Case> && (!detail::any_switch_has_fallback_v<Branches...>) &&
             (!detail::any_case_covered_v<Case, Branches...>) &&
             detail::any_switch_branch_v<::std::decay_t<Handler> &, Result, Case>
-        [[nodiscard]]
-        constexpr auto in_case(Handler && handler) const
         {
             return append<Case>(::std::forward<Handler>(handler));
         }
@@ -215,20 +215,20 @@ namespace scl
         // A branch that matches and does nothing is a complete handler only where doing
         // nothing produces the result, which is `Result = void`.
         template <typename Case>
+        [[nodiscard]]
+        constexpr auto in_case() const
             requires ::std::is_void_v<Result> && detail::any_switch_case<Case> &&
             (!detail::any_switch_has_fallback_v<Branches...>) &&
             (!detail::any_case_covered_v<Case, Branches...>)
-        [[nodiscard]]
-        constexpr auto in_case() const
         {
             return append<Case>(detail::any_switch_no_handler{});
         }
 
         template <typename Handler>
-            requires(!detail::any_switch_has_fallback_v<Branches...>) &&
-            detail::any_switch_branch_v<::std::decay_t<Handler> &, Result, detail::any_switch_fallback>
         [[nodiscard]]
         constexpr auto or_else(Handler && handler) const
+            requires(!detail::any_switch_has_fallback_v<Branches...>) &&
+            detail::any_switch_branch_v<::std::decay_t<Handler> &, Result, detail::any_switch_fallback>
         {
             return append<detail::any_switch_fallback>(::std::forward<Handler>(handler));
         }
@@ -385,7 +385,7 @@ namespace scl
         }
 
         template <typename, typename...>
-        friend class any_switch;
+        friend class ::scl::any_switch;
 
         branches_type m_branches;
     };
@@ -500,6 +500,12 @@ namespace scl
  * @brief What @ref scl::any_switch::apply returns.
  *
  * `std::optional<Result>`, or `void` for a chain that produces nothing.
+ */
+
+/**
+ * @fn scl::any_switch::any_switch()
+ * @brief Constructs the empty chain, the starting point every other chain is
+ *        built from with @ref scl::any_switch::in_case.
  */
 
 /**

@@ -22,10 +22,16 @@
 
 #include "detail/base.h"
 
-// P2738 (C++26) makes recovering a typed pointer from `void const *` a constant
-// expression, which is the one thing the anchor below exists to work around.
-// `__cpp_constexpr` reports it, spelled once here rather than compared against a bare
-// 202306L at each of the branches that turn on it.
+/**
+ * @internal
+ * @def SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST
+ * @brief Whether P2738 (C++26) is available, making the recovery of a typed
+ *        pointer from `void const *` a constant expression.
+ *
+ * That recovery is the one thing the anchor below exists to work around, and
+ * several branches turn on it — spelled once here rather than comparing
+ * `__cpp_constexpr` against a bare 202306L at each of them.
+ */
 #if defined(__cpp_constexpr) && __cpp_constexpr >= 202306L
 #define SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST 1
 #else
@@ -65,9 +71,9 @@ namespace scl
     // Wrapper is deduced so that the caller's own cv-qualification reaches accepts(): a
     // const handle cannot escalate to a write the handle itself does not carry.
     template <typename Type, typename Wrapper>
-        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>)
     [[nodiscard]]
-    SCL_HOT constexpr Type * any_cast(Wrapper * arg) noexcept;
+    SCL_HOT constexpr Type * any_cast(Wrapper * arg) noexcept
+        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>);
 
     class any_arg : detail::any_base
     {
@@ -87,11 +93,11 @@ namespace scl
         // std::any has no volatile-qualified members, so a volatile std::any is excluded
         // rather than bound as one nothing could later reach.
         template <typename Any>
-            requires(detail::is_std_any_v<::std::remove_cvref_t<Any>>) &&
-            (!::std::is_volatile_v<::std::remove_reference_t<Any>>)
         // cppcheck-suppress noExplicitConstructor
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
         constexpr any_arg(Any && value SCL_LIFETIMEBOUND) noexcept
+            requires(detail::is_std_any_v<::std::remove_cvref_t<Any>>) &&
+            (!::std::is_volatile_v<::std::remove_reference_t<Any>>)
             : base_type{::std::addressof(value), &detail::any_view_descriptor_of<::std::remove_reference_t<Any> &>}
         {}
 #endif
@@ -107,11 +113,11 @@ namespace scl
         // see each form whole.
 #if SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST
         template <typename Type>
-            requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
         // cppcheck-suppress noExplicitConstructor
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
         constexpr any_arg(Type && object SCL_LIFETIMEBOUND) noexcept
+            requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
+            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
             // With the recovery constant-evaluable on its own, the binding is the plain one
             // a view makes, and every restriction the anchor imposed on where an `any_arg`
             // may sit goes with it.
@@ -119,8 +125,6 @@ namespace scl
         {}
 #else
         template <typename Type>
-            requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
         // cppcheck-suppress noExplicitConstructor
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
         constexpr any_arg(Type && object SCL_LIFETIMEBOUND
@@ -133,6 +137,8 @@ namespace scl
                 ::std::remove_cvref_t<Type>>{detail::any_view_descriptor_of<::std::remove_reference_t<Type> &>}
 #endif
             ) noexcept
+            requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
+            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
             // Only constant evaluation needs the anchor, and only constant evaluation takes
             // it. The anchor dies with the full expression that made it, which spans the
             // call it was made for and nothing beyond; at run time the descriptor is the
@@ -177,17 +183,18 @@ namespace scl
     private:
         // An explicit object parameter in the base deduces this type, not the base, and
         // private inheritance would otherwise refuse that conversion.
-        friend class detail::any_base;
+        friend class ::scl::detail::any_base;
 
         template <typename Type, typename Wrapper>
+        friend constexpr Type * scl::any_cast(Wrapper * arg) noexcept
             requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>)
-        friend constexpr Type * any_cast(Wrapper * arg) noexcept;
+        ;
     };
 
     template <typename Type, typename Wrapper>
-        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>)
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(Wrapper * arg) noexcept
+        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<Wrapper>, any_arg>)
     {
         if (arg == nullptr)
             SCL_UNLIKELY return nullptr;
@@ -221,11 +228,11 @@ namespace scl
     // form. Constrained to any_arg itself, not any_base: an any_view converts to any_arg
     // implicitly, and admitting that conversion here would hand write access to a view
     // that promises none.
-    template <typename Type, typename Argument>
-        requires(::std::same_as<::std::remove_cv_t<Argument>, any_arg>) &&
-        (::std::is_lvalue_reference_v<Type>) && (!::std::is_const_v<::std::remove_reference_t<Type>>)
+    template <typename Type, typename LValueArgument>
     [[nodiscard]]
-    constexpr Type any_cast(Argument & arg SCL_LIFETIMEBOUND)
+    constexpr Type any_cast(LValueArgument & arg SCL_LIFETIMEBOUND)
+        requires(::std::same_as<::std::remove_cv_t<LValueArgument>, any_arg>) &&
+        (::std::is_lvalue_reference_v<Type>) && (!::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         auto * pointer = any_cast<::std::remove_reference_t<Type>>(&arg);
         if (pointer == nullptr)
@@ -238,10 +245,10 @@ namespace scl
     // ability to answer during constant evaluation. Reading supplies the `const` itself,
     // as the view does.
     // Not lifetime-bound: the result is a copy, and it outlives the argument by design.
-    template <typename Type, typename Argument>
-        requires(::std::same_as<::std::remove_cv_t<Argument>, any_arg>) && (::std::is_object_v<Type>)
+    template <typename Type, typename ValueArgument>
     [[nodiscard]]
-    constexpr Type any_cast(Argument & arg)
+    constexpr Type any_cast(ValueArgument & arg)
+        requires(::std::same_as<::std::remove_cv_t<ValueArgument>, any_arg>) && (::std::is_object_v<Type>)
     {
         auto const * pointer = any_cast<Type const>(&arg);
         if (pointer == nullptr)
@@ -249,11 +256,11 @@ namespace scl
         return *pointer;
     }
 
-    template <typename Type, typename Argument>
-        requires(::std::same_as<::std::remove_cv_t<Argument>, any_arg>) &&
-        (::std::is_lvalue_reference_v<Type>) && (::std::is_const_v<::std::remove_reference_t<Type>>)
+    template <typename Type, typename ConstLValueArgument>
     [[nodiscard]]
-    constexpr Type any_cast(Argument & arg SCL_LIFETIMEBOUND)
+    constexpr Type any_cast(ConstLValueArgument & arg SCL_LIFETIMEBOUND)
+        requires(::std::same_as<::std::remove_cv_t<ConstLValueArgument>, any_arg>) &&
+        (::std::is_lvalue_reference_v<Type>) && (::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         // remove_reference_t keeps the request's cv: T const volatile & must reach a
         // volatile referent.
@@ -404,6 +411,40 @@ namespace scl
  */
 
 /**
+ * @fn scl::any_arg::any_arg()
+ * @brief Deleted: an argument view always refers to something, so there is no
+ *        empty state to default-construct into.
+ */
+
+/**
+ * @fn scl::any_arg::any_arg(any_arg const &)
+ * @brief Copies the binding — the referent and its descriptor. The copy refers
+ *        to the same object and inherits its parameter-only lifetime.
+ */
+
+/**
+ * @fn scl::any_arg::any_arg(any_arg &&)
+ * @brief Same as the copy constructor: the binding is two pointers, so moving
+ *        it copies it and leaves the source usable.
+ */
+
+/**
+ * @fn scl::any_arg::operator=(any_arg const &)
+ * @brief Deleted: rebinding would outlive the call the original binding was
+ *        made for, which is the one thing the parameter-only contract forbids.
+ */
+
+/**
+ * @fn scl::any_arg::operator=(any_arg &&)
+ * @brief Deleted, for the same reason as copy assignment.
+ */
+
+/**
+ * @fn scl::any_arg::~any_arg()
+ * @brief Trivial: the view owns neither the referent nor the descriptor.
+ */
+
+/**
  * @fn scl::any_arg::any_arg(Any && value)
  * @brief Constructs a view over the object held in @p value without copying it.
  *
@@ -448,6 +489,17 @@ namespace scl
  *
  * The view receives the `const`-qualified form of the binding, so write access
  * does not survive the round trip through a view.
+ */
+
+/**
+ * @fn scl::any_arg::operator any_view() const volatile
+ * @brief Converts a `volatile`-qualified handle to an @ref scl::any_view over
+ *        the same referent.
+ *
+ * Spelled apart from the `const` form rather than as one `const volatile`
+ * conversion, which would cost every caller its constexpr-capability. Not
+ * `constexpr`, since a `volatile` handle cannot be reached during constant
+ * evaluation anyway.
  */
 
 /**
@@ -507,14 +559,14 @@ namespace scl
  */
 
 /**
- * @fn scl::any_cast(Argument & arg)
+ * @fn scl::any_cast(LValueArgument & arg)
  * @ingroup scl_utility_any
- * @brief Returns the viewed object by value, by `const` reference, or by mutable
- *        reference, or throws.
+ * @brief Writes through the viewed object, or throws.
  *
- * Three forms share this shape, told apart by @p Type: an object type copies the
- * value out, a `const` lvalue reference binds it without copying, and a non-`const`
- * lvalue reference writes through it. Reading supplies the `const` itself, exactly
+ * Three forms share this shape, told apart by @p Type: this one takes a non-`const`
+ * lvalue reference and writes through it, @ref scl::any_cast(ValueArgument & arg)
+ * copies the value out, and @ref scl::any_cast(ConstLValueArgument & arg) binds it as a
+ * `const` reference without copying. Reading supplies the `const` itself, exactly
  * as @ref scl::any_view does; writing is granted under the coverage rule stated on
  * the pointer form.
  *
@@ -524,10 +576,45 @@ namespace scl
  * `any_arg` rather than leaving them to that conversion is also what keeps them
  * usable in constant evaluation, which the conversion to a view gives up.
  *
- * @tparam Type      The requested result type — an object type, a `const` lvalue
- *                   reference, or a non-`const` lvalue reference.
+ * @tparam Type      The requested result type — a non-`const` lvalue reference.
  * @tparam Argument  Deduced; must be `scl::any_arg`.
- * @param  arg  The argument view to read or write through.
+ * @param  arg  The argument view to write through.
+ * @return The viewed object as @p Type.
+ * @throws scl::bad_any_cast  If the viewed type does not match, or the request does
+ *                            not cover the qualifiers of the referent or the handle.
+ */
+
+/**
+ * @fn scl::any_cast(ValueArgument & arg)
+ * @ingroup scl_utility_any
+ * @brief Copies the viewed object out, or throws.
+ *
+ * The reading form for an object type. It supplies the `const` itself, exactly as
+ * @ref scl::any_view does, and is spelled for `any_arg` rather than left to the
+ * conversion to a view — which before P2738 (C++26) drops the anchor and with it the
+ * ability to answer during constant evaluation. The result is a copy and outlives
+ * @p arg, so it is not lifetime-bound.
+ *
+ * @tparam Type      The requested result type — an object type.
+ * @tparam Argument  Deduced; must be `scl::any_arg`.
+ * @param  arg  The argument view to copy the value out of.
+ * @return A copy of the viewed object, as @p Type.
+ * @throws scl::bad_any_cast  If the viewed type does not match, or the request does
+ *                            not cover the qualifiers of the referent or the handle.
+ */
+
+/**
+ * @fn scl::any_cast(ConstLValueArgument & arg)
+ * @ingroup scl_utility_any
+ * @brief Binds the viewed object as a `const` reference without copying, or throws.
+ *
+ * The reading form for a `const` lvalue reference, on the same terms as
+ * @ref scl::any_cast(ValueArgument & arg). The reference refers to the viewed object,
+ * so it stays valid while that object lives.
+ *
+ * @tparam Type      The requested result type — a `const` lvalue reference.
+ * @tparam Argument  Deduced; must be `scl::any_arg`.
+ * @param  arg  The argument view to bind to.
  * @return The viewed object as @p Type.
  * @throws scl::bad_any_cast  If the viewed type does not match, or the request does
  *                            not cover the qualifiers of the referent or the handle.

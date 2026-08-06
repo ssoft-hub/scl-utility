@@ -24,6 +24,7 @@
 namespace scl
 {
     class any_view;
+    class any_arg;
 
     // Never std::bad_any_cast under RTTI: a base type that depends on SCL_HAS_RTTI
     // is an ODR trap for a binary linking RTTI and -fno-rtti translation units.
@@ -50,16 +51,17 @@ namespace scl
 #endif
 
         template <typename Type>
-            requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(Type & object SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*): implicit view by design
+            requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
+            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
             : base_type{::std::addressof(object), &detail::any_view_descriptor_of<Type &>}
         {}
 
         template <typename Type>
+        any_view(Type const &&)
             requires(!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
-        any_view(Type const &&) = delete;
+        = delete;
 
     public:
         using base_type::has_value;
@@ -73,22 +75,23 @@ namespace scl
             : base_type{object, descriptor}
         {}
 
-        friend class any_arg;
+        friend class ::scl::any_arg;
 
         // An explicit object parameter in the base deduces this type, not the base, and
         // private inheritance would otherwise refuse that conversion.
-        friend class detail::any_base;
+        friend class ::scl::detail::any_base;
 
         template <typename Type, typename View>
+        friend constexpr Type const * any_cast(View * view) noexcept
             requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<View>, any_view>)
-        friend constexpr Type const * any_cast(View * view) noexcept;
+        ;
     };
 
     // View is deduced so that the caller's own cv-qualification reaches accepts().
     template <typename Type, typename View>
-        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<View>, any_view>)
     [[nodiscard]]
     SCL_HOT constexpr Type const * any_cast(View * view) noexcept
+        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<View>, any_view>)
     {
         using bare = ::std::remove_cvref_t<Type>;
 
@@ -111,10 +114,10 @@ namespace scl
     // Not deduced: this form must keep admitting an implicit conversion, which template
     // deduction does not consider. A volatile handle cannot bind here — use the pointer form.
     template <typename Type>
-        requires(::std::is_object_v<Type> ||
-            (::std::is_lvalue_reference_v<Type> && ::std::is_const_v<::std::remove_reference_t<Type>>))
     [[nodiscard]]
     constexpr Type any_cast(any_view const & view)
+        requires(::std::is_object_v<Type> ||
+            (::std::is_lvalue_reference_v<Type> && ::std::is_const_v<::std::remove_reference_t<Type>>))
     {
         // remove_reference_t keeps the request's cv: T const volatile & must reach a volatile referent.
         auto const * pointer = any_cast<::std::remove_reference_t<Type>>(&view);
@@ -238,6 +241,18 @@ namespace scl
  *          constructor below instead of this one: the view reports `type_name() ==
  *          "std::any"` either way, but `any_cast` never unwraps the boxed object.
  *          There is no portable way to detect this case from inside the library.
+ */
+
+/**
+ * @fn scl::any_view::any_view(::std::any const &&)
+ * @brief Deleted: a view outlives the call it is made in, so binding it to a
+ *        `std::any` temporary would leave it dangling.
+ */
+
+/**
+ * @fn scl::any_view::any_view(Type const &&)
+ * @brief Deleted: same as for a `std::any` temporary — an rvalue of any
+ *        constness would dangle the moment the full expression ends.
  */
 
 /**
