@@ -18,6 +18,15 @@
  *     Concept satisfied by any enumeration type (scoped or unscoped).
  */
 
+/**
+ * @internal
+ * @brief Pattern anchor: an enumeration of a known name, so the shape the
+ *        compiler gives `__PRETTY_FUNCTION__` can be measured against it.
+ *
+ * The name is deliberately unpronounceable, so that it cannot occur inside an
+ * enumerator name being extracted. Unscoped on purpose: the pattern being
+ * measured is the one an unscoped enumerator renders as.
+ */
 enum we5r256sg_e // NOLINT(cppcoreguidelines-use-enum-class, performance-enum-size)
 {
     we5r256sg_v

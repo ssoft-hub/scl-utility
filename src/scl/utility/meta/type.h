@@ -64,17 +64,13 @@ namespace scl::detail
     }
 
 #if defined(_MSC_VER) && !defined(__clang__)
-    // MSVC-specific extraction using angle brackets
-    // Format: "ReturnType __cdecl FunctionName<TYPE>(void)"
-    // We need to find the last < before >(void) pattern
+    // MSVC renders the signature as "ReturnType __cdecl FunctionName<TYPE>(void)".
     constexpr ::std::size_t type_name_pattern_prefix_length() noexcept
     {
         constexpr auto text = type_name_pattern_text<p8qim3n2a_t>();
-        // Find the closing pattern >( first
         constexpr auto close_pattern = text.rfind(">(");
         if constexpr (close_pattern == ::std::string_view::npos)
             return 0;
-        // Find the last < before the closing pattern
         constexpr auto before_close = text.substr(0, close_pattern);
         constexpr auto open_bracket = before_close.find_last_of('<');
         return (open_bracket != ::std::string_view::npos) ? open_bracket + 1 : 0;

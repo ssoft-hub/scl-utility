@@ -8,7 +8,6 @@
 
 /**
  * @defgroup scl_utility_any ScL Any
- * @ingroup scl_utility
  * @brief Non-owning, read-only views over a `std::any` or a typed value.
  */
 

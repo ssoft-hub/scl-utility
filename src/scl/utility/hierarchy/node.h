@@ -192,7 +192,8 @@ namespace scl::hierarchy
 
         template <typename... Arguments>
         constexpr iterator emplace(const_iterator where, Arguments &&... arguments) /**/
-            noexcept(noexcept(m_nodes.emplace(where, ::std::forward<Arguments>(arguments)...)))
+            noexcept(noexcept(::std::declval<nodes &>().emplace(::std::declval<const_iterator>(),
+                ::std::declval<Arguments>()...)))
             requires(::std::constructible_from<node, Arguments...>)
         {
             iterator result = m_nodes.emplace(where, ::std::forward<Arguments>(arguments)...);
@@ -377,12 +378,8 @@ namespace scl::hierarchy::concepts
 
 namespace scl::hierarchy
 {
-    // ADL hooks implementing the scl::hierarchy::parent_of / has_parent /
-    // are_identical contract (see algorithm.h) for node. Internal — not part
-    // of the public API; call parent_of / has_parent / are_identical instead.
-    // adl_parent has two overloads (mutable / const) rather than one
-    // forwarding-reference template, so constness of the parent always
-    // matches constness of self.
+    // Two overloads rather than one forwarding-reference template, so the
+    // constness of the parent always matches the constness of self.
     template <typename Payload, template <typename> class Allocator>
     [[nodiscard]]
     constexpr node<Payload, Allocator> & adl_parent(node<Payload, Allocator> & self) /**/
@@ -580,6 +577,11 @@ namespace scl::hierarchy
  */
 
 /**
+ * @typedef scl::hierarchy::node::node_pointer
+ * @brief Pointer used for the parent link (`node *`). Null for a root.
+ */
+
+/**
  * @typedef scl::hierarchy::node::reference
  * @brief Lvalue reference to `value_type` (`node &`), derived from `nodes`.
  */
@@ -657,9 +659,10 @@ namespace scl::hierarchy
  * @fn scl::hierarchy::node::node(node &&)
  * @brief Moves the child list from @p other in O(1) and resets parent pointers.
  *
- * The underlying `std::list` is moved (O(1)).  Every transferred child's
- * `m_parent` is rewritten to `this`.  The moved-from node is left with no
- * children and no parent; its `payload` is in a valid but unspecified state.
+ * The underlying `std::list` is moved (O(1)).  Every transferred child's parent
+ * link is rewritten to point at this node, so `parent()` answers it rather than
+ * the source.  The moved-from node is left with no children and no parent; its
+ * `payload` is in a valid but unspecified state.
  *
  * @param other  Source node to move from.
  *
@@ -697,6 +700,34 @@ namespace scl::hierarchy
  * scl::hierarchy::node<int>         c{};                 // payload = int{} = 0
  * scl::hierarchy::node<std::pair<int,int>> d{1, 2};      // piecewise pair
  * @endcode
+ */
+
+/**
+ * @fn scl::hierarchy::node::~node()
+ * @brief Destroys the node and, with it, the whole subtree it owns.
+ */
+
+/**
+ * @fn scl::hierarchy::node::operator=(node const &)
+ * @brief Deleted: assignment would have to choose between rewriting the
+ *        subtree in place and re-parenting it, and neither reading is the
+ *        obvious one. Use @ref scl::hierarchy::node::transfer to move
+ *        children, or construct a fresh node.
+ */
+
+/**
+ * @fn scl::hierarchy::node::operator=(node &&)
+ * @brief Deleted, for the same reason as copy assignment.
+ */
+
+// -----------------------------------------------------------------------------
+// Allocator
+// -----------------------------------------------------------------------------
+
+/**
+ * @fn scl::hierarchy::node::get_allocator() const
+ * @brief Returns the allocator the child list was built with.
+ * @return A copy of the underlying `nodes` allocator.
  */
 
 // -----------------------------------------------------------------------------
@@ -1174,4 +1205,49 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::node::crend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ */
+
+// -----------------------------------------------------------------------------
+// ADL customization points
+// -----------------------------------------------------------------------------
+
+/**
+ * @fn scl::hierarchy::adl_parent(node<Payload, Allocator> & self)
+ * @ingroup scl_utility_hierarchy
+ * @brief Customization point answering @ref scl::hierarchy::parent_of for a node.
+ *
+ * Found by argument-dependent lookup, not called directly: the algorithms in
+ * `algorithm.h` are the interface, and this is how `node` satisfies them.
+ *
+ * @param  self  The node whose parent to return.
+ * @return The parent, mutable because @p self is.
+ */
+
+/**
+ * @fn scl::hierarchy::adl_parent(node<Payload, Allocator> const & self)
+ * @ingroup scl_utility_hierarchy
+ * @brief Const counterpart of @ref scl::hierarchy::adl_parent, so the parent is
+ *        only ever as mutable as the node it was reached from.
+ *
+ * @param  self  The node whose parent to return.
+ * @return The parent, immutable.
+ */
+
+/**
+ * @fn scl::hierarchy::adl_has_parent(node<Payload, Allocator> const & self)
+ * @ingroup scl_utility_hierarchy
+ * @brief Customization point answering @ref scl::hierarchy::has_parent for a node.
+ *
+ * @param  self  The node to query.
+ * @return `true` when @p self is attached to a parent.
+ */
+
+/**
+ * @fn scl::hierarchy::adl_identity(node<Payload, Allocator> const & self)
+ * @ingroup scl_utility_hierarchy
+ * @brief Customization point answering @ref scl::hierarchy::are_identical for a node.
+ *
+ * @param  self  The node to identify.
+ * @return The node's own address — a node is reached by reference, so it is
+ *         its own identity.
  */

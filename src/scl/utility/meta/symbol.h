@@ -15,6 +15,14 @@
  *     Useful for reflection-like tasks where only the member or function name is required.
  */
 
+/**
+ * @internal
+ * @brief Pattern anchor: a symbol of a known name, so the shape the compiler
+ *        gives `__PRETTY_FUNCTION__` can be measured against it.
+ *
+ * The name is deliberately unpronounceable, so that it cannot occur inside a
+ * symbol name being extracted.
+ */
 inline void lah4l4tjla6_f() {}
 
 namespace scl::detail

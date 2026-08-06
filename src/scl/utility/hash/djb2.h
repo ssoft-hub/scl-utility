@@ -78,3 +78,22 @@ namespace scl::hash
     };
 
 } // namespace scl::hash
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @typedef scl::hash::djb2_hasher::result_type
+ * @brief Digest type produced by this hasher — `std::uint64_t`.
+ */
+
+/**
+ * @fn scl::hash::djb2_hasher::operator()(Range const & range) const
+ * @brief Hashes @p range with @ref scl::hash::djb2 and its default seed.
+ *
+ * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
+ *                convertible to `std::uint8_t`.
+ * @param  range  Input range to hash.
+ * @return 64-bit djb2a digest of @p range.
+ */

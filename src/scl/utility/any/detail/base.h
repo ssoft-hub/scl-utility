@@ -49,9 +49,9 @@ namespace scl::detail
     }
 
     template <typename Type>
-        requires ::std::is_reference_v<Type>
     [[nodiscard]]
     constexpr any_qualifier any_qualifiers_of() noexcept
+        requires ::std::is_reference_v<Type>
     {
         using referent = ::std::remove_reference_t<Type>;
 
