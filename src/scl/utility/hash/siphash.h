@@ -181,3 +181,32 @@ namespace scl::hash
     };
 
 } // namespace scl::hash
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @var scl::hash::siphash_key::k0
+ * @brief Low half of the 128-bit secret key.
+ */
+
+/**
+ * @var scl::hash::siphash_key::k1
+ * @brief High half of the 128-bit secret key.
+ */
+
+/**
+ * @typedef scl::hash::siphash_hasher::result_type
+ * @brief Digest type produced by this hasher — `std::uint64_t`.
+ */
+
+/**
+ * @fn scl::hash::siphash_hasher::operator()(Range const & range) const
+ * @brief Hashes @p range with @ref scl::hash::siphash under the embedded key.
+ *
+ * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
+ *                convertible to `std::uint8_t`.
+ * @param  range  Input range to hash.
+ * @return 64-bit SipHash-2-4 digest of @p range.
+ */

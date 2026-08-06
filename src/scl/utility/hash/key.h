@@ -156,3 +156,14 @@ struct std::hash<::scl::hash::key<Hasher>>
  * @fn scl::hash::key::operator<=>(key const &, key const &)
  * @brief Three-way comparison (generates ==, !=, <, <=, >, >=).
  */
+
+/**
+ * @fn std::hash< ::scl::hash::key< Hasher > >::operator()(::scl::hash::key< Hasher > const & k) const
+ * @brief Returns the digest already held by @p k, narrowed to `std::size_t`.
+ *
+ * The digest is the hash: `key` is produced by a hasher, so rehashing it would
+ * only cost work without adding distribution.
+ *
+ * @param  k  Digest to convert.
+ * @return The stored digest as `std::size_t`.
+ */

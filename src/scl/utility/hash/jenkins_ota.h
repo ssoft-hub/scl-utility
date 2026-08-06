@@ -91,3 +91,23 @@ namespace scl::hash
     };
 
 } // namespace scl::hash
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @typedef scl::hash::jenkins_ota_hasher::result_type
+ * @brief Digest type produced by this hasher — `std::uint32_t`, as Jenkins
+ *        one-at-a-time is a 32-bit hash.
+ */
+
+/**
+ * @fn scl::hash::jenkins_ota_hasher::operator()(Range const & range) const
+ * @brief Hashes @p range with @ref scl::hash::jenkins_ota and its default seed.
+ *
+ * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
+ *                convertible to `std::uint8_t`.
+ * @param  range  Input range to hash.
+ * @return 32-bit Jenkins one-at-a-time digest of @p range.
+ */

@@ -76,3 +76,22 @@ namespace scl::hash
     };
 
 } // namespace scl::hash
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @typedef scl::hash::sdbm_hasher::result_type
+ * @brief Digest type produced by this hasher — `std::uint64_t`.
+ */
+
+/**
+ * @fn scl::hash::sdbm_hasher::operator()(Range const & range) const
+ * @brief Hashes @p range with @ref scl::hash::sdbm and its default seed.
+ *
+ * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
+ *                convertible to `std::uint8_t`.
+ * @param  range  Input range to hash.
+ * @return 64-bit sdbm digest of @p range.
+ */
