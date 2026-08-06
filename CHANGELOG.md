@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The reference now lists and describes every public member. Previously 147 of them —
+  most of `scl::hierarchy::tree` and its iterator and reference proxies, but also the
+  hash functors, the deleted special members of `scl::type_key` and `scl::any_arg`, and
+  the `hierarchy` ADL customization points — carried no text and were dropped from the
+  pages entirely rather than shown as undocumented.
+- Every member's description now appears in the `Member Documentation` section of its class
+  page, not only in the summary table at the top. A one-line description — which is what a
+  type alias, a deleted special member or an iterator operator gets — previously stopped at
+  the summary, leaving 207 of the 377 public members with no detailed entry.
+- The documentation lint gate now holds coverage as well as attachment: a public member
+  added without a block fails it, where before it silently disappeared from the reference.
+
 ### Removed
 
 - The `ScL Utility` group. It was the declared parent of the module groups but only

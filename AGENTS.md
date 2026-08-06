@@ -29,6 +29,21 @@ project/doxygen/     — Doxyfile
 - Test files named `*_gtest.cpp`, `*_doctest.cpp`, or `*_catch2.cpp`; every new public API must have a GoogleTest (`*_gtest.cpp`) test
 - No comments unless the WHY is non-obvious
 - All source comments and identifiers in **English**
+- A `requires` clause goes **after** the declaration, never between the template head and
+  the declaration:
+
+```cpp
+template <typename Type>
+[[nodiscard]]
+constexpr Type * any_cast(Type * arg) noexcept
+    requires(::std::is_object_v<Type>)
+{ ... }
+```
+
+  It follows every other part of the declarator — parameter list, `const`, `noexcept`,
+  trailing return type — and precedes `= delete` / `= default` and a constructor's
+  initialiser list. A `requires` *expression* inside a `concept` is a different construct
+  and is unaffected.
 
 ## Required Checks Before Every Commit
 Run on every changed `.h` / `.hpp` file:
@@ -131,12 +146,9 @@ matches nothing, `node(Arguments &&... arguments)` matches. Run `script/lint/dox
 (a lint job in both CI pipelines) after touching a public header; it fails on every Doxygen
 diagnostic, an unattached block and a stale `@param` name alike.
 
-Attribute macros are expanded by Doxygen, so `@fn` spells the clean declaration —
-`SCL_HOT` and `SCL_LIFETIMEBOUND` never appear in it. The Doxyfile expands every macro
-(`MACRO_EXPANSION = YES` with `EXPAND_ONLY_PREDEF = NO`) using the definition found in the
-source, reached through `INCLUDE_PATH`, so a new attribute macro needs no entry anywhere
-and the macros keep their own `@def` pages — which a `PREDEFINED` override would take
-away, its `#ifndef` guard hiding the definition it documents.
+Attribute macros are expanded before matching, so `@fn` spells the clean declaration —
+`SCL_HOT` and `SCL_LIFETIMEBOUND` never appear in it. A new attribute macro needs no entry
+anywhere for this to hold.
 
 Four shapes defeat out-of-line matching in Doxygen 1.15 and 1.16. The first three have a
 fix on the declaration side:
@@ -145,7 +157,11 @@ fix on the declaration side:
   *names* do not disambiguate, so `any_cast(Wrapper * view)` in one header and
   `any_cast(Wrapper * arg)` in another collapse into a single member and one of the two
   blocks is dropped without a warning. Give the deduced template parameters distinct names
-  (`View` against `Wrapper`) so the rendered signatures differ.
+  so the rendered signatures differ, naming each after the role it plays —
+  `ValueArgument`, `LValueArgument`, `ConstLValueArgument` for the three `any_cast` forms
+  that read and write through an argument. A trailing `requires` clause tells such
+  overloads apart for the compiler but not for Doxygen, so the names are what make each
+  addressable from an `@fn` block.
 - **A `requires` clause needs each conjunct parenthesised** — `requires(A) && (B)`, not
   `requires A && B`. Doxygen drops the leading `::` of a conjunct that follows `&&`, and
   the mangled clause no longer matches the declaration it came from.
@@ -176,10 +192,36 @@ namespace scl
 #endif
 ```
 
-`WARN_AS_ERROR` stays `NO`, and the gate greps the report instead: `WARN_AS_ERROR` would
-also fail on `WARN_IF_UNDOCUMENTED`, and members that never had a block are a coverage gap
-with its own gate to come — a different defect from a block that was written and then lost.
-Everything Doxygen does report is a finding, so the report is expected to stay empty.
+Name a befriended **class** from the root — `friend class ::scl::hierarchy::tree<Payload,
+Observer, Allocator>;`, `template <typename, typename...> friend class ::scl::any_switch;`.
+An unqualified one whose name matches a member of the befriending class (`friend class
+tree;` inside `tree::reference`, which also has a `tree()` accessor) captures that member's
+out-of-line block, and nothing is reported, since the block did reach a target.
+
+A befriended **free function** takes the namespace *without* the leading `::` —
+`friend constexpr Type * scl::any_cast(...)`. The leading form loses the function's own
+definition instead. Qualifying it at all needs a prior namespace-scope declaration, so a
+function returning a dependent east-const pointer stays unqualified — see the third trap
+above. A hidden friend, defined in the class body like `type_key::operator==`, cannot be
+qualified at all.
+
+Judge coverage from the generated HTML, not from the report: a block can be attached, carry
+its text in the XML and still not reach the reader. Compare the `memtitle` count on a class
+page against its member rows.
+
+### Visibility
+
+The public API is documented in full — every public member carries a block, deleted and
+defaulted special members, type aliases and iterator boilerplate included. A one-line
+`@brief` is enough where there is nothing more to say.
+
+Private and protected members stay out of the reference. A block written for one, because a
+reader of the code needs it, carries `@internal`.
+
+An internal entity declared in *public* scope — a pattern anchor, an `SCL_DETAIL_*` probe —
+takes `@internal` **and** an `EXCLUDE_SYMBOLS` entry. The tag alone is not enough: an
+`@internal` block is discarded before it counts as documentation, which leaves the entity
+reported as undocumented instead of excluded.
 
 ## Do Not
 - Add runtime dependencies
