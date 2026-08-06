@@ -167,6 +167,39 @@ namespace scl
  */
 
 /**
+ * @fn scl::type_key::type_key()
+ * @brief Deleted: a key is produced only by ::scl::type_key_of, which pairs a
+ *        type's name with the discriminator that belongs to it.
+ */
+
+/**
+ * @fn scl::type_key::type_key(type_key const &)
+ * @brief Deleted: a key is an identity with reference semantics, so a copy
+ *        would drop the address fast path @ref scl::type_key::operator==
+ *        relies on. Hold `type_key const &` or `type_key const *` instead.
+ */
+
+/**
+ * @fn scl::type_key::type_key(type_key &&)
+ * @brief Deleted, for the same reason as the copy constructor.
+ */
+
+/**
+ * @fn scl::type_key::operator=(type_key const &)
+ * @brief Deleted: a key denotes one type for its whole lifetime.
+ */
+
+/**
+ * @fn scl::type_key::operator=(type_key &&)
+ * @brief Deleted, for the same reason as copy assignment.
+ */
+
+/**
+ * @fn scl::type_key::~type_key()
+ * @brief Trivial: a key owns nothing, holding only a view of its module.
+ */
+
+/**
  * @fn scl::type_key::name()
  * @brief Fully qualified compile-time type name, as ::scl::type_name<T>()
  *        renders it for the current compiler.
