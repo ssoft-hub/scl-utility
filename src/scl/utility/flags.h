@@ -18,7 +18,6 @@
 
 /**
  * @defgroup scl_utility_flags ScL Flags
- * @ingroup scl_utility
  * @brief Type-safe bitmask container `scl::flags` over a scoped `enum class`.
  */
 
@@ -783,6 +782,12 @@ namespace scl
 /**
  * @typedef scl::flags::const_iterator::difference_type
  * @brief Signed integer type for iterator distances.
+ */
+
+/**
+ * @fn scl::flags::const_iterator::const_iterator()
+ * @brief Constructs a singular iterator owning no flags, as the forward
+ *        iterator requirements demand. Comparable, but not dereferenceable.
  */
 
 /**
