@@ -8,7 +8,6 @@
 
 /**
  * @defgroup scl_utility_hierarchy ScL Hierarchy
- * @ingroup scl_utility
  * @brief Parent-child tree nodes with observer-aware tree wrapper.
  * @{
  */

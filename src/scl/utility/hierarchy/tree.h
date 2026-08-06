@@ -34,21 +34,9 @@ namespace scl::hierarchy::concepts
             obs.on_change(value, value);
         };
 
-    // Shape required to serve as an ADL node-reference proxy (tree::reference /
-    // tree::const_reference): .leaf() returning an actual scl::hierarchy::node,
-    // plus .parent() / .has_parent(). Internal — not part of the public API;
-    // narrows the adl_parent / adl_has_parent / adl_identity hooks below.
-    //
-    // tree<Payload, Observer, Allocator>::reference cannot be named directly by
-    // a template parameter list the compiler can deduce (Payload/Observer/
-    // Allocator only ever appear behind tree<...>::, a non-deduced context per
-    // [temp.deduct.type]) — so those hooks are function templates over a single,
-    // trivially-deduced Ref parameter, narrowed by this concept instead of
-    // naming reference/const_reference directly. Requiring .leaf() to return an
-    // actual node (checked by concepts::node) rules out an unrelated,
-    // coincidentally-shaped type; combined with ADL (this concept and the hooks
-    // live in scl::hierarchy, so they are only ever found for types associated
-    // with this namespace), an accidental match is not realistically possible.
+    // tree<...>::reference only ever appears behind tree<...>::, a non-deduced
+    // context per [temp.deduct.type], so the ADL hooks below take a deduced Ref
+    // and narrow it here instead of naming the proxies outright.
     template <typename Ref>
     concept node_proxy =
         requires(Ref self) {
@@ -119,7 +107,7 @@ namespace scl::hierarchy
     public:
         class iterator
         {
-            friend class tree;
+            friend class ::scl::hierarchy::tree<Payload, Observer, Allocator>;
 
         public:
             using iterator_concept = ::std::bidirectional_iterator_tag;
@@ -170,15 +158,15 @@ namespace scl::hierarchy
             constexpr iterator operator--(int) noexcept { return {m_tree, m_node_iter--}; }
 
             constexpr reference operator*() const noexcept { return {*m_tree, *m_node_iter}; }
-            constexpr arrow_wrapper<reference> operator->() const noexcept
+            constexpr auto operator->() const noexcept
             {
-                return {*m_tree, *m_node_iter};
+                return arrow_wrapper<reference>{*m_tree, *m_node_iter};
             }
         };
 
         class const_iterator
         {
-            friend class tree;
+            friend class ::scl::hierarchy::tree<Payload, Observer, Allocator>;
 
         public:
             using iterator_concept = ::std::bidirectional_iterator_tag;
@@ -247,9 +235,9 @@ namespace scl::hierarchy
             constexpr const_iterator operator--(int) noexcept { return {m_tree, m_node_iter--}; }
 
             constexpr const_reference operator*() const noexcept { return {*m_tree, *m_node_iter}; }
-            constexpr arrow_wrapper<const_reference> operator->() const noexcept
+            constexpr auto operator->() const noexcept
             {
-                return {*m_tree, *m_node_iter};
+                return arrow_wrapper<const_reference>{*m_tree, *m_node_iter};
             }
         };
 
@@ -258,7 +246,7 @@ namespace scl::hierarchy
 
         class reference
         {
-            friend class tree;
+            friend class ::scl::hierarchy::tree<Payload, Observer, Allocator>;
 
         public:
             using tree_reference = tree &;
@@ -387,8 +375,8 @@ namespace scl::hierarchy
 
             template <typename... Arguments>
             constexpr iterator emplace(const_iterator where, Arguments &&... arguments) /**/
-                noexcept(noexcept(m_node.emplace(::std::declval<typename node::const_iterator>(),
-                             ::std::declval<Arguments>()...)) &&
+                noexcept(noexcept(::std::declval<node_reference>().emplace(
+                             ::std::declval<typename node::const_iterator>(), ::std::declval<Arguments>()...)) &&
                     noexcept(::std::declval<observer &>().on_insert(::std::declval<iterator>())))
                 requires(::std::constructible_from<payload, Arguments...>)
             {
@@ -634,7 +622,7 @@ namespace scl::hierarchy
 
         class const_reference
         {
-            friend class tree;
+            friend class ::scl::hierarchy::tree<Payload, Observer, Allocator>;
 
         public:
             using const_tree_reference = tree const &;
@@ -886,9 +874,9 @@ namespace scl::hierarchy
 
         template <typename... Arguments>
         constexpr iterator emplace(const_iterator where, Arguments &&... arguments) /**/
-            noexcept(noexcept(m_nodes.emplace(::std::declval<typename nodes::const_iterator>(),
-                         ::std::declval<Arguments>()...)) &&
-                noexcept(m_observer.on_insert(::std::declval<iterator>())))
+            noexcept(noexcept(::std::declval<nodes &>().emplace(
+                         ::std::declval<typename nodes::const_iterator>(), ::std::declval<Arguments>()...)) &&
+                noexcept(::std::declval<observer &>().on_insert(::std::declval<iterator>())))
             requires(::std::constructible_from<payload, Arguments...>)
         {
             iterator iter{this, m_nodes.emplace(where.m_node_iter, ::std::forward<Arguments>(arguments)...)};
@@ -1113,13 +1101,6 @@ namespace scl::hierarchy
         return ::scl::hierarchy::are_identical(m_node, other.m_node);
     }
 
-    // ADL hooks implementing the scl::hierarchy::parent_of / has_parent /
-    // are_identical contract (see algorithm.h) for any concepts::node_proxy —
-    // tree::reference and tree::const_reference. Internal — not part of the
-    // public API; call parent_of / has_parent / are_identical instead.
-    // adl_identity returns the address of the wrapped node (via .leaf()), not
-    // of the proxy itself — reference/const_reference are transient by-value
-    // proxies, so two proxies denoting the same node must compare identical.
     template <concepts::node_proxy Ref>
     [[nodiscard]]
     constexpr Ref adl_parent(Ref self) /**/
@@ -1252,8 +1233,28 @@ namespace scl::hierarchy
  */
 
 /**
+ * @typedef scl::hierarchy::tree::payload_reference
+ * @brief Mutable reference to a stored payload (`payload &`).
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_payload_reference
+ * @brief Immutable reference to a stored payload (`payload const &`).
+ */
+
+/**
  * @typedef scl::hierarchy::tree::observer
  * @brief The observer type, `Observer<tree>`.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::observer_reference
+ * @brief Mutable reference to the observer (`observer &`).
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::observer_const_reference
+ * @brief Immutable reference to the observer (`observer const &`).
  */
 
 /**
@@ -1262,8 +1263,49 @@ namespace scl::hierarchy
  */
 
 /**
+ * @typedef scl::hierarchy::tree::nodes
+ * @brief The node container backing the root list, taken from `node`.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::pointer
+ * @brief `void`: an element is reached through a transient `reference` proxy,
+ *        so there is no pointer to it to hand out.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_pointer
+ * @brief `void`, for the same reason as @ref scl::hierarchy::tree::pointer.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::size_type
+ * @brief Unsigned integer type for element counts, taken from `nodes`.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::difference_type
+ * @brief Signed integer type for iterator distances, taken from `nodes`.
+ */
+
+/**
  * @typedef scl::hierarchy::tree::value_type
  * @brief STL element type of the root list — `reference`, not `payload`.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::allocator_type
+ * @brief Allocator the root list was built with, taken from `nodes`.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reverse_iterator
+ * @brief Mutable reverse iterator over the root list.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_reverse_iterator
+ * @brief Immutable reverse iterator over the root list.
  */
 
 // -----------------------------------------------------------------------------
@@ -1479,6 +1521,56 @@ namespace scl::hierarchy
  * @brief Returns a mutable past-the-end sentinel for the root list.
  */
 
+/**
+ * @fn scl::hierarchy::tree::begin() const
+ * @brief Returns an immutable iterator to the first root node.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::end() const
+ * @brief Returns an immutable past-the-end sentinel for the root list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::cbegin() const
+ * @brief Returns an immutable iterator to the first root node.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::cend() const
+ * @brief Returns an immutable past-the-end sentinel for the root list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::rbegin()
+ * @brief Returns a mutable reverse iterator to the last root node.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::rend()
+ * @brief Returns a mutable reverse past-the-end sentinel for the root list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::rbegin() const
+ * @brief Returns an immutable reverse iterator to the last root node.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::rend() const
+ * @brief Returns an immutable reverse past-the-end sentinel for the root list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::crbegin() const
+ * @brief Returns an immutable reverse iterator to the last root node.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::crend() const
+ * @brief Returns an immutable reverse past-the-end sentinel for the root list.
+ */
+
 // -----------------------------------------------------------------------------
 // tree::iterator / tree::const_iterator
 // -----------------------------------------------------------------------------
@@ -1490,9 +1582,244 @@ namespace scl::hierarchy
  */
 
 /**
+ * @typedef scl::hierarchy::tree::iterator::iterator_concept
+ * @brief `std::bidirectional_iterator_tag` — the concept this iterator models.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::iterator::iterator_category
+ * @brief `std::bidirectional_iterator_tag`, for pre-C++20 algorithm dispatch.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::iterator::value_type
+ * @brief What dereferencing yields — a `tree::reference` proxy, not a node.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::iterator::difference_type
+ * @brief Signed integer type for iterator distances.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::iterator::pointer
+ * @brief `void`: `operator*` returns a transient proxy by value, so there is no
+ *        pointer into the sequence to name. `operator->` returns a wrapper that
+ *        keeps the proxy alive for the duration of the access.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::iterator::reference
+ * @brief The proxy `operator*` returns — `tree::reference`, by value.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::iterator::const_reference
+ * @brief The read-only proxy over the same node — `tree::const_reference`.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::iterator()
+ * @brief Constructs a singular iterator belonging to no tree, as the forward
+ *        iterator requirements demand. Comparable, but not dereferenceable.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::operator==(iterator const & other) const
+ * @brief Reports whether both iterators denote the same position.
+ * @param  other  Iterator to compare against; must belong to the same tree
+ *                unless either side is singular.
+ * @return `true` when the two denote the same position.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::operator!=(iterator const & other) const
+ * @brief Negation of @ref scl::hierarchy::tree::iterator::operator==.
+ * @param  other  Iterator to compare against.
+ * @return `true` when the two denote different positions.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::operator++()
+ * @brief Advances to the next sibling.
+ * @return `*this`, advanced.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::operator--()
+ * @brief Steps back to the previous sibling.
+ * @return `*this`, stepped back.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::operator++(int)
+ * @brief Advances to the next sibling, returning the position left behind.
+ * @return A copy denoting the position before the advance.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::operator--(int)
+ * @brief Steps back to the previous sibling, returning the position left behind.
+ * @return A copy denoting the position before the step.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::operator*() const
+ * @brief Returns a proxy over the node at the current position.
+ * @return A `reference` proxy, by value — it denotes the node, it is not one.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::iterator::operator->() const
+ * @brief Reaches the members of the node at the current position.
+ * @return A wrapper holding the proxy, so it outlives the member access made
+ *         through it.
+ */
+
+/**
  * @class scl::hierarchy::tree::const_iterator
  * @brief Immutable bidirectional iterator over sibling nodes. Dereferences to a
  *        `const_reference` proxy. Implicitly constructible from `iterator`.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_iterator::iterator_concept
+ * @brief `std::bidirectional_iterator_tag` — the concept this iterator models.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_iterator::iterator_category
+ * @brief `std::bidirectional_iterator_tag`, for pre-C++20 algorithm dispatch.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_iterator::value_type
+ * @brief What dereferencing yields — a proxy, not a node.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_iterator::difference_type
+ * @brief Signed integer type for iterator distances.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_iterator::pointer
+ * @brief `void`, for the same reason as
+ *        @ref scl::hierarchy::tree::iterator::pointer.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_iterator::reference
+ * @brief The mutable proxy type of the owning tree, kept for symmetry with
+ *        `iterator`; `operator*` yields `const_reference`.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_iterator::const_reference
+ * @brief The proxy `operator*` returns — `tree::const_reference`, by value.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::const_iterator()
+ * @brief Constructs a singular iterator belonging to no tree, as the forward
+ *        iterator requirements demand. Comparable, but not dereferenceable.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::const_iterator(iterator const & other)
+ * @brief Converts a mutable iterator to an immutable one over the same position.
+ *
+ * Implicit, so a mutable iterator is accepted wherever an immutable one is
+ * expected — the conversion only ever narrows access.
+ *
+ * @param other  Iterator to convert.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::const_iterator(const_iterator const &)
+ * @brief Copies the position; the copy denotes the same node.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::const_iterator(const_iterator &&)
+ * @brief Same as the copy constructor: the position is two pointers, so moving
+ *        it copies it and leaves the source usable.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::~const_iterator()
+ * @brief Trivial: an iterator owns neither the tree nor the node it denotes.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator=(const_iterator const &)
+ * @brief Rebinds this iterator to the position @p other denotes.
+ * @return `*this`.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator=(const_iterator &&)
+ * @brief Same as copy assignment.
+ * @return `*this`.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator=(iterator const & other)
+ * @brief Rebinds this iterator to the position a mutable iterator denotes.
+ * @param  other  Iterator to take the position from.
+ * @return `*this`.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator==(const_iterator const & other) const
+ * @brief Reports whether both iterators denote the same position.
+ * @param  other  Iterator to compare against; must belong to the same tree
+ *                unless either side is singular.
+ * @return `true` when the two denote the same position.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator!=(const_iterator const & other) const
+ * @brief Negation of @ref scl::hierarchy::tree::const_iterator::operator==.
+ * @param  other  Iterator to compare against.
+ * @return `true` when the two denote different positions.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator++()
+ * @brief Advances to the next sibling.
+ * @return `*this`, advanced.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator--()
+ * @brief Steps back to the previous sibling.
+ * @return `*this`, stepped back.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator++(int)
+ * @brief Advances to the next sibling, returning the position left behind.
+ * @return A copy denoting the position before the advance.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator--(int)
+ * @brief Steps back to the previous sibling, returning the position left behind.
+ * @return A copy denoting the position before the step.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator*() const
+ * @brief Returns a read-only proxy over the node at the current position.
+ * @return A `const_reference` proxy, by value.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_iterator::operator->() const
+ * @brief Reaches the members of the node at the current position.
+ * @return A wrapper holding the proxy, so it outlives the member access made
+ *         through it.
  */
 
 // -----------------------------------------------------------------------------
@@ -1530,6 +1857,16 @@ namespace scl::hierarchy
 // -----------------------------------------------------------------------------
 
 /**
+ * @typedef scl::hierarchy::tree::reference::tree_reference
+ * @brief Mutable reference to the owning tree (`tree &`).
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reference::const_tree_reference
+ * @brief Immutable reference to the owning tree (`tree const &`).
+ */
+
+/**
  * @typedef scl::hierarchy::tree::reference::node_reference
  * @brief Mutable reference to the underlying `node` (`node &`).
  */
@@ -1539,6 +1876,46 @@ namespace scl::hierarchy
  * @brief Immutable reference to the underlying `node` (`node const &`).
  */
 
+/**
+ * @typedef scl::hierarchy::tree::reference::payload_reference
+ * @brief Mutable reference to the node's payload (`payload &`).
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reference::const_payload_reference
+ * @brief Immutable reference to the node's payload (`payload const &`).
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reference::iterator
+ * @brief Mutable iterator over this node's direct children.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reference::const_iterator
+ * @brief Immutable iterator over this node's direct children.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reference::reverse_iterator
+ * @brief Mutable reverse iterator over this node's direct children.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reference::const_reverse_iterator
+ * @brief Immutable reverse iterator over this node's direct children.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reference::size_type
+ * @brief Unsigned integer type for child counts.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::reference::difference_type
+ * @brief Signed integer type for iterator distances.
+ */
+
 // -----------------------------------------------------------------------------
 // tree::reference — identity and payload
 // -----------------------------------------------------------------------------
@@ -1546,6 +1923,11 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::reference::tree()
  * @brief Returns the tree this node belongs to.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::tree() const
+ * @brief Returns the tree this node belongs to, immutably.
  */
 
 /**
@@ -1568,6 +1950,13 @@ namespace scl::hierarchy
  * @brief Returns `true` when @p other denotes the same node — identity, not value.
  */
 
+/**
+ * @fn scl::hierarchy::tree::reference::operator!=(const_reference) const
+ * @brief Negation of @ref scl::hierarchy::tree::reference::operator==, spelled
+ *        out because the proxies compare across their mutable and immutable
+ *        forms rather than only against their own type.
+ */
+
 // -----------------------------------------------------------------------------
 // tree::reference — parent access
 // -----------------------------------------------------------------------------
@@ -1580,6 +1969,12 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::reference::parent()
  * @brief Returns a proxy over the parent node.
+ * @pre `has_parent()`
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::parent() const
+ * @brief Returns an immutable proxy over the parent node.
  * @pre `has_parent()`
  */
 
@@ -1604,8 +1999,20 @@ namespace scl::hierarchy
  */
 
 /**
+ * @fn scl::hierarchy::tree::reference::front() const
+ * @brief Returns an immutable proxy over the first direct child.
+ * @pre `!empty()`
+ */
+
+/**
  * @fn scl::hierarchy::tree::reference::back()
  * @brief Returns a proxy over the last direct child.
+ * @pre `!empty()`
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::back() const
+ * @brief Returns an immutable proxy over the last direct child.
  * @pre `!empty()`
  */
 
@@ -1766,6 +2173,56 @@ namespace scl::hierarchy
  * @brief Returns a mutable past-the-end sentinel for the direct child list.
  */
 
+/**
+ * @fn scl::hierarchy::tree::reference::begin() const
+ * @brief Returns an immutable iterator to the first direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::end() const
+ * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::cbegin() const
+ * @brief Returns an immutable iterator to the first direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::cend() const
+ * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::rbegin()
+ * @brief Returns a mutable reverse iterator to the last direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::rend()
+ * @brief Returns a mutable reverse past-the-end sentinel for the direct child list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::rbegin() const
+ * @brief Returns an immutable reverse iterator to the last direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::rend() const
+ * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::crbegin() const
+ * @brief Returns an immutable reverse iterator to the last direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::reference::crend() const
+ * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ */
+
 // -----------------------------------------------------------------------------
 // tree::const_reference
 // -----------------------------------------------------------------------------
@@ -1779,6 +2236,41 @@ namespace scl::hierarchy
  * `has_parent`, `parent`, `empty`, `size`, `front`, `back`, `operator==`, and
  * the iterators. There is no mutation, insertion, removal, or transfer on
  * `const_reference`.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_reference::const_tree_reference
+ * @brief Immutable reference to the owning tree (`tree const &`).
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_reference::const_node_reference
+ * @brief Immutable reference to the underlying `node` (`node const &`).
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_reference::const_payload_reference
+ * @brief Immutable reference to the node's payload (`payload const &`).
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_reference::const_iterator
+ * @brief Immutable iterator over this node's direct children.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_reference::const_reverse_iterator
+ * @brief Immutable reverse iterator over this node's direct children.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_reference::size_type
+ * @brief Unsigned integer type for child counts.
+ */
+
+/**
+ * @typedef scl::hierarchy::tree::const_reference::difference_type
+ * @brief Signed integer type for iterator distances.
  */
 
 /**
@@ -1813,6 +2305,13 @@ namespace scl::hierarchy
  */
 
 /**
+ * @fn scl::hierarchy::tree::const_reference::operator!=(const_reference) const
+ * @brief Negation of @ref scl::hierarchy::tree::const_reference::operator==,
+ *        spelled out because the proxies compare across their mutable and
+ *        immutable forms rather than only against their own type.
+ */
+
+/**
  * @fn scl::hierarchy::tree::const_reference::empty() const
  * @brief Returns `true` when this node has no direct children.
  */
@@ -1842,4 +2341,89 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::const_reference::begin() const
  * @brief Returns an immutable iterator to the first direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_reference::end() const
+ * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_reference::cbegin() const
+ * @brief Returns an immutable iterator to the first direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_reference::cend() const
+ * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_reference::rbegin() const
+ * @brief Returns an immutable reverse iterator to the last direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_reference::rend() const
+ * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_reference::crbegin() const
+ * @brief Returns an immutable reverse iterator to the last direct child.
+ */
+
+/**
+ * @fn scl::hierarchy::tree::const_reference::crend() const
+ * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ */
+
+// -----------------------------------------------------------------------------
+// ADL customization points
+// -----------------------------------------------------------------------------
+
+/**
+ * @fn scl::hierarchy::adl_parent(Ref self)
+ * @ingroup scl_utility_hierarchy
+ * @brief Customization point answering @ref scl::hierarchy::parent_of for a
+ *        @ref scl::hierarchy::tree proxy.
+ *
+ * Found by argument-dependent lookup, not called directly: the algorithms in
+ * `algorithm.h` are the interface, and this is how the proxies satisfy them.
+ * The parameter is a single deduced `Ref` rather than `tree::reference`, whose
+ * template arguments only ever appear behind `tree<...>::` and so cannot be
+ * deduced ([temp.deduct.type]); `concepts::node_proxy` narrows it back down.
+ *
+ * @tparam Ref   @ref scl::hierarchy::tree::reference or
+ *               @ref scl::hierarchy::tree::const_reference.
+ * @param  self  The proxy whose parent to return.
+ * @return A proxy for the parent, of the same kind as @p self.
+ */
+
+/**
+ * @fn scl::hierarchy::adl_has_parent(Ref self)
+ * @ingroup scl_utility_hierarchy
+ * @brief Customization point answering @ref scl::hierarchy::has_parent for a
+ *        @ref scl::hierarchy::tree proxy.
+ *
+ * @tparam Ref   @ref scl::hierarchy::tree::reference or
+ *               @ref scl::hierarchy::tree::const_reference.
+ * @param  self  The proxy to query.
+ * @return `true` when the denoted node is attached to a parent.
+ */
+
+/**
+ * @fn scl::hierarchy::adl_identity(Ref self)
+ * @ingroup scl_utility_hierarchy
+ * @brief Customization point answering @ref scl::hierarchy::are_identical for a
+ *        @ref scl::hierarchy::tree proxy.
+ *
+ * Returns the address of the wrapped node rather than of the proxy: the proxies
+ * are transient and passed by value, so two of them denoting the same node must
+ * still compare identical.
+ *
+ * @tparam Ref   @ref scl::hierarchy::tree::reference or
+ *               @ref scl::hierarchy::tree::const_reference.
+ * @param  self  The proxy to identify.
+ * @return The address of the node @p self denotes.
  */
