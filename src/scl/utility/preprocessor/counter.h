@@ -16,7 +16,11 @@
  * It's useful for generating unique IDs or counting occurrences of something
  * within a translation unit during compilation.
  *
+ * @warning Whether stateful metaprogramming of this kind is well-formed at all
+ *          is an open core issue; a future resolution may outlaw the technique.
+ *
  * @see https://stackoverflow.com/a/6174263/1190123
+ * @see http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#2118
  */
 
 namespace scl::preprocessor::detail
@@ -71,9 +75,10 @@ namespace scl::preprocessor::detail
  * @brief Reads the current value of a compile-time counter.
  * @ingroup scl_utility_preprocessor
  * @details
- * This macro constructs the counter's value by checking for `crumb` overloads
- * for each bit from 0 to 31. It chains `SCL_COUNTER_CRUMB` calls, where each
- * call resolves to the most specific `crumb` function available for its rank.
+ * The value is assembled one bit at a time, ranks 0 through 31, from the
+ * declarations left behind by earlier @ref SCL_COUNTER_NEXT expansions in the same
+ * translation unit. It is therefore a compile-time constant that reads differently
+ * at different points in the file — the count at the point of expansion.
  *
  * @param Tag The unique identifier for the counter. Can be a template type.
  * @return A `constexpr` value of type `std::uint_fast32_t`.
@@ -136,10 +141,10 @@ namespace scl::preprocessor::detail
  * @brief Increments a compile-time counter.
  * @ingroup scl_utility_preprocessor
  * @details
- * This macro defines a new `crumb` function overload in the `scl` namespace.
- * This new function is a better match for overload resolution for a specific
- * bit-rank, effectively "setting" that bit and incrementing the counter's value
- * for subsequent reads via `SCL_COUNTER_VALUE`.
+ * Expands to a declaration that sets one bit of the counter, so every later
+ * @ref SCL_COUNTER_VALUE for the same @p Tag reads one more than before. It is a
+ * declaration, not a statement: expand it at namespace or class scope, not inside a
+ * function body.
  *
  * @param Tag The unique identifier for the counter to increment. Can be a template type.
  * 
@@ -169,44 +174,3 @@ namespace scl::preprocessor::detail
             return {};                                                                                 \
         }                                                                                              \
     }
-
-// http://b.atch.se/posts/non-constant-constant-expressions/
-// http://b.atch.se/posts/constexpr-counter/#prereq-adl
-// https://stackoverflow.com/questions/44267673/is-stateful-metaprogramming-ill-formed-yet
-// http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#2118
-
-// namespace scl
-//{
-//     template < typename Tag_ >
-//     class counter
-//     {
-//         using Value = int;
-
-//        template < Value n >
-//        struct Index
-//        {
-//            friend constexpr Value adlValue ( Index< n > );
-//        };
-
-//        template < Value n >
-//        struct Writer
-//        {
-//            friend constexpr Value adlValue ( Index< n > ) { return n; }
-//            static constexpr Value value = n;
-//        };
-
-//        template < Value n >
-//        static constexpr Value increment ( float, Index< n > )
-//        { return n; }
-
-//        template < Value n, Value = adlValue( Index< n >{} ) >
-//        static constexpr Value increment ( Value, Index< n >, Value v = increment( 0, Index< n + 1 >{} ) ) { return v; }
-
-//    public:
-//        template < Value n = 0 >
-//        static constexpr Value next ( Value v = value_of< Writer< increment( 0, Index< 0 >{} ) + n > > ) { return v + 1; }
-
-//        template < Value n = 0 >
-//        static constexpr Value value ( Value v = value_of< Writer< increment( 0, Index< 0 >{} ) + n - 1 > > ) { return v + 1; }
-//    };
-//}
