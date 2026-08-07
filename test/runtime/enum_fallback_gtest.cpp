@@ -12,7 +12,7 @@ namespace
 {
     enum class FbColor : int
     {
-        Red  = 1,
+        Red = 1,
         Blue = -3,
     };
 

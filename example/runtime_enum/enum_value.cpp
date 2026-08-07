@@ -17,23 +17,23 @@
 
 enum class Color : int
 {
-    Red   = 1,
+    Red = 1,
     Green = 2,
-    Blue  = -3,
+    Blue = -3,
 };
 
 enum class Flags : unsigned
 {
     None = 0,
-    A    = 1,
-    B    = 2,
+    A = 1,
+    B = 2,
 };
 
 namespace app
 {
     enum class Status : int
     {
-        Ok  = 0,
+        Ok = 0,
         Err = 42,
     };
 } // namespace app
@@ -45,15 +45,15 @@ namespace app
 static void show_named()
 {
     // Compile-time: non-type template parameter, result is constexpr string_view.
-    constexpr auto ct_name  = ::scl::enum_name<Color::Red>();
+    constexpr auto ct_name = ::scl::enum_name<Color::Red>();
     constexpr auto ct_short = ::scl::enum_short_name<Color::Red>();
 
     ::std::cout << "[compile-time] enum_name       : " << ct_name << '\n';  // Color::Red
     ::std::cout << "[compile-time] enum_short_name : " << ct_short << '\n'; // Red
 
     // Runtime: accepts any value; returns "TypeName::N".
-    ::std::cout << "[runtime     ] enum_value       : " << ::scl::enum_value(Color::Red) << '\n';   // Color::1
-    ::std::cout << "[runtime     ] enum_value       : " << ::scl::enum_value(Color::Blue) << '\n';  // Color::-3
+    ::std::cout << "[runtime     ] enum_value       : " << ::scl::enum_value(Color::Red) << '\n'; // Color::1
+    ::std::cout << "[runtime     ] enum_value       : " << ::scl::enum_value(Color::Blue) << '\n'; // Color::-3
 }
 
 // ============================================================================
@@ -73,8 +73,8 @@ static void show_out_of_range()
 
 static void show_unsigned_and_namespaced()
 {
-    ::std::cout << "[runtime     ] Flags::B          : " << ::scl::enum_value(Flags::B) << '\n';          // Flags::2
-    ::std::cout << "[runtime     ] app::Status::Err  : " << ::scl::enum_value(app::Status::Err) << '\n';  // Status::42
+    ::std::cout << "[runtime     ] Flags::B          : " << ::scl::enum_value(Flags::B) << '\n'; // Flags::2
+    ::std::cout << "[runtime     ] app::Status::Err  : " << ::scl::enum_value(app::Status::Err) << '\n'; // Status::42
 }
 
 // ============================================================================
