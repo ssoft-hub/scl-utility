@@ -34,11 +34,11 @@ is covered separately in [observer_tuple.md](observer_tuple.md).
 ```cpp
 template <typename Tree>
 struct my_observer {
-    void on_insert(typename Tree::iterator);              // after a node is inserted
-    void on_erase (typename Tree::const_iterator);        // before a node is erased
+    void on_insert(Tree::iterator);              // after a node is inserted
+    void on_erase (Tree::const_iterator);        // before a node is erased
     void on_clear ();                                     // before the tree is cleared
-    void on_change(typename Tree::const_payload_reference old_value,
-                   typename Tree::const_payload_reference new_value);
+    void on_change(Tree::const_payload_reference old_value,
+                   Tree::const_payload_reference new_value);
 };
 ```
 
@@ -237,9 +237,9 @@ There is no mutation, insertion, removal, or transfer on `const_reference`.
 ```cpp
 template <typename Tree>
 struct logger {
-    void on_insert(typename Tree::iterator it)
+    void on_insert(Tree::iterator it)
     { std::cout << "insert: " << (*it).value() << '\n'; }
-    void on_erase(typename Tree::const_iterator it)
+    void on_erase(Tree::const_iterator it)
     { std::cout << "erase: " << (*it).value() << '\n'; }
     void on_clear() { std::cout << "clear\n"; }
     void on_change(int old_v, int new_v)

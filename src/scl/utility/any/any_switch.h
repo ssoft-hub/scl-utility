@@ -328,7 +328,7 @@ namespace scl
         static constexpr bool run(BranchTuple & branches, any_arg & subject, storage_type & result)
         {
             using branch = ::std::tuple_element_t<Index, branches_type>;
-            using case_type = typename branch::case_type;
+            using case_type = branch::case_type;
 
             auto & handler = ::std::get<Index>(branches).handler;
 

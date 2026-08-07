@@ -10,9 +10,9 @@ template <typename Tree>
 struct counting_observer
 {
 public:
-    using iterator = typename Tree::iterator;
-    using const_iterator = typename Tree::const_iterator;
-    using const_reference = typename Tree::const_payload_reference;
+    using iterator = Tree::iterator;
+    using const_iterator = Tree::const_iterator;
+    using const_reference = Tree::const_payload_reference;
 
 public:
     int inserted = 0;

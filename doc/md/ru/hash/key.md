@@ -340,7 +340,7 @@ struct siphash_hasher;
 template <byte_hasher Hasher = siphash_hasher<>>
 struct key {
     using hasher_type = Hasher;
-    using value_type  = typename Hasher::result_type;
+    using value_type  = Hasher::result_type;
     value_type value{};
 
     constexpr key(Range&&) noexcept;
