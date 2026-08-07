@@ -116,6 +116,16 @@ sources appear on the Examples page of the generated reference.
 - [`example/runtime_type`](example/runtime_type/type_name.cpp) — compile-time and runtime
   type names side by side under polymorphism.
 
+The programs under `example/quick_start/` are the shortest form of each topic, and are the
+source of the snippets in the Quick start above:
+
+- [`example/quick_start/any`](example/quick_start/any/any.cpp)
+- [`example/quick_start/flags`](example/quick_start/flags/flags.cpp)
+- [`example/quick_start/hash`](example/quick_start/hash/hash.cpp)
+- [`example/quick_start/hierarchy`](example/quick_start/hierarchy/hierarchy.cpp)
+- [`example/quick_start/meta`](example/quick_start/meta/meta.cpp)
+- [`example/quick_start/type_traits`](example/quick_start/type_traits/type_traits.cpp)
+
 ## Doxygen
 
 - [GitLab Pages](https://ssoft-scl.gitlab.io/scl-utility/dev/)
