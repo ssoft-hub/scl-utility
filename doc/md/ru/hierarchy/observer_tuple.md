@@ -72,9 +72,9 @@ void on_change(const_payload_reference old_value, const_payload_reference new_va
 ```cpp
 template <typename Tree>
 struct logger {
-    void on_insert(typename Tree::iterator it)
+    void on_insert(Tree::iterator it)
     { std::cout << "insert: " << (*it).value() << '\n'; }
-    void on_erase(typename Tree::const_iterator it)
+    void on_erase(Tree::const_iterator it)
     { std::cout << "erase: " << (*it).value() << '\n'; }
     void on_clear() { std::cout << "clear\n"; }
     void on_change(int old_v, int new_v)
@@ -84,8 +84,8 @@ struct logger {
 template <typename Tree>
 struct counter {
     std::size_t count = 0;
-    void on_insert(typename Tree::iterator) { ++count; }
-    void on_erase(typename Tree::const_iterator) { --count; }
+    void on_insert(Tree::iterator) { ++count; }
+    void on_erase(Tree::const_iterator) { --count; }
     void on_clear() { count = 0; }
     void on_change(int, int) {}
 };

@@ -39,7 +39,7 @@ namespace
     using has_bar_t = decltype(::std::declval<T>().bar());
 
     template <typename T>
-    using value_type_t = typename T::value_type;
+    using value_type_t = T::value_type;
 
     template <typename T>
     using compute_result_t = decltype(::std::declval<T>().compute());
@@ -51,10 +51,10 @@ namespace
     using has_size_t = decltype(::std::declval<T>().size());
 
     template <typename T>
-    using iterator_t = typename T::iterator;
+    using iterator_t = T::iterator;
 
     template <typename T>
-    using inner_type_t = typename T::Inner::type;
+    using inner_type_t = T::Inner::type;
 
 } // anonymous namespace
 

@@ -59,7 +59,7 @@ Extracts the type of `Operation<Arguments...>`, or `void` if ill-formed.
 
 ```cpp
 template <typename T>
-using value_type_t = typename T:: value_type;
+using value_type_t = T::value_type;
 
 using VecValueType = scl::detected_t<value_type_t, std::vector<int>>;
 // VecValueType is int
@@ -118,7 +118,7 @@ void process(const T& obj) {
 
 ```cpp
 template <typename T>
-using value_type_t = typename T:: value_type;
+using value_type_t = T::value_type;
 
 template <typename Container>
 auto sum(const Container& c) {

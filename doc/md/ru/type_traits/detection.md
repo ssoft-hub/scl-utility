@@ -61,7 +61,7 @@ if constexpr (scl::is_detected_v<has_size_t, MyType>) {
 
 ```cpp
 template <typename T>
-using value_type_t = typename T::value_type;
+using value_type_t = T::value_type;
 
 using VecValueType = scl::detected_t<value_type_t, std::vector<int>>;
 // VecValueType — это int
@@ -120,7 +120,7 @@ void process(const T& obj) {
 
 ```cpp
 template <typename T>
-using value_type_t = typename T:: value_type;
+using value_type_t = T::value_type;
 
 template <typename Container>
 auto sum(const Container& c) {

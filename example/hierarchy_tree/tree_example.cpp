@@ -41,20 +41,20 @@ namespace
     {
         ::std::map<::std::string, ::std::vector<::std::string>> by_assignee;
 
-        void on_insert(typename Tree::iterator it)
+        void on_insert(Tree::iterator it)
         {
             by_assignee[it->value().assignee].push_back(it->value().title);
         }
 
-        void on_erase(typename Tree::const_iterator it)
+        void on_erase(Tree::const_iterator it)
         {
             remove_title(by_assignee[it->value().assignee], it->value().title);
         }
 
         void on_clear() { by_assignee.clear(); }
 
-        void on_change(typename Tree::const_payload_reference before, /**/
-            typename Tree::const_payload_reference after)
+        void on_change(Tree::const_payload_reference before, /**/
+            Tree::const_payload_reference after)
         {
             if (before.assignee == after.assignee)
                 return;
@@ -74,12 +74,12 @@ namespace
     {
         ::std::map<::std::string, int> by_status;
 
-        void on_insert(typename Tree::iterator it) { ++by_status[it->value().status]; }
-        void on_erase(typename Tree::const_iterator it) { --by_status[it->value().status]; }
+        void on_insert(Tree::iterator it) { ++by_status[it->value().status]; }
+        void on_erase(Tree::const_iterator it) { --by_status[it->value().status]; }
         void on_clear() { by_status.clear(); }
 
-        void on_change(typename Tree::const_payload_reference before, /**/
-            typename Tree::const_payload_reference after)
+        void on_change(Tree::const_payload_reference before, /**/
+            Tree::const_payload_reference after)
         {
             if (before.status == after.status)
                 return;

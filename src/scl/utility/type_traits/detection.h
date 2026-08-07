@@ -69,7 +69,7 @@ namespace scl
      * @endcode
      */
     template <template <typename...> class Operation, typename... Arguments>
-    using is_detected = typename detail::detector<void, void, Operation, Arguments...>::value_t;
+    using is_detected = detail::detector<void, void, Operation, Arguments...>::value_t;
 
     /**
      * @brief Variable template version of is_detected
@@ -95,7 +95,7 @@ namespace scl
      * @endcode
      */
     template <template <typename...> class Operation, typename... Arguments>
-    using detected_t = typename detail::detector<void, void, Operation, Arguments...>::type;
+    using detected_t = detail::detector<void, void, Operation, Arguments...>::type;
 
     /**
      * @brief Helper for getting detected type or a default
@@ -122,7 +122,7 @@ namespace scl
      * @endcode
      */
     template <typename Default, template <typename...> class Operation, typename... Arguments>
-    using detected_or_t = typename detected_or<Default, Operation, Arguments...>::type;
+    using detected_or_t = detected_or<Default, Operation, Arguments...>::type;
 
     /**
      * @brief Checks if Operation<Arguments...> results in exactly Expected type
