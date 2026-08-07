@@ -63,6 +63,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the free operators in a namespace of their own, so only the type they belong
   to reaches them.
 
+### CI
+
+- The formatting gate covers `test/` and `example/` as well as `src/`, and the
+  sources as well as the headers. It previously read `src/*.h` only, so three
+  files had drifted away from `.clang-format` with nothing reporting it; they are
+  reformatted. Set `SCL_FORMAT_DIRS` to narrow the scan.
+- The formatting job runs clang-format 22. On 21 it reads `is_same_v<X &&, ...>`
+  as a comparison and demands spaces around the angle brackets, which no other
+  version accepts.
+
 ### Changed
 
 - Test infrastructure: sources named `*_shared.cpp` under `test/<subdir>/` now build
