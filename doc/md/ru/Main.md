@@ -75,7 +75,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 | Компонент | Заголовок | Описание |
 |-----------|-----------|----------|
-| [key](hash/key.md) | `<scl/utility/hash.h>` | Строго типизированный хеш-дайджест: метка switch, ключ контейнера, NTTP |
+| [key](hash/key.md) | `<scl/utility/hash.h>` | Строго типизированное хеш-значение: метка switch, ключ контейнера, NTTP |
 
 ### Flags — типобезопасная битовая маска над scoped enum
 
