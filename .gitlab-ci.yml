@@ -34,6 +34,15 @@ doxygen:
   script:
     - bash script/lint/doxygen.sh
 
+doc-snippets:
+  stage: lint
+  image: ubuntu:24.04
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
+  script:
+    - bash script/lint/doc_snippets.sh
+
 cppcheck:
   stage: lint
   image: ubuntu:24.04
