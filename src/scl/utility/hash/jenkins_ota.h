@@ -35,7 +35,7 @@ namespace scl::hash
      * @note Jenkins OAT is a **32-bit** algorithm by definition. It returns
      *       `std::uint32_t`, unlike the 64-bit algorithms in this module.
      *       Use @ref scl::hash::fnv1a or @ref scl::hash::djb2 when a 64-bit
-     *       digest is required.
+     *       hash value is required.
      *
      * The function is `constexpr`, allowing compile-time hash computation.
      *
@@ -45,7 +45,7 @@ namespace scl::hash
      * @param  range  Input range to hash.
      * @note   String literals (e.g. `"hello"`) include the null terminator in the
      *         hash. Use `std::string_view{"hello"}` to hash only the characters.
-     * @return 32-bit Jenkins OAT digest of the input range.
+     * @return 32-bit Jenkins OAT hash value of the input range.
      *
      * @par Compile-time example
      * @code
@@ -109,5 +109,5 @@ namespace scl::hash
  * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
  *                convertible to `std::uint8_t`.
  * @param  range  Input range to hash.
- * @return 32-bit Jenkins one-at-a-time digest of @p range.
+ * @return 32-bit Jenkins one-at-a-time hash value of @p range.
  */

@@ -6,7 +6,7 @@
 ## Overview
 
 The `scl::hash` module provides a set of non-cryptographic hash functions and a
-strongly-typed digest wrapper `key<Hasher>`. Together they enable:
+strongly-typed hash-value wrapper `key<Hasher>`. Together they enable:
 
 - **Compile-time string hashing** — all functions and `key` are `constexpr`.
 - **`switch`/`case` dispatch on strings** — `key` converts implicitly to an
@@ -22,7 +22,7 @@ convertible to `std::uint8_t` — including string literals, `std::string_view`,
 > **Note on string literals vs `std::string_view`.**
 > A string literal `"hello"` is a `const char[6]` — the range includes the
 > null terminator `\0`. `std::string_view{"hello"}` covers only the five
-> printable characters. These inputs produce **different** digests. Use
+> printable characters. These inputs produce **different** hash values. Use
 > `std::string_view` when precise byte control is needed (e.g. chaining,
 > reference-vector tests).
 
@@ -50,7 +50,7 @@ widely used in compilers, linkers, and embedded systems. The XOR-then-multiply
 order gives better avalanche for similar inputs compared to the original FNV-1
 (multiply-then-add).
 
-**Chaining** two ranges into one digest:
+**Chaining** two ranges into one hash value:
 
 ```cpp
 auto h = scl::hash::fnv1a(std::string_view{"foo"});
@@ -98,7 +98,7 @@ constexpr auto h = scl::hash::sdbm("hello");
 | Chaining | Yes |
 
 **SDBM** originated from the sdbm database library. The mixed-shift formula
-spreads bits efficiently across the digest and performs well for both short and
+spreads bits efficiently across the hash value and performs well for both short and
 long keys with repeated substrings.
 
 ---
@@ -121,7 +121,7 @@ constexpr auto h = scl::hash::jenkins_ota("hello");
 **Jenkins OAT** (Bob Jenkins, 1997) is the only 32-bit algorithm in this
 module. It applies a three-step finalization pass (`h += h<<3; h ^= h>>11;
 h += h<<15`) that ensures full avalanche — every output bit depends on every
-input bit. Use a 64-bit algorithm when a 64-bit digest is required.
+input bit. Use a 64-bit algorithm when a 64-bit hash value is required.
 
 ---
 
@@ -181,7 +181,7 @@ Each algorithm ships with a callable wrapper struct that satisfies the
 
 ```cpp
 scl::hash::fnv1a_hasher h;
-auto digest = h("hello");   // same as scl::hash::fnv1a("hello")
+auto value = h("hello");   // same as scl::hash::fnv1a("hello")
 ```
 
 `siphash_hasher<Key>` embeds the key as a non-type template parameter, making
@@ -219,7 +219,7 @@ constexpr key<> id{"my_event"};           // default: siphash_hasher<>
 constexpr key<fnv1a_hasher> fnv_id{"x"};
 ```
 
-`key<Hasher>` wraps the integer digest produced by `Hasher` in a named type,
+`key<Hasher>` wraps the integer hash value produced by `Hasher` in a named type,
 preventing accidental mixing of raw integers with hash values. The `value_type`
 is deduced from `Hasher::result_type`.
 
@@ -227,7 +227,7 @@ is deduced from `Hasher::result_type`.
 |---|---|
 | `hasher_type` | The `Hasher` type |
 | `value_type` | `Hasher::result_type` — the underlying integer type |
-| `value` | Raw digest |
+| `value` | The hash value itself |
 | `operator value_type()` | Implicit conversion to the raw integer |
 | `operator<=>` | Three-way comparison (`==`, `!=`, `<`, `<=`, `>`, `>=`) |
 

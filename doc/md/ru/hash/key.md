@@ -185,7 +185,7 @@ scl::hash::siphash_key runtime_key{
 
 ```cpp
 scl::hash::fnv1a_hasher h;
-auto digest = h("hello");   // то же, что scl::hash::fnv1a("hello")
+auto value = h("hello");   // то же, что scl::hash::fnv1a("hello")
 ```
 
 `siphash_hasher<Key>` встраивает ключ как нетиповой параметр шаблона, поэтому

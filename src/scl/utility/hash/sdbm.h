@@ -41,7 +41,7 @@ namespace scl::hash
      * @note   String literals (e.g. `"hello"`) include the null terminator in the
      *         hash. Use `std::string_view{"hello"}` to hash only the characters.
      * @param  h      Initial hash value. Defaults to `0`.
-     * @return 64-bit SDBM digest of the input range.
+     * @return 64-bit SDBM hash value of the input range.
      *
      * @par Compile-time example
      * @code
@@ -93,5 +93,5 @@ namespace scl::hash
  * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
  *                convertible to `std::uint8_t`.
  * @param  range  Input range to hash.
- * @return 64-bit sdbm digest of @p range.
+ * @return 64-bit sdbm hash value of @p range.
  */

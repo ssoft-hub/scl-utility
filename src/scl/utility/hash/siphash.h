@@ -98,7 +98,7 @@ namespace scl::hash
      *         hash. Use `std::string_view{"hello"}` to hash only the characters.
      * @param  key    128-bit secret key. Defaults to @ref siphash_default_key.
      *                For security-sensitive use, provide a randomly generated key.
-     * @return 64-bit SipHash-2-4 digest.
+     * @return 64-bit SipHash-2-4 hash value.
      *
      * @par Compile-time example
      * @code
@@ -208,5 +208,5 @@ namespace scl::hash
  * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
  *                convertible to `std::uint8_t`.
  * @param  range  Input range to hash.
- * @return 64-bit SipHash-2-4 digest of @p range.
+ * @return 64-bit SipHash-2-4 hash value of @p range.
  */

@@ -113,7 +113,7 @@ Then include the umbrella header or individual component headers:
 
 | Component | Header | Description |
 |-----------|--------|-------------|
-| [key](hash/key.md) | `<scl/utility/hash.h>` | Strongly-typed hash digest; usable as switch label, map key, and NTTP |
+| [key](hash/key.md) | `<scl/utility/hash.h>` | Strongly-typed hash value; usable as switch label, map key, and NTTP |
 
 ### Flags — type-safe bitmask over a scoped enum
 
