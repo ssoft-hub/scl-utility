@@ -182,3 +182,9 @@ static_assert(scl::is_tu_local_v<std::vector<duck>>);
 static_assert(!scl::is_tu_local_v<goose>);
 static_assert(!scl::is_tu_local_v<int>);
 ```
+
+## Смотрите также
+
+- [`example/meta/type_key_example.cpp`](../../../../example/meta/type_key_example.cpp) —
+  рабочая версия: хешируемый хендл над `type_key`, согласованный с идентичностью ключа
+  и используемый напрямую как ключ неупорядоченного контейнера.

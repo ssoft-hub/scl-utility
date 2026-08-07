@@ -47,3 +47,9 @@ scl::enum_value(app::Status::Err); // "Status::42" — namespace stripped
 | Result | Member identifier (`"Color::Red"`) | Numeric value (`"Color::1"`) |
 | Out-of-range values | Not applicable — `V` must be a named enumerator | Supported |
 | RTTI | Not required | Not required |
+
+## See also
+
+- [`example/runtime_enum/enum_value.cpp`](../../../../example/runtime_enum/enum_value.cpp) —
+  runnable version: a named enumerator against its compile-time counterpart, a value
+  outside the enumerator set, an unsigned underlying type and a namespaced enum.

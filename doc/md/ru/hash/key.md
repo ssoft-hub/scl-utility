@@ -363,3 +363,10 @@ struct std::hash<scl::hash::key<Hasher>>;
 - Fowler, G., Noll, L. C. & Vo, P. (1991). FNV Hash — общественное достояние.
 - Bernstein, D. J. (1990). djb2 — общественное достояние.
 - Jenkins, B. (1997). [Hash Functions](http://www.burtleburtle.net/bob/hash/doobs.html) — общественное достояние.
+
+## Смотрите также
+
+- [`example/hash/key_nttp.cpp`](../../../../example/hash/key_nttp.cpp) —
+  рабочая версия: `key` как нетиповой параметр шаблона — тег типа из строкового
+  литерала, специализация по строковому значению и диспетчеризация по ключу,
+  вычисленному на этапе компиляции.

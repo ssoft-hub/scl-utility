@@ -68,6 +68,10 @@ cppcheck --enable=warning,style,performance,portability \
 bash script/lint/doxygen.sh
 ```
 
+The format gate checks `src/`, `test/` and `example/`, headers and sources alike, so a
+changed `.cpp` is subject to it too. `bash script/lint/clang_format.sh` runs it over the
+whole tree the way CI does.
+
 ## Branching
 - Branch name format: `{user}/feat/{subject}`, `{user}/fix/{subject}`, `{user}/refactor/{subject}`
 - **Never commit directly to `dev` or `main`**

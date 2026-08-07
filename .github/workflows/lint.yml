@@ -19,7 +19,8 @@ jobs:
 
   clang-format:
     runs-on: ubuntu-latest
-    container: silkeh/clang:21
+    # Not 21: it reads `is_same_v<X &&, ...>` as a comparison and spaces it out.
+    container: silkeh/clang:22
     steps:
       - uses: actions/checkout@v6
 

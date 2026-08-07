@@ -1,5 +1,5 @@
 /**
- * @file key_nttp.cpp
+ * @example key_nttp.cpp
  * @brief Demonstrates scl::hash::key<> as a non-type template parameter (NTTP).
  *
  * In C++20 a class type may be used as an NTTP if it is a *structural type*:

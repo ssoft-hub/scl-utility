@@ -121,4 +121,7 @@ Because it models `std::ranges::bidirectional_range` and `std::ranges::sized_ran
 
 ## See also
 
+- [`example/flags/flags_example.cpp`](../../../../example/flags/flags_example.cpp) —
+  runnable version: combining and querying flags, set algebra between two masks,
+  and iterating the set flags in both directions.
 - [Russian documentation](../../ru/flags/flags.md)

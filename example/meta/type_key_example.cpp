@@ -1,5 +1,5 @@
 /**
- * @file type_key_example.cpp
+ * @example type_key_example.cpp
  * @brief Demonstrates a user-side hashable handle for scl::type_key.
  *
  * scl::type_key ships without hashing support on purpose: the right digest

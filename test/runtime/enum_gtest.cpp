@@ -4,16 +4,16 @@
 
 enum class Color : int
 {
-    Red   = 1,
+    Red = 1,
     Green = 2,
-    Blue  = -3,
+    Blue = -3,
 };
 
 enum class Flags : unsigned
 {
     None = 0,
-    A    = 1,
-    B    = 2,
+    A = 1,
+    B = 2,
 };
 
 enum class ByteEnum : unsigned char
@@ -25,7 +25,7 @@ namespace ns
 {
     enum class Status : int
     {
-        Ok  = 0,
+        Ok = 0,
         Err = 42,
     };
 } // namespace ns
@@ -47,10 +47,7 @@ TEST(EnumValueTest, ScopedIntPositive)
 /**
  * @test Verify that enum_value formats negative underlying values correctly.
  */
-TEST(EnumValueTest, ScopedIntNegative)
-{
-    EXPECT_EQ(::scl::enum_value(Color::Blue), "Color::-3");
-}
+TEST(EnumValueTest, ScopedIntNegative) { EXPECT_EQ(::scl::enum_value(Color::Blue), "Color::-3"); }
 
 /**
  * @test Verify that enum_value formats a scoped enum with unsigned underlying type.
@@ -72,10 +69,7 @@ TEST(EnumValueTest, UnderlyingBytePromotedToUnsigned)
 /**
  * @test Verify that enum_value handles an out-of-range (unnamed) enum value.
  */
-TEST(EnumValueTest, OutOfRangeValue)
-{
-    EXPECT_EQ(::scl::enum_value(Color{42}), "Color::42");
-}
+TEST(EnumValueTest, OutOfRangeValue) { EXPECT_EQ(::scl::enum_value(Color{42}), "Color::42"); }
 
 /**
  * @test Verify that enum_value strips namespace qualifiers from the type name.
@@ -89,7 +83,4 @@ TEST(EnumValueTest, NamespacedEnum)
 /**
  * @test Verify that enum_value works for unscoped enums.
  */
-TEST(EnumValueTest, UnscopedEnum)
-{
-    EXPECT_EQ(::scl::enum_value(ValA), "Unscoped::7");
-}
+TEST(EnumValueTest, UnscopedEnum) { EXPECT_EQ(::scl::enum_value(ValA), "Unscoped::7"); }

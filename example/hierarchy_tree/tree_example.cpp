@@ -1,5 +1,5 @@
 /**
- * @file tree_example.cpp
+ * @example tree_example.cpp
  * @brief Demonstrates scl::hierarchy::tree<> with composed observers keeping
  *        two independent indexes in sync across structural moves.
  *

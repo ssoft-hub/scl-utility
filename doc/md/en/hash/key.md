@@ -357,3 +357,9 @@ struct std::hash<scl::hash::key<Hasher>>;
 - Fowler, G., Noll, L. C. & Vo, P. (1991). FNV Hash — public domain.
 - Bernstein, D. J. (1990). djb2 — public domain.
 - Jenkins, B. (1997). [Hash Functions](http://www.burtleburtle.net/bob/hash/doobs.html) — public domain.
+
+## See also
+
+- [`example/hash/key_nttp.cpp`](../../../../example/hash/key_nttp.cpp) —
+  runnable version: `key` as a non-type template parameter — a type tag from a string
+  literal, a specialisation selected by string value, and dispatch on a compile-time key.

@@ -1,5 +1,5 @@
 /**
- * @file type_name.cpp
+ * @example type_name.cpp
  * @brief Compares compile-time and runtime type name extraction.
  *
  * Compile-time:  scl::type_name<T>()       — T is a template parameter; no object required;
