@@ -90,6 +90,19 @@ find src \( -name '*.h' -o -name '*.hpp' \) -exec cppcheck \
   {} +
 ```
 
+### Documentation snippets
+
+A Markdown code block introduced by a snippet marker repeats a region of a compiled
+program, and CI fails when the two have drifted apart:
+```bash
+# Check every page
+bash script/lint/doc_snippets.sh
+
+# Fill the blocks in from their sources, after editing an example
+bash script/lint/doc_snippets.sh --write
+```
+The write mode is for local work only — CI checks and never writes.
+
 ## Test naming convention
 
 Test files live in `module/utility/test/` and are named by framework suffix:
@@ -105,10 +118,12 @@ Each public component should have tests in at least one framework.
 ## Documentation
 
 - All public APIs must have Doxygen comments in the header files.
-- Markdown documentation is maintained in two languages:
+- Markdown documentation is maintained per language under `doc/md/<language>/`:
   - English: `doc/md/en/`
   - Russian: `doc/md/ru/`
-- When adding or modifying a component, update both language versions.
+- When adding or modifying a component, update every language version.
+- A language added under `doc/md/` needs no configuration: the snippet check and the
+  documentation build find its pages by path.
 - Follow the existing doc format (see `doc/md/en/meta/type_name.md` as reference).
 
 ## Commit messages
