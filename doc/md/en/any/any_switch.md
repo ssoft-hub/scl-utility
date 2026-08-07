@@ -255,6 +255,8 @@ captured reference does.
 
 ## See also
 
+- [`example/any/any_example.cpp`](../../../../example/any/any_example.cpp) —
+  runnable version: one chain replacing a cascade of casts, over both backings.
 - [any_arg](any_arg.md) — the subject type every branch reads through
 - [any_view](any_view.md) — the storable read-only view, also accepted as a subject
 - [Russian documentation](../../ru/any/any_switch.md)

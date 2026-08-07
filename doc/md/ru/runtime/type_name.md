@@ -83,3 +83,9 @@ std::unique_ptr<Base> p = std::make_unique<app::Task<int>>();
 scl::type_name(*p);        // "app::Task<int>"
 scl::type_short_name(*p);  // "Task"
 ```
+
+## Смотрите также
+
+- [`example/runtime_type/type_name.cpp`](../../../../example/runtime_type/type_name.cpp) —
+  рабочая версия: формы времени компиляции и времени выполнения рядом для статического
+  типа, через ссылку на базовый класс и для шаблона, доступного через указатель на базу.

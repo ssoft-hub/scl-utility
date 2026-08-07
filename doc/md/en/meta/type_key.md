@@ -179,3 +179,9 @@ static_assert(scl::is_tu_local_v<std::vector<duck>>);
 static_assert(!scl::is_tu_local_v<goose>);
 static_assert(!scl::is_tu_local_v<int>);
 ```
+
+## See also
+
+- [`example/meta/type_key_example.cpp`](../../../../example/meta/type_key_example.cpp) —
+  runnable version: a hashable handle over `type_key`, kept consistent with the key's
+  identity and used directly as an unordered-container key.

@@ -1,5 +1,5 @@
 /**
- * @file enum_value.cpp
+ * @example enum_value.cpp
  * @brief Demonstrates scl::enum_value for runtime enum representation.
  *
  * Compile-time:  scl::enum_name<V>()    — returns the member identifier as a string_view

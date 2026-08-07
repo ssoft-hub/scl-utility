@@ -81,3 +81,9 @@ std::unique_ptr<Base> p = std::make_unique<app::Task<int>>();
 scl::type_name(*p);        // "app::Task<int>"
 scl::type_short_name(*p);  // "Task"
 ```
+
+## See also
+
+- [`example/runtime_type/type_name.cpp`](../../../../example/runtime_type/type_name.cpp) —
+  runnable version: the compile-time and runtime forms side by side on a static type,
+  through a base reference, and on a template accessed through a base pointer.

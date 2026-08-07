@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- An `Examples` page in the generated reference, listing all eight programs under
+  `example/` with their description and full source, and an `Examples` section in
+  `README.md` linking each of them. The programs were previously reachable only by
+  browsing the repository.
+- A link to the runnable example from every Markdown page whose subject has one:
+  `any_view`, `any_arg`, `any_switch`, `flags`, `hash::key`, `type_key`, `enum_value`
+  and the runtime `type_name`, in both languages.
+
 ### Changed
 
 - The reference now lists and describes every public member. Previously 147 of them —

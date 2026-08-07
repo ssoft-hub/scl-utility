@@ -195,6 +195,9 @@ Two limits of the key carry over unchanged:
 
 ## See also
 
+- [`example/any/any_example.cpp`](../../../../example/any/any_example.cpp) —
+  runnable version: one function reading either backing, the reference-form casts,
+  and the identity queries.
 - [any_arg](any_arg.md) — the parameter-only companion, which also grants write access
 - [any_switch](any_switch.md) — a branch chain reading a view without a cascade of casts
 - [type_key](../meta/type_key.md) — the identity key behind `type_key()`
