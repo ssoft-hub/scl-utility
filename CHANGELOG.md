@@ -15,8 +15,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A link to the runnable example from every Markdown page whose subject has one:
   `any_view`, `any_arg`, `any_switch`, `flags`, `hash::key`, `type_key`, `enum_value`
   and the runtime `type_name`, in both languages.
+- A Quick start of six programs — `meta`, `hash`, `flags`, `any`, `hierarchy`,
+  `type_traits` — under `example/quick_start/`. `README.md`, both `Main.md` and the
+  Doxygen main page show the code of those programs rather than a snippet written
+  beside them.
 
 ### Changed
+
+- `<scl/utility.h>` now includes every module header. It left out `hash.h` and
+  `runtime.h`, so the header the documentation offers as "everything" reached neither
+  the hash utilities nor `enum_value` and the runtime type names.
+- The installation instructions name paths and targets that exist, and cover the three
+  ways to consume the module: its `src` on an include path, the toolkit super-project
+  added in tree, and an installed package through
+  `find_package(scl COMPONENTS utility)`. The former `add_subdirectory(module/utility)`
+  addressed a directory that has no `CMakeLists.txt`.
+- The stated CMake requirement is 3.23, which is what the toolkit declares; the pages
+  said 3.20.
+- `README.md`, both `Main.md` and the Doxygen main page list all ten groups. Any,
+  Concepts and Runtime were missing from the README, Concepts and Hierarchy from both
+  `Main.md`, and five of the ten from the main page.
+- The badge row tells the two CI systems apart and carries the GitHub lint status
+  beside the GitLab one.
 
 - The reference now lists and describes every public member. Previously 147 of them —
   most of `scl::hierarchy::tree` and its iterator and reference proxies, but also the
@@ -65,6 +85,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### CI
 
+- A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
+  source file must repeat the region of that file between its `//! [quick_start]`
+  markers, so a documented program and its copy in the text cannot drift apart
+  unnoticed. `script/lint/doc_snippets.sh` documents the exact spelling.
 - The formatting gate covers `test/` and `example/` as well as `src/`, and the
   sources as well as the headers. It previously read `src/*.h` only, so three
   files had drifted away from `.clang-format` with nothing reporting it; they are

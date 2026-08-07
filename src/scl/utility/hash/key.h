@@ -2,7 +2,7 @@
 
 /**
  * @file
- * @brief Strongly-typed hash digest parameterized by a hash function.
+ * @brief Strongly-typed hash value parameterized by a hash function.
  * @ingroup scl_utility_hash
  */
 
@@ -17,7 +17,7 @@ namespace scl::hash::concepts
 {
     /**
      * @brief Concept satisfied by any default-constructible callable that maps
-     *        a byte range to an integral digest and exposes a `result_type` typedef.
+     *        a byte range to an integral hash value and exposes a `result_type` typedef.
      * @ingroup scl_utility_hash
      *
      * Used to constrain the `Hasher` parameter of @ref scl::hash::key.
@@ -33,12 +33,12 @@ namespace scl::hash::concepts
 namespace scl::hash
 {
     /**
-     * @brief Strongly-typed hash digest parameterized by a hash function.
+     * @brief Strongly-typed hash value parameterized by a hash function.
      * @ingroup scl_utility_hash
      *
-     * Wraps the digest produced by @p Hasher in a named type, preventing
+     * Wraps the hash value produced by @p Hasher in a named type, preventing
      * accidental mixing of raw integers with hash values. The `value_type` and
-     * width of the digest are derived automatically from the hasher's return type:
+     * width of the hash value are derived automatically from the hasher's return type:
      *
      * | Hasher                | `value_type`        |
      * |-----------------------|---------------------|
@@ -49,7 +49,7 @@ namespace scl::hash
      * | `jenkins_ota_hasher`  | `std::uint32_t`     |
      *
      * Key properties:
-     * - **`constexpr`** — digest computed at compile time.
+     * - **`constexpr`** — hash value computed at compile time.
      * - **Comparable** — `==`, `!=`, `<`, `<=`, `>`, `>=` via defaulted `<=>`.
      * - **`switch`/`case` label** — implicit conversion to `value_type` enables
      *   string-dispatching without `if`-`else` chains.
@@ -125,7 +125,7 @@ struct std::hash<::scl::hash::key<Hasher>>
 
 /**
  * @typedef scl::hash::key::hasher_type
- * @brief The hasher type used to produce this digest.
+ * @brief The hasher type used to produce this hash value.
  */
 
 /**
@@ -135,12 +135,12 @@ struct std::hash<::scl::hash::key<Hasher>>
 
 /**
  * @var scl::hash::key::value
- * @brief Raw digest value.
+ * @brief The hash value itself.
  */
 
 /**
  * @fn scl::hash::key::key(Range const & range)
- * @brief Constructs the digest by hashing @p range with @p Hasher.
+ * @brief Constructs the hash value by hashing @p range with @p Hasher.
  *
  * @tparam Range  Any type satisfying `std::ranges::range` whose elements
  *                are convertible to `std::uint8_t`.
@@ -149,7 +149,7 @@ struct std::hash<::scl::hash::key<Hasher>>
 
 /**
  * @fn scl::hash::key::operator value_type() const
- * @brief Implicit conversion to the raw integer digest.
+ * @brief Implicit conversion to the raw integer hash value.
  */
 
 /**
@@ -159,11 +159,11 @@ struct std::hash<::scl::hash::key<Hasher>>
 
 /**
  * @fn std::hash< ::scl::hash::key< Hasher > >::operator()(::scl::hash::key< Hasher > const & k) const
- * @brief Returns the digest already held by @p k, narrowed to `std::size_t`.
+ * @brief Returns the hash value already held by @p k, narrowed to `std::size_t`.
  *
- * The digest is the hash: `key` is produced by a hasher, so rehashing it would
+ * The stored value is the hash: `key` is produced by a hasher, so rehashing it would
  * only cost work without adding distribution.
  *
  * @param  k  Digest to convert.
- * @return The stored digest as `std::size_t`.
+ * @return The stored hash value as `std::size_t`.
  */

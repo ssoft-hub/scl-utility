@@ -28,7 +28,7 @@ namespace scl::hash
      * The function is `constexpr`, allowing compile-time hash computation.
      *
      * @note **Chaining:** pass the result of a previous call as @p h to hash
-     *       several ranges into a single digest:
+     *       several ranges into a single hash value:
      *       @code
      *       auto h = scl::hash::fnv1a(first_range);
      *       h     = scl::hash::fnv1a(second_range, h);
@@ -44,7 +44,7 @@ namespace scl::hash
      *                Defaults to the standard FNV-1a 64-bit offset basis
      *                `14695981039346656037` (`0xcbf29ce484222325`).
      *                An empty range leaves @p h unchanged and returns it as-is.
-     * @return 64-bit FNV-1a digest of the input range.
+     * @return 64-bit FNV-1a hash value of the input range.
      *
      * @par Compile-time example
      * @code
@@ -98,5 +98,5 @@ namespace scl::hash
  * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
  *                convertible to `std::uint8_t`.
  * @param  range  Input range to hash.
- * @return 64-bit FNV-1a digest of @p range.
+ * @return 64-bit FNV-1a hash value of @p range.
  */

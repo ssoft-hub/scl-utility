@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
-# Run the whole lint stage (clang-format, clang-tidy, cppcheck, doxygen) the same way
-# CI does. Each tool has its own script; this umbrella runs all four and aggregates the
-# result. Intended for local (IDE) use — CI invokes the per-tool scripts as separate jobs.
+# Run the whole lint stage (clang-format, clang-tidy, cppcheck, doxygen, doc snippets) the
+# same way CI does. Each tool has its own script; this umbrella runs all five and aggregates
+# the result. Intended for local (IDE) use — CI invokes the per-tool scripts as separate jobs.
 #
 set -uo pipefail
 here="$(dirname "$0")"
 
 rc=0
-for tool in clang_format clang_tidy cppcheck doxygen; do
+for tool in clang_format clang_tidy cppcheck doxygen doc_snippets; do
     echo "=== ${tool} ==="
     bash "${here}/${tool}.sh" || rc=1
 done

@@ -8,7 +8,7 @@
 
 /**
  * @defgroup scl_utility_hash ScL Hash Utilities
- * @brief Non-cryptographic compile-time hash functions and digest types.
+ * @brief Non-cryptographic compile-time hash functions and hash-value types.
  * @{
  */
 

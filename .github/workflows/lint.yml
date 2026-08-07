@@ -44,6 +44,14 @@ jobs:
       - name: Run doxygen lint
         run: bash script/lint/doxygen.sh
 
+  doc-snippets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check documentation snippets
+        run: bash script/lint/doc_snippets.sh
+
   cppcheck:
     runs-on: ubuntu-24.04
     steps:
