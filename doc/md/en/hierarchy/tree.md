@@ -309,7 +309,7 @@ assert(t.empty());
 
 ## See also
 
-- [`example/hierarchy_tree/tree_example.cpp`](../../../example/hierarchy_tree/tree_example.cpp) —
+- [`example/hierarchy_tree/tree_example.cpp`](../../../../example/hierarchy_tree/tree_example.cpp) —
   runnable version: a task board with two observers composed via
   `observer_tuple`, keeping independent indexes in sync across `set_value()`
   and cross-parent `transfer()`.

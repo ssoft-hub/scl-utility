@@ -183,6 +183,6 @@ assert(!extracted.has_parent());
 
 ## Смотрите также
 
-- [`example/hierarchy_node/node_example.cpp`](../../../example/hierarchy_node/node_example.cpp) —
+- [`example/hierarchy_node/node_example.cpp`](../../../../example/hierarchy_node/node_example.cpp) —
   рабочая версия примеров выше (оргструктура, реорганизация через
   `take()`/`transfer()`).

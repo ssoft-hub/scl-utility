@@ -106,10 +106,10 @@ Each public component should have tests in at least one framework.
 
 - All public APIs must have Doxygen comments in the header files.
 - Markdown documentation is maintained in two languages:
-  - English: `doc/en/`
-  - Russian: `doc/ru/`
+  - English: `doc/md/en/`
+  - Russian: `doc/md/ru/`
 - When adding or modifying a component, update both language versions.
-- Follow the existing doc format (see `doc/en/meta/type_name.md` as reference).
+- Follow the existing doc format (see `doc/md/en/meta/type_name.md` as reference).
 
 ## Commit messages
 

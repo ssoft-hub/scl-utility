@@ -100,8 +100,8 @@ int main() {
 
 ## Documentation
 
-- [English](doc/en/Main.md)
-- [Russian](doc/ru/Main.md)
+- [English](doc/md/en/Main.md)
+- [Russian](doc/md/ru/Main.md)
 
 ## See also
 

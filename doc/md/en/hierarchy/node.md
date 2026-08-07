@@ -178,5 +178,5 @@ assert(!extracted.has_parent());
 
 ## See also
 
-- [`example/hierarchy_node/node_example.cpp`](../../../example/hierarchy_node/node_example.cpp) —
+- [`example/hierarchy_node/node_example.cpp`](../../../../example/hierarchy_node/node_example.cpp) —
   runnable version of the examples above (org chart, `take()`/`transfer()` reorg).

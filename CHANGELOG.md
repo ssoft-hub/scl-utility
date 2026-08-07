@@ -19,6 +19,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the summary, leaving 207 of the 377 public members with no detailed entry.
 - The documentation lint gate now holds coverage as well as attachment: a public member
   added without a block fails it, where before it silently disappeared from the reference.
+- The hand-written Markdown guides moved from `doc/en/` and `doc/ru/` to `doc/md/en/` and
+  `doc/md/ru/`. `doc/` also holds generated output such as `doc/doxygen/`, so written and
+  generated documentation no longer sit at the same level.
 
 ### Removed
 
