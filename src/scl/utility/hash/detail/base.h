@@ -9,7 +9,9 @@
 #include <scl/utility/attribute/inline.h>
 #include <scl/utility/attribute/lifetimebound.h>
 #include <scl/utility/attribute/nodiscard.h>
+#include <scl/utility/hash/concepts.h>
 
+#include <bit>
 #include <concepts>
 #include <cstdint>
 #include <ranges>
@@ -17,15 +19,21 @@
 
 namespace scl::hash::detail
 {
-    // A wider code unit reaches the digest as its low byte alone, so a terminator rule
-    // for it would tidy up a value the hash functions already lose.
+    // Only these two spell text a terminator belongs to; std::byte and the one-byte
+    // element types carry data, where a zero is a value like every other.
     template <typename Type>
     concept character = ::std::same_as<Type, char> || ::std::same_as<Type, char8_t>;
+
+    template <::scl::hash::concepts::byte_element Element>
+    SCL_NODISCARD SCL_FORCE_INLINE constexpr ::std::uint8_t as_byte(Element const value) noexcept
+    {
+        return ::std::bit_cast<::std::uint8_t>(value);
+    }
 
     template <::std::ranges::range Range>
     SCL_NODISCARD SCL_FORCE_INLINE constexpr auto
     without_terminator(Range const & range SCL_LIFETIMEBOUND) noexcept
-        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+        requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         auto const first = ::std::ranges::begin(range);
         auto last = ::std::ranges::end(range);
@@ -34,7 +42,7 @@ namespace scl::hash::detail
         // other element type is data, where zero is a value like every other.
         if constexpr (::std::is_bounded_array_v<Range> && character<::std::ranges::range_value_t<Range>>)
         {
-            if (first != last && static_cast<::std::uint8_t>(*(last - 1)) == 0U)
+            if (first != last && as_byte(*(last - 1)) == 0U)
                 --last;
         }
 

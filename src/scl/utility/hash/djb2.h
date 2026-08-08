@@ -38,8 +38,9 @@ namespace scl::hash
      *       @endcode
      *
      * @tparam Range  Any type satisfying `std::ranges::range` whose elements
-     *                are convertible to `std::uint8_t` — e.g. a string literal,
-     *                `std::string_view`, `std::string`, `std::span<std::byte>`.
+     *                are one byte wide — e.g. a string literal, `std::string_view`,
+     *                `std::string`, `std::span<std::byte>`, a byte vector. See
+     *                @ref scl::hash::concepts::byte_element.
      * @param  range  Input range to hash.
      * @note   The text is hashed, however it is spelled: a character array's terminating
      *         zero is left out, so `djb2("hello")` equals `djb2(std::string_view{"hello"})`.
@@ -57,13 +58,11 @@ namespace scl::hash
      */
     template <::std::ranges::range Range>
     constexpr ::std::uint64_t djb2(Range const & range, ::std::uint64_t h = 5381ull)
-        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+        requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         auto const text = detail::without_terminator(range);
         return ::std::accumulate(::std::ranges::begin(text), ::std::ranges::end(text), h,
-            [](::std::uint64_t acc, auto c) noexcept {
-            return (acc * 33ull) ^ static_cast<::std::uint8_t>(c);
-        });
+            [](::std::uint64_t acc, auto c) noexcept { return (acc * 33ull) ^ detail::as_byte(c); });
     }
 
     /**
@@ -76,7 +75,7 @@ namespace scl::hash
 
         template <::std::ranges::range Range>
         constexpr result_type operator()(Range const & range) const noexcept
-            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::djb2(range);
         }
@@ -90,7 +89,7 @@ namespace scl::hash
 
 /**
  * @typedef scl::hash::djb2_hasher::result_type
- * @brief Digest type produced by this hasher — `std::uint64_t`.
+ * @brief Hash value type produced by this hasher — `std::uint64_t`.
  */
 
 /**

@@ -12,6 +12,8 @@
  * @{
  */
 
+#include <scl/utility/hash/byte_view.h>
+#include <scl/utility/hash/concepts.h>
 #include <scl/utility/hash/djb2.h>
 #include <scl/utility/hash/fnv1a.h>
 #include <scl/utility/hash/jenkins_ota.h>

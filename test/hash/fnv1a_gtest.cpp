@@ -65,7 +65,7 @@ TEST(Fnv1aTest, ResultType)
 TEST(Fnv1aTest, Constexpr) { STATIC_EXPECT_NE(fnv1a("constexpr"), 14695981039346656037ull); }
 
 /**
- * @test std::vector<uint8_t> of the same bytes yields the same digest as string_view.
+ * @test std::vector<uint8_t> of the same bytes yields the same hash value as string_view.
  */
 TEST(Fnv1aTest, VectorRange)
 {

@@ -93,8 +93,9 @@ namespace scl::hash
      * The function is `constexpr`, allowing compile-time hash computation.
      *
      * @tparam Range  Any type satisfying `std::ranges::range` whose elements
-     *                are convertible to `std::uint8_t` — e.g. a string literal,
-     *                `std::string_view`, `std::string`, `std::span<std::byte>`.
+     *                are one byte wide — e.g. a string literal, `std::string_view`,
+     *                `std::string`, `std::span<std::byte>`, a byte vector. See
+     *                @ref scl::hash::concepts::byte_element.
      * @param  range  Input range to hash.
      * @note   The text is hashed, however it is spelled: a character array's terminating
      *         zero is left out, so `siphash("hello")` equals
@@ -116,7 +117,7 @@ namespace scl::hash
      */
     template <::std::ranges::range Range>
     constexpr ::std::uint64_t siphash(Range const & range, siphash_key const key = siphash_default_key)
-        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+        requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         // State initialised from key XOR'd with magic constants spelling
         // "somepseudorandomlygeneratedbytes".
@@ -131,7 +132,7 @@ namespace scl::hash
 
         for (auto const c : detail::without_terminator(range))
         {
-            m |= static_cast<::std::uint64_t>(static_cast<::std::uint8_t>(c)) << shift;
+            m |= static_cast<::std::uint64_t>(detail::as_byte(c)) << shift;
             shift += 8;
             ++len;
 
@@ -179,7 +180,7 @@ namespace scl::hash
 
         template <::std::ranges::range Range>
         constexpr result_type operator()(Range const & range) const noexcept
-            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::siphash(range, Key);
         }
@@ -203,7 +204,7 @@ namespace scl::hash
 
 /**
  * @typedef scl::hash::siphash_hasher::result_type
- * @brief Digest type produced by this hasher — `std::uint64_t`.
+ * @brief Hash value type produced by this hasher — `std::uint64_t`.
  */
 
 /**

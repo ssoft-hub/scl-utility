@@ -42,8 +42,9 @@ namespace scl::hash
      * The function is `constexpr`, allowing compile-time hash computation.
      *
      * @tparam Range  Any type satisfying `std::ranges::range` whose elements
-     *                are convertible to `std::uint8_t` — e.g. a string literal,
-     *                `std::string_view`, `std::string`, `std::span<std::byte>`.
+     *                are one byte wide — e.g. a string literal, `std::string_view`,
+     *                `std::string`, `std::span<std::byte>`, a byte vector. See
+     *                @ref scl::hash::concepts::byte_element.
      * @param  range  Input range to hash.
      * @note   The text is hashed, however it is spelled: a character array's terminating
      *         zero is left out, so `jenkins_ota("hello")` equals
@@ -60,13 +61,13 @@ namespace scl::hash
      */
     template <::std::ranges::range Range>
     constexpr ::std::uint32_t jenkins_ota(Range const & range)
-        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+        requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         ::std::uint32_t h = 0;
 
         for (auto const c : detail::without_terminator(range))
         {
-            h += static_cast<::std::uint8_t>(c);
+            h += detail::as_byte(c);
             h += h << 10;
             h ^= h >> 6;
         }
@@ -89,7 +90,7 @@ namespace scl::hash
 
         template <::std::ranges::range Range>
         constexpr result_type operator()(Range const & range) const noexcept
-            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::jenkins_ota(range);
         }
@@ -103,7 +104,7 @@ namespace scl::hash
 
 /**
  * @typedef scl::hash::jenkins_ota_hasher::result_type
- * @brief Digest type produced by this hasher — `std::uint32_t`, as Jenkins
+ * @brief Hash value type produced by this hasher — `std::uint32_t`, as Jenkins
  *        one-at-a-time is a 32-bit hash.
  */
 

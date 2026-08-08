@@ -2,12 +2,12 @@
  * @example type_key_example.cpp
  * @brief Demonstrates a user-side hashable handle for scl::type_key.
  *
- * scl::type_key ships without hashing support on purpose: the right digest
+ * scl::type_key ships without hashing support on purpose: the right hash value
  * depends on the consumer. This example shows the safe recipe — a small
- * copyable handle that caches a digest derived from key.name() only, never
+ * copyable handle that caches a hash value derived from key.name() only, never
  * from addresses. Addresses differ between modules for the same type (and
  * between TUs for same-named anonymous-namespace types), so an address-based
- * digest would break the "equal keys have equal hashes" contract that any
+ * hash value would break the "equal keys have equal hashes" contract that any
  * hash container relies on.
  */
 
@@ -22,8 +22,8 @@
 #include <unordered_map>
 
 // A hashable value-type handle for the non-copyable scl::type_key: keeps a
-// pointer to the per-type constant and caches the name-derived digest, so
-// the digest is computed once per handle instead of on every container probe.
+// pointer to the per-type constant and caches the name-derived hash value, so
+// it is computed once per handle instead of on every container probe.
 class hash_key
 {
 public:
@@ -52,8 +52,8 @@ public:
     }
 
     // Equality delegates to the underlying keys: same-named anonymous-
-    // namespace types from different TUs share a digest (equal name strings),
-    // so the digest alone must never decide a match.
+    // namespace types from different TUs share a hash value (equal name strings),
+    // so the hash value alone must never decide a match.
     friend constexpr bool operator==(hash_key const & left, hash_key const & right) noexcept
     {
         return left.key() == right.key();
@@ -74,7 +74,7 @@ struct std::hash<hash_key>
 {
     ::std::size_t operator()(hash_key const & key) const noexcept
     {
-        return key.hash(); // cached digest, no recomputation per probe
+        return key.hash(); // cached hash value, no recomputation per probe
     }
 };
 
@@ -95,14 +95,14 @@ static void show_consistency()
 {
     constexpr auto duck_key = hash_key::of<duck>();
 
-    // Equal keys (same type) always produce the same digest.
-    ::std::cout << "duck digest stable:   " << (duck_key.hash() == hash_key::of<duck>().hash()) << '\n'; // 1
+    // Equal keys (same type) always produce the same hash value.
+    ::std::cout << "duck hash stable:     " << (duck_key.hash() == hash_key::of<duck>().hash()) << '\n'; // 1
 
     // The handle compares against the type_key it was built from.
     ::std::cout << "duck matches its key: " << (duck_key == ::scl::type_key_of<duck>()) << '\n'; // 1
 
-    // Distinct types render distinct names, so their digests differ here.
-    ::std::cout << "duck != goose digest: " << (duck_key.hash() != hash_key::of<goose>().hash()) << '\n'; // 1
+    // Distinct types render distinct names, so their hash values differ here.
+    ::std::cout << "duck != goose hash:   " << (duck_key.hash() != hash_key::of<goose>().hash()) << '\n'; // 1
 }
 
 // ============================================================================
@@ -112,7 +112,7 @@ static void show_consistency()
 static void show_registry()
 {
     // std::hash<hash_key> is specialized above, so the handle keys the map
-    // as-is; digest collisions are resolved by the container itself through
+    // as-is; hash collisions are resolved by the container itself through
     // operator==, which compares the underlying keys.
     ::std::unordered_map<hash_key, ::std::string> registry;
     registry.emplace(hash_key::of<duck>(), "duck");

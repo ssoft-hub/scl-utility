@@ -351,8 +351,11 @@ sources appear on the Examples page of the generated reference.
   `std::any`, `any_arg` in parameter position, and an `any_switch` chain.
 - [`example/flags`](example/flags/flags_example.cpp) — combining and querying flags, set
   algebra between two masks, and iterating the set flags.
-- [`example/hash`](example/hash/key_nttp.cpp) — `hash::key` as a non-type template
+- [`example/hash/key_nttp`](example/hash/key_nttp/hash_key_nttp_example.cpp) — `hash::key` as a non-type template
   parameter: string-tagged types, specialisation by string value, compile-time dispatch.
+- [`example/hash/byte_view`](example/hash/byte_view/hash_byte_view_example.cpp) — hashing a
+  range whose elements are wider than a byte: `hash::byte_view` says which bytes are meant,
+  in an order two machines agree on.
 - [`example/hierarchy_node`](example/hierarchy_node/node_example.cpp) — an organization
   chart built from `hierarchy::node`, reorganized with `take()` and `transfer()`.
 - [`example/hierarchy_tree`](example/hierarchy_tree/tree_example.cpp) — a task board on

@@ -37,8 +37,9 @@ namespace scl::hash
      *       @endcode
      *
      * @tparam Range  Any type satisfying `std::ranges::range` whose elements
-     *                are convertible to `std::uint8_t` — e.g. a string literal,
-     *                `std::string_view`, `std::string`, `std::span<std::byte>`.
+     *                are one byte wide — e.g. a string literal, `std::string_view`,
+     *                `std::string`, `std::span<std::byte>`, a byte vector. See
+     *                @ref scl::hash::concepts::byte_element.
      * @param  range  Input range to hash.
      * @note   The text is hashed, however it is spelled: a character array's terminating
      *         zero is left out, so `fnv1a("hello")` equals `fnv1a(std::string_view{"hello"})`.
@@ -58,11 +59,11 @@ namespace scl::hash
      */
     template <::std::ranges::range Range>
     constexpr ::std::uint64_t fnv1a(Range const & range, ::std::uint64_t h = 14695981039346656037ull)
-        requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+        requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         for (auto const c : detail::without_terminator(range))
         {
-            h ^= static_cast<::std::uint8_t>(c);
+            h ^= detail::as_byte(c);
             h *= 1099511628211ull;
         }
         return h;
@@ -78,7 +79,7 @@ namespace scl::hash
 
         template <::std::ranges::range Range>
         constexpr result_type operator()(Range const & range) const noexcept
-            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::fnv1a(range);
         }
@@ -92,7 +93,7 @@ namespace scl::hash
 
 /**
  * @typedef scl::hash::fnv1a_hasher::result_type
- * @brief Digest type produced by this hasher — `std::uint64_t`.
+ * @brief Hash value type produced by this hasher — `std::uint64_t`.
  */
 
 /**

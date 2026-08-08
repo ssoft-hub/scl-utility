@@ -6,6 +6,7 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/hash/concepts.h>
 #include <scl/utility/hash/siphash.h>
 
 #include <concepts>
@@ -99,7 +100,7 @@ namespace scl::hash
 
         template <::std::ranges::range Range>
         explicit constexpr key(Range const & range) noexcept
-            requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
+            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
             : value{Hasher{}(range)}
         {}
 
@@ -147,8 +148,8 @@ struct std::hash<::scl::hash::key<Hasher>>
  * @fn scl::hash::key::key(Range const & range)
  * @brief Constructs the hash value by hashing @p range with @p Hasher.
  *
- * @tparam Range  Any type satisfying `std::ranges::range` whose elements
- *                are convertible to `std::uint8_t`.
+ * @tparam Range  Any type satisfying `std::ranges::range` whose elements are one byte
+ *                wide. See @ref scl::hash::concepts::byte_element.
  * @param  range  Input range (e.g. `std::string`, `std::span<std::byte>`).
  */
 
@@ -169,6 +170,6 @@ struct std::hash<::scl::hash::key<Hasher>>
  * The stored value is the hash: `key` is produced by a hasher, so rehashing it would
  * only cost work without adding distribution.
  *
- * @param  k  Digest to convert.
+ * @param  k  Key whose hash value is returned.
  * @return The stored hash value as `std::size_t`.
  */
