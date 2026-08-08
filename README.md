@@ -154,7 +154,7 @@ int main()
     static_assert(::scl::type_name<int>() == "int");
     static_assert(::scl::enum_short_name<color::green>() == "green");
 
-    ::std::cout << ::scl::type_name<color>() << '\n';        // color
+    ::std::cout << ::scl::type_name<color>() << '\n';        // color; MSVC: enum color
     ::std::cout << ::scl::enum_name<color::green>() << '\n'; // color::green
 }
 ```
@@ -364,6 +364,9 @@ reference.
   `hierarchy::tree` with two observers composed through `observer_tuple`.
 - [`example/meta/type_key`](example/meta/type_key/meta_type_key_example.cpp) — a hashable handle over `type_key`,
   used as an unordered-container key.
+- [`example/meta/type_name`](example/meta/type_name/meta_type_name_example.cpp) — `type_name`
+  and `type_short_name`, and the part of a rendered name that depends on the compiler. It is
+  the source of the snippets on the `meta/type_name` pages.
 - [`example/runtime/enum_value`](example/runtime/enum_value/runtime_enum_value_example.cpp) — `enum_value` against its
   compile-time counterpart, including values outside the enumerator set.
 - [`example/runtime/type_name`](example/runtime/type_name/runtime_type_name_example.cpp) — compile-time and runtime

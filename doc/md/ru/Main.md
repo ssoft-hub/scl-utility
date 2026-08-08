@@ -164,7 +164,7 @@ int main()
     static_assert(::scl::type_name<int>() == "int");
     static_assert(::scl::enum_short_name<color::green>() == "green");
 
-    ::std::cout << ::scl::type_name<color>() << '\n';        // color
+    ::std::cout << ::scl::type_name<color>() << '\n';        // color; MSVC: enum color
     ::std::cout << ::scl::enum_name<color::green>() << '\n'; // color::green
 }
 ```
