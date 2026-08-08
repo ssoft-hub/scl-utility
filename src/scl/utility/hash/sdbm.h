@@ -88,7 +88,7 @@ namespace scl::hash
 
 /**
  * @typedef scl::hash::sdbm_hasher::result_type
- * @brief Digest type produced by this hasher — `std::uint64_t`.
+ * @brief Hash value type produced by this hasher — `std::uint64_t`.
  */
 
 /**

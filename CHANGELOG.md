@@ -330,7 +330,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     via `operator()`.
   - `jenkins_ota` — 32-bit Jenkins one-at-a-time hash.
   - `siphash` — SipHash-2-4 64-bit keyed hash (hash-flooding resistant).
-  - `key<Hasher>` — strongly-typed digest wrapping a hash value; usable as
+  - `key<Hasher>` — strongly-typed wrapper over a hash value; usable as
     `switch`/`case` label, STL unordered container key, and non-type template
     parameter (C++20 NTTP).
 

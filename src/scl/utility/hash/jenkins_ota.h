@@ -103,7 +103,7 @@ namespace scl::hash
 
 /**
  * @typedef scl::hash::jenkins_ota_hasher::result_type
- * @brief Digest type produced by this hasher — `std::uint32_t`, as Jenkins
+ * @brief Hash value type produced by this hasher — `std::uint32_t`, as Jenkins
  *        one-at-a-time is a 32-bit hash.
  */
 

@@ -169,6 +169,6 @@ struct std::hash<::scl::hash::key<Hasher>>
  * The stored value is the hash: `key` is produced by a hasher, so rehashing it would
  * only cost work without adding distribution.
  *
- * @param  k  Digest to convert.
+ * @param  k  Key whose hash value is returned.
  * @return The stored hash value as `std::size_t`.
  */

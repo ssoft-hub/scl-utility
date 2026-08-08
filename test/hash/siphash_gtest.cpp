@@ -50,7 +50,7 @@ TEST(SipHashTest, DifferentInputsDifferentHashes)
 }
 
 /**
- * @test Different keys produce different digests for the same input
+ * @test Different keys produce different hash values for the same input
  *       (hash-flooding resistance property).
  */
 TEST(SipHashTest, DifferentKeysDifferentHashes)

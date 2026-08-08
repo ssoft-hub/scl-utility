@@ -41,7 +41,7 @@ TEST(KeyTypeTest, DefaultHasherIsSipHash)
 }
 
 /**
- * @test key<Hasher> values match the corresponding free-function digest.
+ * @test key<Hasher> values match the corresponding free-function hash value.
  */
 TEST(KeyTypeTest, ValueMatchesHasherFreeFunction)
 {
@@ -82,7 +82,7 @@ TEST(KeyDefaultTest, ComparisonOperators)
 }
 
 /**
- * @test Implicit conversion to value_type returns the raw digest.
+ * @test Implicit conversion to value_type returns the raw hash value.
  */
 TEST(KeyDefaultTest, ImplicitConversionToValueType)
 {
@@ -311,7 +311,7 @@ TEST(KeyNttpTest, NonDefaultHasherAsNttp)
 }
 
 // ============================================================================
-// Cross-algorithm: same input → distinct digests per hasher
+// Cross-algorithm: same input → distinct hash values per hasher
 // ============================================================================
 
 /**

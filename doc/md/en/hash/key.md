@@ -211,7 +211,7 @@ used with `key<>`.
 
 ---
 
-## `key<Hasher>` — Strongly-Typed Digest
+## `key<Hasher>` — Strongly-Typed Hash Value
 
 ```cpp
 #include <scl/utility/hash/key.h>
