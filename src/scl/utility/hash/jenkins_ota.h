@@ -11,6 +11,8 @@
 #include <ranges>
 #include <utility>
 
+#include "detail/base.h"
+
 namespace scl::hash
 {
     /**
@@ -43,8 +45,11 @@ namespace scl::hash
      *                are convertible to `std::uint8_t` — e.g. a string literal,
      *                `std::string_view`, `std::string`, `std::span<std::byte>`.
      * @param  range  Input range to hash.
-     * @note   String literals (e.g. `"hello"`) include the null terminator in the
-     *         hash. Use `std::string_view{"hello"}` to hash only the characters.
+     * @note   The text is hashed, however it is spelled: a character array's terminating
+     *         zero is left out, so `jenkins_ota("hello")` equals
+     *         `jenkins_ota(std::string_view{"hello"})`. An array that does not end in
+     *         zero, and an array of any other element type, is hashed whole — a zero
+     *         byte is data there, not a terminator.
      * @return 32-bit Jenkins OAT hash value of the input range.
      *
      * @par Compile-time example
@@ -59,7 +64,7 @@ namespace scl::hash
     {
         ::std::uint32_t h = 0;
 
-        for (auto const c : range)
+        for (auto const c : detail::without_terminator(range))
         {
             h += static_cast<::std::uint8_t>(c);
             h += h << 10;

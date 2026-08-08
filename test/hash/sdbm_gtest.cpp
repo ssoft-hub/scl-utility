@@ -2,7 +2,9 @@
 
 #include <scl/utility/hash/sdbm.h>
 
+#include <array>
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 using namespace ::scl::hash;
@@ -37,7 +39,6 @@ TEST(SdbmTest, DifferentInputsDifferentHashes)
 
 /**
  * @test Chaining two ranges equals hashing their concatenation.
- * @note Uses std::string_view to control exact byte boundaries (no null terminator).
  */
 TEST(SdbmTest, ChainingEquivalentToConcatenation)
 {
@@ -57,6 +58,34 @@ TEST(SdbmTest, ResultType)
  * @test Constexpr evaluation produces a value distinct from the seed.
  */
 TEST(SdbmTest, Constexpr) { STATIC_EXPECT_NE(sdbm("constexpr"), 0ull); }
+
+/**
+ * @test A string literal is hashed as its text — every spelling of it agrees.
+ */
+TEST(SdbmTest, LiteralHashedWithoutTerminatingZero)
+{
+    STATIC_EXPECT_EQ(sdbm("hello"), sdbm(::std::string_view{"hello"}));
+    EXPECT_EQ(sdbm("hello"), sdbm(::std::string{"hello"}));
+}
+
+/**
+ * @test An array that does not end in zero keeps every byte.
+ */
+TEST(SdbmTest, ArrayWithoutTerminatingZeroHashedWhole)
+{
+    static constexpr char raw[3]{'a', 'b', 'c'};
+    STATIC_EXPECT_EQ(sdbm(raw), sdbm(::std::string_view{"abc"}));
+}
+
+/**
+ * @test A byte array keeps every byte, a zero at its end included.
+ */
+TEST(SdbmTest, ByteArrayKeepsTrailingZero)
+{
+    static constexpr ::std::uint8_t data[4]{1, 2, 3, 0};
+    static constexpr ::std::array<::std::uint8_t, 4> same{1, 2, 3, 0};
+    STATIC_EXPECT_EQ(sdbm(data), sdbm(same));
+}
 
 /**
  * @test sdbm_hasher callable produces the same result as the free function.

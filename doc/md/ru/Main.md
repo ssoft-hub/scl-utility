@@ -180,17 +180,14 @@ int main()
 #include <string_view>
 
 using ::scl::hash::key;
-using namespace ::std::literals;
 
-// A key hashes the range it is given, and a string literal carries its
-// terminating zero: keep every key in the comparison built from a view.
 int code_of(::std::string_view command)
 {
     switch (key<>{command})
     {
-    case key<>{"start"sv}:
+    case key<>{"start"}:
         return 1;
-    case key<>{"stop"sv}:
+    case key<>{"stop"}:
         return 2;
     default:
         return 0;
@@ -198,9 +195,9 @@ int code_of(::std::string_view command)
 }
 
 template <key<> Command>
-constexpr bool is_start = (Command == key<>{"start"sv});
+constexpr bool is_start = (Command == key<>{"start"});
 
-static_assert(is_start<key<>{"start"sv}>);
+static_assert(is_start<key<>{"start"}>);
 
 int main()
 {

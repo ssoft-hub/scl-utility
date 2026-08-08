@@ -2,7 +2,9 @@
 
 #include <scl/utility/hash/jenkins_ota.h>
 
+#include <array>
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 using namespace ::scl::hash;
@@ -45,6 +47,34 @@ TEST(JenkinsOtaTest, ResultType)
  * @test Constexpr evaluation produces a non-zero value.
  */
 TEST(JenkinsOtaTest, Constexpr) { STATIC_EXPECT_NE(jenkins_ota("constexpr"), 0u); }
+
+/**
+ * @test A string literal is hashed as its text — every spelling of it agrees.
+ */
+TEST(JenkinsOtaTest, LiteralHashedWithoutTerminatingZero)
+{
+    STATIC_EXPECT_EQ(jenkins_ota("hello"), jenkins_ota(::std::string_view{"hello"}));
+    EXPECT_EQ(jenkins_ota("hello"), jenkins_ota(::std::string{"hello"}));
+}
+
+/**
+ * @test An array that does not end in zero keeps every byte.
+ */
+TEST(JenkinsOtaTest, ArrayWithoutTerminatingZeroHashedWhole)
+{
+    static constexpr char raw[3]{'a', 'b', 'c'};
+    STATIC_EXPECT_EQ(jenkins_ota(raw), jenkins_ota(::std::string_view{"abc"}));
+}
+
+/**
+ * @test A byte array keeps every byte, a zero at its end included.
+ */
+TEST(JenkinsOtaTest, ByteArrayKeepsTrailingZero)
+{
+    static constexpr ::std::uint8_t data[4]{1, 2, 3, 0};
+    static constexpr ::std::array<::std::uint8_t, 4> same{1, 2, 3, 0};
+    STATIC_EXPECT_EQ(jenkins_ota(data), jenkins_ota(same));
+}
 
 /**
  * @test jenkins_ota_hasher callable produces the same result as the free function.

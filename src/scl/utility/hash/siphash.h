@@ -12,6 +12,8 @@
 #include <ranges>
 #include <utility>
 
+#include "detail/base.h"
+
 namespace scl::hash
 {
     /**
@@ -94,8 +96,11 @@ namespace scl::hash
      *                are convertible to `std::uint8_t` — e.g. a string literal,
      *                `std::string_view`, `std::string`, `std::span<std::byte>`.
      * @param  range  Input range to hash.
-     * @note   String literals (e.g. `"hello"`) include the null terminator in the
-     *         hash. Use `std::string_view{"hello"}` to hash only the characters.
+     * @note   The text is hashed, however it is spelled: a character array's terminating
+     *         zero is left out, so `siphash("hello")` equals
+     *         `siphash(std::string_view{"hello"})`. An array that does not end in zero,
+     *         and an array of any other element type, is hashed whole — a zero byte is
+     *         data there, not a terminator.
      * @param  key    128-bit secret key. Defaults to @ref siphash_default_key.
      *                For security-sensitive use, provide a randomly generated key.
      * @return 64-bit SipHash-2-4 hash value.
@@ -124,7 +129,7 @@ namespace scl::hash
         ::std::size_t len = 0;
         int shift = 0; // bits filled in m (0, 8, 16, ..., 56)
 
-        for (auto const c : range)
+        for (auto const c : detail::without_terminator(range))
         {
             m |= static_cast<::std::uint64_t>(static_cast<::std::uint8_t>(c)) << shift;
             shift += 8;

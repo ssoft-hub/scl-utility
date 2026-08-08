@@ -75,14 +75,19 @@ namespace scl::hash
      *
      * @par Switch/case dispatching
      * @code
-     * int handle(scl::hash::key<> cmd) {
-     *     switch (cmd) {
+     * int handle(std::string_view command) {
+     *     switch (scl::hash::key<>{command}) {
      *         case scl::hash::key<>{"start"}: return 1;
      *         case scl::hash::key<>{"stop"}:  return 2;
      *         default: return 0;
      *     }
      * }
      * @endcode
+     *
+     * @note A key holds the hash of the text it is given, whatever spells it: a character
+     *       array's terminating zero is not part of that text, so `key<>{"start"}` equals
+     *       the key built from `std::string_view{"start"}` or `std::string`. An array of
+     *       any other element type is data and keeps every byte, a trailing zero included.
      */
     template <concepts::byte_hasher Hasher = siphash_hasher<>>
     struct key

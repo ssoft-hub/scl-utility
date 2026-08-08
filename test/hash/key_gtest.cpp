@@ -147,6 +147,36 @@ TEST(KeyDefaultTest, StringAndStringViewEquivalent)
     EXPECT_EQ(key<>{::std::string{"equal"}}, key<>{::std::string_view{"equal"}});
 }
 
+/**
+ * @test A string literal, a view and a string spelling the same text produce one key.
+ */
+TEST(KeyDefaultTest, LiteralHashedWithoutTerminatingZero)
+{
+    STATIC_EXPECT_EQ(key<>{"start"}, key<>{::std::string_view{"start"}});
+    EXPECT_EQ(key<>{"start"}, key<>{::std::string{"start"}});
+}
+
+/**
+ * @test An array that does not end in zero keeps every byte.
+ */
+TEST(KeyDefaultTest, ArrayWithoutTerminatingZeroHashedWhole)
+{
+    static constexpr char raw[3]{'a', 'b', 'c'};
+    STATIC_EXPECT_EQ(key<>{raw}, key<>{::std::string_view{"abc"}});
+}
+
+/**
+ * @test Every hasher agrees on a literal and its view spelling.
+ */
+TEST(KeyCrossAlgorithmTest, LiteralMatchesViewForEveryHasher)
+{
+    STATIC_EXPECT_EQ(key<fnv1a_hasher>{"hello"}, key<fnv1a_hasher>{::std::string_view{"hello"}});
+    STATIC_EXPECT_EQ(key<djb2_hasher>{"hello"}, key<djb2_hasher>{::std::string_view{"hello"}});
+    STATIC_EXPECT_EQ(key<sdbm_hasher>{"hello"}, key<sdbm_hasher>{::std::string_view{"hello"}});
+    STATIC_EXPECT_EQ(key<jenkins_ota_hasher>{"hello"}, key<jenkins_ota_hasher>{::std::string_view{"hello"}});
+    STATIC_EXPECT_EQ(key<siphash_hasher<>>{"hello"}, key<siphash_hasher<>>{::std::string_view{"hello"}});
+}
+
 // ============================================================================
 // switch/case with key<Hasher>
 // ============================================================================

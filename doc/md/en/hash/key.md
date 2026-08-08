@@ -19,12 +19,15 @@ All hash functions accept any `std::ranges::range` whose element type is
 convertible to `std::uint8_t` — including string literals, `std::string_view`,
 `std::string`, `std::span<std::byte>`, and byte vectors.
 
-> **Note on string literals vs `std::string_view`.**
-> A string literal `"hello"` is a `const char[6]` — the range includes the
-> null terminator `\0`. `std::string_view{"hello"}` covers only the five
-> printable characters. These inputs produce **different** hash values. Use
-> `std::string_view` when precise byte control is needed (e.g. chaining,
-> reference-vector tests).
+> **Note on string literals.**
+> A string literal `"hello"` is a `const char[6]` whose last element is the
+> terminating zero. That zero is not part of the text and is not hashed, so
+> `"hello"`, `std::string_view{"hello"}` and `std::string{"hello"}` produce the
+> **same** hash value. The rule covers arrays of `char` and `char8_t` — the two
+> character types whose code unit is a byte — and only their last element: an array
+> that does not end in zero — `const char raw[3]{'a', 'b', 'c'}` — is hashed whole,
+> and so is an array of any other element type, where `std::uint8_t data[4]{1, 2, 3, 0}`
+> keeps all four bytes because a zero byte is data rather than a terminator.
 
 ---
 
