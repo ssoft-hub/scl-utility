@@ -15,9 +15,14 @@ strongly-typed hash-value wrapper `key<Hasher>`. Together they enable:
 - **String-keyed template parameters (NTTP)** — `key` is a structural type,
   so it may appear as a non-type template argument (C++20).
 
-All hash functions accept any `std::ranges::range` whose element type is
-convertible to `std::uint8_t` — including string literals, `std::string_view`,
-`std::string`, `std::span<std::byte>`, and byte vectors.
+All hash functions accept any `std::ranges::range` whose element is one byte wide —
+string literals, `std::string_view`, `std::string`, `std::span<std::byte>` and byte
+vectors among them.
+
+A wider element — `wchar_t`, `char16_t`, `char32_t`, or any arithmetic type — is
+rejected at compile time rather than truncated to its low byte, which would let two
+inputs differing above that byte produce one hash value. Hash the bytes of such a
+range explicitly when that is what is meant.
 
 > **Note on string literals.**
 > A string literal `"hello"` is a `const char[6]` whose last element is the
@@ -318,6 +323,11 @@ protection at runtime, construct a `siphash_key` from a random source and use
 ```cpp
 namespace scl::hash {
 
+// What an element must be
+namespace concepts {
+    template <typename Type> concept byte_element;     // one byte of data
+}
+
 // Free functions
 constexpr uint64_t fnv1a(Range&&, uint64_t h = offset_basis);
 constexpr uint64_t djb2 (Range&&, uint64_t h = 5381);
@@ -366,3 +376,4 @@ struct std::hash<scl::hash::key<Hasher>>;
 - [`example/hash/key_nttp.cpp`](../../../../example/hash/key_nttp.cpp) —
   runnable version: `key` as a non-type template parameter — a type tag from a string
   literal, a specialisation selected by string value, and dispatch on a compile-time key.
+  runnable version: hashing a `std::u16string_view` and a `std::vector<std::uint32_t>`

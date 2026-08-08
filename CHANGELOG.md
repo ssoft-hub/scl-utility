@@ -62,6 +62,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A range the hash functions accept is hashed by every bit of every element. An element
+  wider than a byte reached the hash function as its low byte alone, so `L"Ā"` and
+  `L"Ȁ"` produced one value, as did `L"AB"` and `L"Łł"`; `std::vector<int>`
+  and `std::vector<double>` were accepted on the same lossy terms. `wchar_t`, `char16_t`,
+  `char32_t` and every arithmetic element are now rejected at compile time — hash the
+  bytes of such a range explicitly when that is what is meant — and
+  `std::span<std::byte>`, promised in the documentation but rejected by the old
+  constraint, works. The new `scl::hash::concepts::byte_element` states the rule, and
+  hash values of byte ranges are unchanged.
 - A string literal is hashed as the text it spells. Its terminating zero counted as one
   more byte, so `scl::hash::key<>{"start"}` equalled neither the key built from a
   `std::string_view` nor the one built from a `std::string`, and a `switch` over a key
@@ -71,7 +80,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   unit is a byte — and nothing else: an array that does not end in zero —
   `char const raw[3]{'a', 'b', 'c'}` — is still hashed whole, and so is an array of any
   other element type, where `std::uint8_t data[4]{1, 2, 3, 0}` keeps all four bytes.
-  **The value produced for a string literal changes**: a digest stored by an earlier
+  **The value produced for a string literal changes**: a hash value stored by an earlier
   version no longer matches the one computed now. A literal keeps folding to a constant
   at compile time, and a view, a string or a byte range costs what it did before;
   hashing a character array whose contents are only known at run time may cost slightly
