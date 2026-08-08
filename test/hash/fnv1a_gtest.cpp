@@ -2,7 +2,9 @@
 
 #include <scl/utility/hash/fnv1a.h>
 
+#include <array>
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -42,7 +44,6 @@ TEST(Fnv1aTest, DifferentInputsDifferentHashes)
 
 /**
  * @test Chaining two ranges equals hashing their concatenation.
- * @note Uses std::string_view to control exact byte boundaries (no null terminator).
  */
 TEST(Fnv1aTest, ChainingEquivalentToConcatenation)
 {
@@ -80,6 +81,42 @@ TEST(Fnv1aTest, SignedCharEquivalentToUnsigned)
     ::std::string const s{"\x68\x65\x6c\x6c\x6f"};
     ::std::vector<::std::uint8_t> const bytes{0x68, 0x65, 0x6c, 0x6c, 0x6f};
     EXPECT_EQ(fnv1a(::std::string_view{s}), fnv1a(bytes));
+}
+
+/**
+ * @test A string literal is hashed as its text — every spelling of it agrees.
+ */
+TEST(Fnv1aTest, LiteralHashedWithoutTerminatingZero)
+{
+    STATIC_EXPECT_EQ(fnv1a("hello"), fnv1a(::std::string_view{"hello"}));
+    EXPECT_EQ(fnv1a("hello"), fnv1a(::std::string{"hello"}));
+}
+
+/**
+ * @test An array that does not end in zero keeps every byte.
+ */
+TEST(Fnv1aTest, ArrayWithoutTerminatingZeroHashedWhole)
+{
+    static constexpr char raw[3]{'a', 'b', 'c'};
+    STATIC_EXPECT_EQ(fnv1a(raw), fnv1a(::std::string_view{"abc"}));
+}
+
+/**
+ * @test A UTF-8 literal follows the same rule as a narrow one.
+ */
+TEST(Fnv1aTest, Utf8LiteralHashedWithoutTerminatingZero)
+{
+    STATIC_EXPECT_EQ(fnv1a(u8"hello"), fnv1a(::std::string_view{"hello"}));
+}
+
+/**
+ * @test A byte array keeps every byte, a zero at its end included.
+ */
+TEST(Fnv1aTest, ByteArrayKeepsTrailingZero)
+{
+    static constexpr ::std::uint8_t data[4]{1, 2, 3, 0};
+    static constexpr ::std::array<::std::uint8_t, 4> same{1, 2, 3, 0};
+    STATIC_EXPECT_EQ(fnv1a(data), fnv1a(same));
 }
 
 /**

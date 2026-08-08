@@ -62,6 +62,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A string literal is hashed as the text it spells. Its terminating zero counted as one
+  more byte, so `scl::hash::key<>{"start"}` equalled neither the key built from a
+  `std::string_view` nor the one built from a `std::string`, and a `switch` over a key
+  taken from a runtime string fell through to `default` with nothing reported.
+  `fnv1a`, `djb2`, `sdbm`, `jenkins_ota` and `siphash` follow the same rule. It covers
+  the last element of an array of `char` or `char8_t` — the character types whose code
+  unit is a byte — and nothing else: an array that does not end in zero —
+  `char const raw[3]{'a', 'b', 'c'}` — is still hashed whole, and so is an array of any
+  other element type, where `std::uint8_t data[4]{1, 2, 3, 0}` keeps all four bytes.
+  **The value produced for a string literal changes**: a digest stored by an earlier
+  version no longer matches the one computed now. A literal keeps folding to a constant
+  at compile time, and a view, a string or a byte range costs what it did before;
+  hashing a character array whose contents are only known at run time may cost slightly
+  more, since its length is no longer a constant.
 - Documentation blocks that silently failed to reach their target now appear in the
   generated reference: each `scl::any_cast` overload carries its own description, and
   `has_value` / `type_name` / `type_key` are listed and described on `scl::any_view` and

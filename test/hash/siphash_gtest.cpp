@@ -2,7 +2,9 @@
 
 #include <scl/utility/hash/siphash.h>
 
+#include <array>
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <type_traits>
 
@@ -70,6 +72,34 @@ TEST(SipHashTest, ResultType)
  * @test Constexpr evaluation produces a non-zero value.
  */
 TEST(SipHashTest, Constexpr) { STATIC_EXPECT_NE(siphash("constexpr", test_key), 0ull); }
+
+/**
+ * @test A string literal is hashed as its text — every spelling of it agrees.
+ */
+TEST(SipHashTest, LiteralHashedWithoutTerminatingZero)
+{
+    STATIC_EXPECT_EQ(siphash("hello", test_key), siphash(::std::string_view{"hello"}, test_key));
+    EXPECT_EQ(siphash("hello", test_key), siphash(::std::string{"hello"}, test_key));
+}
+
+/**
+ * @test An array that does not end in zero keeps every byte.
+ */
+TEST(SipHashTest, ArrayWithoutTerminatingZeroHashedWhole)
+{
+    static constexpr char raw[3]{'a', 'b', 'c'};
+    STATIC_EXPECT_EQ(siphash(raw, test_key), siphash(::std::string_view{"abc"}, test_key));
+}
+
+/**
+ * @test A byte array keeps every byte, a zero at its end included.
+ */
+TEST(SipHashTest, ByteArrayKeepsTrailingZero)
+{
+    static constexpr ::std::uint8_t data[4]{1, 2, 3, 0};
+    static constexpr ::std::array<::std::uint8_t, 4> same{1, 2, 3, 0};
+    STATIC_EXPECT_EQ(siphash(data, test_key), siphash(same, test_key));
+}
 
 /**
  * @test siphash_hasher<Key> callable produces the same result as the free function.

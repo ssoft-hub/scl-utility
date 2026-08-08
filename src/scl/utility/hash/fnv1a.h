@@ -11,6 +11,8 @@
 #include <ranges>
 #include <utility>
 
+#include "detail/base.h"
+
 namespace scl::hash
 {
     /**
@@ -38,8 +40,10 @@ namespace scl::hash
      *                are convertible to `std::uint8_t` — e.g. a string literal,
      *                `std::string_view`, `std::string`, `std::span<std::byte>`.
      * @param  range  Input range to hash.
-     * @note   String literals (e.g. `"hello"`) include the null terminator in the
-     *         hash. Use `std::string_view{"hello"}` to hash only the characters.
+     * @note   The text is hashed, however it is spelled: a character array's terminating
+     *         zero is left out, so `fnv1a("hello")` equals `fnv1a(std::string_view{"hello"})`.
+     *         An array that does not end in zero, and an array of any other element type,
+     *         is hashed whole — a zero byte is data there, not a terminator.
      * @param  h      Initial hash value (offset basis).
      *                Defaults to the standard FNV-1a 64-bit offset basis
      *                `14695981039346656037` (`0xcbf29ce484222325`).
@@ -56,7 +60,7 @@ namespace scl::hash
     constexpr ::std::uint64_t fnv1a(Range const & range, ::std::uint64_t h = 14695981039346656037ull)
         requires ::std::convertible_to<::std::ranges::range_value_t<Range>, ::std::uint8_t>
     {
-        for (auto const c : range)
+        for (auto const c : detail::without_terminator(range))
         {
             h ^= static_cast<::std::uint8_t>(c);
             h *= 1099511628211ull;
