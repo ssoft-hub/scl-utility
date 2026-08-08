@@ -9,10 +9,15 @@
  * @details
  * - ::scl::type_name<T>:
  *     Extracts the fully qualified name of the template type T.
- *     Automatically normalizes compiler-specific output by stripping 'class'/'struct'/'union' prefixes on MSVC.
+ *     The rendering is compiler-specific and is not normalized: MSVC keeps the
+ *     'class'/'struct'/'union'/'enum' prefix, at the top level and inside template arguments
+ *     alike, where GCC and Clang omit it, and the standard library decides how its own
+ *     types spell themselves. It is meant for display, not for identity - ::scl::type_key
+ *     is what compares.
  * - ::scl::type_short_name<T>:
  *     Extracts only the unqualified identifier of the type T.
- *     Strips all leading namespace and class scope qualifiers.
+ *     Strips all leading namespace and class scope qualifiers, the MSVC
+ *     'class'/'struct'/'union'/'enum' prefix, and the template arguments.
  */
 
 struct p8qim3n2a_t
@@ -114,9 +119,16 @@ namespace scl
      * and `__PRETTY_FUNCTION__` on GCC/Clang) to extract the type name from
      * the decorated function signature. The result is evaluated at compile-time.
      *
-     * @note On MSVC, the output includes 'struct ', 'class ', 'union ' keywords
-     * as part of the type name (e.g., "struct MyType" instead of "MyType").
-     * This differs from GCC/Clang which omit these keywords.
+     * @note On MSVC, the output includes the 'struct ', 'class ', 'union ' and
+     * 'enum ' keywords as part of the type name (e.g., "struct MyType" instead of
+     * "MyType", "enum Color" instead of "Color"), inside template arguments as well
+     * as at the top level. This differs from GCC/Clang which omit these keywords.
+     *
+     * @warning The result is for display, not for identity. No part of it is
+     * guaranteed to agree between compilers or standard libraries, so it must not
+     * be compared against a literal, parsed, or persisted. ::scl::type_key is the
+     * comparable type identity; ::scl::type_short_name is the bare identifier of a
+     * namespace-scope type.
      *
      * @code
      * struct MyType {};

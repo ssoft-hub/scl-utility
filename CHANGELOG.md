@@ -116,6 +116,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `node::transfer` documents the parameter it actually takes, and
   `std::hash<scl::hash::key>` is placed in the reference rather than reported as
   unplaceable.
+- `scl::type_name<T>()` is documented as it behaves. The header of `meta/type.h`
+  promised that the `class`/`struct`/`union` prefix is stripped on MSVC, which it never
+  was and — as the same file's `@note` and the Markdown pages already said — is not
+  meant to be. The prefix reaches template arguments too, and the example on the pages
+  asserted a substring that could not hold on MSVC.
+- The documentation says what a rendered name is for. It is a value to show, not one to
+  compare: the prefix aside, inline namespaces and defaulted template arguments diverge
+  too, so `std::string` reaches the caller as three different strings on the three
+  supported toolchains and no part of a name is guaranteed to agree between them. The
+  pages and the header now point at `scl::type_key` for identity and at
+  `type_short_name<T>()` for the bare identifier, where the text used to offer matching
+  on a substring — which is the same trap one step further in.
 
 - Fixed a compiler crash (`SIGSEGV` in clang's `Sema`) building
   `utility_type_traits_gtest` on macOS, caused by an oversized test
