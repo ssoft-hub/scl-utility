@@ -6,7 +6,11 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/concepts/type_category.h>
 #include <scl/utility/concepts/type_property.h>
+
+#include <concepts>
+#include <type_traits>
 
 namespace scl::hash::concepts
 {
@@ -39,6 +43,28 @@ namespace scl::hash::concepts
     concept byte_element = sizeof(Type) == 1
             && ::scl::concepts::trivially_copyable<Type>
             && !::scl::concepts::empty_type<Type>;
+    // clang-format on
+
+    /**
+     * @brief Satisfied when a value of @p Type has bytes @ref scl::hash::byte_view can spell.
+     * @ingroup scl_utility_hash
+     *
+     * An integer, or an enumeration standing for one. Two types are left out:
+     *
+     * - A floating-point type. Its bytes tell values apart that compare equal — `0.0`
+     *   against `-0.0`, one `NaN` against another — so a hash value taken from them answers a
+     *   different question than the comparison does.
+     * - `wchar_t`. Its width is what the platform says it is — two bytes on Windows, four
+     *   elsewhere — so one text would reach the hash function as a different number of bytes on
+     *   each. Spell the encoding that is meant: `char16_t` and `char32_t` are fixed by the
+     *   standard and hash alike everywhere.
+     *
+     * @tparam Type  Element type to check.
+     */
+    // clang-format off
+    template <typename Type>
+    concept integer_element = (::std::integral<Type> || ::scl::concepts::enum_type<Type>)
+            && !::std::same_as<::std::remove_cv_t<Type>, wchar_t>;
     // clang-format on
 
 } // namespace scl::hash::concepts

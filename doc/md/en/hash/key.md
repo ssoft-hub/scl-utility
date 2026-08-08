@@ -21,8 +21,29 @@ vectors among them.
 
 A wider element — `wchar_t`, `char16_t`, `char32_t`, or any arithmetic type — is
 rejected at compile time rather than truncated to its low byte, which would let two
-inputs differing above that byte produce one hash value. Hash the bytes of such a
-range explicitly when that is what is meant.
+inputs differing above that byte produce one hash value.
+
+`scl::hash::byte_view` is where such a range says which bytes it means:
+
+```cpp
+#include <scl/utility/hash/byte_view.h>
+
+constexpr auto value = scl::hash::fnv1a(scl::hash::byte_view(std::u16string_view{u"start"}));
+```
+
+Each element contributes `sizeof(element)` bytes, least significant first, whatever the
+host's own byte order — two machines hash one input alike. A byte-sized element passes
+through unchanged, so saying `byte_view` where none is needed changes nothing.
+
+Two element types stay out of `byte_view` as well. A floating-point one, because its bytes
+tell apart values that compare equal (`0.0` against `-0.0`, one `NaN` against another); and
+`wchar_t`, because its width is what the platform says it is — two bytes on Windows, four
+elsewhere — so one text would reach the hash function as a different number of bytes on each.
+`char16_t` and `char32_t` are fixed by the standard and carry the same text everywhere.
+
+The width of `int`, `long` and `size_t` is the platform's own, so a hash value taken over them
+is comparable within one build rather than across platforms. Reach for a fixed-width
+element where a hash value has to travel.
 
 > **Note on string literals.**
 > A string literal `"hello"` is a `const char[6]` whose last element is the
@@ -326,7 +347,11 @@ namespace scl::hash {
 // What an element must be
 namespace concepts {
     template <typename Type> concept byte_element;     // one byte of data
+    template <typename Type> concept integer_element;  // byte_view can spell its bytes
 }
+
+// Explicit conversion for a wider element
+constexpr auto byte_view(Range&&);   // view of uint8_t, least significant byte first
 
 // Free functions
 constexpr uint64_t fnv1a(Range&&, uint64_t h = offset_basis);
@@ -376,4 +401,6 @@ struct std::hash<scl::hash::key<Hasher>>;
 - [`example/hash/key_nttp`](../../../../example/hash/key_nttp/hash_key_nttp_example.cpp) —
   runnable version: `key` as a non-type template parameter — a type tag from a string
   literal, a specialisation selected by string value, and dispatch on a compile-time key.
+- [`example/hash/byte_view`](../../../../example/hash/byte_view/hash_byte_view_example.cpp) —
   runnable version: hashing a `std::u16string_view` and a `std::vector<std::uint32_t>`
+  through `byte_view`, and what the fixed byte order buys.

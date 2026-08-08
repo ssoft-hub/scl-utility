@@ -1,5 +1,6 @@
 #include <gtest_utils.h>
 
+#include <scl/utility/hash/byte_view.h>
 #include <scl/utility/hash/djb2.h>
 #include <scl/utility/hash/fnv1a.h>
 #include <scl/utility/hash/jenkins_ota.h>
@@ -7,10 +8,14 @@
 #include <scl/utility/hash/sdbm.h>
 #include <scl/utility/hash/siphash.h>
 
+#include <algorithm>
+#include <array>
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 using namespace ::scl::hash;
@@ -29,6 +34,10 @@ namespace
         key<>{range};
     };
     // clang-format on
+
+    /// Satisfied when @ref scl::hash::byte_view accepts @p Range.
+    template <typename Range>
+    concept spellable = requires(Range const & range) { byte_view(range); };
 
     enum class byte_enum : unsigned char
     {
@@ -95,3 +104,82 @@ TEST(HashElementTest, WiderThanByteElementsRejected)
  * @test An element carrying no value of its own is rejected.
  */
 TEST(HashElementTest, EmptyElementRejected) { STATIC_EXPECT_FALSE(hashable<::std::vector<empty>>); }
+
+// ============================================================================
+// byte_view — the explicit conversion a wider element needs
+// ============================================================================
+
+/**
+ * @test A wider range becomes hashable once spelled through byte_view.
+ */
+TEST(HashByteViewTest, MakesAWiderRangeHashable)
+{
+    STATIC_EXPECT_FALSE(hashable<::std::u16string_view>);
+    STATIC_EXPECT_TRUE(hashable<decltype(byte_view(::std::u16string_view{}))>);
+    STATIC_EXPECT_TRUE(hashable<decltype(byte_view(::std::declval<::std::vector<int> const &>()))>);
+}
+
+/**
+ * @test A range byte_view cannot spell alike on every platform is rejected.
+ */
+TEST(HashByteViewTest, NonPortableElementsRejected)
+{
+    STATIC_EXPECT_FALSE(spellable<::std::wstring_view>);
+    STATIC_EXPECT_FALSE(spellable<::std::vector<double>>);
+    STATIC_EXPECT_TRUE(spellable<::std::u16string_view>);
+    STATIC_EXPECT_TRUE(spellable<::std::u32string_view>);
+}
+
+/**
+ * @test Inputs differing above the low byte no longer collide.
+ */
+TEST(HashByteViewTest, WideInputsDifferingAboveTheLowByteDiffer)
+{
+    STATIC_EXPECT_NE(fnv1a(byte_view(::std::u16string_view{u"Ā"})),
+        fnv1a(byte_view(::std::u16string_view{u"Ȁ"})));
+    STATIC_EXPECT_NE(siphash(byte_view(::std::u16string_view{u"AB"})),
+        siphash(byte_view(::std::u16string_view{u"Łł"})));
+}
+
+/**
+ * @test A wide spelling of a text is a different input from its narrow one.
+ */
+TEST(HashByteViewTest, WideDiffersFromNarrow)
+{
+    STATIC_EXPECT_NE(fnv1a(byte_view(::std::u16string_view{u"AB"})), fnv1a(::std::string_view{"AB"}));
+}
+
+/**
+ * @test Each element contributes its bytes in little-endian order, whatever the platform.
+ */
+TEST(HashByteViewTest, ElementsSpellTheirBytesLittleEndian)
+{
+    static constexpr ::std::uint32_t values[]{0x04030201U, 0x08070605U};
+    static constexpr ::std::uint8_t expected[]{1, 2, 3, 4, 5, 6, 7, 8};
+    STATIC_EXPECT_TRUE(::std::ranges::equal(byte_view(values), expected));
+}
+
+/**
+ * @test The byte order comes from the value, not from the element's storage.
+ *
+ * On a little-endian host the two orders coincide, so the assertion above passes for a
+ * `bit_cast` implementation as well. Reading the element's own bytes is what the module
+ * must not do — two machines would then hash one input differently — and this is where
+ * such an implementation parts ways with the contract.
+ */
+TEST(HashByteViewTest, ByteOrderIsIndependentOfTheHost)
+{
+    static constexpr ::std::uint32_t value[]{0x04030201U};
+    static constexpr auto storage = ::std::bit_cast<::std::array<::std::uint8_t, 4>>(value[0]);
+    static constexpr bool storage_spells_the_value = ::std::endian::native == ::std::endian::little;
+
+    STATIC_EXPECT_EQ(::std::ranges::equal(byte_view(value), storage), storage_spells_the_value);
+}
+
+/**
+ * @test A byte-sized element passes through unchanged.
+ */
+TEST(HashByteViewTest, ByteElementIsUnchanged)
+{
+    STATIC_EXPECT_EQ(fnv1a(byte_view(::std::string_view{"hello"})), fnv1a(::std::string_view{"hello"}));
+}

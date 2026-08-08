@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::hash::byte_view` — a lazy view spelling a range of wider elements as the bytes the
+  hash functions take: `fnv1a(byte_view(text))` where `text` is a `std::u16string_view`.
+  Each element contributes its bytes least significant first, whatever the host's own byte
+  order, so two machines hash one input alike; a byte-sized element passes through
+  unchanged. `example/hash/byte_view/hash_byte_view_example.cpp` shows it running.
+
 - An `Examples` page in the generated reference, listing all eight programs under
   `example/` with their description and full source, and an `Examples` section in
   `README.md` linking each of them. The programs were previously reachable only by
