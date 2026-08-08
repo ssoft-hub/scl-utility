@@ -380,7 +380,7 @@ struct std::hash<scl::hash::key<Hasher>>;
 
 ## Смотрите также
 
-- [`example/hash/key_nttp.cpp`](../../../../example/hash/key_nttp.cpp) —
+- [`example/hash/key_nttp`](../../../../example/hash/key_nttp/hash_key_nttp_example.cpp) —
   рабочая версия: `key` как нетиповой параметр шаблона — тег типа из строкового
   литерала, специализация по строковому значению и диспетчеризация по ключу,
   вычисленному на этапе компиляции.

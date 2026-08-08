@@ -373,7 +373,7 @@ struct std::hash<scl::hash::key<Hasher>>;
 
 ## See also
 
-- [`example/hash/key_nttp.cpp`](../../../../example/hash/key_nttp.cpp) —
+- [`example/hash/key_nttp`](../../../../example/hash/key_nttp/hash_key_nttp_example.cpp) —
   runnable version: `key` as a non-type template parameter — a type tag from a string
   literal, a specialisation selected by string value, and dispatch on a compile-time key.
   runnable version: hashing a `std::u16string_view` and a `std::vector<std::uint32_t>`
