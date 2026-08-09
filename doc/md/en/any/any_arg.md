@@ -276,7 +276,7 @@ void foo(scl::any_arg value)
 
 ## See also
 
-- [`example/any/any_example.cpp`](../../../../example/any/any_example.cpp) —
+- [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) —
   runnable version: an argument binding a temporary, the write access a view never
   grants, and casts folding at compile time.
 - [any_view](any_view.md) — the storable companion

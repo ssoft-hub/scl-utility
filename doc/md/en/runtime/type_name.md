@@ -84,6 +84,6 @@ scl::type_short_name(*p);  // "Task"
 
 ## See also
 
-- [`example/runtime_type/type_name.cpp`](../../../../example/runtime_type/type_name.cpp) —
+- [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp) —
   runnable version: the compile-time and runtime forms side by side on a static type,
   through a base reference, and on a template accessed through a base pointer.

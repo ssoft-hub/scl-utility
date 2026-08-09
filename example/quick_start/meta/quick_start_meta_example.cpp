@@ -1,5 +1,5 @@
 /**
- * @example meta.cpp
+ * @example quick_start_meta_example.cpp
  * @brief Quick start: type and enumerator names at compile time, without RTTI.
  */
 

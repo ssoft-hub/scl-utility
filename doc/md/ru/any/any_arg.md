@@ -282,7 +282,7 @@ void foo(scl::any_arg value)
 
 ## Смотрите также
 
-- [`example/any/any_example.cpp`](../../../../example/any/any_example.cpp) —
+- [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) —
   рабочая версия: аргумент связывает временный объект, даёт доступ на запись, которого
   не даёт представление, и сворачивает приведения на этапе компиляции.
 - [any_view](any_view.md) — хранимый компаньон

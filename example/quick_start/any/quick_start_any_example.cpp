@@ -1,5 +1,5 @@
 /**
- * @example any.cpp
+ * @example quick_start_any_example.cpp
  * @brief Quick start: one function accepting any argument type, without templates.
  */
 

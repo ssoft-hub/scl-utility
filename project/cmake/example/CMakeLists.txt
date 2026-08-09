@@ -15,8 +15,10 @@
 # directly in example/ (no theme directory) is ignored, not made an example.
 #
 # The target name is "utility_" followed by the example root's path relative to
-# example/ with separators replaced by underscores, e.g.
-# example/hash -> utility_hash.
+# example/ with separators replaced by underscores, then "_example", e.g.
+# example/hierarchy/node -> utility_hierarchy_node_example. The trailing word
+# is what keeps an example target from colliding with a test target of the same
+# group, and makes the target the name of its own source file.
 # The example root is added to the include path so an example can reference its
 # own files (e.g. #include "support/foo.h").
 
@@ -74,7 +76,7 @@ if (EXISTS "${SCL_UTILITY_EXAMPLE_DIR}")
         )
 
         string(REPLACE "/" "_" slug "${rel}")
-        set(tgt "utility_${slug}")
+        set(tgt "utility_${slug}_example")
 
         add_executable(${tgt} ${srcs} ${hdrs})
         target_include_directories(${tgt} PRIVATE "${root_dir}")

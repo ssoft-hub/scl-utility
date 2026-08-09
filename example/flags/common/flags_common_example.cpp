@@ -1,5 +1,5 @@
 /**
- * @example flags_example.cpp
+ * @example flags_common_example.cpp
  * @brief Demonstrates scl::flags — a type-safe bitmask over a scoped enum.
  *
  * scl::flags<Enum> stores one bit per enumerator (bit index == enumerator

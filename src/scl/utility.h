@@ -64,23 +64,23 @@
  * so what follows is the code that builds, not a paraphrase of it.
  *
  * Names of types and enumerators at compile time, without RTTI:
- * @snippet quick_start/meta/meta.cpp quick_start
+ * @snippet quick_start/meta/quick_start_meta_example.cpp quick_start
  *
  * A string as a `switch` label and as a template parameter:
- * @snippet quick_start/hash/hash.cpp quick_start
+ * @snippet quick_start/hash/quick_start_hash_example.cpp quick_start
  *
  * A type-safe bitmask over a scoped enum:
- * @snippet quick_start/flags/flags.cpp quick_start
+ * @snippet quick_start/flags/quick_start_flags_example.cpp quick_start
  *
  * One function accepting any argument type, and one chain choosing the branch:
- * @snippet quick_start/any/any.cpp quick_start
+ * @snippet quick_start/any/quick_start_any_example.cpp quick_start
  *
  * A parent-child tree whose relationships stay queryable and whose changes reach an
  * observer:
- * @snippet quick_start/hierarchy/hierarchy.cpp quick_start
+ * @snippet quick_start/hierarchy/quick_start_hierarchy_example.cpp quick_start
  *
  * Picking an overload and carrying a value category over:
- * @snippet quick_start/type_traits/type_traits.cpp quick_start
+ * @snippet quick_start/type_traits/quick_start_type_traits_example.cpp quick_start
  *
  * @section features Features
  *
