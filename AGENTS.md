@@ -26,7 +26,7 @@ project/doxygen/     — Doxyfile
 - All public symbols live in namespace `scl::` or `scl::utility::`
 - Every file starts with `#pragma once`
 - When adding a new header, include it in the corresponding top-level header (e.g. `src/scl/utility/meta.h`)
-- Test files named `*_gtest.cpp`, `*_doctest.cpp`, or `*_catch2.cpp`; every new public API must have a GoogleTest (`*_gtest.cpp`) test
+- Example, test and benchmark sources are named by the rule in **Source file naming** below; every new public API must have a GoogleTest (`*_gtest.cpp`) test
 - No comments unless the WHY is non-obvious
 - All source comments and identifiers in **English**
 - A `requires` clause goes **after** the declaration, never between the template head and
@@ -44,6 +44,43 @@ constexpr Type * any_cast(Type * arg) noexcept
   trailing return type — and precedes `= delete` / `= default` and a constructor's
   initialiser list. A `requires` *expression* inside a `concept` is a different construct
   and is unaffected.
+
+### Source file naming
+
+```
+example/<group>/<name>/<group>_<name>_example.cpp   ->  target utility_<group>_<name>_example
+test/<group>/<subject>[_<aspect>]_<framework>.cpp   ->  target utility_<group>_<framework>
+benchmark/<group>/<subject>[_<aspect>]_<tool>.cpp   ->  target utility_<group>_<tool>
+```
+
+`<group>` is the header's own directory under `src/scl/utility/`; a header sitting at that
+root (`flags.h`) is its own group. `<subject>` is the header the file covers, followed by
+an aspect when one header needs several files (`type_key_cross_tu_gtest.cpp`,
+`enum_fallback_gtest.cpp`).
+
+Every base name ends in the token naming what the file is built into, and the target ends
+in the same token: `example` for an example, `<framework>` for a test — `gtest`, `doctest`,
+`catch2`, plus `_shared.cpp` for a companion shared library — and `<tool>` for a benchmark.
+In `test/` and `benchmark/` the CMake glob keys on it, and every file of a group builds
+into one executable per framework; in `example/` one source tree is one program, so an
+example's base name is its whole target name without the `utility_` prefix, and the token
+is what keeps that target apart from the test target of the same group. Every target name
+is derived from the path, so a rename needs no build-file edit.
+
+Only `example/` is read by Doxygen (`INPUT` and `EXAMPLE_PATH` in
+`project/doxygen/Doxyfile`), and `@example` addresses a file by base name alone. That is
+why an example carries its group inside the base name and a test does not: two examples
+sharing a base name leave the second unreachable, while a test's uniqueness is already
+covered by its directory.
+
+- The `<name>` level is always present, with no collapsing when it repeats the group. An
+  example covering its group as a whole rather than one subject is named `common`:
+  `example/any/common/any_common_example.cpp`.
+- Every example needs a directory of its own. All sources under one example root link into
+  a single program, so a second `main` beside it is a link error. Directories holding only
+  sub-directories are pure grouping, and the tree may nest freely.
+- No `benchmark/` tree and no `project/cmake/benchmark/CMakeLists.txt` exist yet. The rule
+  is written now; the plumbing lands with the first benchmark.
 
 ## Required Checks Before Every Commit
 Run on every changed `.h` / `.hpp` file:

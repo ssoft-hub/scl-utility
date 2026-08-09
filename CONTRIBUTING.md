@@ -103,17 +103,47 @@ bash script/lint/doc_snippets.sh --write
 ```
 The write mode is for local work only — CI checks and never writes.
 
-## Test naming convention
+## Source file naming
 
-Test files live in `module/utility/test/` and are named by framework suffix:
+Examples, tests and benchmarks follow one rule. `<group>` is the header's own directory
+under `src/scl/utility/` — a header sitting at that root, such as `flags.h`, is its own
+group.
+
+| Tree | Path | Target |
+|------|------|--------|
+| `example/` | `<group>/<name>/<group>_<name>_example.cpp` | `utility_<group>_<name>_example` |
+| `test/` | `<group>/<subject>[_<aspect>]_<framework>.cpp` | `utility_<group>_<framework>` |
+| `benchmark/` | `<group>/<subject>[_<aspect>]_<tool>.cpp` | `utility_<group>_<tool>` |
+
+`<subject>` is the header the file covers, followed by an aspect when one header needs
+several files. The trailing token is what CMake globs on, and it decides which target the
+file joins:
 
 | Suffix | Framework | Linked target |
 |--------|-----------|---------------|
 | `*_gtest.cpp` | GoogleTest | `GTest::gtest_main` |
 | `*_doctest.cpp` | doctest | doctest header-only |
 | `*_catch2.cpp` | Catch2 | Catch2 |
+| `*_shared.cpp` | — | companion shared library, linked into every test target of the directory |
 
 Each public component should have tests in at least one framework.
+
+Every base name ends in the token naming what the file is built into, and the target ends
+in the same token: `example`, or the framework or tool. The trees differ in how many files
+share a target — one example is one program, while every test of a group builds into one
+executable per framework — so only an example's base name is its whole target name without
+the `utility_` prefix. The suffix also keeps an example target apart from the test target
+of the same group.
+
+An example carries its group inside the base name because Doxygen resolves `@example` by
+base name alone, and only `example/` is in its input; a test's directory already makes it
+unique. The `<name>` level is always present — an example covering its group as a whole
+is named `common`, as in `example/any/common/any_common_example.cpp`. Every example needs a
+directory of its own: all sources under one example root link into a single program, so a
+second `main` beside it is a link error.
+
+No `benchmark/` tree exists yet. The rule is written now; the plumbing lands with the
+first benchmark.
 
 ## Documentation
 
