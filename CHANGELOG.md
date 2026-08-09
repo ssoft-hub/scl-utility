@@ -28,6 +28,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Example, test and benchmark sources follow one naming rule, written in `AGENTS.md` and
+  `CONTRIBUTING.md`: an example is `example/<group>/<name>/<group>_<name>_example.cpp`, a
+  test is `test/<group>/<subject>_<framework>.cpp`, and a benchmark will read the same way.
+  An example base name is all Doxygen has to address `@example` by, and two examples
+  sharing one left the second unreachable.
+- Every example target is renamed, because an example target now carries the same trailing
+  `_example` its source does, the way a test target carries the framework: `utility_any`
+  becomes `utility_any_common_example`, `utility_hash_key_nttp` becomes
+  `utility_hash_key_nttp_example`, `utility_meta` becomes `utility_meta_type_key_example`,
+  and so on for all fifteen. Building one example by name uses the new name; building
+  everything is unaffected.
+- Five test sources are named after the header they cover rather than after an API it
+  declares, and `test/preprocesor` is spelled `preprocessor`. That renames one target,
+  `utility_preprocesor_gtest` to `utility_preprocessor_gtest`; the tests it runs are the
+  same, except that the `meta` suites are `MetaTypeTest`, `MetaEnumTest` and
+  `MetaSymbolTest`, which no longer collide with the `runtime` ones.
 - `<scl/utility.h>` now includes every module header. It left out `hash.h` and
   `runtime.h`, so the header the documentation offers as "everything" reached neither
   the hash utilities nor `enum_value` and the runtime type names.

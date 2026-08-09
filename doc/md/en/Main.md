@@ -143,9 +143,9 @@ Six programs, one per topic that reads in a few lines. Each is compiled as an ex
 what follows is the code that builds, not a paraphrase of it.
 
 Names of types and enumerators at compile time, without RTTI
-([`example/quick_start/meta`](../../../example/quick_start/meta/meta.cpp)):
+([`example/quick_start/meta`](../../../example/quick_start/meta/quick_start_meta_example.cpp)):
 
-<!-- snippet: example/quick_start/meta/meta.cpp -->
+<!-- snippet: example/quick_start/meta/quick_start_meta_example.cpp -->
 ```cpp
 #include <scl/utility/meta/enum.h>
 #include <scl/utility/meta/type.h>
@@ -169,9 +169,9 @@ int main()
 ```
 
 A string as a `switch` label and as a template parameter
-([`example/quick_start/hash`](../../../example/quick_start/hash/hash.cpp)):
+([`example/quick_start/hash`](../../../example/quick_start/hash/quick_start_hash_example.cpp)):
 
-<!-- snippet: example/quick_start/hash/hash.cpp -->
+<!-- snippet: example/quick_start/hash/quick_start_hash_example.cpp -->
 ```cpp
 #include <scl/utility/hash/key.h>
 
@@ -205,9 +205,9 @@ int main()
 ```
 
 A type-safe bitmask over a scoped enum
-([`example/quick_start/flags`](../../../example/quick_start/flags/flags.cpp)):
+([`example/quick_start/flags`](../../../example/quick_start/flags/quick_start_flags_example.cpp)):
 
-<!-- snippet: example/quick_start/flags/flags.cpp -->
+<!-- snippet: example/quick_start/flags/quick_start_flags_example.cpp -->
 ```cpp
 #include <scl/utility/flags.h>
 
@@ -240,9 +240,9 @@ int main()
 ```
 
 One function accepting any argument type, and one chain choosing the branch
-([`example/quick_start/any`](../../../example/quick_start/any/any.cpp)):
+([`example/quick_start/any`](../../../example/quick_start/any/quick_start_any_example.cpp)):
 
-<!-- snippet: example/quick_start/any/any.cpp -->
+<!-- snippet: example/quick_start/any/quick_start_any_example.cpp -->
 ```cpp
 #include <scl/utility/any.h>
 
@@ -274,9 +274,9 @@ int main()
 
 A parent-child tree whose relationships stay queryable and whose changes reach an
 observer
-([`example/quick_start/hierarchy`](../../../example/quick_start/hierarchy/hierarchy.cpp)):
+([`example/quick_start/hierarchy`](../../../example/quick_start/hierarchy/quick_start_hierarchy_example.cpp)):
 
-<!-- snippet: example/quick_start/hierarchy/hierarchy.cpp -->
+<!-- snippet: example/quick_start/hierarchy/quick_start_hierarchy_example.cpp -->
 ```cpp
 #include <scl/utility/hierarchy.h>
 
@@ -321,9 +321,9 @@ int main()
 ```
 
 Picking an overload and carrying a value category over
-([`example/quick_start/type_traits`](../../../example/quick_start/type_traits/type_traits.cpp)):
+([`example/quick_start/type_traits`](../../../example/quick_start/type_traits/quick_start_type_traits_example.cpp)):
 
-<!-- snippet: example/quick_start/type_traits/type_traits.cpp -->
+<!-- snippet: example/quick_start/type_traits/quick_start_type_traits_example.cpp -->
 ```cpp
 #include <scl/utility/type_traits/forward_like.h>
 #include <scl/utility/type_traits/overload_cast.h>

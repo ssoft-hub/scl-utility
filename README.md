@@ -134,9 +134,9 @@ Six programs, one per topic that reads in a few lines. Each is compiled as an ex
 what follows is the code that builds, not a paraphrase of it.
 
 Names of types and enumerators at compile time, without RTTI
-([`example/quick_start/meta`](example/quick_start/meta/meta.cpp)):
+([`example/quick_start/meta`](example/quick_start/meta/quick_start_meta_example.cpp)):
 
-<!-- snippet: example/quick_start/meta/meta.cpp -->
+<!-- snippet: example/quick_start/meta/quick_start_meta_example.cpp -->
 ```cpp
 #include <scl/utility/meta/enum.h>
 #include <scl/utility/meta/type.h>
@@ -160,9 +160,9 @@ int main()
 ```
 
 A string as a `switch` label and as a template parameter
-([`example/quick_start/hash`](example/quick_start/hash/hash.cpp)):
+([`example/quick_start/hash`](example/quick_start/hash/quick_start_hash_example.cpp)):
 
-<!-- snippet: example/quick_start/hash/hash.cpp -->
+<!-- snippet: example/quick_start/hash/quick_start_hash_example.cpp -->
 ```cpp
 #include <scl/utility/hash/key.h>
 
@@ -196,9 +196,9 @@ int main()
 ```
 
 A type-safe bitmask over a scoped enum
-([`example/quick_start/flags`](example/quick_start/flags/flags.cpp)):
+([`example/quick_start/flags`](example/quick_start/flags/quick_start_flags_example.cpp)):
 
-<!-- snippet: example/quick_start/flags/flags.cpp -->
+<!-- snippet: example/quick_start/flags/quick_start_flags_example.cpp -->
 ```cpp
 #include <scl/utility/flags.h>
 
@@ -231,9 +231,9 @@ int main()
 ```
 
 One function accepting any argument type, and one chain choosing the branch
-([`example/quick_start/any`](example/quick_start/any/any.cpp)):
+([`example/quick_start/any`](example/quick_start/any/quick_start_any_example.cpp)):
 
-<!-- snippet: example/quick_start/any/any.cpp -->
+<!-- snippet: example/quick_start/any/quick_start_any_example.cpp -->
 ```cpp
 #include <scl/utility/any.h>
 
@@ -265,9 +265,9 @@ int main()
 
 A parent-child tree whose relationships stay queryable and whose changes reach an
 observer
-([`example/quick_start/hierarchy`](example/quick_start/hierarchy/hierarchy.cpp)):
+([`example/quick_start/hierarchy`](example/quick_start/hierarchy/quick_start_hierarchy_example.cpp)):
 
-<!-- snippet: example/quick_start/hierarchy/hierarchy.cpp -->
+<!-- snippet: example/quick_start/hierarchy/quick_start_hierarchy_example.cpp -->
 ```cpp
 #include <scl/utility/hierarchy.h>
 
@@ -312,9 +312,9 @@ int main()
 ```
 
 Picking an overload and carrying a value category over
-([`example/quick_start/type_traits`](example/quick_start/type_traits/type_traits.cpp)):
+([`example/quick_start/type_traits`](example/quick_start/type_traits/quick_start_type_traits_example.cpp)):
 
-<!-- snippet: example/quick_start/type_traits/type_traits.cpp -->
+<!-- snippet: example/quick_start/type_traits/quick_start_type_traits_example.cpp -->
 ```cpp
 #include <scl/utility/type_traits/forward_like.h>
 #include <scl/utility/type_traits/overload_cast.h>
@@ -343,39 +343,41 @@ int main()
 
 ## Examples
 
-Each directory under `example/` builds into one runnable program, named `utility_` plus
-the directory path (`example/hierarchy_node` becomes `utility_hierarchy_node`). The same
-sources appear on the Examples page of the generated reference.
+An example lives at `example/<group>/<name>/` and builds into one runnable program named
+`utility_<group>_<name>_example`, which is also what its source is called:
+`example/hierarchy/node` builds `utility_hierarchy_node_example` from
+`hierarchy_node_example.cpp`. The same sources appear on the Examples page of the generated
+reference.
 
-- [`example/any`](example/any/any_example.cpp) — `any_view` over a typed lvalue and over a
+- [`example/any/common`](example/any/common/any_common_example.cpp) — `any_view` over a typed lvalue and over a
   `std::any`, `any_arg` in parameter position, and an `any_switch` chain.
-- [`example/flags`](example/flags/flags_example.cpp) — combining and querying flags, set
+- [`example/flags/common`](example/flags/common/flags_common_example.cpp) — combining and querying flags, set
   algebra between two masks, and iterating the set flags.
 - [`example/hash/key_nttp`](example/hash/key_nttp/hash_key_nttp_example.cpp) — `hash::key` as a non-type template
   parameter: string-tagged types, specialisation by string value, compile-time dispatch.
 - [`example/hash/byte_view`](example/hash/byte_view/hash_byte_view_example.cpp) — hashing a
   range whose elements are wider than a byte: `hash::byte_view` says which bytes are meant,
   in an order two machines agree on.
-- [`example/hierarchy_node`](example/hierarchy_node/node_example.cpp) — an organization
+- [`example/hierarchy/node`](example/hierarchy/node/hierarchy_node_example.cpp) — an organization
   chart built from `hierarchy::node`, reorganized with `take()` and `transfer()`.
-- [`example/hierarchy_tree`](example/hierarchy_tree/tree_example.cpp) — a task board on
+- [`example/hierarchy/tree`](example/hierarchy/tree/hierarchy_tree_example.cpp) — a task board on
   `hierarchy::tree` with two observers composed through `observer_tuple`.
-- [`example/meta`](example/meta/type_key_example.cpp) — a hashable handle over `type_key`,
+- [`example/meta/type_key`](example/meta/type_key/meta_type_key_example.cpp) — a hashable handle over `type_key`,
   used as an unordered-container key.
-- [`example/runtime_enum`](example/runtime_enum/enum_value.cpp) — `enum_value` against its
+- [`example/runtime/enum_value`](example/runtime/enum_value/runtime_enum_value_example.cpp) — `enum_value` against its
   compile-time counterpart, including values outside the enumerator set.
-- [`example/runtime_type`](example/runtime_type/type_name.cpp) — compile-time and runtime
+- [`example/runtime/type_name`](example/runtime/type_name/runtime_type_name_example.cpp) — compile-time and runtime
   type names side by side under polymorphism.
 
 The programs under `example/quick_start/` are the shortest form of each topic, and are the
 source of the snippets in the Quick start above:
 
-- [`example/quick_start/any`](example/quick_start/any/any.cpp)
-- [`example/quick_start/flags`](example/quick_start/flags/flags.cpp)
-- [`example/quick_start/hash`](example/quick_start/hash/hash.cpp)
-- [`example/quick_start/hierarchy`](example/quick_start/hierarchy/hierarchy.cpp)
-- [`example/quick_start/meta`](example/quick_start/meta/meta.cpp)
-- [`example/quick_start/type_traits`](example/quick_start/type_traits/type_traits.cpp)
+- [`example/quick_start/any`](example/quick_start/any/quick_start_any_example.cpp)
+- [`example/quick_start/flags`](example/quick_start/flags/quick_start_flags_example.cpp)
+- [`example/quick_start/hash`](example/quick_start/hash/quick_start_hash_example.cpp)
+- [`example/quick_start/hierarchy`](example/quick_start/hierarchy/quick_start_hierarchy_example.cpp)
+- [`example/quick_start/meta`](example/quick_start/meta/quick_start_meta_example.cpp)
+- [`example/quick_start/type_traits`](example/quick_start/type_traits/quick_start_type_traits_example.cpp)
 
 ## Doxygen
 

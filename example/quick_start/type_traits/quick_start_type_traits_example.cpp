@@ -1,5 +1,5 @@
 /**
- * @example type_traits.cpp
+ * @example quick_start_type_traits_example.cpp
  * @brief Quick start: picking an overload and carrying a value category over.
  */
 

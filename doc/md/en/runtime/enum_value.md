@@ -50,6 +50,6 @@ scl::enum_value(app::Status::Err); // "Status::42" — namespace stripped
 
 ## See also
 
-- [`example/runtime_enum/enum_value.cpp`](../../../../example/runtime_enum/enum_value.cpp) —
+- [`example/runtime/enum_value/runtime_enum_value_example.cpp`](../../../../example/runtime/enum_value/runtime_enum_value_example.cpp) —
   runnable version: a named enumerator against its compile-time counterpart, a value
   outside the enumerator set, an unsigned underlying type and a namespaced enum.

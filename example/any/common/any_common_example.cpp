@@ -1,5 +1,5 @@
 /**
- * @example any_example.cpp
+ * @example any_common_example.cpp
  * @brief Demonstrates the ScL Any views — scl::any_view and scl::any_arg.
  *
  * scl::any_view is to std::any what std::string_view is to std::string: it

@@ -264,7 +264,7 @@ static_assert(doubling.has_case(21));
 
 ## Смотрите также
 
-- [`example/any/any_example.cpp`](../../../../example/any/any_example.cpp) —
+- [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) —
   рабочая версия: одна цепочка вместо череды приведений, над обоими представлениями.
 - [any_arg](any_arg.md) — тип, через который каждая ветвь читает значение
 - [any_view](any_view.md) — хранимое представление, тоже принимается как значение

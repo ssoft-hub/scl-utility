@@ -1,5 +1,5 @@
 /**
- * @example node_example.cpp
+ * @example hierarchy_node_example.cpp
  * @brief Demonstrates scl::hierarchy::node<> with an in-memory organization chart.
  *
  * node<> owns a tree of typed children and tracks each child's parent

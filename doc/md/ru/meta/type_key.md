@@ -185,6 +185,6 @@ static_assert(!scl::is_tu_local_v<int>);
 
 ## Смотрите также
 
-- [`example/meta/type_key_example.cpp`](../../../../example/meta/type_key_example.cpp) —
+- [`example/meta/type_key/meta_type_key_example.cpp`](../../../../example/meta/type_key/meta_type_key_example.cpp) —
   рабочая версия: хешируемая обёртка над `type_key`, согласованная с идентичностью ключа
   и используемый напрямую как ключ неупорядоченного контейнера.

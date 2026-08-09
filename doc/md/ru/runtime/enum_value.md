@@ -50,7 +50,7 @@ scl::enum_value(app::Status::Err); // "Status::42" — пространство 
 
 ## Смотрите также
 
-- [`example/runtime_enum/enum_value.cpp`](../../../../example/runtime_enum/enum_value.cpp) —
+- [`example/runtime/enum_value/runtime_enum_value_example.cpp`](../../../../example/runtime/enum_value/runtime_enum_value_example.cpp) —
   рабочая версия: именованная константа рядом с её аналогом времени компиляции,
   значение вне набора констант, беззнаковый базовый тип и перечисление в пространстве
   имён.

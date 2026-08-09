@@ -201,7 +201,7 @@ scl::any_cast<int volatile>(&view); // читает нормально
 
 ## Смотрите также
 
-- [`example/any/any_example.cpp`](../../../../example/any/any_example.cpp) —
+- [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) —
   рабочая версия: одна функция читает любое из представлений, приведения в ссылочной
   форме и запросы идентичности.
 - [any_arg](any_arg.md) — параметрический компаньон, дающий ещё и доступ на запись

@@ -1,5 +1,5 @@
 /**
- * @example flags.cpp
+ * @example quick_start_flags_example.cpp
  * @brief Quick start: a type-safe bitmask over a scoped enum.
  */
 

@@ -313,7 +313,7 @@ assert(t.empty());
 
 ## Смотрите также
 
-- [`example/hierarchy_tree/tree_example.cpp`](../../../../example/hierarchy_tree/tree_example.cpp) —
+- [`example/hierarchy/tree/hierarchy_tree_example.cpp`](../../../../example/hierarchy/tree/hierarchy_tree_example.cpp) —
   рабочая версия: доска задач с двумя наблюдателями, объединёнными через
   `observer_tuple`, — индексы остаются синхронными при `set_value()` и при
   переносе поддерева между родителями (`transfer()`).

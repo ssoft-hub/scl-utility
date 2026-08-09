@@ -86,6 +86,6 @@ scl::type_short_name(*p);  // "Task"
 
 ## Смотрите также
 
-- [`example/runtime_type/type_name.cpp`](../../../../example/runtime_type/type_name.cpp) —
+- [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp) —
   рабочая версия: формы времени компиляции и времени выполнения рядом для статического
   типа, через ссылку на базовый класс и для шаблона, доступного через указатель на базу.

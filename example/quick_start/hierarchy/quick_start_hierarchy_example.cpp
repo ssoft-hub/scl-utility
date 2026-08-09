@@ -1,5 +1,5 @@
 /**
- * @example hierarchy.cpp
+ * @example quick_start_hierarchy_example.cpp
  * @brief Quick start: a parent-child tree, its relationships and its observer.
  */
 

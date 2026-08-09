@@ -1,5 +1,5 @@
 /**
- * @example hash.cpp
+ * @example quick_start_hash_example.cpp
  * @brief Quick start: a string as a `switch` label and as a template parameter.
  */
 

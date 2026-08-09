@@ -144,9 +144,9 @@ target_link_libraries(your_target PRIVATE scl::utility)
 пример, поэтому ниже приведён код, который компилируется, а не его пересказ.
 
 Имена типов и констант перечислений на этапе компиляции, без RTTI
-([`example/quick_start/meta`](../../../example/quick_start/meta/meta.cpp)):
+([`example/quick_start/meta`](../../../example/quick_start/meta/quick_start_meta_example.cpp)):
 
-<!-- snippet: example/quick_start/meta/meta.cpp -->
+<!-- snippet: example/quick_start/meta/quick_start_meta_example.cpp -->
 ```cpp
 #include <scl/utility/meta/enum.h>
 #include <scl/utility/meta/type.h>
@@ -170,9 +170,9 @@ int main()
 ```
 
 Строка как метка `switch` и как параметр шаблона
-([`example/quick_start/hash`](../../../example/quick_start/hash/hash.cpp)):
+([`example/quick_start/hash`](../../../example/quick_start/hash/quick_start_hash_example.cpp)):
 
-<!-- snippet: example/quick_start/hash/hash.cpp -->
+<!-- snippet: example/quick_start/hash/quick_start_hash_example.cpp -->
 ```cpp
 #include <scl/utility/hash/key.h>
 
@@ -206,9 +206,9 @@ int main()
 ```
 
 Типобезопасная битовая маска над scoped enum
-([`example/quick_start/flags`](../../../example/quick_start/flags/flags.cpp)):
+([`example/quick_start/flags`](../../../example/quick_start/flags/quick_start_flags_example.cpp)):
 
-<!-- snippet: example/quick_start/flags/flags.cpp -->
+<!-- snippet: example/quick_start/flags/quick_start_flags_example.cpp -->
 ```cpp
 #include <scl/utility/flags.h>
 
@@ -241,9 +241,9 @@ int main()
 ```
 
 Одна функция, принимающая аргумент любого типа, и одна цепочка, выбирающая ветвь
-([`example/quick_start/any`](../../../example/quick_start/any/any.cpp)):
+([`example/quick_start/any`](../../../example/quick_start/any/quick_start_any_example.cpp)):
 
-<!-- snippet: example/quick_start/any/any.cpp -->
+<!-- snippet: example/quick_start/any/quick_start_any_example.cpp -->
 ```cpp
 #include <scl/utility/any.h>
 
@@ -275,9 +275,9 @@ int main()
 
 Дерево «родитель-потомок»: связи остаются доступными для запроса, а изменения
 доходят до наблюдателя
-([`example/quick_start/hierarchy`](../../../example/quick_start/hierarchy/hierarchy.cpp)):
+([`example/quick_start/hierarchy`](../../../example/quick_start/hierarchy/quick_start_hierarchy_example.cpp)):
 
-<!-- snippet: example/quick_start/hierarchy/hierarchy.cpp -->
+<!-- snippet: example/quick_start/hierarchy/quick_start_hierarchy_example.cpp -->
 ```cpp
 #include <scl/utility/hierarchy.h>
 
@@ -322,9 +322,9 @@ int main()
 ```
 
 Выбор перегрузки и перенос категории значения
-([`example/quick_start/type_traits`](../../../example/quick_start/type_traits/type_traits.cpp)):
+([`example/quick_start/type_traits`](../../../example/quick_start/type_traits/quick_start_type_traits_example.cpp)):
 
-<!-- snippet: example/quick_start/type_traits/type_traits.cpp -->
+<!-- snippet: example/quick_start/type_traits/quick_start_type_traits_example.cpp -->
 ```cpp
 #include <scl/utility/type_traits/forward_like.h>
 #include <scl/utility/type_traits/overload_cast.h>
