@@ -23,9 +23,23 @@ extract the exact type representation.
 ### Semantics
 
 - **Compiler-specific output:**
-  On MSVC, the result includes `struct `, `class `, or `union ` prefixes for user-defined types
-  (e.g., `"struct MyStruct"`). GCC and Clang omit these keywords.
-  Use `type_short_name<T>()` if a normalized, prefix-free name is needed.
+  On MSVC, the result includes the `struct `, `class `, `union ` and `enum ` prefixes for
+  user-defined types (`"struct MyStruct"`, `"enum Color"`), at the top level and inside
+  template arguments alike. GCC and Clang omit these keywords. Inline namespaces and
+  defaulted template arguments diverge on top of that. `std::string` measured on GCC 13.1,
+  Clang 22.1 and MSVC 19.44:
+
+  ```text
+  GCC    std::__cxx11::basic_string<char>
+  Clang  std::basic_string<char>
+  MSVC   class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
+  ```
+- **What the result is for:**
+  Display - a log line, an error message, a name shown to a human. It is not a stable
+  identifier: no part of it is guaranteed to agree between compilers, so nothing should
+  compare it against a literal, parse it, or persist it. For type identity use
+  [`type_key`](type_key.md), which is designed for comparison; for the bare identifier of a
+  namespace-scope type use `type_short_name<T>()`.
 - **Qualified Names:**
   The result includes all namespace and class scope qualifiers (e.g., `std::vector<int>`).
 - **Compile-time Evaluation:**
@@ -34,35 +48,43 @@ extract the exact type representation.
 
 ### Examples
 
+<!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_name -->
 ```cpp
 #include <scl/utility/meta/type.h>
-#include <vector>
+
 #include <string>
+#include <vector>
 
-using ::scl::type_name;
+struct MyStruct
+{};
 
-struct MyStruct {};
+constexpr auto npos = ::std::string_view::npos;
 
-// Fundamental types
-static_assert(type_name<int>() == "int");
+// Fundamental types render identically on every compiler.
+static_assert(::scl::type_name<int>() == "int");
 
-// Standard library types
-// Note: exact string may vary slightly by STL implementation
-static_assert(type_name<std::string>().find("basic_string") != std::string_view::npos);
+// A standard library type spells itself the way the toolchain does. std::string:
+// GCC:   "std::__cxx11::basic_string<char>"
+// Clang: "std::basic_string<char>"
+// MSVC:  "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
+static_assert(::scl::type_name<::std::string>().find("basic_string") != npos);
 
-// User-defined types
+// A user-defined type carries the MSVC prefix.
 // GCC/Clang: "MyStruct"  |  MSVC: "struct MyStruct"
-static_assert(type_name<MyStruct>().find("MyStruct") != std::string_view::npos);
+static_assert(::scl::type_name<MyStruct>().find("MyStruct") != npos);
 
-// Templates
-static_assert(type_name<std::vector<MyStruct>>().find("vector<MyStruct>") != std::string_view::npos);
+// The prefix reaches template arguments as well, so a rendered template name has no
+// spelling common to all three compilers.
+// GCC/Clang: "std::vector<MyStruct>"
+// MSVC:      "class std::vector<struct MyStruct,class std::allocator<struct MyStruct> >"
+static_assert(::scl::type_name<::std::vector<MyStruct>>().find("MyStruct") != npos);
 ```
 
 ### Typical Use Cases
 
-Generating human-readable logs, error messages in generic code, or implementing lightweight reflection
-systems where type identities need to be displayed or compared as strings without the overhead of
-`typeid(T).name()`.
+Generating human-readable logs and error messages in generic code, and labelling a type in a
+diagnostic without RTTI and without the mangled spelling of `typeid(T).name()`. Where a type has
+to be recognized rather than shown, [`type_key`](type_key.md) is the facility for it.
 
 ---
 
@@ -81,13 +103,22 @@ arguments are stripped, so the result is always the bare identifier.
 
 ### Example
 
+<!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_short_name -->
 ```cpp
-#include <scl/utility/meta/type.h>
+namespace app::core
+{
+    struct Task
+    {};
+} // namespace app::core
 
-namespace app::core { struct Task {}; }
-
-int main() {
-    constexpr auto full    = scl::type_name<app::core::Task>();       // "app::core::Task" (GCC/Clang)
-    constexpr auto short_n = scl::type_short_name<app::core::Task>(); // "Task"
-}
+// The short name is the bare identifier on every compiler: namespace qualifiers, the
+// MSVC prefix and the template arguments are all stripped.
+static_assert(::scl::type_short_name<app::core::Task>() == "Task");
+static_assert(::scl::type_short_name<::std::vector<MyStruct>>() == "vector");
 ```
+
+## See also
+
+- [`example/meta/type_name/meta_type_name_example.cpp`](../../../../example/meta/type_name/meta_type_name_example.cpp) —
+  runnable version of both examples above, built and run by CI on every supported
+  compiler.

@@ -35,6 +35,23 @@ namespace Namespace
 } // namespace Namespace
 
 /**
+ * @brief TU-local type for testing the anonymous-namespace rendering.
+ */
+namespace
+{
+    struct AnonStruct
+    {};
+} // namespace
+
+/**
+ * @brief Enumeration for testing the MSVC 'enum ' prefix.
+ */
+enum class Color
+{
+    red,
+};
+
+/**
  * @test Verify fundamental types extraction.
  */
 TEST(MetaTypeTest, FundamentalTypes)
@@ -105,6 +122,48 @@ TEST(MetaTypeTest, TemplateTypes)
 
     EXPECT_EQ(::scl::type_short_name<T>(), "TemplateStruct");
     EXPECT_EQ(::scl::type_short_name<TT>(), "TemplateClass");
+}
+
+/**
+ * @test Verify the rendering contract the documentation states.
+ * @note The MSVC prefix reaches template arguments as well, so a rendered template name has
+ * no spelling common to all compilers; the documented examples match on a substring.
+ */
+TEST(MetaTypeTest, DocumentedRenderingContract)
+{
+    constexpr auto npos = ::std::string_view::npos;
+
+    static constexpr auto vector_name = ::scl::type_name<::std::vector<SimpleStruct>>();
+    static constexpr auto enum_vector_name = ::scl::type_name<::std::vector<Color>>();
+    static constexpr auto nested_name = ::scl::type_name<Namespace::Struct>();
+    static constexpr auto anon_name = ::scl::type_name<AnonStruct>();
+
+    STATIC_EXPECT_NE(vector_name.find("SimpleStruct"), npos);
+    STATIC_EXPECT_NE(enum_vector_name.find("Color"), npos);
+    STATIC_EXPECT_NE(nested_name.find("Namespace::Struct"), npos);
+
+    // The anonymous-namespace marker is spelled differently by each compiler, so only the
+    // identifier and the MSVC prefix are portable claims about the rendering.
+    STATIC_EXPECT_NE(anon_name.find("AnonStruct"), npos);
+
+    STATIC_EXPECT_EQ(::scl::type_short_name<Color>(), "Color");
+    STATIC_EXPECT_EQ(::scl::type_short_name<AnonStruct>(), "AnonStruct");
+    STATIC_EXPECT_EQ(::scl::type_short_name<::std::vector<SimpleStruct>>(), "vector");
+
+#if defined(_MSC_VER) && !defined(__clang__)
+    STATIC_EXPECT_EQ(::scl::type_name<SimpleStruct>(), "struct SimpleStruct");
+    STATIC_EXPECT_EQ(::scl::type_name<Color>(), "enum Color");
+    STATIC_EXPECT_NE(vector_name.find("struct SimpleStruct"), npos);
+    STATIC_EXPECT_NE(enum_vector_name.find("enum Color"), npos);
+    STATIC_EXPECT_TRUE(nested_name.starts_with("struct "));
+    STATIC_EXPECT_TRUE(anon_name.starts_with("struct "));
+#else
+    STATIC_EXPECT_EQ(::scl::type_name<SimpleStruct>(), "SimpleStruct");
+    STATIC_EXPECT_EQ(::scl::type_name<Color>(), "Color");
+    STATIC_EXPECT_EQ(vector_name.find("struct "), npos);
+    STATIC_EXPECT_EQ(enum_vector_name.find("enum "), npos);
+    STATIC_EXPECT_EQ(anon_name.find("struct "), npos);
+#endif
 }
 
 /**

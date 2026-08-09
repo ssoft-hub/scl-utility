@@ -14,13 +14,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   order, so two machines hash one input alike; a byte-sized element passes through
   unchanged. `example/hash/byte_view/hash_byte_view_example.cpp` shows it running.
 
-- An `Examples` page in the generated reference, listing all eight programs under
-  `example/` with their description and full source, and an `Examples` section in
+- An `Examples` page in the generated reference, listing every program under
+  `example/` with its description and full source, and an `Examples` section in
   `README.md` linking each of them. The programs were previously reachable only by
   browsing the repository.
 - A link to the runnable example from every Markdown page whose subject has one:
   `any_view`, `any_arg`, `any_switch`, `flags`, `hash::key`, `type_key`, `enum_value`
-  and the runtime `type_name`, in both languages.
+  and both the meta and the runtime `type_name`, on each language's page.
+- `example/meta/type_name` — `type_name` and `type_short_name`, and the part of a rendered
+  name that depends on the compiler. Both code blocks on the `meta/type_name` pages are
+  now taken from it by the `doc-snippets` gate, so what those pages show is code the CI
+  compiles on every supported compiler rather than text written beside it.
 - A Quick start of six programs — `meta`, `hash`, `flags`, `any`, `hierarchy`,
   `type_traits` — under `example/quick_start/`. `README.md`, both `Main.md` and the
   Doxygen main page show the code of those programs rather than a snippet written
@@ -116,6 +120,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `node::transfer` documents the parameter it actually takes, and
   `std::hash<scl::hash::key>` is placed in the reference rather than reported as
   unplaceable.
+- `scl::type_name<T>()` is documented as it behaves. The header of `meta/type.h`
+  promised that the `class`/`struct`/`union` prefix is stripped on MSVC, which it never
+  was and — as the same file's `@note` and the Markdown pages already said — is not
+  meant to be. The prefix reaches template arguments too, and the example on the pages
+  asserted a substring that could not hold on MSVC.
+- The documentation says what a rendered name is for. It is a value to show, not one to
+  compare: the prefix aside, inline namespaces and defaulted template arguments diverge
+  too, so `std::string` reaches the caller as three different strings on the three
+  supported toolchains and no part of a name is guaranteed to agree between them. The
+  pages and the header now point at `scl::type_key` for identity and at
+  `type_short_name<T>()` for the bare identifier, where the text used to offer matching
+  on a substring — which is the same trap one step further in.
+- The Quick start says what `type_name<color>()` actually prints. The line was annotated
+  `color`, which is the GCC and Clang rendering; MSVC prints `enum color`. The program
+  itself was correct, so the `doc-snippets` gate had nothing to catch — a comment states
+  a claim the compiler never checks.
 
 - Fixed a compiler crash (`SIGSEGV` in clang's `Sema`) building
   `utility_type_traits_gtest` on macOS, caused by an oversized test
