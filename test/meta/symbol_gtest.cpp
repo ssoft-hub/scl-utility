@@ -17,7 +17,7 @@ namespace Namespace
     };
 } // namespace Namespace
 
-TEST(SymbolTraitsTest, ShortNames)
+TEST(MetaSymbolTest, ShortNames)
 {
     EXPECT_EQ(::scl::symbol_short_name<Namespace::initialize>(), "initialize");
     EXPECT_EQ(::scl::symbol_short_name<&Namespace::Processor::execute>(), "execute");
@@ -29,7 +29,7 @@ TEST(SymbolTraitsTest, ShortNames)
     EXPECT_EQ(::scl::symbol_short_name<&Namespace::variable>(), "variable");
 }
 
-TEST(SymbolTraitsTest, QualifiedNames)
+TEST(MetaSymbolTest, QualifiedNames)
 {
     EXPECT_EQ(::scl::symbol_name<Namespace::initialize>(), "Namespace::initialize");
     EXPECT_EQ(::scl::symbol_name<&Namespace::Processor::execute>(), "Namespace::Processor::execute");

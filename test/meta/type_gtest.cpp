@@ -37,7 +37,7 @@ namespace Namespace
 /**
  * @test Verify fundamental types extraction.
  */
-TEST(TypeNameTest, FundamentalTypes)
+TEST(MetaTypeTest, FundamentalTypes)
 {
     EXPECT_EQ(::scl::type_name<int>(), "int");
     EXPECT_EQ(::scl::type_name<float>(), "float");
@@ -49,7 +49,7 @@ TEST(TypeNameTest, FundamentalTypes)
  * @test Verify user-defined types (struct/class).
  * @note On MSVC, type names include struct/class keywords.
  */
-TEST(TypeNameTest, UserDefinedTypes)
+TEST(MetaTypeTest, UserDefinedTypes)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
     EXPECT_EQ(::scl::type_name<SimpleStruct>(), "struct SimpleStruct");
@@ -69,7 +69,7 @@ TEST(TypeNameTest, UserDefinedTypes)
 /**
  * @test Verify types within custom namespaces.
  */
-TEST(TypeNameTest, NamespacedTypes)
+TEST(MetaTypeTest, NamespacedTypes)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
     EXPECT_EQ(::scl::type_name<Namespace::Struct>(), "struct Namespace::Struct");
@@ -84,7 +84,7 @@ TEST(TypeNameTest, NamespacedTypes)
  * @test Verify template types extraction.
  * @note On MSVC, template arguments include struct/class keywords.
  */
-TEST(TypeNameTest, TemplateTypes)
+TEST(MetaTypeTest, TemplateTypes)
 {
     using T = Namespace::TemplateStruct<Namespace::Struct>;
     using TT = Namespace::TemplateClass<T>;
@@ -111,7 +111,7 @@ TEST(TypeNameTest, TemplateTypes)
  * @test Verify standard library types.
  * @note STL implementations may vary in how they display default allocators.
  */
-TEST(TypeNameTest, StandardLibraryTypes)
+TEST(MetaTypeTest, StandardLibraryTypes)
 {
     static constexpr ::std::string_view name = ::scl::type_name<::std::vector<int>>();
     // We check for substring because different compilers/STL versions
@@ -123,7 +123,7 @@ TEST(TypeNameTest, StandardLibraryTypes)
 /**
  * @test Verify that qualifiers like const and references are preserved or handled.
  */
-TEST(TypeNameTest, Qualifiers)
+TEST(MetaTypeTest, Qualifiers)
 {
     // Current implementation preserves qualifiers as they are part of type T.
     // We use find/contains logic because exact formatting of 'const' (before or after type)

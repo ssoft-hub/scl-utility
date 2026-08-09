@@ -17,7 +17,7 @@ namespace Namespace
     };
 } // namespace Namespace
 
-TEST(EnumTraitsTest, ScopedEnumName)
+TEST(MetaEnumTest, ScopedEnumName)
 {
     EXPECT_EQ(::scl::enum_name<Namespace::Color::Red>(), "Namespace::Color::Red");
     EXPECT_EQ(::scl::enum_name<Namespace::Color::Green>(), "Namespace::Color::Green");
@@ -27,7 +27,7 @@ TEST(EnumTraitsTest, ScopedEnumName)
     EXPECT_EQ(::scl::enum_short_name<Namespace::Color::Blue>(), "Blue");
 }
 
-TEST(EnumTraitsTest, UnscopedEnumName)
+TEST(MetaEnumTest, UnscopedEnumName)
 {
     EXPECT_EQ(::scl::enum_name<Namespace::Value>(), "Namespace::Value");
     EXPECT_EQ(::scl::enum_short_name<Namespace::Value>(), "Value");
