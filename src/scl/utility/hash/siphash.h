@@ -7,6 +7,7 @@
  */
 
 #include <scl/utility/attribute/inline.h>
+#include <scl/utility/attribute/likely.h>
 #include <scl/utility/attribute/nodiscard.h>
 
 #include <bit>
@@ -140,15 +141,18 @@ namespace scl::hash
             shift += 8;
             ++len;
 
-            if (shift == 64) // full 8-byte block ready
-            {
-                v3 ^= m;
-                detail::sip_round(v0, v1, v2, v3); // c = 2
-                detail::sip_round(v0, v1, v2, v3);
-                v0 ^= m;
-                m = 0;
-                shift = 0;
-            }
+            // One iteration in eight. The hint buys block layout, not prediction
+            // accuracy - see doc/md/en/hash/benchmark.md.
+            if (shift == 64)
+                SCL_UNLIKELY // full 8-byte block ready
+                {
+                    v3 ^= m;
+                    detail::sip_round(v0, v1, v2, v3); // c = 2
+                    detail::sip_round(v0, v1, v2, v3);
+                    v0 ^= m;
+                    m = 0;
+                    shift = 0;
+                }
         }
 
         // Last (partial) block: high byte encodes message length mod 256.
