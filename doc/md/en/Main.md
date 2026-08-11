@@ -55,6 +55,7 @@ Then include the umbrella header or individual component headers:
 | [any_view](any/any_view.md) | `<scl/utility/any/any_view.h>` | Storable read-only view over a `std::any` or a typed lvalue; accepts lvalues only |
 | [any_arg](any/any_arg.md) | `<scl/utility/any/any_arg.h>` | Parameter-only view that also binds rvalues; valid for the duration of the call |
 | [any_switch](any/any_switch.md) | `<scl/utility/any/any_switch.h>` | Branch chain running one branch, chosen by the type an erased value holds; holds no subject |
+| [benchmark](any/benchmark.md) | | What the optimisation attributes are worth on the any_cast branch chain, and why the suite cannot resolve them |
 
 ### Attribute — portable compiler attribute macros
 

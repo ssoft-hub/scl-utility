@@ -56,6 +56,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [any_view](any/any_view.md) | `<scl/utility/any/any_view.h>` | Хранимое read-only представление над `std::any` или типизированным lvalue; принимает только lvalue |
 | [any_arg](any/any_arg.md) | `<scl/utility/any/any_arg.h>` | Представление для позиции параметра, принимает и rvalue; действительно в пределах вызова |
 | [any_switch](any/any_switch.md) | `<scl/utility/any/any_switch.h>` | Цепочка ветвей: выполняет одну ветвь, выбранную по фактическому типу значения; само значение не хранит |
+| [benchmark](any/benchmark.md) | | Чего стоят оптимизационные атрибуты на цепочке ветвей any_cast и почему набор их не разрешает |
 
 ### Attribute — портабельные макросы атрибутов компилятора
 

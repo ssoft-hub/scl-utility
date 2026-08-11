@@ -2,8 +2,8 @@
 
 How the effect of `SCL_FORCE_INLINE`, `SCL_HOT` and the branch hints is measured, and what
 the measurements found across every annotated group. Per-group detail lives in
-[hash](../hash/benchmark.md), [flags](../flags/benchmark.md) and
-[hierarchy](../hierarchy/benchmark.md).
+[hash](../hash/benchmark.md), [flags](../flags/benchmark.md),
+[hierarchy](../hierarchy/benchmark.md) and [any](../any/benchmark.md).
 
 ## Environment
 
@@ -87,6 +87,7 @@ against the same group's unannotated baseline.
 | hierarchy | `SCL_FORCE_INLINE` | no effect | no effect | no effect |
 | hierarchy | `SCL_HOT` | no effect | no effect | defined away |
 | hierarchy | `SCL_LIKELY` / `SCL_UNLIKELY` | no effect | `is_ancestor_of` **+28%** | no effect |
+| any | `SCL_HOT`, `SCL_LIKELY` / `SCL_UNLIKELY` | no effect | not resolvable | no effect |
 
 Code size, `.text` of the `*_size` libraries at `-Os`, with `SCL_FORCE_INLINE` against
 without:
@@ -126,6 +127,12 @@ none. A cost in code size does not veto it, because a build that cannot afford t
 defines the macro away; a cost in speed does, because the default is speed and nothing
 recovers it.
 
+A branch hint is judged differently, because it does not make a function faster: it moves
+cost from one path to another, so the question is which path a caller takes. When the
+operation is small enough that code layout outweighs the move, no run answers that
+question at all - see [any benchmarks](../any/benchmark.md), where the sign of the
+difference reverses when unrelated code joins the same translation unit.
+
 | Group | Attribute | Applied | Why |
 |---|---|---|---|
 | hash | `SCL_FORCE_INLINE` | **yes** | gains on Clang and MSVC, free on GCC; the size it costs is at `-Os` and can be defined away |
@@ -136,6 +143,7 @@ recovers it.
 | flags | `SCL_HOT` | no | no effect on either compiler that implements it |
 | hierarchy | `SCL_LIKELY` / `SCL_UNLIKELY` | no | costs 28% under Clang and gains nowhere |
 | hierarchy | `SCL_FORCE_INLINE`, `SCL_HOT` | no | no effect on any compiler, and no change in code size |
+| any | `SCL_HOT`, `SCL_LIKELY` / `SCL_UNLIKELY` | yes, unmeasured | the suite cannot resolve them: the cases run in 2 ns and the differences are code layout, which reverses sign when unrelated code joins the same translation unit |
 | every group | `SCL_ASSUME` | no | no site: every invariant available is one the optimiser already derives |
 
 Two of the nine rows are a gain, six are a loss or nothing, and one is a duplicate of a
