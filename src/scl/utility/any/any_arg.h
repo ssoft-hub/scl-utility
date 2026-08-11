@@ -599,7 +599,7 @@ namespace scl
  *       unit compiled without exceptions keeps the pointer form, which answers a failed
  *       request with `nullptr`.
  *
- * @tparam Type      The requested result type — a non-`const` lvalue reference.
+ * @tparam Type            The requested result type — a non-`const` lvalue reference.
  * @tparam LValueArgument  Deduced; must be `scl::any_argument`.
  * @param  arg  The argument view to write through.
  * @return The viewed object as @p Type.
@@ -620,7 +620,7 @@ namespace scl
  *
  * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`.
  *
- * @tparam Type      The requested result type — an object type.
+ * @tparam Type           The requested result type — an object type.
  * @tparam ValueArgument  Deduced; must be `scl::any_argument`.
  * @param  arg  The argument view to copy the value out of.
  * @return A copy of the viewed object, as @p Type.
@@ -639,7 +639,7 @@ namespace scl
  *
  * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`.
  *
- * @tparam Type      The requested result type — a `const` lvalue reference.
+ * @tparam Type                 The requested result type — a `const` lvalue reference.
  * @tparam ConstLValueArgument  Deduced; must be `scl::any_argument`.
  * @param  arg  The argument view to bind to.
  * @return The viewed object as @p Type.
