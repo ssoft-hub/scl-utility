@@ -6,6 +6,7 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/attribute/nodiscard.h>
 #include <scl/utility/hash/concepts.h>
 #include <scl/utility/hash/siphash.h>
 
@@ -104,9 +105,9 @@ namespace scl::hash
             : value{Hasher{}(range)}
         {}
 
-        constexpr operator value_type() const noexcept { return value; }
+        SCL_NODISCARD constexpr operator value_type() const noexcept { return value; }
 
-        friend constexpr auto operator<=>(key const &, key const &) noexcept = default;
+        SCL_NODISCARD friend constexpr auto operator<=>(key const &, key const &) noexcept = default;
     };
 
 } // namespace scl::hash
@@ -119,7 +120,7 @@ template <typename Hasher>
 // NOLINTNEXTLINE(bugprone-std-namespace-modification)
 struct std::hash<::scl::hash::key<Hasher>>
 {
-    constexpr ::std::size_t operator()(::scl::hash::key<Hasher> const & k) const noexcept
+    SCL_NODISCARD constexpr ::std::size_t operator()(::scl::hash::key<Hasher> const & k) const noexcept
     {
         return ::std::hash<typename ::scl::hash::key<Hasher>::value_type>{}(k.value);
     }

@@ -6,6 +6,8 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/attribute/nodiscard.h>
+
 #include <bit>
 #include <concepts>
 #include <cstdint>
@@ -116,7 +118,8 @@ namespace scl::hash
      * @see https://www.131002.net/siphash/ — original paper and reference vectors
      */
     template <::std::ranges::range Range>
-    constexpr ::std::uint64_t siphash(Range const & range, siphash_key const key = siphash_default_key)
+    SCL_NODISCARD constexpr ::std::uint64_t
+    siphash(Range const & range, siphash_key const key = siphash_default_key)
         requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         // State initialised from key XOR'd with magic constants spelling
@@ -179,7 +182,7 @@ namespace scl::hash
         using result_type = ::std::uint64_t;
 
         template <::std::ranges::range Range>
-        constexpr result_type operator()(Range const & range) const noexcept
+        SCL_NODISCARD constexpr result_type operator()(Range const & range) const noexcept
             requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::siphash(range, Key);
