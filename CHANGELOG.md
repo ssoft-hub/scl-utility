@@ -150,12 +150,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### CI
 
+- A `benchmark/` tree, measured with Google Benchmark, and the `project/cmake/benchmark/`
+  CMakeLists that builds it. The naming rule was already written; this is the plumbing it
+  was waiting for. The `<tool>` token is `gbench`, so `benchmark/hash/` builds into
+  `utility_hash_gbench`, covering the five hash functions and their hashers over
+  `std::string_view`, `std::string` and a `char` array. Benchmarks are off by default and
+  have no preset of their own - see CONTRIBUTING.md "Benchmarks" for the two commands.
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart
   unnoticed. `script/lint/doc_snippets.sh` documents the exact spelling.
-- The formatting gate covers `test/` and `example/` as well as `src/`, and the
-  sources as well as the headers. It previously read `src/*.h` only, so three
+- The formatting gate covers `test/`, `example/` and `benchmark/` as well as `src/`, and
+  the sources as well as the headers. It previously read `src/*.h` only, so three
   files had drifted away from `.clang-format` with nothing reporting it; they are
   reformatted. Set `SCL_FORMAT_DIRS` to narrow the scan.
 - The formatting job runs clang-format 22. On 21 it reads `is_same_v<X &&, ...>`

@@ -15,6 +15,7 @@ src/scl/utility/     — public headers
   type_traits/       — extended type traits
 test/                — unit tests
 example/             — usage examples
+benchmark/           - Google Benchmark performance measurements
 project/cmake/       — CMakeLists.txt
 project/doxygen/     — Doxyfile
 ```
@@ -79,8 +80,18 @@ covered by its directory.
 - Every example needs a directory of its own. All sources under one example root link into
   a single program, so a second `main` beside it is a link error. Directories holding only
   sub-directories are pure grouping, and the tree may nest freely.
-- No `benchmark/` tree and no `project/cmake/benchmark/CMakeLists.txt` exist yet. The rule
-  is written now; the plumbing lands with the first benchmark.
+- The benchmark `<tool>` token is `gbench`, for Google Benchmark: `benchmark/hash/` builds
+  into `utility_hash_gbench`. Benchmarks are not CTest tests and are off by default -
+  build them by passing the options to any existing preset, and run them through the
+  script beside the build one:
+
+```sh
+script/ci/build.sh clang-x64 Release -DSCL_BUILD_BENCHMARKS=ON -DSCL_BUILD_TESTS=OFF
+script/ci/run_benchmarks.sh clang-x64
+```
+
+  Both scripts live in the super-project, since the benchmark targets are configured
+  there. A timing quoted in an issue or MR must come from a Release build.
 
 ## Required Checks Before Every Commit
 Run on every changed `.h` / `.hpp` file:
@@ -105,9 +116,9 @@ cppcheck --enable=warning,style,performance,portability \
 bash script/lint/doxygen.sh
 ```
 
-The format gate checks `src/`, `test/` and `example/`, headers and sources alike, so a
-changed `.cpp` is subject to it too. `bash script/lint/clang_format.sh` runs it over the
-whole tree the way CI does.
+The format gate checks `src/`, `test/`, `example/` and `benchmark/`, headers and sources
+alike, so a changed `.cpp` is subject to it too. `bash script/lint/clang_format.sh` runs it
+over the whole tree the way CI does. clang-tidy and cppcheck scan `src/` headers only.
 
 ## Branching
 - Branch name format: `{user}/feat/{subject}`, `{user}/fix/{subject}`, `{user}/refactor/{subject}`
