@@ -72,4 +72,15 @@ SCL_NOINLINE void cold_path() {
 - The compiler may ignore `SCL_FORCE_INLINE` in pathological cases (e.g.,
   recursive functions, functions taking address of themselves).
 - Each macro can be overridden before inclusion via
-  `#define SCL_FORCE_INLINE` or `#define SCL_NOINLINE`.
+  `#define SCL_FORCE_INLINE` or `#define SCL_NOINLINE`. Defining it on the command
+  line works too, and is how a size-constrained build opts out of forced inlining
+  across everything it compiles:
+
+  ```cmake
+  target_compile_definitions(firmware PRIVATE SCL_FORCE_INLINE=inline)
+  ```
+
+- `SCL_FORCE_INLINE` costs code size in proportion to the number of call sites: the
+  body is copied into each one, where the compiler would otherwise keep a single
+  out-of-line copy and call it. One call site costs nothing; fifteen can cost most of
+  the section. See [hash benchmarks](../hash/benchmark.md) for measured figures.

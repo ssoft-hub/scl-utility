@@ -6,6 +6,7 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/attribute/inline.h>
 #include <scl/utility/attribute/nodiscard.h>
 
 #include <concepts>
@@ -62,7 +63,7 @@ namespace scl::hash
      * @endcode
      */
     template <::std::ranges::range Range>
-    SCL_NODISCARD constexpr ::std::uint32_t jenkins_ota(Range const & range)
+    SCL_NODISCARD SCL_FORCE_INLINE constexpr ::std::uint32_t jenkins_ota(Range const & range)
         requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         ::std::uint32_t h = 0;
@@ -91,7 +92,7 @@ namespace scl::hash
         using result_type = ::std::uint32_t;
 
         template <::std::ranges::range Range>
-        SCL_NODISCARD constexpr result_type operator()(Range const & range) const noexcept
+        SCL_NODISCARD SCL_FORCE_INLINE constexpr result_type operator()(Range const & range) const noexcept
             requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::jenkins_ota(range);

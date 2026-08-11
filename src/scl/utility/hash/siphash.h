@@ -6,6 +6,7 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/attribute/inline.h>
 #include <scl/utility/attribute/nodiscard.h>
 
 #include <bit>
@@ -34,7 +35,7 @@ namespace scl::hash
 
     namespace detail
     {
-        constexpr void
+        SCL_FORCE_INLINE constexpr void
         sip_round(::std::uint64_t & v0, ::std::uint64_t & v1, ::std::uint64_t & v2, ::std::uint64_t & v3) noexcept
         {
             v0 += v1;
@@ -118,7 +119,7 @@ namespace scl::hash
      * @see https://www.131002.net/siphash/ — original paper and reference vectors
      */
     template <::std::ranges::range Range>
-    SCL_NODISCARD constexpr ::std::uint64_t
+    SCL_NODISCARD SCL_FORCE_INLINE constexpr ::std::uint64_t
     siphash(Range const & range, siphash_key const key = siphash_default_key)
         requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
@@ -182,7 +183,7 @@ namespace scl::hash
         using result_type = ::std::uint64_t;
 
         template <::std::ranges::range Range>
-        SCL_NODISCARD constexpr result_type operator()(Range const & range) const noexcept
+        SCL_NODISCARD SCL_FORCE_INLINE constexpr result_type operator()(Range const & range) const noexcept
             requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::siphash(range, Key);

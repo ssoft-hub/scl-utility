@@ -6,6 +6,7 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/attribute/inline.h>
 #include <scl/utility/attribute/nodiscard.h>
 
 #include <concepts>
@@ -60,7 +61,7 @@ namespace scl::hash
      * @endcode
      */
     template <::std::ranges::range Range>
-    SCL_NODISCARD constexpr ::std::uint64_t
+    SCL_NODISCARD SCL_FORCE_INLINE constexpr ::std::uint64_t
     fnv1a(Range const & range, ::std::uint64_t h = 14695981039346656037ull)
         requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
@@ -81,7 +82,7 @@ namespace scl::hash
         using result_type = ::std::uint64_t;
 
         template <::std::ranges::range Range>
-        SCL_NODISCARD constexpr result_type operator()(Range const & range) const noexcept
+        SCL_NODISCARD SCL_FORCE_INLINE constexpr result_type operator()(Range const & range) const noexcept
             requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::fnv1a(range);
