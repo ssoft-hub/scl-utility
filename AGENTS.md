@@ -92,6 +92,16 @@ script/ci/run_benchmarks.sh clang-x64
 
   Both scripts live in the super-project, since the benchmark targets are configured
   there. A timing quoted in an issue or MR must come from a Release build.
+- The other `<tool>` token is `size`: `benchmark/hash/hash_size.cpp` builds into
+  `utility_hash_size`, a static library rather than a program. Its sources are compiled
+  to be measured and are never linked or run, which is what lets them build for a
+  bare-metal cross compiler where no framework and no startup code exist. Use it whenever
+  a change trades code size for speed - an annotation that inlines, for one:
+
+```sh
+cmake --preset arm-none-eabi && cmake --build --preset arm-none-eabi
+script/ci/run_size.sh arm-none-eabi
+```
 
 ## Required Checks Before Every Commit
 Run on every changed `.h` / `.hpp` file:

@@ -156,6 +156,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `utility_hash_gbench`, covering the five hash functions and their hashers over
   `std::string_view`, `std::string` and a `char` array. Benchmarks are off by default and
   have no preset of their own - see CONTRIBUTING.md "Benchmarks" for the two commands.
+- A second benchmark `<tool>` token, `size`: `benchmark/hash/hash_size.cpp` builds into
+  `utility_hash_size`, a static library whose sources are compiled to be measured and are
+  never linked or run. That is what lets them build for a bare-metal cross compiler, so a
+  change that trades code size for speed can be judged on both.
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart

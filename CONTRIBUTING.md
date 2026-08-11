@@ -158,8 +158,21 @@ script/ci/run_benchmarks.sh clang-x64
 ```
 
 `run_benchmarks.sh` fixes the repetition count, so two runs of the same suite are directly
-comparable - which is what a before/after figure in an issue or MR has to be. Both scripts
+comparable - which is what a before/after figure in an issue or MR has to be. The scripts
 live in the super-project, since the benchmark targets are configured there.
+
+The second `<tool>` token is `size`. `benchmark/hash/hash_size.cpp` builds into
+`utility_hash_size`, a static library whose sources exist to be measured and are never
+linked or run - which is what lets them build for a bare-metal cross compiler, where no
+framework and no startup code exist:
+
+```sh
+cmake --preset arm-none-eabi && cmake --build --preset arm-none-eabi
+script/ci/run_size.sh arm-none-eabi
+```
+
+Reach for it whenever a change trades code size for speed. A timing measured on a desktop
+cannot see that side of the trade.
 
 ## Documentation
 
