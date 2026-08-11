@@ -29,7 +29,7 @@ namespace scl::preprocessor::detail
      * @internal
      * @brief A type that wraps a compile-time unsigned integer constant.
      * @ingroup scl_utility_preprocessor
-     * @tparam n The unsigned integer value to hold.
+     * @tparam N The unsigned integer value to hold.
      */
     template <::std::uint_fast32_t N>
     using counter = ::std::integral_constant<::std::uint_fast32_t, N>;
@@ -40,13 +40,13 @@ namespace scl::preprocessor::detail
      * @ingroup scl_utility_preprocessor
      * @details
      * This function is chosen via overload resolution when no more specific `crumb`
-     * has been defined for a given `Tag` and `rank_`. It contributes `acc_` to
-     * the final sum. The initial call starts with `acc_ = 0`.
+     * has been defined for a given `Tag` and `Rank`. It contributes `Acc` to
+     * the final sum. The initial call starts with `Acc = 0`.
      *
-     * @tparam Tag_ The type used to identify a specific counter.
-     * @tparam rank_ The bit-rank being tested.
-     * @tparam acc_ The accumulated value from lower-rank bits.
-     * @return A `scl::counter` type holding the accumulated value `acc_`.
+     * @tparam Tag  The type used to identify a specific counter.
+     * @tparam Rank The bit-rank being tested.
+     * @tparam Acc  The accumulated value from lower-rank bits.
+     * @return A `scl::counter` type holding the accumulated value `Acc`.
      */
     template <typename Tag, ::std::uint_fast32_t Rank, ::std::uint_fast32_t Acc>
     constexpr counter<Acc>
