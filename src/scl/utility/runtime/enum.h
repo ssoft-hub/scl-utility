@@ -10,6 +10,7 @@
  *     numeric value cast to the enum's underlying type.
  */
 
+#include <scl/utility/attribute/nodiscard.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/meta/type.h>
 
@@ -45,7 +46,7 @@ namespace scl
      * @endcode
      */
     template <concepts::enum_type E>
-    ::std::string enum_value(E value)
+    SCL_NODISCARD ::std::string enum_value(E value)
     {
 #ifdef __cpp_lib_format
         return ::std::format("{}::{}", ::scl::type_short_name<E>(),

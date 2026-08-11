@@ -16,6 +16,7 @@
  * Both functions are only available when RTTI is enabled.
  */
 
+#include <scl/utility/attribute/nodiscard.h>
 #include <scl/utility/preprocessor/rtti.h>
 
 #if SCL_HAS_RTTI || defined(DOXYGEN)
@@ -71,7 +72,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
-    ::std::string type_name(T const & obj)
+    SCL_NODISCARD ::std::string type_name(T const & obj)
     {
         return detail::demangle(typeid(obj).name());
     }
@@ -93,7 +94,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
-    ::std::string type_short_name(T const & obj)
+    SCL_NODISCARD ::std::string type_short_name(T const & obj)
     {
         ::std::string const full = detail::demangle(typeid(obj).name());
         return ::std::string{detail::short_name_from(full)};

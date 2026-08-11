@@ -1,5 +1,7 @@
 #pragma once
 
+#include <scl/utility/attribute/nodiscard.h>
+
 #include <type_traits>
 
 /**
@@ -76,7 +78,8 @@ namespace scl
      * as a `const` lvalue reference if `T` is const.
      */
     template <typename Base, typename T>
-    constexpr decltype(auto) forward_like(T && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
+    SCL_NODISCARD constexpr decltype(auto)
+    forward_like(T && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
     {
         return static_cast<forward_like_t<Base, T &&>>(t);
     }

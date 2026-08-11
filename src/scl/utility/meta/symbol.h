@@ -1,5 +1,7 @@
 #pragma once
 
+#include <scl/utility/attribute/nodiscard.h>
+
 #include <string_view>
 
 /**
@@ -110,7 +112,7 @@ namespace scl
      * @endcode
      */
     template <auto S>
-    constexpr ::std::string_view symbol_name() noexcept
+    SCL_NODISCARD constexpr ::std::string_view symbol_name() noexcept
     {
         constexpr auto text = detail::symbol_pattern_text<S>();
         constexpr auto prefix_length = detail::symbol_prefix_length();
@@ -150,7 +152,7 @@ namespace scl
      * @endcode
      */
     template <auto S>
-    constexpr ::std::string_view symbol_short_name() noexcept
+    SCL_NODISCARD constexpr ::std::string_view symbol_short_name() noexcept
     {
         constexpr auto result = symbol_name<S>();
         constexpr auto pos = result.find_last_of(':');

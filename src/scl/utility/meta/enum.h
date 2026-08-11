@@ -1,5 +1,6 @@
 #pragma once
 
+#include <scl/utility/attribute/nodiscard.h>
 #include <scl/utility/concepts/type_category.h>
 
 #include <string_view>
@@ -89,7 +90,7 @@ namespace scl
      * @endcode
      */
     template <concepts::enum_type auto V>
-    constexpr ::std::string_view enum_name() noexcept
+    SCL_NODISCARD constexpr ::std::string_view enum_name() noexcept
     {
         constexpr auto text = detail::enum_name_pattern_text<V>();
         constexpr auto prefix_length = detail::enum_prefix_lenght();
@@ -120,7 +121,7 @@ namespace scl
      * @endcode
      */
     template <concepts::enum_type auto V>
-    constexpr ::std::string_view enum_short_name() noexcept
+    SCL_NODISCARD constexpr ::std::string_view enum_short_name() noexcept
     {
         constexpr auto result = enum_name<V>();
         constexpr auto pos = result.find_last_of(':');

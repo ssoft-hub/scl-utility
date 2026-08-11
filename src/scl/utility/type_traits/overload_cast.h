@@ -1,5 +1,7 @@
 #pragma once
 
+#include <scl/utility/attribute/nodiscard.h>
+
 #include <type_traits>
 
 /**
@@ -29,40 +31,47 @@ namespace scl::detail
     struct overload_cast
     {
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...)) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...)) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) noexcept) const noexcept -> decltype(ptr)
-        {
-            return ptr;
-        }
-
-        template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) &) const noexcept -> decltype(ptr)
-        {
-            return ptr;
-        }
-        template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) & noexcept) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) &&) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) && noexcept) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) & noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) const) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) &&) const noexcept -> decltype(ptr)
+        {
+            return ptr;
+        }
+        template <class Class, class R>
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) && noexcept) const noexcept -> decltype(ptr)
+        {
+            return ptr;
+        }
+
+        template <class Class, class R>
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) const) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
@@ -74,7 +83,8 @@ namespace scl::detail
         }
 
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) const &) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) const &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
@@ -86,7 +96,8 @@ namespace scl::detail
         }
 
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) const &&) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) const &&) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
@@ -98,7 +109,8 @@ namespace scl::detail
         }
 
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) volatile) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) volatile) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
@@ -110,7 +122,8 @@ namespace scl::detail
         }
 
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) volatile &) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) volatile &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
@@ -122,7 +135,8 @@ namespace scl::detail
         }
 
         template <class Class, class R>
-        constexpr auto operator()(R (Class::*ptr)(Args...) volatile &&) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (Class::*ptr)(Args...) volatile &&) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
@@ -173,12 +187,13 @@ namespace scl::detail
         }
 
         template <class R>
-        constexpr auto operator()(R (*ptr)(Args...)) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto operator()(R (*ptr)(Args...)) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <class R>
-        constexpr auto operator()(R (*ptr)(Args...) noexcept) const noexcept -> decltype(ptr)
+        SCL_NODISCARD constexpr auto
+        operator()(R (*ptr)(Args...) noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }

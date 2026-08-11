@@ -1,5 +1,7 @@
 #pragma once
 
+#include <scl/utility/attribute/nodiscard.h>
+
 #include <string_view>
 
 /**
@@ -139,7 +141,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
-    constexpr auto type_name() noexcept
+    SCL_NODISCARD constexpr auto type_name() noexcept
     {
         constexpr auto pattern_text = detail::type_name_pattern_text<T>();
         constexpr auto prefix_length = detail::type_name_pattern_prefix_length();
@@ -171,7 +173,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
-    constexpr auto type_short_name() noexcept
+    SCL_NODISCARD constexpr auto type_short_name() noexcept
     {
         return detail::short_name_from(type_name<T>());
     }
