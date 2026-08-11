@@ -73,6 +73,7 @@ Then include the umbrella header or individual component headers:
 | [SCL_INDETERMINATE](attribute/indeterminate.md) | `<scl/utility/attribute/indeterminate.h>` | Opt-in to indeterminate (uninitialised) storage (C++26) |
 | [SCL_HOT / SCL_COLD](attribute/hotcold.md) | `<scl/utility/attribute/hotcold.h>` | Function-frequency hints for hot/cold code paths |
 | [SCL_LIFETIMEBOUND](attribute/lifetimebound.md) | `<scl/utility/attribute/lifetimebound.h>` | Dangling-reference detection via lifetime-bound parameter annotation |
+| [benchmark](attribute/benchmark.md) | | How the optimisation attributes are measured, and what they are worth on each compiler |
 
 ### Concepts — concept form of the standard type traits
 
@@ -91,6 +92,7 @@ Then include the umbrella header or individual component headers:
 | [tree](hierarchy/tree.md) | `<scl/utility/hierarchy/tree.h>` | Root-level node list notifying an observer on every change |
 | [observer_tuple](hierarchy/observer_tuple.md) | `<scl/utility/hierarchy/observer_tuple.h>` | Fan-out adapter composing several observers into one |
 | [algorithm](hierarchy/algorithm.md) | `<scl/utility/hierarchy/algorithm.h>` | `is_parent_of`, `is_ancestor_of`, `are_sibling` and friends, adaptable through ADL |
+| [benchmark](hierarchy/benchmark.md) | | What the optimisation attributes cost on the tree walks and queries, and why none is applied |
 
 ### Meta — compile-time reflection
 
@@ -114,12 +116,14 @@ Then include the umbrella header or individual component headers:
 | Component | Header | Description |
 |-----------|--------|-------------|
 | [key](hash/key.md) | `<scl/utility/hash.h>` | Strongly-typed hash value; usable as switch label, map key, and NTTP |
+| [benchmark](hash/benchmark.md) | | What the optimisation attributes are worth in speed and cost in code size, and which of them are applied |
 
 ### Flags — type-safe bitmask over a scoped enum
 
 | Component | Header | Description |
 |-----------|--------|-------------|
 | [flags](flags/flags.md) | `<scl/utility/flags.h>` | Bitmask over a scoped enum; bitwise ops, set predicates, and a bidirectional range over the set flags |
+| [benchmark](flags/benchmark.md) | | What the optimisation attributes cost on the sparse walk, and why none is applied |
 
 ### Preprocessor — macro utilities
 

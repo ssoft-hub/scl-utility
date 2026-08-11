@@ -32,6 +32,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Dropping the result of a hash, a name lookup or a member-pointer cast is now a
+  diagnostic. `SCL_NODISCARD` covers the whole public surface of `hash/` - the five hash
+  functions, every hasher `operator()`, `key`'s conversion and comparison and the
+  `std::hash` specialisation - and the entry points of `meta/` (`enum_name`,
+  `enum_short_name`, `symbol_name`, `symbol_short_name`, `type_name`, `type_short_name`),
+  `runtime/` (`enum_value`, `type_name`, `type_short_name`) and `type_traits/`
+  (`forward_like`, every `overload_cast` `operator()`). None of these functions has an
+  effect other than its return value, so a discarded call was always a mistake and nothing
+  said so.
+- `SCL_FORCE_INLINE` is applied to the five hash functions, their hashers and
+  `detail::sip_round`. It is worth 5.8% on `fnv1a` over a `std::array<char, 63>` and 6.4%
+  on `siphash` under Clang, and 9% on `siphash` under MSVC; under GCC at `-O3` it changes
+  nothing, because the optimiser already inlines the same bodies. The cost is code size at
+  `-Os`, where it does not: the fifteen wrappers in the size suite take `.text` on
+  Cortex-M4 from 1950 to 3690 bytes. A build that cannot afford this defines
+  `SCL_FORCE_INLINE=inline` - every attribute macro supports being overridden that way
+  through its own `#ifndef`.
+- `SCL_UNLIKELY` is applied to the block-completion branch of `siphash`, which fills an
+  eight-byte block once every eight iterations. It is worth 16.5% under MSVC and 6.1%
+  under Clang, and nothing under GCC. The gain is in how the compiler lays out and
+  schedules the two paths; a hardware branch predictor already handles the pattern.
+- No optimisation attribute is applied to `flags` or `hierarchy`, and `SCL_HOT` and
+  `SCL_ASSUME` are applied nowhere. Each was measured on GCC 16, Clang 22 and MSVC 19.44
+  rather than reasoned about:
+  - On `flags`, `SCL_FORCE_INLINE` over the sparse walk makes iteration **43% slower**
+    under Clang (20.2 to 28.9 ns) and moves nothing under GCC or MSVC. Inlining `has_bit`
+    into the loop body of `next_set` costs Clang a transformation it makes while the call
+    stays out of line. `SCL_LIKELY_EXPR` on the loop conditions costs GCC 7% on
+    `flags_all`.
+  - On `hierarchy`, hinting the branches of `is_ancestor_of` costs **28% under Clang**
+    (0.555 to 0.711 ns) even though both hints point the correct way, and moves nothing
+    elsewhere. `SCL_FORCE_INLINE` and `SCL_HOT` change neither timing nor `.text` on any
+    compiler: `begin` and `end` forward to `std::list`, and a one-line forwarder is
+    inlined without being asked.
+  - `SCL_HOT` moves nothing anywhere except `siphash` under Clang, where `SCL_UNLIKELY`
+    already returns more; added on top of that hint it buys nothing further, so the two
+    reach the same decision rather than adding up. It is defined away on MSVC.
+  - `SCL_ASSUME` has no applicable site: the only invariant available is about a variable
+    nothing reads afterwards.
+
+  How a difference is told from run-to-run noise, and the full matrix:
+  `doc/md/*/attribute/benchmark.md`. Per group: `doc/md/*/hash/benchmark.md`,
+  `doc/md/*/flags/benchmark.md`, `doc/md/*/hierarchy/benchmark.md`.
 - Example, test and benchmark sources follow one naming rule, written in `AGENTS.md` and
   `CONTRIBUTING.md`: an example is `example/<group>/<name>/<group>_<name>_example.cpp`, a
   test is `test/<group>/<subject>_<framework>.cpp`, and a benchmark will read the same way.
@@ -156,6 +199,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `utility_hash_gbench`, covering the five hash functions and their hashers over
   `std::string_view`, `std::string` and a `char` array. Benchmarks are off by default and
   have no preset of their own - see CONTRIBUTING.md "Benchmarks" for the two commands.
+- Suites for the other two groups with runtime loops: `benchmark/flags/` covers the bitwise
+  operators and the sparse walk behind the iterator, `benchmark/hierarchy/` the child walk,
+  the recursive walk, the ancestor queries and tree construction over 4681 nodes. Each has a
+  `_size.cpp` counterpart, so both groups can be judged on speed and on `.text`.
 - A second benchmark `<tool>` token, `size`: `benchmark/hash/hash_size.cpp` builds into
   `utility_hash_size`, a static library whose sources are compiled to be measured and are
   never linked or run. That is what lets them build for a bare-metal cross compiler, so a

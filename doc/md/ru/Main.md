@@ -74,6 +74,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [SCL_INDETERMINATE](attribute/indeterminate.md) | `<scl/utility/attribute/indeterminate.h>` | Явный выбор неопределённого хранилища (C++26) |
 | [SCL_HOT / SCL_COLD](attribute/hotcold.md) | `<scl/utility/attribute/hotcold.h>` | Подсказки о частоте вызова функции |
 | [SCL_LIFETIMEBOUND](attribute/lifetimebound.md) | `<scl/utility/attribute/lifetimebound.h>` | Обнаружение висячих ссылок через аннотацию времени жизни параметра |
+| [benchmark](attribute/benchmark.md) | | Как измеряются оптимизационные атрибуты и чего они стоят на каждом компиляторе |
 
 ### Concepts — концепты для стандартных свойств типов
 
@@ -92,6 +93,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [tree](hierarchy/tree.md) | `<scl/utility/hierarchy/tree.h>` | Список узлов верхнего уровня, уведомляющий наблюдателя о каждом изменении |
 | [observer_tuple](hierarchy/observer_tuple.md) | `<scl/utility/hierarchy/observer_tuple.h>` | Адаптер, объединяющий несколько наблюдателей в одного |
 | [algorithm](hierarchy/algorithm.md) | `<scl/utility/hierarchy/algorithm.h>` | `is_parent_of`, `is_ancestor_of`, `are_sibling` и другие; адаптируются через ADL |
+| [benchmark](hierarchy/benchmark.md) | | Чего стоят оптимизационные атрибуты на обходах и запросах дерева и почему ни один не применён |
 
 ### Meta — рефлексия на этапе компиляции
 
@@ -115,12 +117,14 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | Компонент | Заголовок | Описание |
 |-----------|-----------|----------|
 | [key](hash/key.md) | `<scl/utility/hash.h>` | Строго типизированное хеш-значение: метка switch, ключ контейнера, NTTP |
+| [benchmark](hash/benchmark.md) | | Что дают оптимизационные атрибуты по скорости, чего стоят по размеру кода и какие из них применены |
 
 ### Flags — типобезопасная битовая маска над scoped enum
 
 | Компонент | Заголовок | Описание |
 |-----------|-----------|----------|
 | [flags](flags/flags.md) | `<scl/utility/flags.h>` | Маска над scoped enum: битовые операции, предикаты множеств и двунаправленный диапазон по выставленным флагам |
+| [benchmark](flags/benchmark.md) | | Чего стоят оптимизационные атрибуты на разрежённом обходе и почему ни один не применён |
 
 ### Preprocessor — макроутилиты
 
