@@ -39,6 +39,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The four `scl::any_cast` overloads that answer a failed request by throwing — the value
+  and reference forms over an `any_view` and over an `any_arg` — are declared only where
+  `SCL_HAS_EXCEPTIONS` is `1`, as the `typeid` surface is declared only under
+  `SCL_HAS_RTTI`. A translation unit compiled with `-fno-exceptions` keeps the
+  pointer-returning forms, which report failure with `nullptr` and never threw. Nothing
+  changes for a build with exceptions enabled.
+
 - Example, test and benchmark sources follow one naming rule, written in `AGENTS.md` and
   `CONTRIBUTING.md`: an example is `example/<group>/<name>/<group>_<name>_example.cpp`, a
   test is `test/<group>/<subject>_<framework>.cpp`, and a benchmark will read the same way.

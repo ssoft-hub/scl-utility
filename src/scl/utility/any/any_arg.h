@@ -10,6 +10,7 @@
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
 #include <scl/utility/attribute/likely.h>
+#include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/rtti.h>
 
 #include <concepts>
@@ -224,6 +225,7 @@ namespace scl
         return detail::erased_cast<Type>(reached);
     }
 
+#if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
     // Argument is deduced so `&arg` carries the handle's qualification into the pointer
     // form. Constrained to any_arg itself, not any_base: an any_view converts to any_arg
     // implicitly, and admitting that conversion here would hand write access to a view
@@ -269,6 +271,7 @@ namespace scl
             throw bad_any_cast{};
         return *pointer;
     }
+#endif
 } // namespace scl
 
 // =============================================================================
@@ -576,6 +579,10 @@ namespace scl
  * `any_arg` rather than leaving them to that conversion is also what keeps them
  * usable in constant evaluation, which the conversion to a view gives up.
  *
+ * @note All three are declared only where @ref SCL_HAS_EXCEPTIONS is `1`. A translation
+ *       unit compiled without exceptions keeps the pointer form, which answers a failed
+ *       request with `nullptr`.
+ *
  * @tparam Type      The requested result type — a non-`const` lvalue reference.
  * @tparam Argument  Deduced; must be `scl::any_arg`.
  * @param  arg  The argument view to write through.
@@ -595,6 +602,8 @@ namespace scl
  * ability to answer during constant evaluation. The result is a copy and outlives
  * @p arg, so it is not lifetime-bound.
  *
+ * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`.
+ *
  * @tparam Type      The requested result type — an object type.
  * @tparam Argument  Deduced; must be `scl::any_arg`.
  * @param  arg  The argument view to copy the value out of.
@@ -611,6 +620,8 @@ namespace scl
  * The reading form for a `const` lvalue reference, on the same terms as
  * @ref scl::any_cast(ValueArgument & arg). The reference refers to the viewed object,
  * so it stays valid while that object lives.
+ *
+ * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`.
  *
  * @tparam Type      The requested result type — a `const` lvalue reference.
  * @tparam Argument  Deduced; must be `scl::any_arg`.
