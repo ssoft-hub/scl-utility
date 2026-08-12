@@ -46,6 +46,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   pointer-returning forms, which report failure with `nullptr` and never threw. Nothing
   changes for a build with exceptions enabled.
 
+- `scl::flags` reports an enumerator ordinal `>= bit_count` with `std::abort()` where
+  `SCL_HAS_EXCEPTIONS` is `0`, since the constructor and `operator[]` cannot answer such a
+  call at all — it is a precondition violation, not a query that failed. The call stays
+  ill-formed in constant evaluation either way, and a build with exceptions still throws
+  `std::out_of_range` as before.
+
 - Example, test and benchmark sources follow one naming rule, written in `AGENTS.md` and
   `CONTRIBUTING.md`: an example is `example/<group>/<name>/<group>_<name>_example.cpp`, a
   test is `test/<group>/<subject>_<framework>.cpp`, and a benchmark will read the same way.

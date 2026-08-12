@@ -7,19 +7,41 @@
  */
 
 #include <scl/utility/concepts/type_category.h>
+#include <scl/utility/preprocessor/exceptions.h>
 
 #include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstddef>
 #include <iterator>
-#include <stdexcept>
 #include <type_traits>
+
+#if SCL_HAS_EXCEPTIONS
+#include <stdexcept>
+#else
+#include <cstdlib>
+#endif
 
 /**
  * @defgroup scl_utility_flags ScL Flags
  * @brief Type-safe bitmask container `scl::flags` over a scoped `enum class`.
  */
+
+namespace scl::detail
+{
+    // An out-of-range ordinal is a precondition violation, so where it cannot be reported
+    // as an exception it ends the program rather than reading as some other flag. Neither
+    // path is constexpr, which is what keeps such a call ill-formed in constant evaluation.
+    [[noreturn]]
+    inline void reject_flag_ordinal()
+    {
+#if SCL_HAS_EXCEPTIONS
+        throw ::std::out_of_range("scl::flags: enumerator ordinal exceeds bit_count");
+#else
+        ::std::abort();
+#endif
+    }
+} // namespace scl::detail
 
 namespace scl
 {
@@ -67,7 +89,7 @@ namespace scl
         {
             auto const bit = ordinal(value);
             if (bit >= bit_count)
-                throw ::std::out_of_range("scl::flags: enumerator ordinal exceeds bit_count");
+                detail::reject_flag_ordinal();
             return has_bit(bit);
         }
 
@@ -262,7 +284,7 @@ namespace scl
         constexpr void set_bit(::std::size_t position)
         {
             if (position >= bit_count)
-                throw ::std::out_of_range("scl::flags: enumerator ordinal exceeds bit_count");
+                detail::reject_flag_ordinal();
             m_bits[position / 8] |= (::std::byte{1} << (position % 8));
         }
 
@@ -388,6 +410,10 @@ namespace scl
  * range: the offending call throws `std::out_of_range` at runtime and is
  * ill-formed in constant evaluation.  The predicate queries are the exception —
  * they never throw and read an out-of-range ordinal as not set.
+ *
+ * Where @ref SCL_HAS_EXCEPTIONS is `0` the same call ends the program through
+ * `std::abort()` instead, and stays ill-formed in constant evaluation.  Every
+ * `@throws` clause below describes the build that has exceptions.
  *
  * @tparam Enum      Scoped enumeration whose enumerators name the individual bits.
  * @tparam bit_count Storage width in bits (default 32); valid ordinals are `[0, bit_count)`.
