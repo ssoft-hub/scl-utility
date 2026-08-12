@@ -19,7 +19,10 @@ Only scoped enumerations are accepted; a non-scoped `enum` is rejected by a
 `static_assert`. An enumerator whose ordinal is `>= bit_count` is out of range:
 the constructor and `operator[]` throw `std::out_of_range` at runtime and are
 ill-formed in constant evaluation. The predicate queries never throw — an
-out-of-range ordinal simply reads as not set.
+out-of-range ordinal simply reads as not set. Where
+[`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `0` the same call ends the
+program through `std::abort()`, since a precondition violation has no value to return
+in place of the answer.
 
 ## Features
 

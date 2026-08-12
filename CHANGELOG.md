@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `SCL_HAS_EXCEPTIONS` (`#include <scl/utility/preprocessor/exceptions.h>`) — `1` when the
+  translation unit is compiled with exceptions, `0` otherwise, derived from `_CPPUNWIND`,
+  `__EXCEPTIONS` or `__has_feature(cxx_exceptions)`. The language has no standard
+  feature-test macro for exceptions, and the ScL declarations that answer a failed request
+  by throwing are gated on this one, so portable user code branches on the same macro.
+  Always defined, so `#if` interrogates it and `-Wundef` catches a misspelling.
+
+- A Markdown page per availability macro on both language trees — `preprocessor/rtti.md`
+  and `preprocessor/exceptions.md` — stating what the library declares in each
+  configuration. `SCL_HAS_RTTI` had no page, so the generated reference was the only
+  account of it.
+
 - `scl::hash::byte_view` — a lazy view spelling a range of wider elements as the bytes the
   hash functions take: `fnv1a(byte_view(text))` where `text` is a `std::u16string_view`.
   Each element contributes its bytes least significant first, whatever the host's own byte
@@ -31,6 +43,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   beside them.
 
 ### Changed
+
+- The four `scl::any_cast` overloads that answer a failed request by throwing — the value
+  and reference forms over an `any_view` and over an `any_arg` — are declared only where
+  `SCL_HAS_EXCEPTIONS` is `1`, as the `typeid` surface is declared only under
+  `SCL_HAS_RTTI`. A translation unit compiled with `-fno-exceptions` keeps the
+  pointer-returning forms, which report failure with `nullptr` and never threw. Nothing
+  changes for a build with exceptions enabled.
+
+- `scl::flags` reports an enumerator ordinal `>= bit_count` with `std::abort()` where
+  `SCL_HAS_EXCEPTIONS` is `0`, since the constructor and `operator[]` cannot answer such a
+  call at all — it is a precondition violation, not a query that failed. The call stays
+  ill-formed in constant evaluation either way, and a build with exceptions still throws
+  `std::out_of_range` as before.
 
 - Example, test and benchmark sources follow one naming rule, written in `AGENTS.md` and
   `CONTRIBUTING.md`: an example is `example/<group>/<name>/<group>_<name>_example.cpp`, a

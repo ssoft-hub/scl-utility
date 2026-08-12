@@ -17,6 +17,7 @@
  */
 
 #include <scl/utility/preprocessor/counter.h>
+#include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/forward.h>
 #include <scl/utility/preprocessor/rtti.h>
 

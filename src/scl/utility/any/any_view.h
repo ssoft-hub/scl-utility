@@ -9,6 +9,7 @@
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
 #include <scl/utility/attribute/likely.h>
+#include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/rtti.h>
 
 #include <memory>
@@ -111,6 +112,7 @@ namespace scl
         return nullptr;
     }
 
+#if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
     // Not deduced: this form must keep admitting an implicit conversion, which template
     // deduction does not consider. A volatile handle cannot bind here — use the pointer form.
     template <typename Type>
@@ -125,6 +127,7 @@ namespace scl
             throw bad_any_cast{};
         return static_cast<Type>(*pointer);
     }
+#endif
 } // namespace scl
 
 // =============================================================================
@@ -345,6 +348,10 @@ namespace scl
  *
  * The qualifier rule of the pointer form applies here too: a `volatile` referent is
  * read as `any_cast<T const volatile &>`.
+ *
+ * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`. A translation unit compiled
+ *       without exceptions keeps the pointer form, which answers a failed request with
+ *       `nullptr`.
  *
  * @tparam Type  The requested result type (`T` or `T const &`).
  * @param  view  The view to read.

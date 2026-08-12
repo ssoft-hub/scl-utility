@@ -127,6 +127,8 @@ Then include the umbrella header or individual component headers:
 |-----------|--------|-------------|
 | [SCL_FORWARD](preprocessor/forward.md) | `<scl/utility/preprocessor/forward.h>` | Identity macro for token forwarding |
 | [SCL_COUNTER](preprocessor/counter.md) | `<scl/utility/preprocessor/counter.h>` | Compile-time counter via ADL |
+| [SCL_HAS_RTTI](preprocessor/rtti.md) | `<scl/utility/preprocessor/rtti.h>` | Whether the translation unit has RTTI, and what that gates |
+| [SCL_HAS_EXCEPTIONS](preprocessor/exceptions.md) | `<scl/utility/preprocessor/exceptions.h>` | Whether the translation unit has exceptions, and what that gates |
 
 ### Type traits — extended traits and helpers
 
