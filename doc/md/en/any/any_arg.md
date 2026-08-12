@@ -128,6 +128,10 @@ std::string copy = scl::any_cast<std::string>(value);                 // copy ou
 std::string const & ref = scl::any_cast<std::string const &>(value);  // zero copy
 ```
 
+The reference and value forms are declared only where
+[`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `1`. Without exceptions the
+pointer form is the whole cast surface, and it already reports a mismatch.
+
 To keep the value beyond the call, copy it out — never keep the `any_arg`
 itself or an `any_view` converted from it when the argument was a temporary.
 

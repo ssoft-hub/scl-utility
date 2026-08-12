@@ -117,6 +117,10 @@ std::string const & ref = scl::any_cast<std::string const &>(raw);  // zero copy
 // scl::any_cast<std::string &>(raw);   // ill-formed: the view is read-only
 ```
 
+The reference form is declared only where
+[`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `1`. Without exceptions the
+pointer form is the whole cast surface, and it already reports a mismatch.
+
 A `std::any` argument converts implicitly, so the same `scl::any_cast` reads both
 a view and a bare `std::any`:
 

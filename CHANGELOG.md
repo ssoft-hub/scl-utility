@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   by throwing are gated on this one, so portable user code branches on the same macro.
   Always defined, so `#if` interrogates it and `-Wundef` catches a misspelling.
 
+- A Markdown page per availability macro on both language trees — `preprocessor/rtti.md`
+  and `preprocessor/exceptions.md` — stating what the library declares in each
+  configuration. `SCL_HAS_RTTI` had no page, so the generated reference was the only
+  account of it.
+
 - `scl::hash::byte_view` — a lazy view spelling a range of wider elements as the bytes the
   hash functions take: `fnv1a(byte_view(text))` where `text` is a `std::u16string_view`.
   Each element contributes its bytes least significant first, whatever the host's own byte

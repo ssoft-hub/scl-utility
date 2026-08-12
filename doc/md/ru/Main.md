@@ -128,6 +128,8 @@ target_link_libraries(your_target PRIVATE scl::utility)
 |-----------|-----------|----------|
 | [SCL_FORWARD](preprocessor/forward.md) | `<scl/utility/preprocessor/forward.h>` | Макрос-идентификатор для проброса токенов |
 | [SCL_COUNTER](preprocessor/counter.md) | `<scl/utility/preprocessor/counter.h>` | Счётчик времени компиляции через ADL |
+| [SCL_HAS_RTTI](preprocessor/rtti.md) | `<scl/utility/preprocessor/rtti.h>` | Есть ли в единице трансляции RTTI и что от этого зависит |
+| [SCL_HAS_EXCEPTIONS](preprocessor/exceptions.md) | `<scl/utility/preprocessor/exceptions.h>` | Есть ли в единице трансляции исключения и что от этого зависит |
 
 ### Type traits — расширенные свойства типов
 
