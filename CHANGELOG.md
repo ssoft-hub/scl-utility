@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `SCL_HAS_EXCEPTIONS` (`#include <scl/utility/preprocessor/exceptions.h>`) — `1` when the
+  translation unit is compiled with exceptions, `0` otherwise, derived from `_CPPUNWIND`,
+  `__EXCEPTIONS` or `__has_feature(cxx_exceptions)`. The language has no standard
+  feature-test macro for exceptions, and the ScL declarations that answer a failed request
+  by throwing are gated on this one, so portable user code branches on the same macro.
+  Always defined, so `#if` interrogates it and `-Wundef` catches a misspelling.
+
 - `scl::hash::byte_view` — a lazy view spelling a range of wider elements as the bytes the
   hash functions take: `fnv1a(byte_view(text))` where `text` is a `std::u16string_view`.
   Each element contributes its bytes least significant first, whatever the host's own byte
