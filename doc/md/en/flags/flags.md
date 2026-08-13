@@ -1,15 +1,16 @@
 # Flags
 
-A type-safe bitmask over a scoped enum.
+A type-safe set of scoped-enum values.
 
 - Header: `#include <scl/utility/flags.h>`
 
 ## Overview
 
-`scl::flags<Enum, bit_count>` stores one bit per enumerator: the bit index of a
-flag equals the enumerator's underlying value (`One == 0`, `Two == 1`, ...), so
-enumerators need no explicit values. Flags combine through bitwise operators
-without ever casting to the underlying integer.
+`scl::flags<Enum, bit_count>` holds the enum values put into it and stores them
+as one bit per enumerator: the bit index of a value equals the enumerator's
+underlying value (`One == 0`, `Two == 1`, ...), so enumerators need no explicit
+values. Sets combine through operators, never through a cast to the underlying
+integer.
 
 The bits live in a `std::array<std::byte>` sized to `bit_count` (default 32), so
 every operation is usable in constant evaluation on the C++20 baseline — unlike
@@ -19,7 +20,7 @@ Only scoped enumerations are accepted; a non-scoped `enum` is rejected by a
 `static_assert`. An enumerator whose ordinal is `>= bit_count` is out of range:
 the constructor and `operator[]` throw `std::out_of_range` at runtime and are
 ill-formed in constant evaluation. The predicate queries never throw — an
-out-of-range ordinal simply reads as not set. Where
+out-of-range ordinal simply reads as not held. Where
 [`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `0` the same call ends the
 program through `std::abort()`, since a precondition violation has no value to return
 in place of the answer.
@@ -28,27 +29,41 @@ in place of the answer.
 
 - One bit per enumerator ordinal; no explicit enumerator values required
 - `constexpr`-capable throughout (C++20)
-- Bitwise `~ | & ^` and compound `|= &= ^=` in flags-flags and flags-`Enum` forms
+- Set algebra `| & ^ -` and compound `|= &= ^= -=` in set-set and set-`Enum` forms
 - `operator[]` membership test
-- `all_of` / `any_of` / `none_of` predicates in variadic-flag and whole-mask
-  (subset / intersection / disjoint) forms
-- Whole-mask `any` / `none` / `all`
-- Bidirectional range over the set flags, ascending by ordinal
+- `all_of` / `any_of` / `none_of` predicates over a pack of values and over
+  another set (subset / intersection / disjoint)
+- `any` / `none` over the whole set
+- Bidirectional range over the values held, ascending by ordinal
 
 ## API reference
 
 ### Construction
 
-```cpp
-enum class permission { read, write, execute, remove };
-using permissions = scl::flags<permission>;
+Every block below is taken from
+[`example/flags/common/flags_common_example.cpp`](../../../../example/flags/common/flags_common_example.cpp),
+which the CI compiles and runs, so what the page shows is code that works.
 
-permissions none{};                                  // no flags
-permissions rw{permission::read, permission::write}; // two flags
+<!-- snippet: example/flags/common/flags_common_example.cpp declare -->
+```cpp
+enum class permission
+{
+    read,    // bit 0
+    write,   // bit 1
+    execute, // bit 2
+    remove,  // bit 3
+};
+
+using permissions = ::scl::flags<permission>;
+
+// The set the others are measured against. A flags knows its storage width, not which
+// values an enumeration declares, so a caller who needs the whole set names it.
+constexpr permissions all_permissions{
+    permission::read, permission::write, permission::execute, permission::remove};
 ```
 
-A braced empty list selects the default (empty) constructor. Passing a value
-whose ordinal is `>= bit_count` throws `std::out_of_range`.
+A braced empty list selects the default constructor and holds nothing. Passing a
+value whose ordinal is `>= bit_count` throws `std::out_of_range`.
 
 The second template parameter sets the storage width; use it when the default of
 32 bits is not the right size:
@@ -59,64 +74,86 @@ using small = scl::flags<permission, 4>; // 4-bit storage
 
 ### Membership and predicates
 
+`all_of` / `any_of` / `none_of` take either a pack of values or another `flags`, which is
+how a subset, an intersection and a disjoint pair are spelled. An empty pack is vacuously
+true for `all_of` and `none_of`, false for `any_of`. There is no "holds every value" query:
+which values count as *every* one is the caller's to name, and `all_of` asks against that
+set.
+
+<!-- snippet: example/flags/common/flags_common_example.cpp membership -->
 ```cpp
-constexpr permissions p{permission::read, permission::write};
+constexpr permissions granted{permission::read, permission::write};
 
-p[permission::read];                                   // true
-p.all_of(permission::read, permission::write);         // true (every listed flag)
-p.any_of(permission::execute);                         // false (at least one)
-p.none_of(permission::remove);                         // true (none)
-p.all_of();                                            // true  (empty pack)
-p.any_of();                                            // false (empty pack)
-```
+static_assert(granted[permission::read]);
+static_assert(granted.all_of(permission::read, permission::write));
+static_assert(granted.any_of(permission::write, permission::execute));
+static_assert(granted.none_of(permission::remove));
 
-The same predicates accept another `flags` for set relations:
+static_assert(granted.all_of(permissions{permission::read}));    // subset
+static_assert(granted.any_of(permissions{permission::write}));   // intersection
+static_assert(granted.none_of(permissions{permission::remove})); // disjoint
 
-```cpp
-p.all_of(permissions{permission::read});   // subset:       every flag of the argument is set
-p.any_of(permissions{permission::write});  // intersection: they share a set flag
-p.none_of(permissions{permission::remove}); // disjoint:     they share no set flag
-```
-
-Whole-mask queries look at every `bit_count` bit:
-
-```cpp
-p.any();   // at least one bit set
-p.none();  // no bit set
-p.all();   // all bit_count bits set
+static_assert(granted.any());
+static_assert(!granted.none());
+static_assert(!granted.all_of(all_permissions)); // two flags of the four
+static_assert(granted.size() == 2);
 ```
 
 ### Combination
 
+Union, intersection, symmetric difference and difference come in the set-set and the
+set-`Enum` form, each with a compound counterpart. Every one of them is closed over the
+values the operands hold.
+
+There is no complement operator. A complement is taken against the set of all values, and
+a `flags` knows only `capacity` — its storage width, which an enumeration is free to
+underfill or to spread its enumerators across. Complementing over the width would hand
+back ordinals no enumerator names. Name that set instead, and subtract from it.
+
+<!-- snippet: example/flags/common/flags_common_example.cpp algebra -->
 ```cpp
-constexpr permissions a{permission::read, permission::write};
-constexpr permissions b{permission::write, permission::execute};
+constexpr permissions required{permission::read, permission::execute};
 
-a | b;                    // union
-a & b;                    // intersection
-a ^ b;                    // symmetric difference
-~a;                       // complement over bit_count bits
-a | permission::execute;  // flags-Enum form (flags on the left)
+static_assert((granted | required) == permissions{permission::read, permission::write, permission::execute});
+static_assert((granted & required) == permissions{permission::read});
+static_assert((granted ^ required) == permissions{permission::write, permission::execute});
+static_assert((granted - required) == permissions{permission::write});
+static_assert((granted | permission::remove).size() == 3); // flags-Enum form
 
-permissions m{permission::read};
-m |= permission::write;   // compound assignment (flags and Enum forms)
+// A complement is taken against a named set, never against the storage width.
+static_assert((all_permissions - granted) == permissions{permission::execute, permission::remove});
+
+// The compound forms mutate in place, so they need an object rather than a constant.
+constexpr permissions effective = [] {
+    permissions result{permission::read};
+    result |= permission::write;
+    result -= permission::read;
+    return result;
+}();
+static_assert(effective == permissions{permission::write});
 ```
 
 ### Iteration
 
-`flags` is a bidirectional range whose elements are its *set* flags, as `Enum`
-values in ascending ordinal order. `size()` is the number of set flags (the
-population count), distinct from the static `capacity` (the bit width).
+`flags` is a bidirectional range over the values it holds, as `Enum` in ascending
+ordinal order. `size()` is how many it holds, distinct from the static `capacity`,
+which is the storage width.
 
+<!-- snippet: example/flags/common/flags_common_example.cpp iteration -->
 ```cpp
-permissions granted{permission::read, permission::execute};
+// Iterating yields the set flags as Enum values, ascending by ordinal; the reverse
+// iterators walk the same flags back. size() counts them, capacity is the bit width.
+static void print_flags(permissions const & flags)
+{
+    for (permission const flag : flags)
+        ::std::cout << ' ' << static_cast<int>(flag);
+    ::std::cout << " |";
 
-for (permission flag : granted) { /* read, then execute */ }
+    for (auto it = flags.rbegin(); it != flags.rend(); ++it)
+        ::std::cout << ' ' << static_cast<int>(*it);
 
-for (auto it = granted.rbegin(); it != granted.rend(); ++it) { /* execute, then read */ }
-
-granted.size();      // 2  (set flags)
-permissions::capacity; // 32 (bit width)
+    ::std::cout << " (" << flags.size() << " of " << permissions::capacity << ")\n";
+}
 ```
 
 Because it models `std::ranges::bidirectional_range` and `std::ranges::sized_range`,
@@ -125,6 +162,6 @@ Because it models `std::ranges::bidirectional_range` and `std::ranges::sized_ran
 ## See also
 
 - [`example/flags/common/flags_common_example.cpp`](../../../../example/flags/common/flags_common_example.cpp) —
-  runnable version: combining and querying flags, set algebra between two masks,
-  and iterating the set flags in both directions.
+  the program these blocks come from: membership and predicates, set algebra
+  between two sets, and iteration in both directions.
 - [Russian documentation](../../ru/flags/flags.md)

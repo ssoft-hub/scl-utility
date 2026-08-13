@@ -8,7 +8,7 @@
 Common C++ utilities not available in the standard library.
 
 ScL Utility is a header-only module of the ScL Toolkit. It provides erased views over any
-value, portable attribute macros, type-classifying concepts, a bitmask over a scoped enum,
+value, portable attribute macros, type-classifying concepts, a set of scoped-enum values,
 non-cryptographic hashes, parent-child tree hierarchies, compile-time and runtime name
 extraction, preprocessor utilities and extended type traits. Licensed under
 [The Unlicense](LICENSE.md).
@@ -82,13 +82,13 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
   - `siphash` — SipHash-2-4 64-bit keyed hash (hash-flooding resistant)
   - `key<Hasher>` — strongly-typed hash value; usable as `switch`/`case` label,
     STL unordered container key, and non-type template parameter (C++20 NTTP)
-- **Flags** — type-safe bitmask over a scoped enum (`#include <scl/utility/flags.h>`):
+- **Flags** — type-safe set of scoped-enum values (`#include <scl/utility/flags.h>`):
   - `flags<Enum, bit_count>` — one bit per enumerator ordinal; `constexpr`-capable
-  - bitwise `~ | & ^` and compound `|= &= ^=` (flags and single-flag forms),
+  - set algebra `| & ^ -` and compound `|= &= ^= -=` (set and single-value forms),
     `operator[]` membership test
-  - `all_of`/`any_of`/`none_of` predicates (variadic flag packs and whole-mask
-    subset/intersection/disjoint forms), whole-mask `any`/`none`/`all`
-  - a bidirectional range over the set flags (`begin`/`end`/`rbegin`/`rend`, `size`)
+  - `all_of`/`any_of`/`none_of` predicates (packs of values and whole-set
+    subset/intersection/disjoint forms), whole-set `any`/`none`
+  - a bidirectional range over the values held (`begin`/`end`/`rbegin`/`rend`, `size`)
 
 ## Requirements
 
@@ -197,7 +197,7 @@ int main()
 }
 ```
 
-A type-safe bitmask over a scoped enum
+A type-safe set of scoped-enum values
 ([`example/quick_start/flags`](example/quick_start/flags/quick_start_flags_example.cpp)):
 
 <!-- snippet: example/quick_start/flags/quick_start_flags_example.cpp -->

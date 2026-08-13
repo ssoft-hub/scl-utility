@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::flags` subtracts one set from another: `a - b` and `a -= b` keep the flags set in
+  `a` and absent from `b`, in the flags-flags and the flags-`Enum` form alike. The
+  difference was previously spelled `a ^ (a & b)`, and it is what expresses "everything in
+  this set except those" without appealing to a universe the type cannot know.
+
 - `SCL_HAS_EXCEPTIONS` (`#include <scl/utility/preprocessor/exceptions.h>`) — `1` when the
   translation unit is compiled with exceptions, `0` otherwise, derived from `_CPPUNWIND`,
   `__EXCEPTIONS` or `__has_feature(cxx_exceptions)`. The language has no standard
@@ -111,6 +116,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   generated documentation no longer sit at the same level.
 
 ### Removed
+
+- `scl::flags::operator~` and `scl::flags::all()`. Both were defined over the storage
+  width rather than over the flags a caller put in: the complement of a mask whose
+  enumeration declares fewer enumerators than `capacity` bits, or spreads them apart,
+  returned ordinals no enumerator names, and `all()` asked whether every one of those
+  ordinals was set, which such an enumeration can never satisfy. A complement now takes
+  the universe it belongs to — `universe - set`, or `universe ^ set` for a subset — and
+  `all_of(universe)` asks the whole-set question against the same explicit universe.
 
 - The `ScL Utility` group. It was the declared parent of the module groups but only
   three of the ten ever joined it, so its page listed a third of the library and implied

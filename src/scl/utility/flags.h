@@ -2,7 +2,7 @@
 
 /**
  * @file flags.h
- * @brief Type-safe bitmask container over a scoped enum.
+ * @brief Type-safe set of scoped-enum values, one bit per enumerator.
  * @ingroup scl_utility_flags
  */
 
@@ -26,7 +26,7 @@
 
 /**
  * @defgroup scl_utility_flags ScL Flags
- * @brief Type-safe bitmask container `scl::flags` over a scoped `enum class`.
+ * @brief Type-safe set `scl::flags` of the values of a scoped `enum class`.
  */
 
 namespace scl::detail
@@ -149,28 +149,9 @@ namespace scl
         }
 
         [[nodiscard]]
-        constexpr bool all() const noexcept
-        {
-            for (::std::size_t position = 0; position < bit_count; ++position)
-                if (!has_bit(position))
-                    return false;
-            return true;
-        }
-
-        [[nodiscard]]
         constexpr explicit operator bool() const noexcept
         {
             return any();
-        }
-
-        [[nodiscard]]
-        constexpr flags operator~() const noexcept
-        {
-            flags result;
-            for (::std::size_t index = 0; index < byte_count; ++index)
-                result.m_bits[index] = ~m_bits[index];
-            result.trim();
-            return result;
         }
 
         [[nodiscard]]
@@ -201,6 +182,15 @@ namespace scl
         }
 
         [[nodiscard]]
+        constexpr flags operator-(flags const & other) const noexcept
+        {
+            flags result;
+            for (::std::size_t index = 0; index < byte_count; ++index)
+                result.m_bits[index] = m_bits[index] & ~other.m_bits[index];
+            return result;
+        }
+
+        [[nodiscard]]
         constexpr flags operator|(Enum value) const
         {
             return *this | flags{value};
@@ -218,6 +208,12 @@ namespace scl
             return *this ^ flags { value };
         }
 
+        [[nodiscard]]
+        constexpr flags operator-(Enum value) const
+        {
+            return *this - flags{value};
+        }
+
         constexpr flags & operator|=(flags const & other) noexcept { return *this = *this | other; }
 
         constexpr flags & operator&=(flags const & other) noexcept { return *this = *this & other; }
@@ -229,6 +225,10 @@ namespace scl
         constexpr flags & operator&=(Enum value) { return *this = *this & value; }
 
         constexpr flags & operator^=(Enum value) { return *this = *this ^ value; }
+
+        constexpr flags & operator-=(flags const & other) noexcept { return *this = *this - other; }
+
+        constexpr flags & operator-=(Enum value) { return *this = *this - value; }
 
         [[nodiscard]]
         constexpr size_type size() const noexcept
@@ -294,12 +294,6 @@ namespace scl
         {
             return position < bit_count &&
                 (m_bits[position / 8] & (::std::byte{1} << (position % 8))) != ::std::byte{};
-        }
-
-        constexpr void trim() noexcept
-        {
-            if constexpr (bit_count % 8 != 0)
-                m_bits[byte_count - 1] &= static_cast<::std::byte>((1u << (bit_count % 8)) - 1u);
         }
 
         // Padding above `bit_count` is masked off here, so a scan over whole bytes cannot
@@ -422,32 +416,45 @@ namespace scl
 /**
  * @class scl::flags
  * @ingroup scl_utility_flags
- * @brief Type-safe bitmask over a scoped enum, where each flag occupies the bit
- *        at its enumerator ordinal
+ * @brief Type-safe set of scoped-enum values, each held as the bit at its
+ *        enumerator ordinal
  *
- * `flags` stores one bit per enumerator: the bit index of a flag equals the
- * enumerator's underlying value (`One == 0`, `Two == 1`, ...), so enumerators
- * need no explicit values.  The bits live in a `std::array<std::byte>` sized to
- * `bit_count`, which keeps every operation usable in constant evaluation on the
- * C++20 baseline (unlike `std::bitset`, whose query and mutate members are not
- * `constexpr` until C++23).
+ * A `flags` holds the enum values put into it.  It stores them as one bit per
+ * enumerator — the bit index of a value equals the enumerator's underlying value
+ * (`One == 0`, `Two == 1`, ...), so enumerators need no explicit values — in a
+ * `std::array<std::byte>` sized to `bit_count`, which keeps every operation
+ * usable in constant evaluation on the C++20 baseline (unlike `std::bitset`,
+ * whose query and mutate members are not `constexpr` until C++23).
  *
- * The type is a bidirectional range over its *set* flags: iterating yields the
- * corresponding `Enum` values in ascending ordinal order, so it composes with
- * the `<ranges>` views and algorithms.  `capacity` is the fixed bit width;
- * `size()` is the number of set flags.
+ * The type is a bidirectional range over the values it holds: iterating yields
+ * them as `Enum` in ascending ordinal order, so it composes with the `<ranges>`
+ * views and algorithms.  `size()` is how many it holds; `capacity` is the fixed
+ * bit width of the storage, which bounds the valid ordinals and nothing else.
+ *
+ * Every operation is closed over the values a caller has put in: union,
+ * intersection, symmetric difference and difference each yield values one of the
+ * operands already held.  This is why there is no complement operator.  A
+ * complement needs the set of all values, the type knows only `capacity`, and
+ * the two are not the same thing: an enumeration may declare fewer enumerators
+ * than `capacity` bits or spread them apart, and complementing over the width
+ * would then produce ordinals no enumerator names.  Name that set instead, as a
+ * `flags` holding the values that belong to it: `all_values - held` is what a
+ * complement is meant to be, and `all_values ^ held` answers the same where
+ * `held` is a subset of `all_values`.  For the same reason there is no "are all
+ * values held" query: `all_of(all_values)` asks it against the set the caller
+ * names.
  *
  * Only scoped enumerations are accepted; a non-scoped `enum` is rejected by a
  * `static_assert`.  An enumerator whose ordinal is `>= bit_count` is out of
  * range: the offending call throws `std::out_of_range` at runtime and is
  * ill-formed in constant evaluation.  The predicate queries are the exception —
- * they never throw and read an out-of-range ordinal as not set.
+ * they never throw and read an out-of-range ordinal as not held.
  *
  * Where @ref SCL_HAS_EXCEPTIONS is `0` the same call ends the program through
  * `std::abort()` instead, and stays ill-formed in constant evaluation.  Every
  * `@throws` clause below describes the build that has exceptions.
  *
- * @tparam Enum      Scoped enumeration whose enumerators name the individual bits.
+ * @tparam Enum      Scoped enumeration whose enumerators name the values held.
  * @tparam bit_count Storage width in bits (default 32); valid ordinals are `[0, bit_count)`.
  *
  * @par Example
@@ -468,7 +475,7 @@ namespace scl
 
 /**
  * @typedef scl::flags::enum_type
- * @brief The scoped enumeration this bitmask is built over (same as `Enum`).
+ * @brief The scoped enumeration this set is built over (same as `Enum`).
  */
 
 /**
@@ -504,7 +511,8 @@ namespace scl
 /**
  * @var scl::flags::capacity
  * @brief Fixed storage width in bits (equal to `bit_count`); the number of
- *        addressable flag ordinals, distinct from `size()`.
+ *        addressable ordinals, distinct from `size()` and from the number of
+ *        enumerators the enumeration declares.
  */
 
 // -----------------------------------------------------------------------------
@@ -513,12 +521,12 @@ namespace scl
 
 /**
  * @fn scl::flags::flags()
- * @brief Constructs an empty bitmask with no flags set.
+ * @brief Constructs an empty set with no flags set.
  */
 
 /**
  * @fn scl::flags::flags(Values... values)
- * @brief Constructs a bitmask with the given flags set.
+ * @brief Constructs a set with the given flags set.
  *
  * Accepts zero or more `Enum` values; each sets the bit at its ordinal.  A
  * braced empty list selects the default constructor instead.  Passing a value
@@ -543,8 +551,8 @@ namespace scl
 
 /**
  * @fn scl::flags::operator==(flags const & other) const
- * @brief Returns `true` when both bitmasks have exactly the same flags set.
- * @param other  Bitmask to compare against.
+ * @brief Returns `true` when both sets hold exactly the same flags.
+ * @param other  Set to compare against.
  * @return `true` on bit-for-bit equality; `!=` is synthesised from this.
  */
 
@@ -603,27 +611,27 @@ namespace scl
 
 /**
  * @fn scl::flags::all_of(flags const & other) const
- * @brief Returns `true` when @p other is a subset of this bitmask.
- * @param other  Bitmask whose set flags must all be set here.
+ * @brief Returns `true` when @p other is a subset of this set.
+ * @param other  Set whose flags must all be held here.
  * @return `true` if every flag of @p other is set (`(*this & other) == other`).
  */
 
 /**
  * @fn scl::flags::any_of(flags const & other) const
- * @brief Returns `true` when the two bitmasks share at least one set flag.
- * @param other  Bitmask to intersect with.
+ * @brief Returns `true` when the two sets share at least one set flag.
+ * @param other  Set to intersect with.
  * @return `true` if the intersection is non-empty.
  */
 
 /**
  * @fn scl::flags::none_of(flags const & other) const
- * @brief Returns `true` when the two bitmasks share no set flag.
- * @param other  Bitmask to test disjointness against.
+ * @brief Returns `true` when the two sets share no set flag.
+ * @param other  Set to test disjointness against.
  * @return `true` if the intersection is empty.
  */
 
 // -----------------------------------------------------------------------------
-// Whole-mask queries
+// Whole-set queries
 // -----------------------------------------------------------------------------
 
 /**
@@ -635,13 +643,7 @@ namespace scl
 /**
  * @fn scl::flags::none() const
  * @brief Returns `true` when no bit is set.
- * @return `true` if the bitmask is empty.
- */
-
-/**
- * @fn scl::flags::all() const
- * @brief Returns `true` when every one of the `bit_count` bits is set.
- * @return `true` if all bits (the full storage width) are set.
+ * @return `true` if the set is empty.
  */
 
 /**
@@ -655,31 +657,31 @@ namespace scl
 // -----------------------------------------------------------------------------
 
 /**
- * @fn scl::flags::operator~() const
- * @brief Returns the complement over all `bit_count` bits.
- * @return A bitmask with every valid ordinal toggled; padding bits above
- *         `bit_count` stay clear.
- */
-
-/**
  * @fn scl::flags::operator|(flags const & other) const
- * @brief Returns the union of the two bitmasks.
- * @param other  Right-hand bitmask.
- * @return A bitmask with the flags of either operand set.
+ * @brief Returns the union of the two sets.
+ * @param other  Right-hand set.
+ * @return A set with the flags of either operand set.
  */
 
 /**
  * @fn scl::flags::operator&(flags const & other) const
- * @brief Returns the intersection of the two bitmasks.
- * @param other  Right-hand bitmask.
- * @return A bitmask with the flags set in both operands.
+ * @brief Returns the intersection of the two sets.
+ * @param other  Right-hand set.
+ * @return A set with the flags set in both operands.
  */
 
 /**
  * @fn scl::flags::operator^(flags const & other) const
- * @brief Returns the symmetric difference of the two bitmasks.
- * @param other  Right-hand bitmask.
- * @return A bitmask with the flags set in exactly one operand.
+ * @brief Returns the symmetric difference of the two sets.
+ * @param other  Right-hand set.
+ * @return A set with the flags set in exactly one operand.
+ */
+
+/**
+ * @fn scl::flags::operator-(flags const & other) const
+ * @brief Returns the difference of the two sets.
+ * @param other  Set to subtract.
+ * @return A set with the flags set here and not in @p other.
  */
 
 /**
@@ -694,7 +696,7 @@ namespace scl
  * @fn scl::flags::operator&(Enum value) const
  * @brief Returns the intersection with a single flag.
  * @param value  Flag to keep.
- * @return A bitmask holding at most @p value.
+ * @return A set holding at most @p value.
  * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
  */
 
@@ -706,6 +708,14 @@ namespace scl
  * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
  */
 
+/**
+ * @fn scl::flags::operator-(Enum value) const
+ * @brief Returns the difference with a single flag.
+ * @param value  Flag to remove.
+ * @return A copy without @p value.
+ * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
+ */
+
 // -----------------------------------------------------------------------------
 // Compound assignment
 // -----------------------------------------------------------------------------
@@ -713,21 +723,21 @@ namespace scl
 /**
  * @fn scl::flags::operator|=(flags const & other)
  * @brief Sets the flags of @p other in place (union).
- * @param other  Bitmask to union in.
+ * @param other  Set to union in.
  * @return `*this`.
  */
 
 /**
  * @fn scl::flags::operator&=(flags const & other)
  * @brief Keeps only the flags also set in @p other (intersection).
- * @param other  Bitmask to intersect with.
+ * @param other  Set to intersect with.
  * @return `*this`.
  */
 
 /**
  * @fn scl::flags::operator^=(flags const & other)
  * @brief Toggles the flags set in @p other (symmetric difference).
- * @param other  Bitmask to XOR in.
+ * @param other  Set to XOR in.
  * @return `*this`.
  */
 
@@ -751,6 +761,21 @@ namespace scl
  * @fn scl::flags::operator^=(Enum value)
  * @brief Toggles a single flag in place.
  * @param value  Flag to toggle.
+ * @return `*this`.
+ * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
+ */
+
+/**
+ * @fn scl::flags::operator-=(flags const & other)
+ * @brief Removes the flags set in @p other in place (difference).
+ * @param other  Set to subtract.
+ * @return `*this`.
+ */
+
+/**
+ * @fn scl::flags::operator-=(Enum value)
+ * @brief Removes a single flag in place.
+ * @param value  Flag to remove.
  * @return `*this`.
  * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
  */
