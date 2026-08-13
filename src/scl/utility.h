@@ -69,7 +69,7 @@
  * A string as a `switch` label and as a template parameter:
  * @snippet quick_start/hash/quick_start_hash_example.cpp quick_start
  *
- * A type-safe bitmask over a scoped enum:
+ * A type-safe set of scoped-enum values:
  * @snippet quick_start/flags/quick_start_flags_example.cpp quick_start
  *
  * One function accepting any argument type, and one chain choosing the branch:
@@ -93,8 +93,8 @@
  * - **Concepts** (@ref scl_utility_concepts) — concept wrappers for
  *   std type traits that have no std concept equivalent: reference, qualifier,
  *   type-category, and type-property classifiers.
- * - **Flags** (@ref scl_utility_flags) — a bitmask over a scoped enum with bitwise
- *   operators, set predicates, and a bidirectional range over the flags it holds.
+ * - **Flags** (@ref scl_utility_flags) — a set of scoped-enum values with set algebra,
+ *   set predicates, and a bidirectional range over the values it holds.
  * - **Hash** (@ref scl_utility_hash) — non-cryptographic hashes (fnv1a, djb2, sdbm,
  *   jenkins_ota, siphash) and key, a strongly-typed hash value usable as a case label,
  *   a container key and a non-type template parameter.

@@ -1,15 +1,16 @@
 # Flags
 
-A type-safe bitmask over a scoped enum.
+A type-safe set of scoped-enum values.
 
 - Header: `#include <scl/utility/flags.h>`
 
 ## Overview
 
-`scl::flags<Enum, bit_count>` stores one bit per enumerator: the bit index of a
-flag equals the enumerator's underlying value (`One == 0`, `Two == 1`, ...), so
-enumerators need no explicit values. Flags combine through bitwise operators
-without ever casting to the underlying integer.
+`scl::flags<Enum, bit_count>` holds the enum values put into it and stores them
+as one bit per enumerator: the bit index of a value equals the enumerator's
+underlying value (`One == 0`, `Two == 1`, ...), so enumerators need no explicit
+values. Sets combine through operators, never through a cast to the underlying
+integer.
 
 The bits live in a `std::array<std::byte>` sized to `bit_count` (default 32), so
 every operation is usable in constant evaluation on the C++20 baseline — unlike
@@ -19,7 +20,7 @@ Only scoped enumerations are accepted; a non-scoped `enum` is rejected by a
 `static_assert`. An enumerator whose ordinal is `>= bit_count` is out of range:
 the constructor and `operator[]` throw `std::out_of_range` at runtime and are
 ill-formed in constant evaluation. The predicate queries never throw — an
-out-of-range ordinal simply reads as not set. Where
+out-of-range ordinal simply reads as not held. Where
 [`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `0` the same call ends the
 program through `std::abort()`, since a precondition violation has no value to return
 in place of the answer.
@@ -28,19 +29,20 @@ in place of the answer.
 
 - One bit per enumerator ordinal; no explicit enumerator values required
 - `constexpr`-capable throughout (C++20)
-- Set algebra `| & ^ -` and compound `|= &= ^= -=` in flags-flags and flags-`Enum` forms
+- Set algebra `| & ^ -` and compound `|= &= ^= -=` in set-set and set-`Enum` forms
 - `operator[]` membership test
-- `all_of` / `any_of` / `none_of` predicates in variadic-flag and whole-mask
-  (subset / intersection / disjoint) forms
-- Whole-mask `any` / `none`
-- Bidirectional range over the set flags, ascending by ordinal
+- `all_of` / `any_of` / `none_of` predicates over a pack of values and over
+  another set (subset / intersection / disjoint)
+- `any` / `none` over the whole set
+- Bidirectional range over the values held, ascending by ordinal
 
 ## API reference
 
 ### Construction
 
-Every block below is taken from the compiled example, so what the page shows is code
-that works.
+Every block below is taken from
+[`example/flags/common/flags_common_example.cpp`](../../../../example/flags/common/flags_common_example.cpp),
+which the CI compiles and runs, so what the page shows is code that works.
 
 <!-- snippet: example/flags/common/flags_common_example.cpp declare -->
 ```cpp
@@ -60,8 +62,8 @@ constexpr permissions all_permissions{
     permission::read, permission::write, permission::execute, permission::remove};
 ```
 
-A braced empty list selects the default (empty) constructor. Passing a value
-whose ordinal is `>= bit_count` throws `std::out_of_range`.
+A braced empty list selects the default constructor and holds nothing. Passing a
+value whose ordinal is `>= bit_count` throws `std::out_of_range`.
 
 The second template parameter sets the storage width; use it when the default of
 32 bits is not the right size:
@@ -71,6 +73,12 @@ using small = scl::flags<permission, 4>; // 4-bit storage
 ```
 
 ### Membership and predicates
+
+`all_of` / `any_of` / `none_of` take either a pack of values or another `flags`, which is
+how a subset, an intersection and a disjoint pair are spelled. An empty pack is vacuously
+true for `all_of` and `none_of`, false for `any_of`. There is no "holds every value" query:
+which values count as *every* one is the caller's to name, and `all_of` asks against that
+set.
 
 <!-- snippet: example/flags/common/flags_common_example.cpp membership -->
 ```cpp
@@ -92,6 +100,15 @@ static_assert(granted.size() == 2);
 ```
 
 ### Combination
+
+Union, intersection, symmetric difference and difference come in the set-set and the
+set-`Enum` form, each with a compound counterpart. Every one of them is closed over the
+values the operands hold.
+
+There is no complement operator. A complement is taken against the set of all values, and
+a `flags` knows only `capacity` — its storage width, which an enumeration is free to
+underfill or to spread its enumerators across. Complementing over the width would hand
+back ordinals no enumerator names. Name that set instead, and subtract from it.
 
 <!-- snippet: example/flags/common/flags_common_example.cpp algebra -->
 ```cpp
@@ -118,9 +135,9 @@ static_assert(effective == permissions{permission::write});
 
 ### Iteration
 
-`flags` is a bidirectional range whose elements are its *set* flags, as `Enum`
-values in ascending ordinal order. `size()` is the number of set flags (the
-population count), distinct from the static `capacity` (the bit width).
+`flags` is a bidirectional range over the values it holds, as `Enum` in ascending
+ordinal order. `size()` is how many it holds, distinct from the static `capacity`,
+which is the storage width.
 
 <!-- snippet: example/flags/common/flags_common_example.cpp iteration -->
 ```cpp
@@ -145,6 +162,6 @@ Because it models `std::ranges::bidirectional_range` and `std::ranges::sized_ran
 ## See also
 
 - [`example/flags/common/flags_common_example.cpp`](../../../../example/flags/common/flags_common_example.cpp) —
-  runnable version: combining and querying flags, set algebra between two masks,
-  and iterating the set flags in both directions.
+  the program these blocks come from: membership and predicates, set algebra
+  between two sets, and iteration in both directions.
 - [Russian documentation](../../ru/flags/flags.md)

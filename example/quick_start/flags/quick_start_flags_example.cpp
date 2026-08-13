@@ -1,6 +1,6 @@
 /**
  * @example quick_start_flags_example.cpp
- * @brief Quick start: a type-safe bitmask over a scoped enum.
+ * @brief Quick start: a type-safe set of scoped-enum values.
  */
 
 //! [quick_start]
