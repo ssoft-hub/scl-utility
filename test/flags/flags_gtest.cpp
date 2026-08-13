@@ -33,6 +33,15 @@ namespace
 
     using wide_flags = ::scl::flags<wide_flag, 24>;
     using partial_flags = ::scl::flags<wide_flag, 12>;
+
+    template <typename Flags>
+    constexpr Flags every_ordinal_of()
+    {
+        Flags result;
+        for (::std::size_t ordinal = 0; ordinal < Flags::capacity; ++ordinal)
+            result |= static_cast<Flags::enum_type>(ordinal);
+        return result;
+    }
 } // namespace
 
 TEST(FlagsTest, ConstructAllOfAndSubscript)
@@ -72,10 +81,6 @@ TEST(FlagsTest, BitwiseOperators)
     STATIC_EXPECT_TRUE((a | Three) == flag_numbers(One, Two, Three));
     STATIC_EXPECT_TRUE((a & One) == flag_numbers(One));
     STATIC_EXPECT_TRUE((a ^ One) == flag_numbers(Two));
-
-    using tiny = ::scl::flags<flag_number, 2>; // bits 0,1; ~ must not set padding
-    STATIC_EXPECT_TRUE(~tiny{} == tiny(One, Two));
-    STATIC_EXPECT_TRUE(~tiny(One) == tiny(Two));
 }
 
 TEST(FlagsTest, Difference)
@@ -172,16 +177,17 @@ TEST(FlagsTest, WholeMaskQueries)
 {
     using enum flag_number;
     using tiny = ::scl::flags<flag_number, 2>; // bits 0,1
+    constexpr tiny universe{One, Two};
 
     STATIC_EXPECT_TRUE(tiny{}.none());
     STATIC_EXPECT_FALSE(tiny{}.any());
-    STATIC_EXPECT_FALSE(tiny{}.all());
+    STATIC_EXPECT_FALSE(tiny{}.all_of(universe));
 
     STATIC_EXPECT_TRUE(tiny(One).any());
     STATIC_EXPECT_FALSE(tiny(One).none());
-    STATIC_EXPECT_FALSE(tiny(One).all());
+    STATIC_EXPECT_FALSE(tiny(One).all_of(universe));
 
-    STATIC_EXPECT_TRUE(tiny(One, Two).all());
+    STATIC_EXPECT_TRUE(universe.all_of(universe));
 
     STATIC_EXPECT_FALSE(static_cast<bool>(tiny{}));
     STATIC_EXPECT_TRUE(static_cast<bool>(tiny(One)));
@@ -327,7 +333,7 @@ TEST(FlagsTest, EmptyMultiByteMaskYieldsEmptyRange)
 TEST(FlagsTest, FullMaskWithPartialLastByteStopsAtCapacity)
 {
     using enum wide_flag;
-    constexpr partial_flags full = ~partial_flags{};
+    constexpr partial_flags full = every_ordinal_of<partial_flags>();
 
     STATIC_EXPECT_EQ(full.size(), 12u);
     EXPECT_EQ(::std::ranges::distance(full), 12);
@@ -341,7 +347,7 @@ TEST(FlagsTest, SizeCountsSetBitsInEveryByte)
 
     constexpr wide_flags spread{First, ByteEnd, ByteStart, Far};
     STATIC_EXPECT_EQ(spread.size(), 4u);
-    STATIC_EXPECT_EQ((~wide_flags{}).size(), 24u);
+    STATIC_EXPECT_EQ(every_ordinal_of<wide_flags>().size(), 24u);
     STATIC_EXPECT_EQ(wide_flags{Far}.size(), 1u);
 }
 

@@ -59,7 +59,7 @@ static void show_set_algebra()
 
     ::std::cout << "granted covers required? " << granted.all_of(required) << '\n'; // 1 (subset)
     ::std::cout << "overlap?                 " << granted.any_of(required) << '\n'; // 1 (intersection)
-    ::std::cout << "missing (required & ~granted) empty? " << (required & ~granted).none() << '\n'; // 1
+    ::std::cout << "missing (required - granted) empty? " << (required - granted).none() << '\n'; // 1
 }
 
 // ============================================================================

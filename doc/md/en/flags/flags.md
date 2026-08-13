@@ -28,11 +28,11 @@ in place of the answer.
 
 - One bit per enumerator ordinal; no explicit enumerator values required
 - `constexpr`-capable throughout (C++20)
-- Bitwise `~ | & ^ -` and compound `|= &= ^= -=` in flags-flags and flags-`Enum` forms
+- Set algebra `| & ^ -` and compound `|= &= ^= -=` in flags-flags and flags-`Enum` forms
 - `operator[]` membership test
 - `all_of` / `any_of` / `none_of` predicates in variadic-flag and whole-mask
   (subset / intersection / disjoint) forms
-- Whole-mask `any` / `none` / `all`
+- Whole-mask `any` / `none`
 - Bidirectional range over the set flags, ascending by ordinal
 
 ## API reference
@@ -78,12 +78,21 @@ p.any_of(permissions{permission::write});  // intersection: they share a set fla
 p.none_of(permissions{permission::remove}); // disjoint:     they share no set flag
 ```
 
-Whole-mask queries look at every `bit_count` bit:
+Whole-mask queries:
 
 ```cpp
-p.any();   // at least one bit set
-p.none();  // no bit set
-p.all();   // all bit_count bits set
+p.any();   // at least one flag set
+p.none();  // no flag set
+```
+
+There is no "every flag is set" query, because the set that counts as *every* flag is the
+caller's to name, and `all_of` is what asks about it:
+
+```cpp
+constexpr permissions all_permissions{permission::read, permission::write,
+    permission::execute, permission::remove};
+
+p.all_of(all_permissions); // false: p holds two of the four
 ```
 
 ### Combination
@@ -96,11 +105,24 @@ a | b;                    // union
 a & b;                    // intersection
 a ^ b;                    // symmetric difference
 a - b;                    // difference: set in a, not in b
-~a;                       // complement over bit_count bits
 a | permission::execute;  // flags-Enum form (flags on the left)
 
 permissions m{permission::read};
 m |= permission::write;   // compound assignment (flags and Enum forms)
+m -= permission::read;    // and the difference in place
+```
+
+There is no complement operator. A complement is taken against a universe, and a `flags`
+knows only `capacity` — its storage width, which an enumeration is free to underfill or to
+spread its enumerators across. Complementing over the width would hand back ordinals no
+enumerator names. Name the universe instead:
+
+```cpp
+constexpr permissions all_permissions{permission::read, permission::write,
+    permission::execute, permission::remove};
+
+all_permissions - a;      // {execute, remove} — the complement of a within that set
+all_permissions ^ a;      // the same, since a is a subset of it
 ```
 
 ### Iteration

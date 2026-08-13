@@ -149,28 +149,9 @@ namespace scl
         }
 
         [[nodiscard]]
-        constexpr bool all() const noexcept
-        {
-            for (::std::size_t position = 0; position < bit_count; ++position)
-                if (!has_bit(position))
-                    return false;
-            return true;
-        }
-
-        [[nodiscard]]
         constexpr explicit operator bool() const noexcept
         {
             return any();
-        }
-
-        [[nodiscard]]
-        constexpr flags operator~() const noexcept
-        {
-            flags result;
-            for (::std::size_t index = 0; index < byte_count; ++index)
-                result.m_bits[index] = ~m_bits[index];
-            result.trim();
-            return result;
         }
 
         [[nodiscard]]
@@ -315,12 +296,6 @@ namespace scl
                 (m_bits[position / 8] & (::std::byte{1} << (position % 8))) != ::std::byte{};
         }
 
-        constexpr void trim() noexcept
-        {
-            if constexpr (bit_count % 8 != 0)
-                m_bits[byte_count - 1] &= static_cast<::std::byte>((1u << (bit_count % 8)) - 1u);
-        }
-
         // Padding above `bit_count` is masked off here, so a scan over whole bytes cannot
         // report a position outside the mask even if a padding bit were ever set.
         [[nodiscard]]
@@ -455,6 +430,19 @@ namespace scl
  * corresponding `Enum` values in ascending ordinal order, so it composes with
  * the `<ranges>` views and algorithms.  `capacity` is the fixed bit width;
  * `size()` is the number of set flags.
+ *
+ * What a `flags` holds is the set of enum values put into it, and every
+ * operation is closed over that set: union, intersection, symmetric difference
+ * and difference each yield values that one of the operands already held.  This
+ * is why there is no complement operator.  A complement needs a universe, the
+ * type knows only `capacity`, and the two are not the same thing: an enumeration
+ * may declare fewer enumerators than `capacity` bits or spread them apart, and
+ * complementing over the width would then produce ordinals no enumerator names.
+ * Spell the universe instead, as a `flags` holding the values that belong to it:
+ * `universe - set` is what a complement is meant to be, and `universe ^ set`
+ * answers the same when `set` is known to be a subset of `universe`.  For the
+ * same reason there is no "are all flags set" query: `all_of(universe)` asks it
+ * against a universe the caller names.
  *
  * Only scoped enumerations are accepted; a non-scoped `enum` is rejected by a
  * `static_assert`.  An enumerator whose ordinal is `>= bit_count` is out of
@@ -658,12 +646,6 @@ namespace scl
  */
 
 /**
- * @fn scl::flags::all() const
- * @brief Returns `true` when every one of the `bit_count` bits is set.
- * @return `true` if all bits (the full storage width) are set.
- */
-
-/**
  * @fn scl::flags::operator bool() const
  * @brief Contextually converts to `true` when at least one flag is set.
  * @return `any()`; explicit, so it participates only in boolean contexts.
@@ -672,13 +654,6 @@ namespace scl
 // -----------------------------------------------------------------------------
 // Bitwise operators
 // -----------------------------------------------------------------------------
-
-/**
- * @fn scl::flags::operator~() const
- * @brief Returns the complement over all `bit_count` bits.
- * @return A bitmask with every valid ordinal toggled; padding bits above
- *         `bit_count` stay clear.
- */
 
 /**
  * @fn scl::flags::operator|(flags const & other) const

@@ -117,6 +117,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- `scl::flags::operator~` and `scl::flags::all()`. Both were defined over the storage
+  width rather than over the flags a caller put in: the complement of a mask whose
+  enumeration declares fewer enumerators than `capacity` bits, or spreads them apart,
+  returned ordinals no enumerator names, and `all()` asked whether every one of those
+  ordinals was set, which such an enumeration can never satisfy. A complement now takes
+  the universe it belongs to — `universe - set`, or `universe ^ set` for a subset — and
+  `all_of(universe)` asks the whole-set question against the same explicit universe.
+
 - The `ScL Utility` group. It was the declared parent of the module groups but only
   three of the ten ever joined it, so its page listed a third of the library and implied
   the rest sat elsewhere. The module groups are the top level, as the main page already
