@@ -39,12 +39,25 @@ in place of the answer.
 
 ### Construction
 
-```cpp
-enum class permission { read, write, execute, remove };
-using permissions = scl::flags<permission>;
+Every block below is taken from the compiled example, so what the page shows is code
+that works.
 
-permissions none{};                                  // no flags
-permissions rw{permission::read, permission::write}; // two flags
+<!-- snippet: example/flags/common/flags_common_example.cpp declare -->
+```cpp
+enum class permission
+{
+    read,    // bit 0
+    write,   // bit 1
+    execute, // bit 2
+    remove,  // bit 3
+};
+
+using permissions = ::scl::flags<permission>;
+
+// The set the others are measured against. A flags knows its storage width, not which
+// values an enumeration declares, so a caller who needs the whole set names it.
+constexpr permissions all_permissions{
+    permission::read, permission::write, permission::execute, permission::remove};
 ```
 
 A braced empty list selects the default (empty) constructor. Passing a value
@@ -59,70 +72,48 @@ using small = scl::flags<permission, 4>; // 4-bit storage
 
 ### Membership and predicates
 
+<!-- snippet: example/flags/common/flags_common_example.cpp membership -->
 ```cpp
-constexpr permissions p{permission::read, permission::write};
+constexpr permissions granted{permission::read, permission::write};
 
-p[permission::read];                                   // true
-p.all_of(permission::read, permission::write);         // true (every listed flag)
-p.any_of(permission::execute);                         // false (at least one)
-p.none_of(permission::remove);                         // true (none)
-p.all_of();                                            // true  (empty pack)
-p.any_of();                                            // false (empty pack)
-```
+static_assert(granted[permission::read]);
+static_assert(granted.all_of(permission::read, permission::write));
+static_assert(granted.any_of(permission::write, permission::execute));
+static_assert(granted.none_of(permission::remove));
 
-The same predicates accept another `flags` for set relations:
+static_assert(granted.all_of(permissions{permission::read}));    // subset
+static_assert(granted.any_of(permissions{permission::write}));   // intersection
+static_assert(granted.none_of(permissions{permission::remove})); // disjoint
 
-```cpp
-p.all_of(permissions{permission::read});   // subset:       every flag of the argument is set
-p.any_of(permissions{permission::write});  // intersection: they share a set flag
-p.none_of(permissions{permission::remove}); // disjoint:     they share no set flag
-```
-
-Whole-mask queries:
-
-```cpp
-p.any();   // at least one flag set
-p.none();  // no flag set
-```
-
-There is no "every flag is set" query, because the set that counts as *every* flag is the
-caller's to name, and `all_of` is what asks about it:
-
-```cpp
-constexpr permissions all_permissions{permission::read, permission::write,
-    permission::execute, permission::remove};
-
-p.all_of(all_permissions); // false: p holds two of the four
+static_assert(granted.any());
+static_assert(!granted.none());
+static_assert(!granted.all_of(all_permissions)); // two flags of the four
+static_assert(granted.size() == 2);
 ```
 
 ### Combination
 
+<!-- snippet: example/flags/common/flags_common_example.cpp algebra -->
 ```cpp
-constexpr permissions a{permission::read, permission::write};
-constexpr permissions b{permission::write, permission::execute};
+constexpr permissions required{permission::read, permission::execute};
 
-a | b;                    // union
-a & b;                    // intersection
-a ^ b;                    // symmetric difference
-a - b;                    // difference: set in a, not in b
-a | permission::execute;  // flags-Enum form (flags on the left)
+static_assert((granted | required) == permissions{permission::read, permission::write, permission::execute});
+static_assert((granted & required) == permissions{permission::read});
+static_assert((granted ^ required) == permissions{permission::write, permission::execute});
+static_assert((granted - required) == permissions{permission::write});
+static_assert((granted | permission::remove).size() == 3); // flags-Enum form
 
-permissions m{permission::read};
-m |= permission::write;   // compound assignment (flags and Enum forms)
-m -= permission::read;    // and the difference in place
-```
+// A complement is taken against a named set, never against the storage width.
+static_assert((all_permissions - granted) == permissions{permission::execute, permission::remove});
 
-There is no complement operator. A complement is taken against a universe, and a `flags`
-knows only `capacity` — its storage width, which an enumeration is free to underfill or to
-spread its enumerators across. Complementing over the width would hand back ordinals no
-enumerator names. Name the universe instead:
-
-```cpp
-constexpr permissions all_permissions{permission::read, permission::write,
-    permission::execute, permission::remove};
-
-all_permissions - a;      // {execute, remove} — the complement of a within that set
-all_permissions ^ a;      // the same, since a is a subset of it
+// The compound forms mutate in place, so they need an object rather than a constant.
+constexpr permissions effective = [] {
+    permissions result{permission::read};
+    result |= permission::write;
+    result -= permission::read;
+    return result;
+}();
+static_assert(effective == permissions{permission::write});
 ```
 
 ### Iteration
@@ -131,15 +122,21 @@ all_permissions ^ a;      // the same, since a is a subset of it
 values in ascending ordinal order. `size()` is the number of set flags (the
 population count), distinct from the static `capacity` (the bit width).
 
+<!-- snippet: example/flags/common/flags_common_example.cpp iteration -->
 ```cpp
-permissions granted{permission::read, permission::execute};
+// Iterating yields the set flags as Enum values, ascending by ordinal; the reverse
+// iterators walk the same flags back. size() counts them, capacity is the bit width.
+static void print_flags(permissions const & flags)
+{
+    for (permission const flag : flags)
+        ::std::cout << ' ' << static_cast<int>(flag);
+    ::std::cout << " |";
 
-for (permission flag : granted) { /* read, then execute */ }
+    for (auto it = flags.rbegin(); it != flags.rend(); ++it)
+        ::std::cout << ' ' << static_cast<int>(*it);
 
-for (auto it = granted.rbegin(); it != granted.rend(); ++it) { /* execute, then read */ }
-
-granted.size();      // 2  (set flags)
-permissions::capacity; // 32 (bit width)
+    ::std::cout << " (" << flags.size() << " of " << permissions::capacity << ")\n";
+}
 ```
 
 Because it models `std::ranges::bidirectional_range` and `std::ranges::sized_range`,

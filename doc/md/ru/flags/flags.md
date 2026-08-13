@@ -40,12 +40,25 @@
 
 ### Конструирование
 
-```cpp
-enum class permission { read, write, execute, remove };
-using permissions = scl::flags<permission>;
+Каждый блок ниже взят из компилируемого примера, поэтому страница показывает
+работающий код.
 
-permissions none{};                                  // без флагов
-permissions rw{permission::read, permission::write}; // два флага
+<!-- snippet: example/flags/common/flags_common_example.cpp declare -->
+```cpp
+enum class permission
+{
+    read,    // bit 0
+    write,   // bit 1
+    execute, // bit 2
+    remove,  // bit 3
+};
+
+using permissions = ::scl::flags<permission>;
+
+// The set the others are measured against. A flags knows its storage width, not which
+// values an enumeration declares, so a caller who needs the whole set names it.
+constexpr permissions all_permissions{
+    permission::read, permission::write, permission::execute, permission::remove};
 ```
 
 Пустой фигурный список выбирает конструктор по умолчанию (пустая маска).
@@ -60,70 +73,48 @@ using small = scl::flags<permission, 4>; // 4-битное хранилище
 
 ### Принадлежность и предикаты
 
+<!-- snippet: example/flags/common/flags_common_example.cpp membership -->
 ```cpp
-constexpr permissions p{permission::read, permission::write};
+constexpr permissions granted{permission::read, permission::write};
 
-p[permission::read];                                   // true
-p.all_of(permission::read, permission::write);         // true (все перечисленные)
-p.any_of(permission::execute);                         // false (хотя бы один)
-p.none_of(permission::remove);                         // true (ни одного)
-p.all_of();                                            // true  (пустой пакет)
-p.any_of();                                            // false (пустой пакет)
-```
+static_assert(granted[permission::read]);
+static_assert(granted.all_of(permission::read, permission::write));
+static_assert(granted.any_of(permission::write, permission::execute));
+static_assert(granted.none_of(permission::remove));
 
-Те же предикаты принимают другой `flags` для отношений множеств:
+static_assert(granted.all_of(permissions{permission::read}));    // subset
+static_assert(granted.any_of(permissions{permission::write}));   // intersection
+static_assert(granted.none_of(permissions{permission::remove})); // disjoint
 
-```cpp
-p.all_of(permissions{permission::read});   // подмножество:  все флаги аргумента выставлены
-p.any_of(permissions{permission::write});  // пересечение:   есть общий выставленный флаг
-p.none_of(permissions{permission::remove}); // непересечение: общих флагов нет
-```
-
-Запросы над всей маской:
-
-```cpp
-p.any();   // выставлен хотя бы один флаг
-p.none();  // не выставлено ни одного
-```
-
-Запроса «выставлены все флаги» нет: что считать полным множеством, называет вызывающая
-сторона, а спрашивает о нём тот же `all_of`:
-
-```cpp
-constexpr permissions all_permissions{permission::read, permission::write,
-    permission::execute, permission::remove};
-
-p.all_of(all_permissions); // false: p хранит два флага из четырёх
+static_assert(granted.any());
+static_assert(!granted.none());
+static_assert(!granted.all_of(all_permissions)); // two flags of the four
+static_assert(granted.size() == 2);
 ```
 
 ### Комбинирование
 
+<!-- snippet: example/flags/common/flags_common_example.cpp algebra -->
 ```cpp
-constexpr permissions a{permission::read, permission::write};
-constexpr permissions b{permission::write, permission::execute};
+constexpr permissions required{permission::read, permission::execute};
 
-a | b;                    // объединение
-a & b;                    // пересечение
-a ^ b;                    // симметрическая разность
-a - b;                    // разность: есть в a, нет в b
-a | permission::execute;  // форма flags-Enum (flags слева)
+static_assert((granted | required) == permissions{permission::read, permission::write, permission::execute});
+static_assert((granted & required) == permissions{permission::read});
+static_assert((granted ^ required) == permissions{permission::write, permission::execute});
+static_assert((granted - required) == permissions{permission::write});
+static_assert((granted | permission::remove).size() == 3); // flags-Enum form
 
-permissions m{permission::read};
-m |= permission::write;   // составное присваивание (формы flags и Enum)
-m -= permission::read;    // и разность на месте
-```
+// A complement is taken against a named set, never against the storage width.
+static_assert((all_permissions - granted) == permissions{permission::execute, permission::remove});
 
-Оператора дополнения нет. Дополнение берётся относительно полного множества, а `flags`
-знает только `capacity` — ширину хранилища, которую перечисление вправе занять не
-полностью или разредить. Дополнение по ширине вернуло бы порядковые номера, которым не
-соответствует ни один перечислитель. Полное множество задаётся явно:
-
-```cpp
-constexpr permissions all_permissions{permission::read, permission::write,
-    permission::execute, permission::remove};
-
-all_permissions - a;      // {execute, remove} — дополнение a внутри полного множества
-all_permissions ^ a;      // то же самое, поскольку a — подмножество
+// The compound forms mutate in place, so they need an object rather than a constant.
+constexpr permissions effective = [] {
+    permissions result{permission::read};
+    result |= permission::write;
+    result -= permission::read;
+    return result;
+}();
+static_assert(effective == permissions{permission::write});
 ```
 
 ### Итерация
@@ -132,15 +123,21 @@ all_permissions ^ a;      // то же самое, поскольку a — по
 значения `Enum` по возрастанию ординала. `size()` — число выставленных флагов
 (популяционный счёт), в отличие от статического `capacity` (ширина в битах).
 
+<!-- snippet: example/flags/common/flags_common_example.cpp iteration -->
 ```cpp
-permissions granted{permission::read, permission::execute};
+// Iterating yields the set flags as Enum values, ascending by ordinal; the reverse
+// iterators walk the same flags back. size() counts them, capacity is the bit width.
+static void print_flags(permissions const & flags)
+{
+    for (permission const flag : flags)
+        ::std::cout << ' ' << static_cast<int>(flag);
+    ::std::cout << " |";
 
-for (permission flag : granted) { /* read, затем execute */ }
+    for (auto it = flags.rbegin(); it != flags.rend(); ++it)
+        ::std::cout << ' ' << static_cast<int>(*it);
 
-for (auto it = granted.rbegin(); it != granted.rend(); ++it) { /* execute, затем read */ }
-
-granted.size();      // 2  (выставленные флаги)
-permissions::capacity; // 32 (ширина в битах)
+    ::std::cout << " (" << flags.size() << " of " << permissions::capacity << ")\n";
+}
 ```
 
 Поскольку `flags` моделирует `std::ranges::bidirectional_range` и
