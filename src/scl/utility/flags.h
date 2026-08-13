@@ -11,8 +11,10 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <type_traits>
 
@@ -232,9 +234,8 @@ namespace scl
         constexpr size_type size() const noexcept
         {
             size_type count = 0;
-            for (::std::size_t position = 0; position < bit_count; ++position)
-                if (has_bit(position))
-                    ++count;
+            for (::std::size_t index = 0; index < byte_count; ++index)
+                count += static_cast<size_type>(::std::popcount(bits_at(index)));
             return count;
         }
 
@@ -301,19 +302,50 @@ namespace scl
                 m_bits[byte_count - 1] &= static_cast<::std::byte>((1u << (bit_count % 8)) - 1u);
         }
 
+        // Padding above `bit_count` is masked off here, so a scan over whole bytes cannot
+        // report a position outside the mask even if a padding bit were ever set.
+        [[nodiscard]]
+        constexpr ::std::uint8_t bits_at(::std::size_t index) const noexcept
+        {
+            auto const bits = ::std::to_integer<::std::uint8_t>(m_bits[index]);
+            if constexpr (bit_count % 8 != 0)
+                return index + 1 == byte_count
+                    ? static_cast<::std::uint8_t>(bits & ((1u << (bit_count % 8)) - 1u))
+                    : bits;
+            else
+                return bits;
+        }
+
         [[nodiscard]]
         constexpr ::std::size_t next_set(::std::size_t from) const noexcept
         {
-            while (from < bit_count && !has_bit(from))
-                ++from;
-            return from;
+            if (from >= bit_count)
+                return bit_count;
+
+            auto index = from / 8;
+            auto bits = static_cast<::std::uint8_t>(bits_at(index) & (0xFFu << (from % 8)));
+            while (bits == 0)
+            {
+                if (++index == byte_count)
+                    return bit_count;
+                bits = bits_at(index);
+            }
+            return (index * 8) + static_cast<::std::size_t>(::std::countr_zero(bits));
         }
 
         [[nodiscard]]
         constexpr ::std::size_t prev_set(::std::size_t before) const noexcept
         {
-            while (before > 0 && !has_bit(before - 1))
-                --before;
+            while (before > 0)
+            {
+                auto const position = before - 1;
+                auto const index = position / 8;
+                auto const bits = static_cast<::std::uint8_t>(bits_at(index) &
+                    (0xFFu >> (7 - (position % 8))));
+                if (bits != 0)
+                    return (index * 8) + 7 - static_cast<::std::size_t>(::std::countl_zero(bits));
+                before = index * 8;
+            }
             return before - 1;
         }
     };
