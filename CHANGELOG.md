@@ -44,6 +44,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `scl::flags` finds its set bits a byte at a time. Iteration and `size()` ask
+  `std::countr_zero`, `std::countl_zero` and `std::popcount` about a whole storage byte
+  instead of testing each bit in turn, so a byte with nothing set costs one test rather
+  than eight — iterating a wide, sparse mask is the operation that gains. The order, the
+  end position and every result are unchanged, in constant evaluation as well.
+
 - The four `scl::any_cast` overloads that answer a failed request by throwing — the value
   and reference forms over an `any_view` and over an `any_arg` — are declared only where
   `SCL_HAS_EXCEPTIONS` is `1`, as the `typeid` surface is declared only under

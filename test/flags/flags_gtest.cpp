@@ -2,6 +2,8 @@
 
 #include <scl/utility/flags.h>
 
+#include <array>
+#include <cstddef>
 #include <iterator>
 #include <ranges>
 #include <stdexcept>
@@ -17,6 +19,20 @@ namespace
     };
 
     using flag_numbers = ::scl::flags<flag_number>;
+
+    // Ordinals on the byte boundaries: the last bit of a byte, the first of the next one,
+    // the last valid bit of a 12-bit mask, and a bit two bytes from the first.
+    enum class wide_flag
+    {
+        First = 0,
+        ByteEnd = 7,
+        ByteStart = 8,
+        PartialEnd = 11,
+        Far = 23,
+    };
+
+    using wide_flags = ::scl::flags<wide_flag, 24>;
+    using partial_flags = ::scl::flags<wide_flag, 12>;
 } // namespace
 
 TEST(FlagsTest, ConstructAllOfAndSubscript)
@@ -209,4 +225,125 @@ TEST(FlagsTest, BidirectionalIterator)
     EXPECT_EQ(*it, Two);
     --it;
     EXPECT_EQ(*it, One);
+}
+
+TEST(FlagsTest, ForwardIterationCrossesByteBoundary)
+{
+    using enum wide_flag;
+    wide_flags const f{ByteEnd, ByteStart};
+
+    ::std::vector<wide_flag> seen;
+    for (wide_flag const flag : f)
+        seen.push_back(flag);
+
+    ASSERT_EQ(seen.size(), 2u);
+    EXPECT_EQ(seen[0], ByteEnd);
+    EXPECT_EQ(seen[1], ByteStart);
+}
+
+TEST(FlagsTest, ReverseIterationCrossesByteBoundary)
+{
+    using enum wide_flag;
+    wide_flags const f{ByteEnd, ByteStart};
+
+    ::std::vector<wide_flag> seen;
+    for (auto it = f.rbegin(); it != f.rend(); ++it)
+        seen.push_back(*it);
+
+    ASSERT_EQ(seen.size(), 2u);
+    EXPECT_EQ(seen[0], ByteStart);
+    EXPECT_EQ(seen[1], ByteEnd);
+}
+
+TEST(FlagsTest, IterationSkipsBytesWithoutSetBits)
+{
+    using enum wide_flag;
+    wide_flags const f{First, Far};
+
+    ::std::vector<wide_flag> seen;
+    for (wide_flag const flag : f)
+        seen.push_back(flag);
+
+    ASSERT_EQ(seen.size(), 2u);
+    EXPECT_EQ(seen[0], First);
+    EXPECT_EQ(seen[1], Far);
+}
+
+TEST(FlagsTest, SingleBitOnByteBoundaryIsReachedFromBothEnds)
+{
+    using enum wide_flag;
+
+    wide_flags const at_byte_end{ByteEnd};
+    EXPECT_EQ(*at_byte_end.begin(), ByteEnd);
+    EXPECT_EQ(*at_byte_end.rbegin(), ByteEnd);
+    EXPECT_EQ(::std::next(at_byte_end.begin()), at_byte_end.end());
+
+    wide_flags const at_byte_start{ByteStart};
+    EXPECT_EQ(*at_byte_start.begin(), ByteStart);
+    EXPECT_EQ(*at_byte_start.rbegin(), ByteStart);
+    EXPECT_EQ(::std::next(at_byte_start.begin()), at_byte_start.end());
+}
+
+TEST(FlagsTest, EmptyMultiByteMaskYieldsEmptyRange)
+{
+    wide_flags const f{};
+
+    STATIC_EXPECT_EQ(wide_flags{}.size(), 0u);
+    EXPECT_EQ(f.begin(), f.end());
+    EXPECT_EQ(f.rbegin(), f.rend());
+}
+
+TEST(FlagsTest, FullMaskWithPartialLastByteStopsAtCapacity)
+{
+    using enum wide_flag;
+    constexpr partial_flags full = ~partial_flags{};
+
+    STATIC_EXPECT_EQ(full.size(), 12u);
+    EXPECT_EQ(::std::ranges::distance(full), 12);
+    EXPECT_EQ(*full.begin(), First);
+    EXPECT_EQ(*::std::prev(full.end()), PartialEnd);
+}
+
+TEST(FlagsTest, SizeCountsSetBitsInEveryByte)
+{
+    using enum wide_flag;
+
+    constexpr wide_flags spread{First, ByteEnd, ByteStart, Far};
+    STATIC_EXPECT_EQ(spread.size(), 4u);
+    STATIC_EXPECT_EQ((~wide_flags{}).size(), 24u);
+    STATIC_EXPECT_EQ(wide_flags{Far}.size(), 1u);
+}
+
+TEST(FlagsTest, IterationRunsInConstantEvaluation)
+{
+    using enum wide_flag;
+
+    auto const walk = [] {
+        constexpr wide_flags f{ByteEnd, ByteStart, Far};
+        ::std::array<wide_flag, 3> seen{};
+        ::std::size_t index = 0;
+        for (wide_flag const flag : f)
+            seen[index++] = flag;
+        return seen;
+    };
+
+    constexpr ::std::array expected{ByteEnd, ByteStart, Far};
+    STATIC_EXPECT_TRUE(walk() == expected);
+}
+
+TEST(FlagsTest, ReverseIterationRunsInConstantEvaluation)
+{
+    using enum wide_flag;
+
+    auto const walk_back = [] {
+        constexpr partial_flags f{First, ByteEnd, ByteStart, PartialEnd};
+        ::std::array<wide_flag, 4> seen{};
+        ::std::size_t index = 0;
+        for (auto it = f.rbegin(); it != f.rend(); ++it)
+            seen[index++] = *it;
+        return seen;
+    };
+
+    constexpr ::std::array expected{PartialEnd, ByteStart, ByteEnd, First};
+    STATIC_EXPECT_TRUE(walk_back() == expected);
 }
