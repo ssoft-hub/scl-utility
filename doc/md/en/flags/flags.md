@@ -28,7 +28,7 @@ in place of the answer.
 
 - One bit per enumerator ordinal; no explicit enumerator values required
 - `constexpr`-capable throughout (C++20)
-- Bitwise `~ | & ^` and compound `|= &= ^=` in flags-flags and flags-`Enum` forms
+- Bitwise `~ | & ^ -` and compound `|= &= ^= -=` in flags-flags and flags-`Enum` forms
 - `operator[]` membership test
 - `all_of` / `any_of` / `none_of` predicates in variadic-flag and whole-mask
   (subset / intersection / disjoint) forms
@@ -95,6 +95,7 @@ constexpr permissions b{permission::write, permission::execute};
 a | b;                    // union
 a & b;                    // intersection
 a ^ b;                    // symmetric difference
+a - b;                    // difference: set in a, not in b
 ~a;                       // complement over bit_count bits
 a | permission::execute;  // flags-Enum form (flags on the left)
 

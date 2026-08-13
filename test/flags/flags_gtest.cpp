@@ -78,6 +78,29 @@ TEST(FlagsTest, BitwiseOperators)
     STATIC_EXPECT_TRUE(~tiny(One) == tiny(Two));
 }
 
+TEST(FlagsTest, Difference)
+{
+    using enum flag_number;
+    constexpr flag_numbers a{One, Two};
+
+    STATIC_EXPECT_TRUE((a - flag_numbers{Two, Three}) == flag_numbers(One)); // overlapping
+    STATIC_EXPECT_TRUE((a - flag_numbers{Three}) == a);                      // disjoint
+    STATIC_EXPECT_TRUE((a - a) == flag_numbers{});                           // self
+    STATIC_EXPECT_TRUE((a - flag_numbers{}) == a);                           // empty subtrahend
+    STATIC_EXPECT_TRUE((flag_numbers{} - a) == flag_numbers{});              // empty minuend
+    STATIC_EXPECT_TRUE((a - Two) == flag_numbers(One));
+}
+
+TEST(FlagsTest, ComplementAgainstNamedUniverse)
+{
+    using enum flag_number;
+    constexpr flag_numbers universe{One, Two, Three};
+    constexpr flag_numbers f{Two};
+
+    STATIC_EXPECT_TRUE((universe - f) == flag_numbers(One, Three));
+    STATIC_EXPECT_TRUE((universe ^ f) == flag_numbers(One, Three));
+}
+
 TEST(FlagsTest, CompoundAssignment)
 {
     using enum flag_number;
@@ -105,6 +128,14 @@ TEST(FlagsTest, CompoundAssignment)
         return f;
     };
     STATIC_EXPECT_TRUE(xor_flags() == flag_numbers(Three));
+
+    auto const minus_flags = [] {
+        flag_numbers f{One, Two, Three};
+        f -= flag_numbers{Two};
+        f -= Three;
+        return f;
+    };
+    STATIC_EXPECT_TRUE(minus_flags() == flag_numbers(One));
 }
 
 TEST(FlagsTest, VariadicPredicates)

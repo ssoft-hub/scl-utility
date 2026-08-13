@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::flags` subtracts one set from another: `a - b` and `a -= b` keep the flags set in
+  `a` and absent from `b`, in the flags-flags and the flags-`Enum` form alike. The
+  difference was previously spelled `a ^ (a & b)`, and it is what expresses "everything in
+  this set except those" without appealing to a universe the type cannot know.
+
 - `SCL_HAS_EXCEPTIONS` (`#include <scl/utility/preprocessor/exceptions.h>`) — `1` when the
   translation unit is compiled with exceptions, `0` otherwise, derived from `_CPPUNWIND`,
   `__EXCEPTIONS` or `__has_feature(cxx_exceptions)`. The language has no standard

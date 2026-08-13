@@ -201,6 +201,15 @@ namespace scl
         }
 
         [[nodiscard]]
+        constexpr flags operator-(flags const & other) const noexcept
+        {
+            flags result;
+            for (::std::size_t index = 0; index < byte_count; ++index)
+                result.m_bits[index] = m_bits[index] & ~other.m_bits[index];
+            return result;
+        }
+
+        [[nodiscard]]
         constexpr flags operator|(Enum value) const
         {
             return *this | flags{value};
@@ -218,6 +227,12 @@ namespace scl
             return *this ^ flags { value };
         }
 
+        [[nodiscard]]
+        constexpr flags operator-(Enum value) const
+        {
+            return *this - flags{value};
+        }
+
         constexpr flags & operator|=(flags const & other) noexcept { return *this = *this | other; }
 
         constexpr flags & operator&=(flags const & other) noexcept { return *this = *this & other; }
@@ -229,6 +244,10 @@ namespace scl
         constexpr flags & operator&=(Enum value) { return *this = *this & value; }
 
         constexpr flags & operator^=(Enum value) { return *this = *this ^ value; }
+
+        constexpr flags & operator-=(flags const & other) noexcept { return *this = *this - other; }
+
+        constexpr flags & operator-=(Enum value) { return *this = *this - value; }
 
         [[nodiscard]]
         constexpr size_type size() const noexcept
@@ -683,6 +702,13 @@ namespace scl
  */
 
 /**
+ * @fn scl::flags::operator-(flags const & other) const
+ * @brief Returns the difference of the two bitmasks.
+ * @param other  Bitmask to subtract.
+ * @return A bitmask with the flags set here and not in @p other.
+ */
+
+/**
  * @fn scl::flags::operator|(Enum value) const
  * @brief Returns the union with a single flag.
  * @param value  Flag to add.
@@ -703,6 +729,14 @@ namespace scl
  * @brief Returns the symmetric difference with a single flag.
  * @param value  Flag to toggle.
  * @return A copy with @p value toggled.
+ * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
+ */
+
+/**
+ * @fn scl::flags::operator-(Enum value) const
+ * @brief Returns the difference with a single flag.
+ * @param value  Flag to remove.
+ * @return A copy without @p value.
  * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
  */
 
@@ -751,6 +785,21 @@ namespace scl
  * @fn scl::flags::operator^=(Enum value)
  * @brief Toggles a single flag in place.
  * @param value  Flag to toggle.
+ * @return `*this`.
+ * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
+ */
+
+/**
+ * @fn scl::flags::operator-=(flags const & other)
+ * @brief Removes the flags set in @p other in place (difference).
+ * @param other  Bitmask to subtract.
+ * @return `*this`.
+ */
+
+/**
+ * @fn scl::flags::operator-=(Enum value)
+ * @brief Removes a single flag in place.
+ * @param value  Flag to remove.
  * @return `*this`.
  * @throws ::std::out_of_range  If the ordinal is `>= bit_count`.
  */
