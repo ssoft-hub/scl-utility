@@ -157,17 +157,15 @@ int const * r = scl::any_cast<int const>(&value); // и константный �
 Этим аргумент отличается от представления. Представление только читает, поэтому запрос там
 может называть любую квалификацию, но результат всегда получает `const`.
 
+<!-- snippet: example/any/common/any_common_example.cpp write_through_argument -->
 ```cpp
-void bump(scl::any_arg value)
+static void bump(::scl::any_arg value)
 {
-    if (auto * number = scl::any_cast<int>(&value))
-        ++*number;                              // запись видна вызывающей стороне
+    if (auto * number = ::scl::any_cast<int>(&value))
+        ++*number;
+    else
+        ::std::cout << "  refused: the referent is not a writable int\n";
 }
-
-int counter = 0;
-bump(counter);            // counter становится равен 1
-int const frozen = 0;
-bump(frozen);             // запись не выполняется: объект константный, получен nullptr
 ```
 
 Форма со ссылкой выражает тот же выбор ссылочным типом: `any_cast<int &>` пишет,
@@ -313,4 +311,5 @@ scl::any_view stored = value;   // не компилируется
   даёт представление, и сворачивает приведения на этапе компиляции.
 - [any_view](any_view.md) - представление, которое можно хранить
 - [any_switch](any_switch.md) - цепочка ветвей над тем же значением, по ветви на тип
+- [any](any.md) - контейнер, значение которого читают оба представления
 - [Английская документация](../../en/any/any_arg.md)

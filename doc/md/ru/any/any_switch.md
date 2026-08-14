@@ -17,7 +17,7 @@
 `scl::any_switch` сводит это к одному выражению. Тип в ветви называется один раз,
 срабатывает первая подходящая ветвь, а запасная стоит в той же цепочке. Читать цепочка
 может всё, что принимает [`scl::any_arg`](any_arg.md): именованный или временный объект
-известного типа, [`scl::any_view`](any_view.md), а в сборке с RTTI -
+известного типа, [`scl::any_view`](any_view.md), [`scl::any`](any.md), а в сборке с RTTI -
 и `std::any`.
 
 Само значение цепочка не хранит. Методы `in_case` и `or_else` только описывают ветви.
@@ -27,15 +27,17 @@
 положить в переменную, поле или контейнер, вернуть из функции и применить там, где значение
 появится.
 
+<!-- snippet: example/any/common/any_common_example.cpp switch -->
 ```cpp
-constexpr auto matcher = scl::any_switch<std::string>()
-    .in_case<void>("значения нет")
-    .in_case<int>([](int number) { return std::to_string(number); })
-    .in_case<std::string const &>([](std::string const & text) { return text; })
-    .or_else("неизвестно");
-
-std::optional<std::string> result = matcher.apply(value);   // без предварительных проверок
-bool covered = matcher.has_case(value);                     // ветвь не выполняется
+static auto const describe_switch =
+    ::scl::any_switch<::std::string>()
+        .in_case<void>("nothing at all")
+        .in_case<int>([](int number) { return "int " + ::std::to_string(number); })
+        .in_case<::std::string const &>([](::std::string const & text) {
+    return "string \"" + text + "\"";
+}).or_else([](::scl::any_arg other) {
+    return "something else (" + ::std::string{other.type_name()} + ")";
+});
 ```
 
 ## Возможности
@@ -278,4 +280,5 @@ static_assert(doubling.has_case(21));
   аргументом.
 - [any_arg](any_arg.md) - тип, через который каждая ветвь читает значение
 - [any_view](any_view.md) - представление, которое цепочка тоже принимает как значение
+- [any](any.md) - контейнер, значение которого цепочка читает
 - [Английская документация](../../en/any/any_switch.md)

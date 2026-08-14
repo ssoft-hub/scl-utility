@@ -48,10 +48,11 @@ Then include the umbrella header or individual component headers:
 
 ## Components
 
-### Any — non-owning read-only views over `std::any`
+### Any — one erased object, owned or viewed in place
 
 | Component | Header | Description |
 |-----------|--------|-------------|
+| [any](any/any.md) | `<scl/utility/any/any.h>` | Owning holder of one object of any type; no RTTI, usable in constant evaluation, two pointers wide |
 | [any_view](any/any_view.md) | `<scl/utility/any/any_view.h>` | Storable read-only view over a `std::any` or a typed lvalue; accepts lvalues only |
 | [any_arg](any/any_arg.md) | `<scl/utility/any/any_arg.h>` | Parameter-only view that also binds rvalues; valid for the duration of the call |
 | [any_switch](any/any_switch.md) | `<scl/utility/any/any_switch.h>` | Branch chain running one branch, chosen by the type an erased value holds; holds no subject |

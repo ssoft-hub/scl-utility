@@ -42,6 +42,7 @@ static void bar(::scl::any_view value)
 // Pattern 2 — reference-form any_cast: value copy vs zero-copy const reference
 // ============================================================================
 
+//! [reference_cast]
 static void show_reference_cast()
 {
     ::std::string const text{"Hello Any!"};
@@ -56,6 +57,7 @@ static void show_reference_cast()
     ::std::cout << "copy == \"" << copy << "\" (own object)\n";
     ::std::cout << "ref  == \"" << ref << "\" bound to source? " << (&ref == &text) << '\n'; // 1
 }
+//! [reference_cast]
 
 // ============================================================================
 // Pattern 3 — identity queries across both backings and the empty view
@@ -107,6 +109,7 @@ static ::std::string keep(::scl::any_arg value)
 // Pattern 5 — an argument grants write access, a view never does
 // ============================================================================
 
+//! [write_through_argument]
 static void bump(::scl::any_arg value)
 {
     if (auto * number = ::scl::any_cast<int>(&value))
@@ -114,6 +117,7 @@ static void bump(::scl::any_arg value)
     else
         ::std::cout << "  refused: the referent is not a writable int\n";
 }
+//! [write_through_argument]
 
 // ============================================================================
 // Pattern 6 — an argument's casts fold at compile time
@@ -144,6 +148,7 @@ static void show_constant_evaluation()
 
 // The chain holds no subject, so it is built once and applied to as many values
 // as the caller has. Each branch names its type once; the first match runs.
+//! [switch]
 static auto const describe_switch =
     ::scl::any_switch<::std::string>()
         .in_case<void>("nothing at all")
@@ -153,6 +158,7 @@ static auto const describe_switch =
 }).or_else([](::scl::any_arg other) {
     return "something else (" + ::std::string{other.type_name()} + ")";
 });
+//! [switch]
 
 static void show_switch()
 {

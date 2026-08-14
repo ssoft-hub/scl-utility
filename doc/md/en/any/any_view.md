@@ -8,7 +8,7 @@ address and the description of its type.
 
 ## Overview
 
-`scl::any_view` relates to `std::any` the way `std::string_view` relates to
+`scl::any_view` relates to [`scl::any`](any.md) the way `std::string_view` relates to
 `std::string`. A function that has to read a value of an unknown type takes a view and does
 not force the caller to build an owning object. Nothing is copied and nothing is allocated.
 
@@ -123,10 +123,22 @@ The reference form answers the object by value or by const reference, and throws
 `scl::bad_any_cast` when the type does not match. A reference result binds to the object
 without copying it:
 
+<!-- snippet: example/any/common/any_common_example.cpp reference_cast -->
 ```cpp
-std::string copy = scl::any_cast<std::string>(raw);                 // a copy of the value
-std::string const & ref = scl::any_cast<std::string const &>(raw);  // no copy
-// scl::any_cast<std::string &>(raw);   // does not compile: a view never writes
+static void show_reference_cast()
+{
+    ::std::string const text{"Hello Any!"};
+
+    // Bind through a NAMED view: casting `T const &` through a temporary view
+    // would trip GCC's -Wdangling-reference, even though the payload outlives it.
+    ::scl::any_view const view{text};
+
+    auto const copy = ::scl::any_cast<::std::string>(view);          // independent copy
+    auto const & ref = ::scl::any_cast<::std::string const &>(view); // zero-copy reference
+
+    ::std::cout << "copy == \"" << copy << "\" (own object)\n";
+    ::std::cout << "ref  == \"" << ref << "\" bound to source? " << (&ref == &text) << '\n'; // 1
+}
 ```
 
 The reference form is declared only where
@@ -217,5 +229,6 @@ The two limits of the key apply here as well:
   identity queries.
 - [any_arg](any_arg.md) - a view for a method parameter that also grants write access
 - [any_switch](any_switch.md) - a chain of branches that reads a value without a run of casts
+- [any](any.md) - the owning type these views read
 - [type_key](../meta/type_key.md) - the identity key `type_key()` answers with
 - [Russian documentation](../../ru/any/any_view.md)

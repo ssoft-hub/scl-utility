@@ -16,7 +16,7 @@ covering each other or from never running at all.
 `scl::any_switch` reduces that to one expression. A branch names its type once, the first
 matching branch runs, and the fallback stands in the same chain. The chain reads whatever
 [`scl::any_arg`](any_arg.md) accepts: a named or temporary object of a known type, an
-[`scl::any_view`](any_view.md), and in a build with RTTI a
+[`scl::any_view`](any_view.md), an [`scl::any`](any.md), and in a build with RTTI a
 `std::any` as well.
 
 The chain does not store the value. `in_case` and `or_else` only describe branches. `apply`
@@ -25,15 +25,17 @@ run. One chain therefore serves any number of values, none of them has to outliv
 chain itself behaves as an ordinary object: it can be put in a variable, a field or a
 container, returned from a function, and applied wherever the value appears.
 
+<!-- snippet: example/any/common/any_common_example.cpp switch -->
 ```cpp
-constexpr auto matcher = scl::any_switch<std::string>()
-    .in_case<void>("no value")
-    .in_case<int>([](int number) { return std::to_string(number); })
-    .in_case<std::string const &>([](std::string const & text) { return text; })
-    .or_else("unknown");
-
-std::optional<std::string> result = matcher.apply(value);   // no check needed beforehand
-bool covered = matcher.has_case(value);                     // no branch runs
+static auto const describe_switch =
+    ::scl::any_switch<::std::string>()
+        .in_case<void>("nothing at all")
+        .in_case<int>([](int number) { return "int " + ::std::to_string(number); })
+        .in_case<::std::string const &>([](::std::string const & text) {
+    return "string \"" + text + "\"";
+}).or_else([](::scl::any_arg other) {
+    return "something else (" + ::std::string{other.type_name()} + ")";
+});
 ```
 
 ## Features
@@ -266,4 +268,5 @@ does.
   a working example: one chain instead of a run of casts, over a view and over an argument.
 - [any_arg](any_arg.md) - the type every branch reads the value through
 - [any_view](any_view.md) - the view the chain also accepts as a value
+- [any](any.md) - the owning type whose value the chain reads
 - [Russian documentation](../../ru/any/any_switch.md)

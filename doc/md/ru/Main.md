@@ -49,10 +49,11 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 ## Компоненты
 
-### Any — невладеющие read-only представления над `std::any`
+### Any — один стёртый объект: во владении или по месту
 
 | Компонент | Заголовок | Описание |
 |-----------|-----------|----------|
+| [any](any/any.md) | `<scl/utility/any/any.h>` | Владелец одного объекта любого типа; без RTTI, работает на этапе компиляции, шириной в два указателя |
 | [any_view](any/any_view.md) | `<scl/utility/any/any_view.h>` | Хранимое read-only представление над `std::any` или типизированным lvalue; принимает только lvalue |
 | [any_arg](any/any_arg.md) | `<scl/utility/any/any_arg.h>` | Представление для позиции параметра, принимает и rvalue; действительно в пределах вызова |
 | [any_switch](any/any_switch.md) | `<scl/utility/any/any_switch.h>` | Цепочка ветвей: выполняет одну ветвь, выбранную по фактическому типу значения; само значение не хранит |
