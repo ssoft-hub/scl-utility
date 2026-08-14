@@ -110,6 +110,18 @@ namespace scl
             : base_type{view.object(), view.const_descriptor()}
         {}
 
+        // Unwrapped to its content, bound with the constness of the any it was taken from.
+        template <typename AnyType>
+        // cppcheck-suppress noExplicitConstructor
+        // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): binds, never forwards
+        constexpr any_argument(AnyType && owner SCL_LIFETIMEBOUND) noexcept
+            requires(::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<AnyType>>)
+            : base_type{owner.viewed_object(),
+                  ::std::is_const_v<::std::remove_reference_t<AnyType>>
+                      ? owner.viewed_const_descriptor()
+                      : owner.viewed_descriptor()}
+        {}
+
         // Spelled once per branch rather than as one declaration with the anchor
         // conditioned inside it: the parameter list is what differs, and a reader should
         // see each form whole.
@@ -119,7 +131,8 @@ namespace scl
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
         constexpr any_argument(Type && object SCL_LIFETIMEBOUND) noexcept
             requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
+            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>) &&
+            (!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<Type>>)
             // With the recovery constant-evaluable on its own, the binding is the plain one
             // a view makes, and every restriction the anchor imposed on where an `any_arg`
             // may sit goes with it.
@@ -140,7 +153,8 @@ namespace scl
 #endif
             ) noexcept
             requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
+            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>) &&
+            (!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<Type>>)
             // Only constant evaluation needs the anchor, and only constant evaluation takes
             // it. The anchor dies with the full expression that made it, which spans the
             // call it was made for and nothing beyond; at run time the descriptor is the
@@ -175,6 +189,7 @@ namespace scl
         // An explicit object parameter in the base deduces this type, not the base, and
         // private inheritance would otherwise refuse that conversion.
         friend class ::scl::detail::any_base;
+        friend struct ::scl::detail::any_handle_access;
 
         template <typename Type>
         friend constexpr Type * scl::any_cast(any_argument const * arg) noexcept
@@ -475,6 +490,23 @@ namespace scl
  *
  * @param view  The view whose referent to adopt; the argument refers to the
  *              same object, not to the view.
+ */
+
+/**
+ * @fn scl::any_argument::any_argument(AnyType && owner)
+ * @brief Binds the object an owning any holds, rather than the any itself.
+ *
+ * The binding records the constness of the any it was made from: a non-`const`
+ * any is bound for writing, a `const` one for reading only, the same rule every
+ * other binding here obeys.
+ *
+ * @tparam AnyType  Deduced @ref scl::basic_any specialization, with its own
+ *                  cv-ref qualification.
+ * @param  owner  The any whose content is bound.
+ *
+ * @note @ref scl::any_cast through this binding is a run-time operation: the
+ *       content is reached as `void *`, which no anchor can make
+ *       constant-evaluable, exactly as for the `std::any` backing.
  */
 
 /**
