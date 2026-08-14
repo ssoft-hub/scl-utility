@@ -19,7 +19,7 @@
 
 namespace scl::detail
 {
-    using any_view_name = ::std::string_view;
+    using any_name = ::std::string_view;
 
     enum class any_qualifier : unsigned char
     {
@@ -74,20 +74,20 @@ namespace scl::detail
     }
 
     // Per cv-ref form of a referent; how a value was bound never changes its type.
-    struct any_view_descriptor
+    struct any_type_descriptor
     {
         // One key object per bare type, so identity is a pointer comparison within a module.
         ::scl::type_key const * type;
         any_qualifier qualifiers;
         // Already-const forms point at themselves, which terminates the chain.
-        any_view_descriptor const * as_const;
+        any_type_descriptor const * as_const;
     };
 
     template <typename Type>
-    inline constexpr any_view_descriptor any_view_descriptor_of{
+    inline constexpr any_type_descriptor any_type_descriptor_of{
         .type = &::scl::type_key_of<::std::remove_cvref_t<Type>>(),
         .qualifiers = any_qualifiers_of<Type>(),
-        .as_const = &any_view_descriptor_of<::std::remove_reference_t<Type> const &>};
+        .as_const = &any_type_descriptor_of<::std::remove_reference_t<Type> const &>};
 
 #if SCL_HAS_RTTI
     template <typename Type>
@@ -102,8 +102,8 @@ namespace scl::detail
     class any_base
     {
     public:
-        using descriptor_type = any_view_descriptor;
-        using name = any_view_name;
+        using descriptor_type = any_type_descriptor;
+        using name = any_name;
 
     private:
         void const volatile * m_object = nullptr;

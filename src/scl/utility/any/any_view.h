@@ -45,7 +45,7 @@ namespace scl
 #if SCL_HAS_RTTI || defined(DOXYGEN)
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(::std::any const & value SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
-            : base_type{::std::addressof(value), &detail::any_view_descriptor_of<::std::any const &>}
+            : base_type{::std::addressof(value), &detail::any_type_descriptor_of<::std::any const &>}
         {}
 
         any_view(::std::any const &&) = delete;
@@ -56,7 +56,7 @@ namespace scl
         constexpr any_view(Type & object SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*): implicit view by design
             requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
-            : base_type{::std::addressof(object), &detail::any_view_descriptor_of<Type &>}
+            : base_type{::std::addressof(object), &detail::any_type_descriptor_of<Type &>}
         {}
 
         // Only the view's own copy escapes the refusal.

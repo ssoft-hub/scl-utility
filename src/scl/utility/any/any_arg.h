@@ -49,12 +49,12 @@ namespace scl::detail
     // made for. Being a descriptor is what keeps the view two pointers wide - the one it
     // already spends on a descriptor does for both.
     template <typename Type>
-    struct any_anchor : any_view_descriptor
+    struct any_anchor : any_type_descriptor
     {
         // Spelled out rather than left to aggregate initialisation, which would also admit
         // a default-constructed anchor - one describing no type at all.
-        constexpr explicit any_anchor(any_view_descriptor const & descriptor) noexcept
-            : any_view_descriptor{descriptor}
+        constexpr explicit any_anchor(any_type_descriptor const & descriptor) noexcept
+            : any_type_descriptor{descriptor}
         {}
 
         // Named for what it holds rather than `object`, which any_base already spells as
@@ -99,7 +99,7 @@ namespace scl
         constexpr any_argument(Any && value SCL_LIFETIMEBOUND) noexcept
             requires(detail::is_std_any_v<::std::remove_cvref_t<Any>>) &&
             (!::std::is_volatile_v<::std::remove_reference_t<Any>>)
-            : base_type{::std::addressof(value), &detail::any_view_descriptor_of<::std::remove_reference_t<Any> &>}
+            : base_type{::std::addressof(value), &detail::any_type_descriptor_of<::std::remove_reference_t<Any> &>}
         {}
 #endif
 
@@ -123,7 +123,7 @@ namespace scl
             // With the recovery constant-evaluable on its own, the binding is the plain one
             // a view makes, and every restriction the anchor imposed on where an `any_arg`
             // may sit goes with it.
-            : base_type{::std::addressof(object), &detail::any_view_descriptor_of<::std::remove_reference_t<Type> &>}
+            : base_type{::std::addressof(object), &detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
         {}
 #else
         template <typename Type>
@@ -136,7 +136,7 @@ namespace scl
             // an implementation detail of constant evaluation, never something to pass.
             ,
             detail::any_anchor<::std::remove_cvref_t<Type>> const & anchor = detail::any_anchor<
-                ::std::remove_cvref_t<Type>>{detail::any_view_descriptor_of<::std::remove_reference_t<Type> &>}
+                ::std::remove_cvref_t<Type>>{detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
 #endif
             ) noexcept
             requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
@@ -148,7 +148,7 @@ namespace scl
             : base_type{::std::addressof(object),
                   ::std::is_constant_evaluated()
                       ? static_cast<base_type::descriptor_type const *>(::std::addressof(anchor))
-                      : &detail::any_view_descriptor_of<::std::remove_reference_t<Type> &>}
+                      : &detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
         {
             // The qualifiers dropped here are restored by any_cast, which hands out a
             // pointer only once binding_accepts() has proved the request covers them.
