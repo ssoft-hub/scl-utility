@@ -37,7 +37,8 @@ namespace
     concept arg_castable = requires(::scl::any_arg arg) { ::scl::any_cast<Type>(arg); };
 
     template <typename Type>
-    concept arg_ptr_castable = requires(::scl::any_arg const * arg) { ::scl::any_cast<Type>(arg); };
+    concept arg_ptr_castable =
+        requires(::scl::any_argument const * arg) { ::scl::any_cast<Type>(arg); };
 
     template <typename Type>
     concept arg_from_lvalue = requires(Type & object) { ::scl::any_arg{object}; };
@@ -79,6 +80,14 @@ namespace
     {
         return ::scl::any_cast<double const>(&argument) == nullptr;
     }
+
+    int received_id(::scl::any_arg argument) noexcept
+    {
+        auto const * reached = ::scl::any_cast<counted const>(&argument);
+        return (reached != nullptr) ? reached->id : -1;
+    }
+
+    int delegated_id(::scl::any_arg argument) noexcept { return received_id(argument); }
 
     constexpr int read_lvalue_argument() noexcept
     {
@@ -124,22 +133,18 @@ namespace
         }(value);
     }
 
-    // A const handle cannot escalate to a write either, anchor or no anchor.
-    constexpr bool const_handle_refuses_write() noexcept
+    constexpr bool empty_view_adopts_empty(::scl::any_arg argument) noexcept
     {
-        int value = 42;
-        return [](::scl::any_arg const argument) noexcept {
-            return ::scl::any_cast<int>(&argument) == nullptr && ::scl::any_cast<int const>(&argument) != nullptr;
-        }(value);
+        return !argument.has_value() && argument.type_name().empty();
     }
 
-    // Delegation: the copy keeps the caller's anchor, which is still alive.
+    // Delegation: the next call binds the same argument, whose anchor is still alive.
     constexpr int delegated_read(::scl::any_arg argument) noexcept
     {
         return read_argument(argument);
     }
 
-    constexpr bool identity_holds(::scl::any_arg const argument) noexcept
+    constexpr bool identity_holds(::scl::any_arg argument) noexcept
     {
         return argument.has_value() && argument.type_name() == ::scl::type_name<int>() &&
             argument.type_key() == &::scl::type_key_of<int>();
@@ -151,7 +156,7 @@ namespace
     bool identity_holds_on_local() noexcept
     {
         int const probe = 42;
-        ::scl::any_arg const argument{probe};
+        ::scl::any_arg argument{probe};
 
         return argument.has_value() && argument.type_name() == ::scl::type_name<int>() &&
             argument.type_key() == &::scl::type_key_of<int>();
@@ -165,7 +170,7 @@ namespace
     constexpr int read_local_argument() noexcept
     {
         int const probe = 21;
-        ::scl::any_arg const argument{probe};
+        ::scl::any_arg argument{probe};
         auto const * reached = ::scl::any_cast<int const>(&argument);
 
         return (reached != nullptr) ? *reached * 2 : -1;
@@ -173,7 +178,7 @@ namespace
 
     constexpr int read_adopted_argument(::scl::any_view const view) noexcept
     {
-        ::scl::any_arg const argument{view};
+        ::scl::any_arg argument{view};
         auto const * reached = ::scl::any_cast<int const>(&argument);
 
         return (reached != nullptr) ? *reached * 2 : -1;
@@ -217,15 +222,17 @@ TEST(AnyArgTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(arg_from_lvalue<::std::any volatile>);
 #endif
 
-    // Storage is discouraged at the API level: no default state, no rebinding.
-    STATIC_EXPECT_FALSE(::std::is_default_constructible_v<::scl::any_arg>);
-    STATIC_EXPECT_FALSE(::std::is_copy_assignable_v<::scl::any_arg>);
-    STATIC_EXPECT_FALSE(::std::is_move_assignable_v<::scl::any_arg>);
-    STATIC_EXPECT_TRUE(::std::is_copy_constructible_v<::scl::any_arg>);
-    STATIC_EXPECT_TRUE(::std::is_trivially_copyable_v<::scl::any_arg>);
+    // A reference to a class nothing can copy: a container, a data member and `auto`
+    // all refuse it.
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::any_arg, ::scl::any_argument const &>));
+    STATIC_EXPECT_FALSE(::std::is_default_constructible_v<::scl::any_argument>);
+    STATIC_EXPECT_FALSE(::std::is_copy_constructible_v<::scl::any_argument>);
+    STATIC_EXPECT_FALSE(::std::is_move_constructible_v<::scl::any_argument>);
+    STATIC_EXPECT_FALSE(::std::is_copy_assignable_v<::scl::any_argument>);
+    STATIC_EXPECT_FALSE(::std::is_move_assignable_v<::scl::any_argument>);
     // Two pointers, as a view: what makes a cast constant-evaluable is a descriptor too,
     // so it rides in the pointer the view already spends on one.
-    STATIC_EXPECT_TRUE(sizeof(::scl::any_arg) == 2 * sizeof(void *));
+    STATIC_EXPECT_TRUE(sizeof(::scl::any_argument) == 2 * sizeof(void *));
     STATIC_EXPECT_TRUE(sizeof(::scl::any_view) == 2 * sizeof(void *));
 
     // Unlike any_view, an argument grants write access — and only an argument does.
@@ -241,10 +248,9 @@ TEST(AnyArgTest, CompileTimeGuards)
 
     // No conversion to a view in any qualification: a view may be stored and an argument
     // may not, so one is never obtained from the other.
-    STATIC_EXPECT_FALSE((::std::is_convertible_v<::scl::any_arg, ::scl::any_view>));
-    STATIC_EXPECT_FALSE((::std::is_convertible_v<::scl::any_arg &, ::scl::any_view>));
-    STATIC_EXPECT_FALSE((::std::is_convertible_v<::scl::any_arg const &, ::scl::any_view>));
-    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::any_view, ::scl::any_arg &>));
+    STATIC_EXPECT_FALSE((::std::is_convertible_v<::scl::any_argument &, ::scl::any_view>));
+    STATIC_EXPECT_FALSE((::std::is_convertible_v<::scl::any_argument const &, ::scl::any_view>));
+    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::any_view, ::scl::any_argument &>));
 
     // The other direction stays: a view hands its referent to an argument.
     STATIC_EXPECT_TRUE((::std::is_convertible_v<::scl::any_view &, ::scl::any_arg>));
@@ -279,7 +285,6 @@ TEST(AnyArgTest, ConstexprCastObeysQualifierCoverage)
     // the coverage check, never instead of it.
     STATIC_EXPECT_TRUE(const_referent_refuses_write());
     STATIC_EXPECT_TRUE(volatile_referent_needs_volatile());
-    STATIC_EXPECT_TRUE(const_handle_refuses_write());
 }
 
 TEST(AnyArgTest, ConstexprWriteReachesTheCallersObject)
@@ -325,7 +330,7 @@ TEST(AnyArgTest, LvalueArgumentCasts)
     ASSERT_NE(::scl::any_cast<counted>(&arg), nullptr); // pointer form
     EXPECT_EQ(::scl::any_cast<counted>(&arg)->id, 9);
     EXPECT_EQ(::scl::any_cast<double>(&arg), nullptr);
-    EXPECT_EQ(::scl::any_cast<int>(static_cast<::scl::any_arg const *>(nullptr)), nullptr);
+    EXPECT_EQ(::scl::any_cast<int>(static_cast<::scl::any_argument const *>(nullptr)), nullptr);
 
     EXPECT_EQ(&::scl::any_cast<counted const &>(arg), &value); // binds to the original
     EXPECT_EQ(counted::copies, 0);
@@ -347,7 +352,7 @@ TEST(AnyArgTest, ConstructsFromAnyView)
 {
     counted value{6};
     ::scl::any_view const view{value};
-    ::scl::any_arg const arg{view}; // adopts the referent, not the view object
+    ::scl::any_arg arg{view}; // adopts the referent, not the view object
 
     EXPECT_EQ(::scl::any_cast<counted const>(&arg), &value);
     EXPECT_EQ(arg.type_name(), ::scl::type_name<counted>());
@@ -367,10 +372,9 @@ TEST(AnyArgTest, AdoptedAnyViewStaysReadOnly)
 TEST(AnyArgTest, AdoptedFromEmptyAnyView)
 {
     constexpr ::scl::any_view empty{};
-    constexpr ::scl::any_arg arg{empty};
+    ::scl::any_arg arg{empty};
 
-    STATIC_EXPECT_FALSE(arg.has_value());
-    STATIC_EXPECT_TRUE(arg.type_name().empty());
+    STATIC_EXPECT_TRUE(empty_view_adopts_empty(::scl::any_view{}));
     EXPECT_EQ(::scl::any_cast<int const>(&arg), nullptr);
     EXPECT_THROW((void)::scl::any_cast<int &>(arg), ::scl::bad_any_cast);
 }
@@ -380,7 +384,7 @@ TEST(AnyArgTest, AdoptedFromEmptyAnyView)
 TEST(AnyArgTest, StdAnyBackingCast)
 {
     ::std::any const boxed{::std::string{"hello"}};
-    ::scl::any_arg const arg{boxed};
+    ::scl::any_arg arg{boxed};
 
     EXPECT_TRUE(arg.has_value());
     EXPECT_EQ(arg.type_name(), ::scl::type_name<::std::any>()); // names the backing, not the boxed type
@@ -410,7 +414,7 @@ TEST(AnyArgTest, MutableAccessThroughNonConstStdAny)
 TEST(AnyArgTest, MutableAccessRefusedOnConstStdAny)
 {
     ::std::any const boxed{::std::string{"frozen"}};
-    ::scl::any_arg const arg{boxed};
+    ::scl::any_arg arg{boxed};
 
     EXPECT_EQ(::scl::any_cast<::std::string>(&arg), nullptr);
     EXPECT_EQ(*::scl::any_cast<::std::string const>(&arg), "frozen");
@@ -421,7 +425,7 @@ TEST(AnyArgTest, MutableAccessRefusedOnStdAnyThroughAnyView)
 {
     ::std::any boxed{::std::string{"frozen"}};
     ::scl::any_view const view{boxed};
-    ::scl::any_arg const arg{view};
+    ::scl::any_arg arg{view};
 
     EXPECT_EQ(::scl::any_cast<::std::string>(&arg), nullptr);
     EXPECT_EQ(*::scl::any_cast<::std::string const>(&arg), "frozen");
@@ -449,7 +453,7 @@ TEST(AnyArgTest, TemporaryStdAnyReadWithinCall)
 TEST(AnyArgTest, ViewOverEmptyStdAny)
 {
     ::std::any const empty_any{};
-    ::scl::any_arg const arg{empty_any};
+    ::scl::any_arg arg{empty_any};
 
     EXPECT_FALSE(arg.has_value());
     EXPECT_EQ(arg.type_name(), ::scl::type_name<::std::any>());
@@ -499,7 +503,7 @@ TEST(AnyArgTest, MutableAccessRefusedOnQualifiedReferent)
 TEST(AnyArgTest, MutableAccessRejectsTypeMismatch)
 {
     counted value{1};
-    ::scl::any_arg const arg{value};
+    ::scl::any_arg arg{value};
 
     EXPECT_EQ(::scl::any_cast<double>(&arg), nullptr);
     EXPECT_THROW((void)::scl::any_cast<double &>(arg), ::scl::bad_any_cast);
@@ -522,7 +526,7 @@ TEST(AnyArgTest, VolatileSurvivesAdoptionFromAnyView)
 {
     int volatile value = 5;
     ::scl::any_view const view{value};
-    ::scl::any_arg const adopted{view};
+    ::scl::any_arg adopted{view};
 
     // The const-qualified form keeps volatile: a plain read would drop it.
     EXPECT_EQ(::scl::any_cast<int const>(&adopted), nullptr);
@@ -539,53 +543,9 @@ TEST(AnyArgTest, RvalueBoundReferentWritableUnlessConst)
     EXPECT_FALSE(writes(static_cast<counted const>(counted{1})));
 }
 
-TEST(AnyArgTest, ConstHandleRefusesWriteRegardlessOfReferent)
+TEST(AnyArgTest, ArgumentPassesOnToAnotherCall)
 {
-    // The handle's own const is a qualifier too: it must be covered by the request just
-    // like the referent's, so a const any_arg cannot escalate to a write the handle
-    // itself does not carry — even over an otherwise unqualified referent.
-    counted value{1};
-    ::scl::any_arg const arg{value};
+    counted value{7};
 
-    EXPECT_EQ(::scl::any_cast<counted>(&arg), nullptr);
-    ASSERT_NE(::scl::any_cast<counted const>(&arg), nullptr);
-    EXPECT_EQ(::scl::any_cast<counted const>(&arg)->id, 1);
-    EXPECT_THROW((void)::scl::any_cast<counted &>(arg), ::scl::bad_any_cast);
-}
-
-TEST(AnyArgTest, NonConstHandleStillWrites)
-{
-    // Confirms the const-handle refusal above is specific to const, not a general
-    // regression: a non-const handle over the same kind of referent still writes.
-    counted value{1};
-    ::scl::any_arg arg{value};
-
-    auto * p = ::scl::any_cast<counted>(&arg);
-    ASSERT_NE(p, nullptr);
-    p->id = 9;
-    EXPECT_EQ(value.id, 9);
-}
-
-TEST(AnyArgTest, VolatileHandleRequiresVolatileRequest)
-{
-    // Symmetric with the const case: the handle's own volatile is a qualifier the
-    // request must cover too, independent of the referent's own qualifiers.
-    counted value{1};
-    ::scl::any_arg volatile arg{value};
-
-    EXPECT_EQ(::scl::any_cast<counted>(&arg), nullptr);
-    auto * p = ::scl::any_cast<counted volatile>(&arg);
-    ASSERT_NE(p, nullptr);
-    p->id = 5; // volatile handle, unqualified referent: still writable once covered
-    EXPECT_EQ(value.id, 5);
-}
-
-TEST(AnyArgTest, ConstVolatileHandleRefusesWrite)
-{
-    counted value{1};
-    ::scl::any_arg const volatile arg{value};
-
-    EXPECT_EQ(::scl::any_cast<counted volatile>(&arg), nullptr); // volatile alone: still const-refused
-    ASSERT_NE(::scl::any_cast<counted const volatile>(&arg), nullptr);
-    EXPECT_EQ(::scl::any_cast<counted const volatile>(&arg)->id, 1);
+    EXPECT_EQ(delegated_id(value), 7);
 }

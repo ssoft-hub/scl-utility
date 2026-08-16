@@ -237,8 +237,8 @@ argument. When building the value is expensive, pass a callable instead.
 A chain stays a literal type as long as its branches are literal. The value reaches `apply` as
 a parameter, that is, where the cast of [`any_arg`](any_arg.md#constant-evaluation) already
 folds at compile time on C++20. A chain declared `constexpr` and applied in a constant
-expression therefore selects and runs a branch at compile time, free of the limits a stored
-`any_arg` carries:
+expression therefore selects and runs a branch at compile time, free of the limits an
+`any_arg` in a local variable carries:
 
 ```cpp
 constexpr auto doubling = scl::any_switch<int>()

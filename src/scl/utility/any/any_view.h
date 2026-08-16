@@ -25,7 +25,7 @@
 namespace scl
 {
     class any_view;
-    class any_arg;
+    class any_argument;
 
     // Never std::bad_any_cast under RTTI: a base type that depends on SCL_HAS_RTTI
     // is an ODR trap for a binary linking RTTI and -fno-rtti translation units.
@@ -70,13 +70,13 @@ namespace scl
         using base_type::type_name;
 
     private:
-        // any_arg reaches this to hand over a referent it already narrowed with
+        // An argument reaches this to hand over a referent it already narrowed with
         // any_base::const_descriptor.
         constexpr explicit any_view(void const volatile * object, base_type::descriptor_type const * descriptor) noexcept
             : base_type{object, descriptor}
         {}
 
-        friend class ::scl::any_arg;
+        friend class ::scl::any_argument;
 
         // An explicit object parameter in the base deduces this type, not the base, and
         // private inheritance would otherwise refuse that conversion.

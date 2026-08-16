@@ -1,15 +1,16 @@
 # Any arg
 
 `scl::any_arg` refers to an existing object whose type is known only at run time, and is
-meant for a method parameter. A function takes it by value to read - and sometimes to
-modify - an argument of an unknown type, copying nothing and allocating nothing.
+meant for a method parameter. A function declares a parameter with it to read - and
+sometimes to modify - an argument of an unknown type, copying nothing and allocating
+nothing.
 
 - Header: `#include <scl/utility/any/any_arg.h>`
 
 ## Overview
 
 `scl::any_arg` complements [`scl::any_view`](any_view.md). Both refer to someone else's
-object, cost two pointers and are trivially copyable, but they serve different places.
+object and cost two pointers, but they serve different places.
 
 A view can be stored: put in a field, in a container, returned from a function. That is why
 it accepts a named object only. Were it to bind a temporary, it would outlive that temporary
@@ -19,21 +20,32 @@ An argument cannot be stored, and in exchange it binds both a named object and a
 one. A temporary passed into a call lives until that call ends, so a parameter uses it
 safely.
 
-Hence the question: could one type serve both roles, with the difference expressed by
-`const`, as `any_arg const`? No, for three reasons.
+### An argument arrives as a reference
 
-First, `const` on a by-value parameter is not part of the type of the function. The
-declarations `void f(any_arg)` and `void f(any_arg const)` describe the same function, so
-the signature does not tell the caller whether the function reads the argument or writes to
-it. The type system checks the difference between `f(any_view)` and `f(any_arg)`; it does
-not check a difference in `const`.
+`scl::any_arg` is not a class but a name for the reference `scl::any_argument const &`. The
+class is called `scl::any_argument`, and a parameter is written with the short name:
 
-Second, `any_view` refuses a temporary on every compiler, while `const any_arg` binds one.
-The warning that the reference will dangle comes from Clang alone; GCC and MSVC compile such
-code silently.
+```cpp
+void foo(scl::any_arg value);
+```
 
-Third, a `const any_arg` cannot be put in a field: a field needs assignment, and `const`
-forbids it. A non-const `any_arg` in a field would open write access again.
+The reference is what turns the ban on storing into a rule of the language. A container of
+references cannot be declared, so `std::vector<scl::any_arg>` and
+`std::optional<scl::any_arg>` do not compile. The class itself forbids copying and moving,
+so neither a data member of that type nor `auto copy = value;` compiles either. No copy is
+needed: passing an argument on binds one more reference to the same object.
+
+Narrowing the rights with `const` does not work. A qualifier written on a name that already
+stands for a reference is dropped, so `scl::any_arg const` is the same `scl::any_arg`, and
+Clang reports it as `-Wignored-reference-qualifiers`. A function that only reads declares
+its parameter as [`scl::any_view`](any_view.md), and then the restriction is visible to the
+caller, because the types differ.
+
+Two openings the language still leaves: a reference data member,
+`scl::any_argument const & kept;`, and a function returning `scl::any_arg`. Any C++
+reference behaves that way. The constructor parameters carry a lifetime-binding attribute,
+so Clang warns when an argument leaves the scope where the object it refers to lives. To
+keep the value, copy it out.
 
 `any_arg` refers to the same things a view does: to a typed object directly, without RTTI,
 or to a `std::any` - the latter in builds with RTTI only. A view passed to it hands over its
@@ -41,17 +53,16 @@ object, so the argument refers to that object rather than to the view. Identity 
 behave identically on both types.
 
 The access rights of an argument are wider. A view only reads. An argument always reads, and
-writes when it was bound to an object carrying neither `const` nor `volatile`.
-
-The interface itself discourages storing an argument: `scl::any_arg` has neither a default
-constructor nor assignment. The copy constructor remains, because passing a parameter by
-value needs it. The constructor parameters carry a lifetime-binding attribute, so Clang
-warns when an argument leaves the scope where the object it refers to lives.
+writes when it was bound to an object carrying neither `const` nor `volatile`. Nothing else
+affects the rights: an argument always arrives through a const reference, so its own
+constness takes no part in the check.
 
 ## Features
 
 - Binds both a named and a temporary object of any constness - safe for a parameter.
-- Owns nothing, costs two pointers and is trivially copyable.
+- Owns nothing and costs two pointers.
+- Refuses to be stored: a container of references cannot be declared, and the class behind
+  the short name forbids copying and moving.
 - Refers to the same sources as a view and answers the same identity queries; they run
   during constant evaluation on the C++20 baseline.
 - Hands out a pointer through `any_cast<T>(arg *)`; a type mismatch answers `nullptr` and
@@ -82,8 +93,7 @@ foo(view);                        // takes the object of the view, not the view 
 
 An `any_arg` cannot be declared without an argument: there is no default constructor. There
 is no assignment either, so an empty instance would stay empty forever - nothing could fill
-it. Copying is available, since the copy constructor is what passes a parameter by value.
-The binding is fixed once, at construction, and never changes afterwards.
+it. The binding is fixed once, at construction, and never changes afterwards.
 
 `has_value()` may still answer `false`. That is what an argument bound to an empty
 `std::any`, or one that took the object of an empty view, answers: the argument was passed,
@@ -126,8 +136,7 @@ The reference and value forms are declared only where
 [`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `1`. With exceptions turned off the
 pointer form remains, and it already reports a mismatch.
 
-To keep a value past the call, copy it out. Do not hold the `any_arg` itself, or a view
-obtained from it, when the argument was bound to a temporary.
+To keep a value past the call, copy it out.
 
 ### Writing
 
@@ -168,23 +177,13 @@ the `std::any` itself is non-const. A `volatile std::any` is not supported, beca
 `std::any` has no `volatile`-qualified members and `std::any_cast` does not accept a
 pointer to `volatile`.
 
-Coverage applies to the argument itself, not only to the object. The `const` and `volatile`
-qualifiers of an `any_arg` variable have to be requested as well. A `const any_arg`
-therefore grants no write, even when the object inside carries no qualifiers at all:
+Coverage looks at the binding alone. An argument's own representation takes no part in it:
+an argument always arrives through a const reference, and were that constness added to the
+qualifiers of the object, no write would ever pass.
 
-```cpp
-int value = 0;
-scl::any_arg const arg{value};
-
-scl::any_cast<int>(&arg);         // nullptr: the argument is const, the request misses it
-scl::any_cast<int const>(&arg);   // reads normally
-```
-
-A `volatile any_arg` symmetrically demands `volatile` in the request, whatever the
-qualifiers of the object are.
-
-A view grants no write at all. The implicit conversion from `any_arg` to `any_view` does not
-open one, so a view stays strictly read-only.
+A view grants no write at all. An argument that took the object of an
+[`any_view`](any_view.md) receives it narrowed to reading, so a view stays strictly
+read-only.
 
 ### Constant evaluation
 
@@ -215,13 +214,13 @@ for. A function parameter is precisely such an entity, which is why a view - sto
 long as one likes - cannot work this way.
 
 The anchor takes part in constant evaluation only. At run time the constructor records the
-static type description, so an `any_arg` in any position - a local variable, a field -
-behaves exactly as it would without this machinery.
+static type description, so a local variable of type `any_arg` behaves exactly as it would
+without this machinery.
 
 The limits follow from that.
 
-- The argument has to be a **parameter**. If an `any_arg` is declared as a local variable, a
-  field or a member of an aggregate, the anchor is already destroyed by the time of the
+- The argument has to be a **parameter**. If an `any_arg` is declared as a local variable
+  bound to an argument built on the spot, the anchor is already destroyed by the time of the
   cast. The cast - and with it the identity query - then stops with a compiler diagnostic
   rather than answering something wrong. Only Clang diagnoses this reliably: GCC and MSVC
   extend the lifetime of the temporary further and accept such code, so do not take their
@@ -270,15 +269,15 @@ C++26.
 
 ### Passing the value on
 
-An argument is passed on as an argument: it is copyable, and the copy refers to the same
-object.
+An argument is passed on as an argument: the next call binds one more reference to the same
+object, and no copy is made.
 
 ```cpp
 void inner(scl::any_arg value);
 
 void foo(scl::any_arg value)
 {
-    inner(value);   // a copy of the argument, the same object
+    inner(value);   // one more reference to the same object
 }
 ```
 

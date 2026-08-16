@@ -293,7 +293,7 @@ namespace scl
         template <typename BranchTuple, ::std::size_t... Index>
         static constexpr void select(/**/
             BranchTuple & branches,
-            any_arg & subject,
+            any_arg subject,
             storage_type & result,
             ::std::index_sequence<Index...> /*indices*/)
         {
@@ -302,8 +302,8 @@ namespace scl
         }
 
         template <::std::size_t... Index>
-        constexpr bool
-        covered(any_arg & subject, ::std::index_sequence<Index...> /*indices*/) const noexcept
+        [[nodiscard]]
+        constexpr bool covered(any_arg subject, ::std::index_sequence<Index...> /*indices*/) const noexcept
         {
             return (matches<Index>(subject) || ...);
         }
@@ -311,7 +311,8 @@ namespace scl
         // Selection alone, with no handler in sight: this is what makes has_case answer
         // without a side effect, and it is the same test apply performs.
         template <::std::size_t Index>
-        constexpr bool matches(any_arg & subject) const noexcept
+        [[nodiscard]]
+        constexpr bool matches(any_arg subject) const noexcept
         {
             using case_type = typename ::std::tuple_element_t<Index, branches_type>::case_type;
 
@@ -325,7 +326,7 @@ namespace scl
         }
 
         template <::std::size_t Index, typename BranchTuple>
-        static constexpr bool run(BranchTuple & branches, any_arg & subject, storage_type & result)
+        static constexpr bool run(BranchTuple & branches, any_arg subject, storage_type & result)
         {
             using branch = ::std::tuple_element_t<Index, branches_type>;
             using case_type = branch::case_type;

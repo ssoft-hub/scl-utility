@@ -92,7 +92,8 @@ static void describe(::scl::any_arg value)
 
 static void log_any(::scl::any_arg value)
 {
-    ::std::cout << "  delegated, has_value=" << value.has_value() << '\n';
+    ::std::cout << "  logged, has_value=" << value.has_value() << '\n';
+    describe(value); // passing an argument on binds another reference to the same object
 }
 
 static ::std::string keep(::scl::any_arg value)
@@ -207,7 +208,7 @@ int main(int, char **)
 #endif
 
     ::std::cout << "\n=== Delegation onward ===\n";
-    log_any(::std::string{"delegated"}); // the argument is copied, the referent is not
+    log_any(::std::string{"delegated"});
 
     ::std::cout << "\n=== Copying a value out of a temporary ===\n";
     ::std::cout << "  kept == \"" << keep(::std::string{"kept beyond the call"}) << "\"\n";
