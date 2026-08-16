@@ -59,9 +59,10 @@ namespace scl
             : base_type{::std::addressof(object), &detail::any_view_descriptor_of<Type &>}
         {}
 
+        // Only the view's own copy escapes the refusal.
         template <typename Type>
         any_view(Type const &&)
-            requires(!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
+            requires(!::std::same_as<::std::remove_cvref_t<Type>, any_view>)
         = delete;
 
     public:

@@ -80,6 +80,9 @@ TEST(AnyViewTest, CompileTimeGuards)
     STATIC_EXPECT_TRUE(view_from_rvalue<::scl::any_view>);
     STATIC_EXPECT_TRUE(view_from_rvalue<::scl::any_view const>);
 
+    // An argument may not be stored, so a view is never made out of one.
+    STATIC_EXPECT_FALSE(view_from_lvalue<::scl::any_argument>);
+
     // Two pointers wide and trivially copyable, as documented.
     STATIC_EXPECT_TRUE(sizeof(::scl::any_view) == 2 * sizeof(void *));
     STATIC_EXPECT_TRUE(::std::is_trivially_copyable_v<::scl::any_view>);
