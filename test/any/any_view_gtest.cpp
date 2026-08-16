@@ -217,6 +217,25 @@ TEST(AnyViewTest, StdAnyBackingCast)
     EXPECT_THROW((void)::scl::any_cast<int>(view), ::scl::bad_any_cast);
 }
 
+TEST(AnyViewTest, StdAnyBackingAnswersTheBoxItself)
+{
+    ::std::any boxed{42};
+    ::scl::any_view const view{boxed};
+
+    EXPECT_EQ(::scl::any_cast<::std::any const>(&view), &boxed);
+    EXPECT_EQ(&::scl::any_cast<::std::any const &>(view), &boxed);
+    EXPECT_EQ(::scl::any_cast<int const>(&view), ::std::any_cast<int>(&boxed)); // and still what it holds
+}
+
+TEST(AnyViewTest, RawBackingRefusesAStdAnyRequest)
+{
+    ::std::string text{"hello"};
+    ::scl::any_view const view{text};
+
+    EXPECT_EQ(::scl::any_cast<::std::any const>(&view), nullptr);
+    EXPECT_THROW((void)::scl::any_cast<::std::any const &>(view), ::scl::bad_any_cast);
+}
+
 TEST(AnyViewTest, StdAnyBackingDoesNotCopyInner)
 {
     ::std::any boxed{counted{5}};

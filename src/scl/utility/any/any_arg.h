@@ -532,7 +532,10 @@ namespace scl
  * @endcode
  *
  * The std::any backing follows the same rule: a write reaches the boxed object when
- * the `std::any` itself was bound non-`const`.
+ * the `std::any` itself was bound non-`const`. Naming `std::any` in the request
+ * answers the box rather than what it holds, so `any_cast<std::any>(&arg)` over a
+ * non-`const` binding hands out a `std::any *` and lets a callee replace the whole
+ * box.
  *
  * @tparam Type  The requested object type with its qualification; a reference type
  *               is rejected.

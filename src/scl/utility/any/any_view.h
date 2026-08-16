@@ -104,12 +104,14 @@ namespace scl
         // nothing of this view's qualifiers.
         if (!view->accepts(detail::any_qualifiers_of<Type const &>()))
             return nullptr;
+        // The referred-to type answers first, so a request for std::any stops at the box
+        // rather than asking whether another one is nested inside it.
+        if (*descriptor->type == ::scl::type_key_of<bare>())
+            SCL_LIKELY return detail::erased_cast<Type const>(view->object());
 #if SCL_HAS_RTTI
         if (auto const * boxed = view->std_any())
             return ::std::any_cast<bare>(boxed);
 #endif
-        if (*descriptor->type == ::scl::type_key_of<bare>())
-            SCL_LIKELY return detail::erased_cast<Type const>(view->object());
         return nullptr;
     }
 
@@ -317,6 +319,14 @@ namespace scl
  * `view` itself may be `volatile`-qualified, and that is a qualifier the request
  * must cover too: a `volatile any_view` answers `any_cast<T volatile>` and refuses
  * `any_cast<T>`, on top of whatever the referent's own qualifiers require.
+ *
+ * A request naming `std::any` is answered by the box itself — the object the view
+ * refers to, and the type @ref scl::any_view::type_name and
+ * @ref scl::any_view::type_key already report for the std::any backing. That is how
+ * a `std::any` is taken out of a view when what it holds does not matter; a
+ * `std::any` nested inside another one is reached with `std::any_cast` on the box
+ * this call answers. A view over anything else refuses the request, as it refuses
+ * any other type it does not refer to.
  *
  * @tparam Type     The expected object type; a reference type is rejected.
  * @tparam View     Deduced `any_view`, possibly `volatile`-qualified — that

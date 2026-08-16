@@ -105,9 +105,11 @@ raw.type_key() == &scl::type_key_of<std::string>();   // true
 scl::any_view{}.type_key();                           // nullptr
 ```
 
-To learn the type stored inside a `std::any`, call `any_cast<T>` with that very type `T`. A
-call to `any_cast<std::any>` asks whether another `std::any` is stored inside, and usually
-answers `nullptr`.
+To learn the type stored inside a `std::any`, call `any_cast<T>` with that very type `T`.
+A call to `any_cast<std::any>` answers the box itself - the object the view refers to, and
+the type `type_name()` and `type_key()` already report for this backing. That is the way to
+take a `std::any` out of a view when what it holds does not matter. A `std::any` nested
+inside another one is reached with `std::any_cast` on the box that was answered.
 
 ### Casting
 

@@ -143,8 +143,12 @@ The qualifier coverage rule comes from `any_cast` and is reproduced in full:
 | `in_case<T volatile &>` | an object without qualifiers or with `volatile`; that qualifier covers the way `const` does |
 | `in_case<void>` | an empty value |
 
-An `in_case<std::any>` branch does not match a `std::any` itself - exactly as
-`any_cast<std::any>` does not: the object inside is unwrapped, and the branches see its type.
+An `in_case<std::any>` branch matches a `std::any` subject as a whole, exactly as
+`any_cast<std::any>` answers the box. It takes every such subject, and a chain is built
+before any subject exists, so it cannot tell a subject held in a `std::any` from one bound
+directly. A branch after it would therefore keep some of what it names and lose the rest,
+which is why only a wider `std::any` case and the fallback compile there. Leave the branch
+out to have the object inside unwrapped and the branches see its type.
 
 A branch fully covered by an earlier one does not compile. The chain therefore does not let a
 branch be written that would never run. Coverage is counted by which objects a branch catches,

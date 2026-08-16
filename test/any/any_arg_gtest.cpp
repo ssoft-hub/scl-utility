@@ -406,6 +406,27 @@ TEST(AnyArgTest, StdAnyBackingCast)
     EXPECT_EQ(::scl::any_cast<::std::string const &>(arg), "hello");
 }
 
+TEST(AnyArgTest, StdAnyBackingHandsOutTheBoxForWriting)
+{
+    ::std::any boxed{1};
+    ::scl::any_arg arg{boxed};
+
+    auto * box = ::scl::any_cast<::std::any>(&arg);
+    ASSERT_NE(box, nullptr);
+    *box = ::std::string{"replaced"};
+
+    EXPECT_EQ(::std::any_cast<::std::string const &>(boxed), "replaced");
+}
+
+TEST(AnyArgTest, ConstStdAnyRefusesTheBoxForWriting)
+{
+    ::std::any const boxed{1};
+    ::scl::any_arg arg{boxed};
+
+    EXPECT_EQ(::scl::any_cast<::std::any>(&arg), nullptr);
+    EXPECT_EQ(::scl::any_cast<::std::any const>(&arg), &boxed);
+}
+
 TEST(AnyArgTest, MutableAccessThroughNonConstStdAny)
 {
     ::std::any boxed{::std::string{"hello"}};

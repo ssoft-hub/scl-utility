@@ -74,6 +74,39 @@ namespace
     template <typename Handler>
     concept void_handler = requires(Handler handler) { ::scl::any_switch<>().in_case<int>(handler); };
 
+#if SCL_HAS_RTTI
+    // A case naming std::any takes every subject the box itself is, so a case naming a type
+    // may not follow one.
+    template <typename Case>
+    concept case_after_std_any =
+        requires {
+            ::scl::any_switch<>().in_case<::std::any &>([](::std::any &) {
+            }).template in_case<Case>([](Case) {});
+        };
+
+    template <typename Case>
+    concept case_after_const_std_any =
+        requires {
+            ::scl::any_switch<>().in_case<::std::any const &>([](::std::any const &) {
+            }).template in_case<Case>([](Case) {});
+        };
+
+    template <typename Case>
+    concept empty_case_after_std_any =
+        requires {
+            ::scl::any_switch<>().in_case<::std::any const &>([](::std::any const &) {
+            }).template in_case<Case>([]() {});
+        };
+
+    template <typename Result>
+    concept fallback_after_std_any =
+        requires {
+            ::scl::any_switch<Result>()
+                .template in_case<::std::any const &>([](::std::any const &) {
+            }).or_else([]() {});
+        };
+#endif
+
     template <typename Case>
     concept case_after_fallback =
         requires { ::scl::any_switch<>().or_else([]() {}).template in_case<Case>([]() {}); };
@@ -121,6 +154,17 @@ TEST(AnySwitchTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(case_after_volatile_int<int &>);
     STATIC_EXPECT_TRUE(case_after_volatile_int<int const &>);
     STATIC_EXPECT_TRUE(case_after_volatile_int<int>);
+
+#if SCL_HAS_RTTI
+    // A std::any case takes every boxed subject, and a chain cannot tell one from a
+    // subject bound directly, so only a wider std::any case or the fallback may follow.
+    STATIC_EXPECT_FALSE(case_after_std_any<int>);
+    STATIC_EXPECT_FALSE(case_after_std_any<double>);
+    STATIC_EXPECT_TRUE(case_after_std_any<::std::any const &>);
+    STATIC_EXPECT_FALSE(case_after_const_std_any<::std::any>);
+    STATIC_EXPECT_FALSE(empty_case_after_std_any<void>);
+    STATIC_EXPECT_TRUE(fallback_after_std_any<void>);
+#endif
 
     // The fallback catches everything, so nothing may follow it and nothing may repeat it.
     STATIC_EXPECT_FALSE(case_after_fallback<int>);
@@ -741,13 +785,26 @@ TEST(AnySwitchTest, StdAnySubjectIsUnwrapped)
     ::std::string seen;
 
     ::scl::any_switch<>()
-        .in_case<::std::any>([](::std::any const &) {
-        FAIL() << "the box itself must not match";
-    }).in_case<::std::string const &>([&seen](::std::string const & value) {
+        .in_case<::std::string const &>([&seen](::std::string const & value) {
         seen = value;
     }).apply(boxed);
 
     EXPECT_EQ(seen, "hello");
+}
+
+TEST(AnySwitchTest, StdAnySubjectMatchesTheStdAnyCase)
+{
+    ::std::any boxed{::std::string{"hello"}};
+    bool matched = false;
+
+    ::scl::any_switch<>()
+        .in_case<::std::any const &>([&matched](::std::any const & box) {
+        matched = ::std::any_cast<::std::string>(&box) != nullptr;
+    }).or_else([]() {
+        FAIL() << "the case on the box took nothing";
+    }).apply(boxed);
+
+    EXPECT_TRUE(matched);
 }
 
 TEST(AnySwitchTest, EmptyStdAnyMatchesTheVoidCase)
