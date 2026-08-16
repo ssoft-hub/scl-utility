@@ -43,9 +43,11 @@ caller, because the types differ.
 
 Two openings the language still leaves: a reference data member,
 `scl::any_argument const & kept;`, and a function returning `scl::any_arg`. Any C++
-reference behaves that way. The constructor parameters carry a lifetime-binding attribute,
-so Clang warns when an argument leaves the scope where the object it refers to lives. To
-keep the value, copy it out.
+reference behaves that way. The parameters of the constructors that bind an object
+directly carry a lifetime-binding attribute, so Clang warns when an argument leaves the
+scope where the object it refers to lives. Only the constructor taking a view carries
+none: the argument adopts that view's referent and a static descriptor, so the view may
+die first and a temporary view is a valid source. To keep the value, copy it out.
 
 `any_arg` refers to the same things a view does: to a typed object directly, without RTTI,
 or to a `std::any` - the latter in builds with RTTI only. A view passed to it hands over its

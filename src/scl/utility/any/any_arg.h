@@ -104,8 +104,9 @@ namespace scl
 #endif
 
         // A view promises read access only, so the referent is adopted narrowed to it.
+        // Not lifetime-bound: what is adopted is the referent, so the view may die first.
         // cppcheck-suppress noExplicitConstructor
-        constexpr any_argument(any_view const & view SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*): adopts the referent
+        constexpr any_argument(any_view const & view) noexcept // NOLINT(*-explicit-*): adopts the referent
             : base_type{view.object(), view.const_descriptor()}
         {}
 
@@ -465,6 +466,12 @@ namespace scl
  *
  * A view promises read access only, so the referent is adopted narrowed to it:
  * write requests are refused however the object was originally bound.
+ *
+ * The parameter is the one constructor parameter here that is not lifetime-bound
+ * (@ref SCL_LIFETIMEBOUND). What is adopted is the referent and a static
+ * descriptor, so the argument may outlive the view it was built from; a temporary
+ * view is a valid source, and what has to stay alive is the object that view
+ * refers to.
  *
  * @param view  The view whose referent to adopt; the argument refers to the
  *              same object, not to the view.

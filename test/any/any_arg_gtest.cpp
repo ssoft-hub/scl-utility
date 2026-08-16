@@ -369,6 +369,17 @@ TEST(AnyArgTest, AdoptedAnyViewStaysReadOnly)
     EXPECT_FALSE(writes(view)); // the same object through a view does not
 }
 
+TEST(AnyArgTest, AdoptedFromTemporaryViewOutlivesIt)
+{
+    counted value{3};
+    // The view dies at the semicolon; nothing the argument holds points into it.
+    ::scl::any_arg argument{::scl::any_view{value}};
+
+    ASSERT_NE(::scl::any_cast<counted const>(&argument), nullptr);
+    EXPECT_EQ(::scl::any_cast<counted const>(&argument)->id, 3);
+    EXPECT_EQ(::scl::any_cast<counted>(&argument), nullptr);
+}
+
 TEST(AnyArgTest, AdoptedFromEmptyAnyView)
 {
     constexpr ::scl::any_view empty{};
