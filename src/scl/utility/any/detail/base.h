@@ -294,6 +294,14 @@ namespace scl::detail
         }
 #endif
 
+        // For a handle whose own cv-qualification is fixed by its declaration and so states
+        // nothing, the rights come from the binding alone.
+        [[nodiscard]]
+        constexpr bool binding_accepts(any_qualifier requested) const noexcept
+        {
+            return m_descriptor != nullptr && (m_descriptor->qualifiers & ~requested) == any_qualifier::none;
+        }
+
 #if SCL_HAS_RTTI
         // std::any is an external type, so its key compares equal across module boundaries.
 #ifdef __cpp_explicit_this_parameter

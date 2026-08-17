@@ -225,16 +225,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     view), so identity is exact even across a module boundary and same-named
     anonymous-namespace types from different translation units never collide.
   - `scl::any_arg` — the parameter-only companion: binds lvalues and rvalues of
-    any constness and is valid for the duration of the call. No default state and
-    no assignment; converts implicitly to `any_view` for delegation; same
-    backings and identity queries. Unlike the view it also grants write access —
+    any constness and is valid for the duration of the call. It names
+    `scl::any_argument const &`, and that reference is what refuses storage: a
+    container of references is ill-formed and the class declares neither a copy
+    nor a move constructor, so a data member and `auto` are refused too, while
+    passing an argument on binds another reference. No default state, no
+    assignment and no conversion to `any_view`, since a view may be stored and an
+    argument may not; a callee that only reads for the duration of a call takes an
+    `any_arg` of its own. Same backings and identity queries. Unlike the view it also grants write access —
     `any_cast<T>(arg*)` or `any_cast<T &>` on a referent bound without
     cv-qualifiers, the boxed object of a non-`const` `std::any` included — and
     only it does: a referent taken from an `any_view` is narrowed to the read
     access the view promises. Its casts are also constant-evaluable on the C++20
     baseline, where a view's need P2738 (C++26): an argument reaches its referent
     through an anchor the caller materialises per binding, so the argument must be
-    a parameter and there is no `constexpr any_arg` variable. The anchor is a
+    a parameter and there is no `constexpr` argument variable. The anchor is a
     descriptor itself and only constant evaluation reads it, so the type stays two
     pointers wide and its run-time behaviour is a view's. Where `__cpp_constexpr`
     reports P2738, the anchor is not compiled at all and both bounds lift: a cast
@@ -244,11 +249,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     throwing value/reference form where `T const &` binds with no copy. A cast
     must carry every cv-qualifier the referent was bound with, so a `volatile`
     object is read as `T volatile`, and a write — which carries none — reaches
-    only an unqualified referent. The coverage rule reaches the handle itself: a
-    `const`/`volatile` `any_view`/`any_arg` carries those as qualifiers too, so a
-    `const any_arg` cannot escalate to a write regardless of the referent's own
-    qualifiers, and a `volatile` handle requires `volatile` in the request the
-    same way a `volatile` referent does. A `std::any` argument converts
+    only an unqualified referent. For an `any_view` the coverage rule reaches the
+    handle itself, so a `volatile` view requires `volatile` in the request the
+    same way a `volatile` referent does. An argument adds nothing of its own: it
+    is reached through a `const` reference wherever it appears, so its rights come
+    from the binding alone. A request naming `std::any` is answered by the box
+    itself — the type the identity queries already report for that backing — so a
+    `std::any` is taken out of a handle without naming what it holds, and a
+    non-`const` binding hands it out for writing. A `std::any` argument converts
     implicitly, so one `any_cast` serves both backings. Recovering the object is
     a runtime step on C++20 (constant-evaluable under P2738/C++26), as with
     `std::any_cast`.
@@ -259,8 +267,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     `any_cast` probes: every branch names its type once, the first match runs, and
     the fallback belongs to the same chain. `in_case<T>` selects by the
     qualifier-coverage rule of `any_cast` (`volatile` included), `in_case<void>`
-    matches an empty value, and a `std::any` subject is unwrapped so the branches
-    see the boxed type. A branch takes an invocable of no arguments or of the matched
+    matches an empty value, and `in_case<std::any>` matches a `std::any` subject
+    whole — taking every one of them, and a chain cannot tell a subject held in a
+    `std::any` from one bound directly, so only a wider `std::any` case and the
+    fallback may follow it. Leave that branch out and the subject is unwrapped so
+    the branches see the boxed type. A branch takes an invocable of no arguments or of the matched
     value, and — for a named `Result`, a `void` chain having nothing to convert one
     into — a ready value; `in_case<T>()` with neither is a branch that matches and
     does nothing. Either form may produce a `Result` or the `std::optional<Result>`

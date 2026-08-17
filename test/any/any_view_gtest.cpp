@@ -1,8 +1,11 @@
 #include <gtest_utils.h>
 
 #include <scl/utility/any.h>
+#include <scl/utility/preprocessor/rtti.h>
 
+#if SCL_HAS_RTTI
 #include <any>
+#endif
 #include <string>
 #include <type_traits>
 #include <typeinfo>
@@ -65,11 +68,12 @@ TEST(AnyViewTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(view_from_rvalue<int>);
     STATIC_EXPECT_FALSE(view_from_rvalue<counted const>);
     STATIC_EXPECT_FALSE(view_from_rvalue<int const>);
-    STATIC_EXPECT_FALSE(view_from_rvalue<::std::any>);
-    STATIC_EXPECT_FALSE(view_from_rvalue<::std::any const>);
     STATIC_EXPECT_FALSE(view_from_rvalue<counted volatile>);
 
 #if SCL_HAS_RTTI
+    STATIC_EXPECT_FALSE(view_from_rvalue<::std::any>);
+    STATIC_EXPECT_FALSE(view_from_rvalue<::std::any const>);
+
     // std::any has no volatile-qualified members, so a volatile std::any cannot
     // be viewed at all — not even as an lvalue. Without RTTI the library cannot
     // name std::any to exclude it (see the @warning on the std::any constructor).
@@ -79,6 +83,9 @@ TEST(AnyViewTest, CompileTimeGuards)
     // Copying a view — even a const temporary one — is not affected by the guard.
     STATIC_EXPECT_TRUE(view_from_rvalue<::scl::any_view>);
     STATIC_EXPECT_TRUE(view_from_rvalue<::scl::any_view const>);
+
+    // An argument may not be stored, so a view is never made out of one.
+    STATIC_EXPECT_FALSE(view_from_lvalue<::scl::any_argument>);
 
     // Two pointers wide and trivially copyable, as documented.
     STATIC_EXPECT_TRUE(sizeof(::scl::any_view) == 2 * sizeof(void *));
@@ -212,6 +219,25 @@ TEST(AnyViewTest, StdAnyBackingCast)
     EXPECT_EQ(::scl::any_cast<::std::string>(boxed), "hello"); // implicit std::any -> any_view
 
     EXPECT_THROW((void)::scl::any_cast<int>(view), ::scl::bad_any_cast);
+}
+
+TEST(AnyViewTest, StdAnyBackingAnswersTheBoxItself)
+{
+    ::std::any boxed{42};
+    ::scl::any_view const view{boxed};
+
+    EXPECT_EQ(::scl::any_cast<::std::any const>(&view), &boxed);
+    EXPECT_EQ(&::scl::any_cast<::std::any const &>(view), &boxed);
+    EXPECT_EQ(::scl::any_cast<int const>(&view), ::std::any_cast<int>(&boxed)); // and still what it holds
+}
+
+TEST(AnyViewTest, RawBackingRefusesAStdAnyRequest)
+{
+    ::std::string text{"hello"};
+    ::scl::any_view const view{text};
+
+    EXPECT_EQ(::scl::any_cast<::std::any const>(&view), nullptr);
+    EXPECT_THROW((void)::scl::any_cast<::std::any const &>(view), ::scl::bad_any_cast);
 }
 
 TEST(AnyViewTest, StdAnyBackingDoesNotCopyInner)

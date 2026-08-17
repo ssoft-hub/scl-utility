@@ -1,44 +1,54 @@
 # Any view
 
-A non-owning, read-only view over a `std::any` or a typed lvalue.
+`scl::any_view` refers to an existing object whose type is known only at run time, and lets
+a caller read it. The view neither creates, copies nor destroys that object: it holds its
+address and the description of its type.
 
 - Header: `#include <scl/utility/any/any_view.h>`
 
 ## Overview
 
-`scl::any_view` is to `std::any` what `std::string_view` is to `std::string`: it
-refers to an existing value without copying it, so a function can accept a
-heterogeneous argument for read access at no allocation cost. The view is two
-pointers wide and trivially copyable.
+`scl::any_view` relates to `std::any` the way `std::string_view` relates to
+`std::string`. A function that has to read a value of an unknown type takes a view and does
+not force the caller to build an owning object. Nothing is copied and nothing is allocated.
 
-A view is built over one of two backings. The *raw* backing wraps a typed lvalue
-directly: it never depends on RTTI and carries its type identity through
-a [`scl::type_key`](../meta/type_key.md), so `type_name()`, `type_key()`,
-`has_value()` and construction are usable in constant evaluation. The *std::any*
-backing wraps a `std::any` and delegates every cast to `std::any_cast`; because
-`std::any` is itself RTTI-coupled, this backing exists only when RTTI is enabled.
-Under `-fno-rtti` only the raw backing is compiled, and the `std::any`
-constructor disappears with it. This only removes the library's own overload —
-some standard libraries still declare `std::any` without RTTI. Passing one to a
-view built this way binds the raw backing instead: `type_name()` still reports
-`"std::any"`, but `any_cast` never unwraps the boxed object.
+The view costs two pointers and is trivially copyable.
 
-Access is read-only. `scl::any_cast` yields either a value copy or a `const`
-lvalue reference; a non-`const` or rvalue reference cast is ill-formed, because the view never
-grants write access to the object it observes.
+It refers to an object in one of two ways. In the first, the view refers to a typed object
+directly: the type is known at compile time and identified by
+[`scl::type_key`](../meta/type_key.md), so no RTTI is involved, and `type_name()`,
+`type_key()`, `has_value()` and building the view itself all run during constant evaluation.
+In the second, the view refers to a `std::any`, and every cast is delegated to the standard
+`std::any_cast`. Since `std::any` requires RTTI, that constructor disappears from the
+library when the build sets `-fno-rtti`.
 
-The view does not own or extend the lifetime of the referenced object. It stays
-valid only while that object lives — the same caveat as `std::string_view`.
+There is a subtlety here. Some standard libraries declare `std::any` even with RTTI turned
+off. Such an object then binds to the ordinary constructor of the view, that is, it is read
+as a plain typed object. `type_name()` still answers `"std::any"`, but `any_cast` can no
+longer reach the object stored inside it.
+
+A view reads and never writes. `scl::any_cast` answers either a copy of the value or a const
+reference to it. Asking for a non-const reference, or for an rvalue reference, does not
+compile, because the view grants no write access.
+
+The view owns nothing and extends no lifetime. It stays valid exactly as long as the object
+it refers to - the same caveat `std::string_view` carries.
 
 ## Features
 
-- Non-owning, read-only, two pointers wide and trivially copyable
-- Raw backing over any typed lvalue, with no RTTI dependency
-- `std::any` backing that delegates to `std::any_cast` (RTTI builds only)
-- Identity queries `type_name` / `type_key` / `has_value` `constexpr` on C++20
-- Pointer cast `any_cast<T>(view*)` — `noexcept`, null on mismatch
-- Reference / value cast `any_cast<T>(view&)` — throws `scl::bad_any_cast` on mismatch
-- Implicit conversion from `std::any`, so one `any_cast` serves both backings
+- Refers to an object without copying it, and grants no write access.
+- Costs two pointers and is trivially copyable.
+- Refers to a typed object of any type and uses no RTTI.
+- Refers to a `std::any` and delegates the cast to the standard `std::any_cast`; that
+  constructor exists only in builds with RTTI.
+- Answers `type_name()`, `type_key()` and `has_value()` during constant evaluation as well,
+  on the C++20 baseline.
+- Hands out a pointer through `any_cast<T>(view *)`; a type mismatch answers `nullptr` and
+  throws nothing.
+- Hands out a value or a const reference through `any_cast<T>(view &)`; a type mismatch
+  throws `scl::bad_any_cast`.
+- Converts from `std::any` implicitly, so one `scl::any_cast` reads both a view and a
+  `std::any`.
 
 ## API reference
 
@@ -48,20 +58,22 @@ valid only while that object lives — the same caveat as `std::string_view`.
 std::string text{"Hello Any!"};
 
 scl::any_view empty{};      // refers to no object
-scl::any_view raw{text};    // raw backing: views the lvalue in place
+scl::any_view raw{text};    // refers to the object directly
 scl::any_view alias = raw;  // trivially copyable
 ```
 
-Only lvalues are accepted; binding to an rvalue would dangle and is rejected.
-When RTTI is enabled a `std::any` converts implicitly, selecting the `std::any`
-backing:
+The view accepts an lvalue only, that is, a named object. Binding to a temporary is rejected
+by the compiler: such a view would become invalid as soon as the expression ends.
+
+In a build with RTTI a `std::any` converts to a view implicitly:
 
 ```cpp
 std::any boxed{text};
-scl::any_view over_any{boxed};   // std::any backing (RTTI builds only)
+scl::any_view over_any{boxed};   // refers to the std::any
 ```
 
-An rvalue `std::any` is likewise rejected, so the view never outlives its source.
+A temporary `std::any` is refused as well, so the view never outlives the object it refers
+to.
 
 ### Observation
 
@@ -70,139 +82,142 @@ std::string text{"Hello Any!"};
 scl::any_view raw{text};
 
 raw.has_value();   // true
-raw.type_name();   // std::string_view naming std::string (raw backing); the exact
-                   // spelling is the compiler's, e.g. "std::basic_string<char>"
+raw.type_name();   // the name of std::string; the exact spelling comes from the compiler,
+                   // for instance "std::basic_string<char>"
 raw.type_key();    // scl::type_key const * identifying std::string
 ```
 
-`has_value()` reports `false` for an empty view and for a view over an empty
-`std::any`. `type_name()` returns a `std::string_view` over the compile-time type
-name: the type's own name for the raw backing, and `type_name<std::any>()` for the
-`std::any` backing — that is, the name of the backing rather than of the type boxed
-inside it.
+`has_value()` answers `false` in two cases: the view is empty, or it refers to an empty
+`std::any`.
 
-`type_key()` returns a pointer rather than a reference, because a
-[`scl::type_key`](../meta/type_key.md) is an identity with no empty value: an
-empty view answers `nullptr`, which keeps all three states distinguishable. A
-non-null result is the very object `scl::type_key_of<T>()` returns, so comparing
-against it costs one pointer comparison, and `type_key()->name() == type_name()`
-holds throughout:
+`type_name()` answers the name of the type known at compile time. When the view refers to an
+object directly, that is the name of the object's own type. When it refers to a `std::any`,
+that is the name of `std::any`, not the name of the type stored inside it.
+
+`type_key()` answers a pointer rather than a reference, because
+[`scl::type_key`](../meta/type_key.md) has no empty value while an empty view identifies no
+type at all - in that case the method answers `nullptr`. A non-null result is the very
+object `scl::type_key_of<T>()` answers with, so comparing against it costs one pointer
+comparison. The equality `type_key()->name() == type_name()` always holds:
 
 ```cpp
 raw.type_key() == &scl::type_key_of<std::string>();   // true
 scl::any_view{}.type_key();                           // nullptr
 ```
 
-Probe the type inside a `std::any` with `any_cast<T>` naming
-that type — not `any_cast<std::any>`, which asks "is there another `std::any`
-boxed inside?" and normally answers `nullptr`.
+To learn the type stored inside a `std::any`, call `any_cast<T>` with that very type `T`.
+A call to `any_cast<std::any>` answers the box itself - the object the view refers to, and
+the type `type_name()` and `type_key()` already report for this backing. That is the way to
+take a `std::any` out of a view when what it holds does not matter. A `std::any` nested
+inside another one is reached with `std::any_cast` on the box that was answered.
 
 ### Casting
 
-The pointer form returns a `const` pointer on a type match and `nullptr`
-otherwise. It never throws:
+The pointer form answers a const pointer when the requested type matches the type of the
+object, and `nullptr` otherwise. It throws nothing:
 
 ```cpp
 if (auto const * s = scl::any_cast<std::string>(&raw))
     use(*s);   // no copy
 ```
 
-The reference form returns the object by value or by `const` reference, and
-throws `scl::bad_any_cast` on a mismatch. A `const`-reference result binds with
-no copy; a non-`const` or rvalue reference is ill-formed:
+The reference form answers the object by value or by const reference, and throws
+`scl::bad_any_cast` when the type does not match. A reference result binds to the object
+without copying it:
 
 ```cpp
-std::string copy = scl::any_cast<std::string>(raw);                 // value copy
-std::string const & ref = scl::any_cast<std::string const &>(raw);  // zero copy
-// scl::any_cast<std::string &>(raw);   // ill-formed: the view is read-only
+std::string copy = scl::any_cast<std::string>(raw);                 // a copy of the value
+std::string const & ref = scl::any_cast<std::string const &>(raw);  // no copy
+// scl::any_cast<std::string &>(raw);   // does not compile: a view never writes
 ```
 
 The reference form is declared only where
-[`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `1`. Without exceptions the
-pointer form is the whole cast surface, and it already reports a mismatch.
+[`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `1`. With exceptions turned off the
+pointer form remains, and it already reports a mismatch.
 
-A `std::any` argument converts implicitly, so the same `scl::any_cast` reads both
-a view and a bare `std::any`:
+An argument of type `std::any` converts to a view implicitly, so the same `scl::any_cast`
+call reads both a view and a `std::any` directly:
 
 ```cpp
 std::any boxed{text};
-scl::any_cast<std::string>(boxed);   // via implicit any_view conversion
+scl::any_cast<std::string>(boxed);   // through the implicit conversion to any_view
 ```
 
-`scl::bad_any_cast` derives from `std::bad_cast` in every configuration — never
-from `std::bad_any_cast`, so a `catch (std::bad_cast const &)` handler catches
-it regardless of build, and the type itself never depends on RTTI.
+`scl::bad_any_cast` derives from `std::bad_cast` in every configuration and never from
+`std::bad_any_cast`. A handler written as `catch (std::bad_cast const &)` therefore catches
+it whatever the build settings are, and the type itself does not depend on RTTI.
 
-### Qualifiers
+### The const and volatile qualifiers
 
-A view records the cv-qualification of what it was bound to, and a cast must carry
-every qualifier the referent has — reaching it may add qualification, never discard
-it. Reading supplies `const` on its own, so in practice only `volatile` has to be
-asked for:
+A view remembers the qualifiers of the object it was bound to. A cast has to request all of
+them: adding a qualifier is allowed, dropping one is not. Reading adds `const` on its own,
+so in practice only `volatile` has to be requested:
 
 ```cpp
 int volatile sensor = 0;
 scl::any_view const view{sensor};
 
-scl::any_cast<int>(&view);                // nullptr: would discard volatile
-scl::any_cast<int volatile>(&view);       // int const volatile *
-scl::any_cast<int const volatile &>(view);// reads the volatile object
+scl::any_cast<int>(&view);                 // nullptr: the request would drop volatile
+scl::any_cast<int volatile>(&view);        // int const volatile *
+scl::any_cast<int const volatile &>(view); // reads the volatile object
 ```
 
-The reverse direction is always allowed, so a plain referent answers a `volatile`
-request as well.
+The other direction is always allowed: a request carrying `volatile` also passes for an
+object without qualifiers.
 
-The same coverage rule applies to the view itself: a `volatile any_view` is a
-qualifier the request must cover too, independent of the referent's own:
+The same rule covers the view itself. When the variable is declared `any_view volatile`,
+that qualifier has to be requested too, whatever the qualifiers of the object are:
 
 ```cpp
 int number = 0;
 scl::any_view volatile view{number};
+
 scl::any_cast<int>(&view);          // nullptr: the view itself is volatile
-scl::any_cast<int volatile>(&view); // reads fine
+scl::any_cast<int volatile>(&view); // reads normally
 ```
 
 ### Constant evaluation
 
-Identity queries — `type_name`, `type_key`, `has_value` and construction — are
-`constexpr` and evaluate at compile time on the C++20 baseline. `any_cast`,
-however, is a runtime operation there, exactly like `std::any_cast`.
+Building a view and asking it for `type_name()`, `type_key()` and `has_value()` all run
+during constant evaluation, on the C++20 baseline. `any_cast`, however, runs at run time
+there - exactly as `std::any_cast` does.
 
-That limit belongs to the binding rather than to type erasure. The view refers to
-an lvalue of any type, so the only thing it can erase that lvalue's address to is
-`void const *`, and recovering a typed pointer from `void` is constant-evaluable
-only on compilers implementing P2738 (C++26). Erasing to a common base class
-instead stays constant-evaluable on C++20, but that requires an object of that
-class to exist alongside the referent, and something has to keep it alive for as
-long as the handle. The parameter-only companion
-[`any_arg`](any_arg.md#constant-evaluation) can: its caller materialises one per
-binding, and a call outlives its own arguments. A view is storable, so nothing
-bounds how long it must stay valid, and no such object can be provided. For a
-stored view over an object it did not create, C++26 is the earliest the cast can
-fold.
+The limit comes from the way a view binds, not from type erasure as such. A view refers to
+an object of any type, so the only way it can remember the address is as `void const *`, and
+recovering a typed pointer from `void const *` becomes a constant expression only on
+compilers that implement P2738 (C++26).
+
+The other way - erasing to a common base class - is a constant expression on C++20 already,
+but it needs an instance of that class to exist beside the object, and someone has to keep
+that instance alive for as long as the type description lives. For a method parameter
+[`any_arg`](any_arg.md#constant-evaluation) does exactly that: the caller creates such an
+instance per binding, and a call outlives its own arguments by construction. A view, on the
+other hand, can be stored for as long as one likes, and no one is there to provide that
+instance. For a stored view over someone else's object, C++26 therefore remains the earliest
+level at which the cast folds at compile time.
 
 ### Identity across module boundaries
 
-A raw-backed cast compares [`scl::type_key`](../meta/type_key.md) values. Within
-one module that is a pointer comparison; a view that arrived from another module
-falls back to comparing the key's contents, which stays exact — including for
-two same-named types declared in an anonymous namespace of different translation
-units, which the key's per-TU discriminator tells apart.
+A cast through a direct reference to an object compares
+[`scl::type_key`](../meta/type_key.md) values. Within one module that is a pointer
+comparison. A view that arrived from another module is compared by the content of the key,
+and that comparison is exact: two same-named types from anonymous namespaces of different
+translation units differ by the discriminator the key carries.
 
-Two limits of the key carry over unchanged:
+The two limits of the key apply here as well:
 
-- A type declared at block scope — a local class or a closure type — is outside
-  the key's contract and may falsely match a same-named namespace-scope type.
-  Move such a type to namespace scope.
-- A key must not outlive the module that produced it. Drop views built inside a
-  shared library before unloading it.
+- A type declared inside a block - a local class or a closure type - falls outside the
+  contract of the key and may match a same-named type from a namespace by mistake. Declare
+  such a type at namespace scope.
+- The key must not outlive the module that created it. Destroy views created inside a shared
+  library before unloading it.
 
 ## See also
 
-- [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) —
-  runnable version: one function reading either backing, the reference-form casts,
-  and the identity queries.
-- [any_arg](any_arg.md) — the parameter-only companion, which also grants write access
-- [any_switch](any_switch.md) — a branch chain reading a view without a cascade of casts
-- [type_key](../meta/type_key.md) — the identity key behind `type_key()`
+- [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) -
+  a working example: one function reads both a view and an argument, casts in both forms and
+  identity queries.
+- [any_arg](any_arg.md) - a view for a method parameter that also grants write access
+- [any_switch](any_switch.md) - a chain of branches that reads a value without a run of casts
+- [type_key](../meta/type_key.md) - the identity key `type_key()` answers with
 - [Russian documentation](../../ru/any/any_view.md)

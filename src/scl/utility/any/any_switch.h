@@ -77,6 +77,18 @@ namespace scl::detail
     inline constexpr bool any_case_covered_v =
         (any_request_covers_v<any_case_request_t<typename Branches::case_type>, any_case_request_t<Case>> || ...);
 
+    template <typename... Branches>
+    inline constexpr bool any_switch_has_std_any_case_v =
+        (is_std_any_v<::std::remove_cvref_t<typename Branches::case_type>> || ...);
+
+    // A chain is built before any subject exists, so it cannot tell a subject held in a
+    // std::any from one bound directly - and a case naming std::any takes every subject of
+    // the first kind. A case after it would therefore keep some of what it names and lose
+    // the rest without saying which, so only a wider std::any case and the fallback follow.
+    template <typename Case, typename... Branches>
+    inline constexpr bool any_case_shadowed_by_std_any_v = any_switch_has_std_any_case_v<Branches...> &&
+        (!is_std_any_v<::std::remove_cvref_t<Case>>);
+
     // Spelled as a function rather than a disjunction: the branches are ordered exactly as
     // the chain runs them, so a handler is judged by the form that will actually be called.
     // @p Handler is a reference type, so the same check answers for a `const` chain and for
@@ -207,6 +219,7 @@ namespace scl
         constexpr auto in_case(Handler && handler) const
             requires detail::any_switch_case<Case> && (!detail::any_switch_has_fallback_v<Branches...>) &&
             (!detail::any_case_covered_v<Case, Branches...>) &&
+            (!detail::any_case_shadowed_by_std_any_v<Case, Branches...>) &&
             detail::any_switch_branch_v<::std::decay_t<Handler> &, Result, Case>
         {
             return append<Case>(::std::forward<Handler>(handler));
@@ -219,7 +232,8 @@ namespace scl
         constexpr auto in_case() const
             requires ::std::is_void_v<Result> && detail::any_switch_case<Case> &&
             (!detail::any_switch_has_fallback_v<Branches...>) &&
-            (!detail::any_case_covered_v<Case, Branches...>)
+            (!detail::any_case_covered_v<Case, Branches...>) &&
+            (!detail::any_case_shadowed_by_std_any_v<Case, Branches...>)
         {
             return append<Case>(detail::any_switch_no_handler{});
         }
@@ -293,7 +307,7 @@ namespace scl
         template <typename BranchTuple, ::std::size_t... Index>
         static constexpr void select(/**/
             BranchTuple & branches,
-            any_arg & subject,
+            any_arg subject,
             storage_type & result,
             ::std::index_sequence<Index...> /*indices*/)
         {
@@ -302,8 +316,8 @@ namespace scl
         }
 
         template <::std::size_t... Index>
-        constexpr bool
-        covered(any_arg & subject, ::std::index_sequence<Index...> /*indices*/) const noexcept
+        [[nodiscard]]
+        constexpr bool covered(any_arg subject, ::std::index_sequence<Index...> /*indices*/) const noexcept
         {
             return (matches<Index>(subject) || ...);
         }
@@ -311,7 +325,8 @@ namespace scl
         // Selection alone, with no handler in sight: this is what makes has_case answer
         // without a side effect, and it is the same test apply performs.
         template <::std::size_t Index>
-        constexpr bool matches(any_arg & subject) const noexcept
+        [[nodiscard]]
+        constexpr bool matches(any_arg subject) const noexcept
         {
             using case_type = typename ::std::tuple_element_t<Index, branches_type>::case_type;
 
@@ -325,7 +340,7 @@ namespace scl
         }
 
         template <::std::size_t Index, typename BranchTuple>
-        static constexpr bool run(BranchTuple & branches, any_arg & subject, storage_type & result)
+        static constexpr bool run(BranchTuple & branches, any_arg subject, storage_type & result)
         {
             using branch = ::std::tuple_element_t<Index, branches_type>;
             using case_type = branch::case_type;
@@ -418,9 +433,12 @@ namespace scl
  * A case selects by the qualifier-coverage rule of @ref scl::any_cast, mirrored
  * in full: `in_case<T>` and `in_case<T const &>` match a `T` or a `T const`
  * referent, `in_case<T &>` an unqualified one, and `volatile` participates the
- * same way. `in_case<void>` matches an empty value. `in_case<std::any>` does not
- * match the box, exactly as `any_cast<std::any>` does not — a `std::any` subject
- * is unwrapped and the branches see the boxed type.
+ * same way. `in_case<void>` matches an empty value. `in_case<std::any>` matches a
+ * `std::any` subject whole, exactly as `any_cast<std::any>` answers the box. It takes
+ * every such subject, and a chain is built before any subject exists, so it cannot
+ * tell one held in a `std::any` from one bound directly: only a wider `std::any` case
+ * and the fallback may follow. Left out, a subject is unwrapped and the branches see
+ * the boxed type.
  *
  * What `in_case` takes after its case is an invocable, or — for a named `Result`,
  * there being nothing for a `void` chain to convert it into — a ready value. An

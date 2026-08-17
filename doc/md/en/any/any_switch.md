@@ -1,171 +1,182 @@
 # Any switch
 
-A branch chain that runs one branch, chosen by the type an erased value holds.
+`scl::any_switch` describes a set of branches, each answering for its own type, and runs the
+one that matches the actual type of the value it is given.
 
 - Header: `#include <scl/utility/any/any_switch.h>`
 
 ## Overview
 
-Reading an erased value with [`scl::any_cast`](any_view.md#casting) alone is a
-cascade of probes: one call per candidate type, each with its own `if`, and a
-fallback spelled separately. The type is named twice on every branch — once in the
-cast, once in the variable it fills — and nothing keeps the branches from
-overlapping or from silently never matching.
+Reading a value whose type is known only at run time used to mean a run of
+[`scl::any_cast`](any_view.md) attempts: one call per candidate type, an `if` around each,
+and the "none of them matched" case written out separately. The type appears twice in every
+branch - in the cast and in the variable the cast fills - and nothing stops two branches from
+covering each other or from never running at all.
 
-`scl::any_switch` collapses that into one expression. Every branch names its type
-once, the first match runs, and the fallback belongs to the same chain. It reads
-every subject [`scl::any_arg`](any_arg.md) accepts: a typed lvalue or rvalue, an
-[`scl::any_view`](any_view.md), or a `std::any` on an RTTI build.
+`scl::any_switch` reduces that to one expression. A branch names its type once, the first
+matching branch runs, and the fallback stands in the same chain. The chain reads whatever
+[`scl::any_arg`](any_arg.md) accepts: a named or temporary object of a known type, an
+[`scl::any_view`](any_view.md), and in a build with RTTI a
+`std::any` as well.
 
-The chain holds no subject. `in_case` and `or_else` describe the branches;
-`apply` runs them over the subject it is given, and `has_case` asks whether there
-is one to run. So one chain serves any number of subjects, none of them has to
-outlive it, and a chain is an ordinary object: keep it in a variable, a member or
-a container, return it from a function, apply it wherever the subject turns up.
+The chain does not store the value. `in_case` and `or_else` only describe branches. `apply`
+runs them over the value it is handed, and `has_case` answers whether there is anything to
+run. One chain therefore serves any number of values, none of them has to outlive it, and the
+chain itself behaves as an ordinary object: it can be put in a variable, a field or a
+container, returned from a function, and applied wherever the value appears.
 
 ```cpp
 constexpr auto matcher = scl::any_switch<std::string>()
-    .in_case<void>("has no value")
+    .in_case<void>("no value")
     .in_case<int>([](int number) { return std::to_string(number); })
     .in_case<std::string const &>([](std::string const & text) { return text; })
-    .or_else("undefined");
+    .or_else("unknown");
 
-std::optional<std::string> result = matcher.apply(value);   // no precondition
-bool covered = matcher.has_case(value);                     // runs no branch
+std::optional<std::string> result = matcher.apply(value);   // no check needed beforehand
+bool covered = matcher.has_case(value);                     // no branch runs
 ```
 
 ## Features
 
-- One chain, applied to as many subjects as the caller has; no lifetime coupling
-- Selection by the qualifier-coverage rule of `any_cast`, `volatile` included
-- `in_case<void>` for the empty value; a `std::any` subject is unwrapped
-- Branch: an invocable taking nothing or the matched value; a ready value for a named `Result`
-- Optional `or_else` fallback, taking the subject as an `any_arg`
-- `has_case` performs the selection only — nothing runs, no side effect, `noexcept`
-- A case an earlier one covers, a second `or_else`, and an `in_case` after one are compile errors
-- `constexpr` throughout, on the C++20 baseline
+- Serves any number of values and is tied by lifetime to none of them.
+- Selects a branch by the same qualifier coverage rule `any_cast` uses, `volatile` included.
+- Accepts an `in_case<void>` branch for an empty value and unwraps a `std::any`
+  automatically.
+- Lets a branch be a callable - taking no argument or taking the value found - and, when the
+  result type is named, a ready value as well.
+- Accepts an optional `or_else` fallback, which receives the value as an `any_arg`.
+- Answers `has_case` without running a branch: no side effect happens, and the method is
+  `noexcept`.
+- Rejects at compile time a branch fully covered by an earlier one, a second `or_else`, and
+  any branch after one.
+- Works during constant evaluation, on the C++20 baseline.
 
 ## API reference
 
 ### Starting a chain
 
 ```cpp
-scl::any_switch<>();               // apply returns nothing
-scl::any_switch<std::string>();    // apply returns std::optional<std::string>
+scl::any_switch<>();               // apply answers nothing
+scl::any_switch<std::string>();    // apply answers std::optional<std::string>
 ```
 
-`Result` is `void` by default. A named `Result` must be an object type, since
-`apply` hands it back as a `std::optional<Result>` — empty where no branch matched,
-and equally where the branch that did produced nothing.
+The `Result` parameter defaults to `void`. Named explicitly, it has to be an object type:
+`apply` then answers `std::optional<Result>`. The result is empty when no branch matched, and
+equally empty when the matching branch produced no value.
 
-### Cases
+### Branches
 
 ```cpp
 auto matcher = scl::any_switch<>()
-    .in_case<void>([]() { /* the subject holds nothing */ })
-    .in_case<int>([](int number) { /* a copy */ })
+    .in_case<void>([]() { /* no value */ })
+    .in_case<int>([](int number) { /* a copy of the value */ })
     .in_case<std::string const &>([](std::string const & text) { /* no copy */ })
     .in_case<double &>([](double & ratio) { ratio *= 2; })
-    .in_case<char>();              // matches and does nothing
+    .in_case<char>();              // the branch matches and does nothing
 ```
 
-A case names an object type, an lvalue reference to one, or `void`. An rvalue
-reference is rejected — nothing here is movable-from.
+A branch is named by a type. That is an object type, an lvalue reference to one, or `void`.
+An rvalue reference is refused for the same reason a view refuses one: nothing here should
+look movable.
 
-`in_case<Type>()` with no argument is a branch that matches and does nothing. It
-is how a type is claimed away from the fallback without writing an empty branch for
-it, and it belongs to `Result = void`, where doing nothing is a complete branch; for
-a named `Result` it is a compile error.
+Calling `in_case<Type>()` with no argument describes a branch that matches and does nothing.
+That is how a type is taken away from the fallback without inventing an empty lambda for it.
+The form makes sense only when `Result` is `void`, where "nothing" already is the finished
+result; with a named result it does not compile.
 
-After its case, `in_case` takes an invocable taking no argument or one argument
-constructible from the case type. A named `Result` also takes a ready value — a
-`void` chain has nothing to convert one into, so there it is a compile error and
-`in_case<Type>()` is what says "match and do nothing":
+After the type, `in_case` takes a callable - with no argument, or with one that is
+constructible from the branch type. With a named result it also takes a ready value. In a
+chain with `Result = void` there is nothing to convert such a value into, so it does not
+compile there, and "match and do nothing" is written as `in_case<Type>()`:
 
 ```cpp
 auto named = scl::any_switch<std::string>()
-    .in_case<int>("an int")                              // a value
-    .in_case<double>([]() { return "a double"; })        // no argument
+    .in_case<int>("integral")                             // a ready value
+    .in_case<double>([]() { return "floating"; })         // a callable taking no argument
     .in_case<char>([](char symbol) { return std::string(1, symbol); });
 ```
 
-An invocable is called with the matched value where it takes one, and called with
-nothing where it takes none — `[](char symbol) { ... }` sees the value, `[]() { ... }`
-does not. Where both calls compile, the matched value is the one passed.
+The callable receives the value found when it takes an argument, and is called with no
+arguments when it does not. The lambda `[](char symbol) { ... }` receives the value, the
+lambda `[]() { ... }` does not. When both calls compile, the chain passes the value found.
 
-What a branch produces may be a `Result` or the `std::optional<Result>` holding one —
-either form of branch argument, an invocable and a ready value alike. An empty optional
-means the branch ran and produced nothing:
+A branch may produce either `Result` itself or a `std::optional<Result>`. That holds for both
+forms, the callable and the ready value. An empty `optional` means the branch ran and
+produced no value:
 
 ```cpp
 auto parsed = scl::any_switch<std::string>()
     .in_case<int>([](int value) -> std::optional<std::string> {
         return value > 0 ? std::optional{std::to_string(value)} : std::nullopt;
     })
-    .in_case<char>(std::optional<std::string>{});   // a ready value, optional too
+    .in_case<char>(std::optional<std::string>{});   // a ready value, an optional as well
 ```
 
 ### Nesting one chain inside another
 
-That second form is what makes chains compose. A chain is callable and answers
-`std::optional<Result>`, so it qualifies as a branch of an outer chain — a case of
-it, or its fallback:
+The second form is what lets chains be built from each other. A chain is itself a callable
+answering `std::optional<Result>`, so it serves as a branch of another chain, the fallback
+included:
 
 ```cpp
-auto const inner = scl::any_switch<std::string>().in_case<double>("double");
-auto const outer = scl::any_switch<std::string>().in_case<int>("int").or_else(inner);
+auto const inner = scl::any_switch<std::string>().in_case<double>("floating");
+auto const outer = scl::any_switch<std::string>().in_case<int>("integral").or_else(inner);
 
-outer.apply(number);   // "int"     - the outer case
-outer.apply(ratio);    // "double"  - delegated to the inner chain
-outer.apply(symbol);   // empty     - neither chain matched
+outer.apply(number);   // "integral": a branch of the outer chain ran
+outer.apply(ratio);    // "floating":  control went into the nested chain
+outer.apply(symbol);   // empty:       nothing matched in either
 ```
 
-A subject neither chain matches falls through as an empty result rather than a wrong
-one. Note that `has_case` answers for the chain it is asked and does not look inside a
-nested one: a fallback covers every subject, whatever the chain behind it then decides.
+A value that matches no branch produces an empty result rather than a wrong one. Note that
+`has_case` answers for the chain it is asked and does not look inside a nested one: a
+fallback covers every value, whatever the chain behind it decides.
 
-### Selection
+### How a branch is selected
 
-A case selects by the qualifier-coverage rule of `any_cast`, mirrored in full:
+The qualifier coverage rule comes from `any_cast` and is reproduced in full:
 
-| Case | Matches |
+| Branch | When it matches |
 |---|---|
-| `in_case<T>` | a `T` or a `T const` referent; the branch's own parameter decides whether that is a copy |
-| `in_case<T const &>` | the same referents, bound without a copy |
-| `in_case<T &>` | an unqualified referent only, reaching the caller's object |
-| `in_case<T volatile &>` | an unqualified or a `volatile` referent; `volatile` covers the way `const` does |
+| `in_case<T>` | an object of type `T` or `T const`; whether a copy is made is decided by the branch's own parameter |
+| `in_case<T const &>` | the same objects, without a copy |
+| `in_case<T &>` | an object without qualifiers only, with access to the caller's object |
+| `in_case<T volatile &>` | an object without qualifiers or with `volatile`; that qualifier covers the way `const` does |
 | `in_case<void>` | an empty value |
 
-`in_case<std::any>` does not match the box, exactly as `any_cast<std::any>` does
-not: a `std::any` subject is unwrapped and the branches see the boxed type.
+An `in_case<std::any>` branch matches a `std::any` subject as a whole, exactly as
+`any_cast<std::any>` answers the box. It takes every such subject, and a chain is built
+before any subject exists, so it cannot tell a subject held in a `std::any` from one bound
+directly. A branch after it would therefore keep some of what it names and lose the rest,
+which is why only a wider `std::any` case and the fallback compile there. Leave the branch
+out to have the object inside unwrapped and the branches see its type.
 
-A case an earlier one already covers is a compile error rather than a branch that
-never runs, and coverage follows what a case matches rather than how it is spelled.
-`in_case<T>` and `in_case<T const &>` reach the same referents, so the second after
-the first is an error; both reach everything `in_case<T &>` reaches, so it is an
-error after either of them.
+A branch fully covered by an earlier one does not compile. The chain therefore does not let a
+branch be written that would never run. Coverage is counted by which objects a branch catches,
+not by how it is spelled. `in_case<T>` and `in_case<T const &>` catch the same objects, so the
+second after the first is refused. Both also catch everything `in_case<T &>` catches, so it is
+refused after either of them.
 
-The order is what decides. Written first, `in_case<T &>` keeps the unqualified
-referent for itself, and `in_case<T const &>` after it still takes the `const` ones:
+The order decides. Written first, `in_case<T &>` keeps the object without qualifiers for
+itself, and the `in_case<T const &>` that follows still takes objects carrying `const`:
 
 ```cpp
 auto matcher = scl::any_switch<>()
-    .in_case<int &>([](int & number) { number *= 2; })     // an unqualified referent
-    .in_case<int const &>([](int const &) { /* ... */ });  // the const ones, still free
+    .in_case<int &>([](int & number) { number *= 2; })     // objects without qualifiers
+    .in_case<int const &>([](int const &) { /* ... */ });  // const objects, still free
 ```
 
-### Fallback
+### The fallback
 
 ```cpp
 auto matcher = scl::any_switch<std::string>()
-    .in_case<int>("an int")
+    .in_case<int>("integral")
     .or_else([](scl::any_arg other) { return std::string{other.type_name()}; });
 ```
 
-`or_else` is optional and catches everything no case caught — an empty value
-included when the chain has no `in_case<void>`. It is an ordinary branch: it
-returns the chain, not a result. Since it catches everything, nothing may follow
-it and nothing may repeat it; both are compile errors.
+`or_else` is optional and accepts everything no branch matched, including an empty value when
+the chain has no `in_case<void>`. It is a branch like the others: it answers a chain, not a
+result. Since it accepts everything, nothing may follow it and it may not be repeated -
+either one fails to compile.
 
 ### Applying
 
@@ -173,69 +184,65 @@ it and nothing may repeat it; both are compile errors.
 std::optional<std::string> result = matcher.apply(value);
 ```
 
-`apply` selects the first matching branch in the order the cases are written, runs
-that one and no other, and returns `std::optional<Result>` — empty when nothing
-matched. A `void` chain returns nothing at all, and an unmatched subject simply
-runs nothing.
+`apply` takes the first matching branch in the order written, runs that branch alone, and
+answers `std::optional<Result>`. The result is empty when no branch matched. A chain with
+`Result = void` answers nothing and, with no matching branch, simply does nothing.
 
-It may be called any number of times, over as many subjects as the caller has, and
-does the whole thing again each time: the chain describes the branches and holds
-no result, so a branch with a side effect fires once per call. It carries no
-precondition — no branch matching is an ordinary outcome, reported by the result.
+`apply` may be called any number of times over any number of values: the chain describes
+branches and stores no result, so a branch with a side effect runs on every call. No check is
+needed beforehand, since finding no matching branch is an ordinary outcome the result reports.
 
-`apply` is `noexcept` when the branches it may run are and moving the result cannot
-throw, and `const` wherever those branches are callable on a `const` chain; a chain
-holding a `mutable` invocable applies through a non-`const` one.
+`apply` is `noexcept` when every branch it might run is `noexcept` and moving the result does
+not throw. The const form is available where those branches are callable on a const chain; a
+chain holding mutable state inside a branch is applied through the non-const form.
 
-`operator()` is the same thing by another spelling — same selection, same result,
-same `const` and `noexcept` forms:
+`operator()` does exactly the same: the same selection, the same result, the same `const` and
+`noexcept` forms:
 
 ```cpp
-matcher(value);                                  // identical to matcher.apply(value)
-std::ranges::transform(values, out, matcher);    // a chain is a callable
+matcher(value);                                  // the same as matcher.apply(value)
+std::ranges::transform(values, out, matcher);    // the chain is itself a callable
 ```
 
-It exists so a chain can be handed to anything that takes a callable without
-wrapping it in a lambda that only calls `apply`. It is a call, not a conversion: a
-chain still converts to nothing at all.
+It removes the wrapping lambda where a callable is required. This is a call, not a
+conversion: the chain still converts to nothing.
 
 ### Asking without running
 
 ```cpp
 if (matcher.has_case(value))
-    matcher.apply(value);          // the branch is expensive, or has a side effect
+    matcher.apply(value);          // the branch is expensive or has a side effect
 ```
 
-`has_case` reports whether some branch matches the subject. It performs the
-selection and stops there — no branch is run, so no side effect fires and it is
-`noexcept`. With `or_else` present it is always true.
+`has_case` reports whether any branch matches the value. It goes as far as selecting the
+branch and stops there: no branch runs, no side effect happens, and the method is `noexcept`.
+When the chain has a fallback, the answer is always positive.
 
-| state | `has_case(subject)` | `apply(subject)`, named `Result` | `apply(subject)`, `Result = void` |
+| State | `has_case(value)` | `apply(value)` with a named `Result` | `apply(value)` with `Result = void` |
 |---|---|---|---|
-| no branch matches | `false` | empty | nothing runs |
-| a branch matches | `true` | its value, empty where it produced none | that branch runs |
+| no branch matched | `false` | empty | nothing runs |
+| a branch matched | `true` | its value; empty if it produced none | that branch runs |
 
-An empty result therefore does not tell the two rows apart — `has_case` is what
-answers whether a branch matched at all.
+An empty result does not tell the two rows apart, so the question "did any branch match" is
+answered by `has_case`.
 
-There is no implicit conversion from the chain to its result, to `bool`, or to
-anything else: the chain is a description, and reading it is a named call.
+The chain converts implicitly to nothing - not to the result, not to `bool`: it describes
+branches, and obtaining a result is written as an explicit call.
 
 ### What is deferred, and what is not
 
-Building the chain runs nothing: no selection, no branch, no result. The one
-thing no chain defers is a branch that is a ready *value* —
-`or_else(compute())` evaluates `compute()` where it is written, since that is an
-ordinary function argument. Pass an invocable where building the value is
-expensive.
+Building a chain runs nothing: no selection, no branch, no computation of a result. The one
+thing that cannot be deferred is a branch given as a ready **value**. Written as
+`or_else(compute())`, it evaluates `compute()` right there, since that is an ordinary function
+argument. When building the value is expensive, pass a callable instead.
 
 ## Constant evaluation
 
-The chain is a literal type wherever its branches are, and the subject reaches
-`apply` as a parameter — the one position where an
-[`any_arg`](any_arg.md#constant-evaluation) cast folds on the C++20 baseline. A
-`constexpr` chain applied in a constant expression therefore selects and runs at
-compile time, with none of the restrictions a stored `any_arg` carries:
+A chain stays a literal type as long as its branches are literal. The value reaches `apply` as
+a parameter, that is, where the cast of [`any_arg`](any_arg.md#constant-evaluation) already
+folds at compile time on C++20. A chain declared `constexpr` and applied in a constant
+expression therefore selects and runs a branch at compile time, free of the limits an
+`any_arg` in a local variable carries:
 
 ```cpp
 constexpr auto doubling = scl::any_switch<int>()
@@ -248,15 +255,15 @@ static_assert(doubling.has_case(21));
 
 ## Exceptions
 
-The chain catches nothing and wraps nothing. A branch that throws throws out of
-`apply`, in the caller's frame, caught by an ordinary `try` around that call. What
-can still dangle is a branch capturing by reference, and it dangles the way any
-captured reference does.
+The chain catches nothing and wraps nothing. An exception thrown by a branch leaves `apply` in
+the caller's frame and is caught by an ordinary `try` around that call. Only a branch that
+captured something by reference can go stale, and it goes stale the way any captured reference
+does.
 
 ## See also
 
-- [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) —
-  runnable version: one chain replacing a cascade of casts, over both backings.
-- [any_arg](any_arg.md) — the subject type every branch reads through
-- [any_view](any_view.md) — the storable read-only view, also accepted as a subject
+- [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) -
+  a working example: one chain instead of a run of casts, over a view and over an argument.
+- [any_arg](any_arg.md) - the type every branch reads the value through
+- [any_view](any_view.md) - the view the chain also accepts as a value
 - [Russian documentation](../../ru/any/any_switch.md)

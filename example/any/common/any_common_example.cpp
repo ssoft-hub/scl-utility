@@ -90,15 +90,16 @@ static void describe(::scl::any_arg value)
         ::std::cout << "  something else (type_name=\"" << value.type_name() << "\")\n";
 }
 
-static void log_view(::scl::any_view value)
+static void log_any(::scl::any_arg value)
 {
-    ::std::cout << "  delegated, has_value=" << value.has_value() << '\n';
+    ::std::cout << "  logged, has_value=" << value.has_value() << '\n';
+    describe(value); // passing an argument on binds another reference to the same object
 }
 
 static ::std::string keep(::scl::any_arg value)
 {
     // The argument may be a temporary that dies once this call returns, so copy the
-    // payload out; keeping the any_arg — or an any_view converted from it — would dangle.
+    // payload out; keeping the any_arg itself would dangle.
     return ::scl::any_cast<::std::string>(value);
 }
 
@@ -206,8 +207,8 @@ int main(int, char **)
     describe(::std::any{greeting}); // temporary std::any
 #endif
 
-    ::std::cout << "\n=== Delegation to an any_view API ===\n";
-    log_view(::scl::any_arg{::std::string{"delegated"}}); // implicit conversion
+    ::std::cout << "\n=== Delegation onward ===\n";
+    log_any(::std::string{"delegated"});
 
     ::std::cout << "\n=== Copying a value out of a temporary ===\n";
     ::std::cout << "  kept == \"" << keep(::std::string{"kept beyond the call"}) << "\"\n";
