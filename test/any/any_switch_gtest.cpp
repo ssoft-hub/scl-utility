@@ -1,8 +1,11 @@
 #include <gtest_utils.h>
 
 #include <scl/utility/any.h>
+#include <scl/utility/preprocessor/rtti.h>
 
+#if SCL_HAS_RTTI
 #include <any>
+#endif
 #include <optional>
 #include <stdexcept>
 #include <string>

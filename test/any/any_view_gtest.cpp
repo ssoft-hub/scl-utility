@@ -1,8 +1,11 @@
 #include <gtest_utils.h>
 
 #include <scl/utility/any.h>
+#include <scl/utility/preprocessor/rtti.h>
 
+#if SCL_HAS_RTTI
 #include <any>
+#endif
 #include <string>
 #include <type_traits>
 #include <typeinfo>
@@ -65,11 +68,12 @@ TEST(AnyViewTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(view_from_rvalue<int>);
     STATIC_EXPECT_FALSE(view_from_rvalue<counted const>);
     STATIC_EXPECT_FALSE(view_from_rvalue<int const>);
-    STATIC_EXPECT_FALSE(view_from_rvalue<::std::any>);
-    STATIC_EXPECT_FALSE(view_from_rvalue<::std::any const>);
     STATIC_EXPECT_FALSE(view_from_rvalue<counted volatile>);
 
 #if SCL_HAS_RTTI
+    STATIC_EXPECT_FALSE(view_from_rvalue<::std::any>);
+    STATIC_EXPECT_FALSE(view_from_rvalue<::std::any const>);
+
     // std::any has no volatile-qualified members, so a volatile std::any cannot
     // be viewed at all — not even as an lvalue. Without RTTI the library cannot
     // name std::any to exclude it (see the @warning on the std::any constructor).
