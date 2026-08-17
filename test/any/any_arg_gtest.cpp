@@ -239,8 +239,15 @@ TEST(AnyArgTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(arg_ptr_castable<void>);
     STATIC_EXPECT_FALSE(arg_ptr_castable<int()>);
 
-    // Delegation onward: any_arg converts to any_view, not the reverse chain.
-    STATIC_EXPECT_TRUE((::std::is_convertible_v<::scl::any_arg, ::scl::any_view>));
+    // No conversion to a view in any qualification: a view may be stored and an argument
+    // may not, so one is never obtained from the other.
+    STATIC_EXPECT_FALSE((::std::is_convertible_v<::scl::any_arg, ::scl::any_view>));
+    STATIC_EXPECT_FALSE((::std::is_convertible_v<::scl::any_arg &, ::scl::any_view>));
+    STATIC_EXPECT_FALSE((::std::is_convertible_v<::scl::any_arg const &, ::scl::any_view>));
+    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::any_view, ::scl::any_arg &>));
+
+    // The other direction stays: a view hands its referent to an argument.
+    STATIC_EXPECT_TRUE((::std::is_convertible_v<::scl::any_view &, ::scl::any_arg>));
 }
 
 TEST(AnyArgTest, ConstexprIdentityOnRawBacking)
@@ -336,17 +343,6 @@ TEST(AnyArgTest, MismatchThrows)
     EXPECT_THROW((void)::scl::any_cast<double>(arg), ::std::bad_cast);
 }
 
-TEST(AnyArgTest, ConvertsToAnyView)
-{
-    counted value{5};
-    ::scl::any_arg const arg{value};
-    ::scl::any_view const view = arg;
-
-    EXPECT_TRUE(view.has_value());
-    EXPECT_EQ(view.type_name(), ::scl::type_name<counted>());
-    EXPECT_EQ(::scl::any_cast<counted>(&view), &value);
-}
-
 TEST(AnyArgTest, ConstructsFromAnyView)
 {
     counted value{6};
@@ -366,12 +362,6 @@ TEST(AnyArgTest, AdoptedAnyViewStaysReadOnly)
 
     EXPECT_TRUE(writes(value)); // the object itself grants write access
     EXPECT_FALSE(writes(view)); // the same object through a view does not
-
-    // Round trip: a view converted from a writable argument is read-only too.
-    ::scl::any_arg const arg{value};
-    ::scl::any_view const via_arg = arg;
-    EXPECT_FALSE(writes(via_arg));
-    EXPECT_EQ(::scl::any_cast<counted const &>(via_arg).id, 1); // reading still works
 }
 
 TEST(AnyArgTest, AdoptedFromEmptyAnyView)
@@ -528,18 +518,16 @@ TEST(AnyArgTest, VolatileReferentWritableWhenRequestedAsVolatile)
     EXPECT_EQ(value, 42);
 }
 
-TEST(AnyArgTest, VolatileSurvivesRoundTripThroughAnyView)
+TEST(AnyArgTest, VolatileSurvivesAdoptionFromAnyView)
 {
     int volatile value = 5;
-    ::scl::any_arg const arg{value};
-    ::scl::any_view const view = arg;
-
-    ::scl::any_arg const readopted{view};
+    ::scl::any_view const view{value};
+    ::scl::any_arg const adopted{view};
 
     // The const-qualified form keeps volatile: a plain read would drop it.
-    EXPECT_EQ(::scl::any_cast<int const>(&readopted), nullptr);
-    EXPECT_EQ(::scl::any_cast<int const volatile>(&readopted), &value);
-    EXPECT_EQ(::scl::any_cast<int volatile>(&readopted), nullptr); // write stays closed
+    EXPECT_EQ(::scl::any_cast<int const>(&adopted), nullptr);
+    EXPECT_EQ(::scl::any_cast<int const volatile>(&adopted), &value);
+    EXPECT_EQ(::scl::any_cast<int volatile>(&adopted), nullptr); // write stays closed
 }
 
 TEST(AnyArgTest, RvalueBoundReferentWritableUnlessConst)

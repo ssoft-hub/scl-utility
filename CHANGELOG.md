@@ -225,8 +225,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     view), so identity is exact even across a module boundary and same-named
     anonymous-namespace types from different translation units never collide.
   - `scl::any_arg` — the parameter-only companion: binds lvalues and rvalues of
-    any constness and is valid for the duration of the call. No default state and
-    no assignment; converts implicitly to `any_view` for delegation; same
+    any constness and is valid for the duration of the call. No default state,
+    no assignment and no conversion to `any_view`, since a view may be stored and
+    an argument may not; a callee that only reads for the duration of a call takes
+    an `any_arg` of its own. Same
     backings and identity queries. Unlike the view it also grants write access —
     `any_cast<T>(arg*)` or `any_cast<T &>` on a referent bound without
     cv-qualifiers, the boxed object of a non-`const` `std::any` included — and

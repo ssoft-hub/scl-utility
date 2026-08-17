@@ -156,27 +156,22 @@ namespace scl
         }
 #endif
 
+    private:
+        // Named rather than a conversion, and private: a view may be stored and an
+        // argument may not, so a caller never obtains one from the other.
+        [[nodiscard]]
+        constexpr any_view as_view() const noexcept
+        {
+            return any_view{object(), const_descriptor()};
+        }
+
+        [[nodiscard]]
+        any_view as_view() const volatile noexcept
+        {
+            return any_view{object(), const_descriptor()};
+        }
+
     public:
-        // Spelled per handle qualification for the same reason as any_base's accessors: a
-        // bare `const volatile` conversion would cost every caller constexpr-capability.
-#ifdef __cpp_explicit_this_parameter
-        template <typename Self>
-        constexpr operator any_view(this Self && self SCL_LIFETIMEBOUND) noexcept
-        {
-            return any_view{self.object(), self.const_descriptor()};
-        }
-#else
-        constexpr operator any_view() const noexcept SCL_LIFETIMEBOUND
-        {
-            return any_view{object(), const_descriptor()};
-        }
-
-        operator any_view() const volatile noexcept SCL_LIFETIMEBOUND
-        {
-            return any_view{object(), const_descriptor()};
-        }
-#endif
-
         using base_type::has_value;
         using base_type::type_key;
         using base_type::type_name;
@@ -218,7 +213,7 @@ namespace scl
 #endif
         // Through the view, not object(): for the std::any backing the stored address is
         // the box, and a cast must reach what is inside it.
-        any_view const view = *arg;
+        any_view const view = arg->as_view();
         auto const * reached = ::scl::any_cast<Type const>(&view);
         if (reached == nullptr)
             return nullptr;
@@ -483,26 +478,6 @@ namespace scl
  *
  * @tparam Type  Deduced (forwarding) reference type of the viewed value.
  * @param  object  The value to view.
- */
-
-/**
- * @fn scl::any_arg::operator any_view() const
- * @brief Converts to an @ref scl::any_view over the same referent, so a callee
- *        can delegate onward.
- *
- * The view receives the `const`-qualified form of the binding, so write access
- * does not survive the round trip through a view.
- */
-
-/**
- * @fn scl::any_arg::operator any_view() const volatile
- * @brief Converts a `volatile`-qualified handle to an @ref scl::any_view over
- *        the same referent.
- *
- * Spelled apart from the `const` form rather than as one `const volatile`
- * conversion, which would cost every caller its constexpr-capability. Not
- * `constexpr`, since a `volatile` handle cannot be reached during constant
- * evaluation anyway.
  */
 
 /**
