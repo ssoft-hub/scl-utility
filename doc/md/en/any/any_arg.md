@@ -108,7 +108,7 @@ void foo(scl::any_arg value)
 {
     value.has_value();
     value.type_name();   // the name of the object's type; "std::any" for a std::any
-    value.type_key();    // scl::type_key const * identifying that type
+    value.type_key();    // the scl::type_key identifying that type
 }
 ```
 

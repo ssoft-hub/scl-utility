@@ -131,12 +131,11 @@ namespace scl::detail
             return (self.m_descriptor != nullptr) ? self.m_descriptor->type->name() : name{};
         }
 
-        // Null marks the empty state: a key is an identity, with no empty value to return.
         template <typename Self>
         [[nodiscard]]
-        constexpr ::scl::type_key const * type_key(this Self && self) noexcept
+        constexpr ::scl::type_key type_key(this Self && self) noexcept
         {
-            return self.m_descriptor != nullptr ? self.m_descriptor->type : nullptr;
+            return self.m_descriptor != nullptr ? *self.m_descriptor->type : ::scl::type_key{};
         }
 #else
         [[nodiscard]]
@@ -171,17 +170,16 @@ namespace scl::detail
             return (m_descriptor != nullptr) ? m_descriptor->type->name() : name{};
         }
 
-        // Null marks the empty state: a key is an identity, with no empty value to return.
         [[nodiscard]]
-        constexpr ::scl::type_key const * type_key() const noexcept
+        constexpr ::scl::type_key type_key() const noexcept
         {
-            return m_descriptor != nullptr ? m_descriptor->type : nullptr;
+            return m_descriptor != nullptr ? *m_descriptor->type : ::scl::type_key{};
         }
 
         [[nodiscard]]
-        ::scl::type_key const * type_key() const volatile noexcept
+        ::scl::type_key type_key() const volatile noexcept
         {
-            return m_descriptor != nullptr ? m_descriptor->type : nullptr;
+            return m_descriptor != nullptr ? *m_descriptor->type : ::scl::type_key{};
         }
 #endif
 

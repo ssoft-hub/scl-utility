@@ -84,7 +84,7 @@ scl::any_view raw{text};
 raw.has_value();   // true
 raw.type_name();   // the name of std::string; the exact spelling comes from the compiler,
                    // for instance "std::basic_string<char>"
-raw.type_key();    // scl::type_key const * identifying std::string
+raw.type_key();    // the scl::type_key identifying std::string
 ```
 
 `has_value()` answers `false` in two cases: the view is empty, or it refers to an empty
@@ -94,15 +94,13 @@ raw.type_key();    // scl::type_key const * identifying std::string
 object directly, that is the name of the object's own type. When it refers to a `std::any`,
 that is the name of `std::any`, not the name of the type stored inside it.
 
-`type_key()` answers a pointer rather than a reference, because
-[`scl::type_key`](../meta/type_key.md) has no empty value while an empty view identifies no
-type at all - in that case the method answers `nullptr`. A non-null result is the very
-object `scl::type_key_of<T>()` answers with, so comparing against it costs one pointer
-comparison. The equality `type_key()->name() == type_name()` always holds:
+`type_key()` answers a [`scl::type_key`](../meta/type_key.md) by value. An empty view
+identifies no type at all and answers `scl::type_key{}`, the key that names nothing. The
+equality `type_key().name() == type_name()` always holds:
 
 ```cpp
-raw.type_key() == &scl::type_key_of<std::string>();   // true
-scl::any_view{}.type_key();                           // nullptr
+raw.type_key() == scl::type_key_of<std::string>();      // true
+scl::any_view{}.type_key() == scl::type_key{};          // true
 ```
 
 To learn the type stored inside a `std::any`, call `any_cast<T>` with that very type `T`.

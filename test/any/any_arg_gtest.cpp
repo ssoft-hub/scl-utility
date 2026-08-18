@@ -150,7 +150,7 @@ namespace
     constexpr bool identity_holds(::scl::any_arg argument) noexcept
     {
         return argument.has_value() && argument.type_name() == ::scl::type_name<int>() &&
-            argument.type_key() == &::scl::type_key_of<int>();
+            argument.type_key() == ::scl::type_key_of<int>();
     }
 
     // At run time the descriptor is the static one, so identity holds for an argument that
@@ -162,7 +162,7 @@ namespace
         ::scl::any_arg argument{probe};
 
         return argument.has_value() && argument.type_name() == ::scl::type_name<int>() &&
-            argument.type_key() == &::scl::type_key_of<int>();
+            argument.type_key() == ::scl::type_key_of<int>();
     }
 
 // The same condition any_arg.h branches on to decide whether an anchor is needed at all.

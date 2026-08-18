@@ -144,7 +144,7 @@ namespace scl
     {
     public:
         constexpr bool has_value() const noexcept;
-        constexpr ::scl::type_key const * type_key() const noexcept;
+        constexpr ::scl::type_key type_key() const noexcept;
         constexpr name type_name() const noexcept;
     };
 } // namespace scl
@@ -293,15 +293,14 @@ namespace scl
  * @fn scl::any_view::type_key() const
  * @brief Returns the identity key of the viewed type.
  *
- * The result is a pointer, not a reference: a @ref scl::type_key is an identity
- * with no empty value, so an empty view answers `nullptr` rather than a key of
- * nothing. A non-null result is the very object @ref scl::type_key_of returns for
- * that type, so `*view.type_key() == scl::type_key_of<T>()` costs one pointer
- * comparison, and `view.type_key()->name() == view.type_name()` holds throughout.
+ * The key is answered by value, and an empty view answers an empty key, which
+ * names no type at all. `view.type_key() == scl::type_key_of<T>()` compares
+ * against the per-type constant, and `view.type_key().name() == view.type_name()`
+ * holds throughout.
  *
- * @return The key of the viewed type; `nullptr` for an empty view. As with
- *         `type_name()`, the std::any backing identifies itself and not the boxed
- *         type; probe that with @ref scl::any_cast.
+ * @return The key of the viewed type; `scl::type_key{}` for an empty view. As
+ *         with `type_name()`, the std::any backing identifies itself and not the
+ *         boxed type; probe that with @ref scl::any_cast.
  */
 
 /**
