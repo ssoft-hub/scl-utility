@@ -98,6 +98,27 @@ TEST(HierarchyAlgorithmTest, AreIdenticalIsNotEquality)
 }
 
 /**
+ * @test The identity token is a value: built, copied, compared, and nothing else.
+ */
+TEST(HierarchyAlgorithmTest, IdentityIsAValue)
+{
+    STATIC_EXPECT_TRUE(::std::is_default_constructible_v<scl::hierarchy::identity>);
+    STATIC_EXPECT_TRUE(::std::is_copy_constructible_v<scl::hierarchy::identity>);
+    STATIC_EXPECT_TRUE(::std::is_copy_assignable_v<scl::hierarchy::identity>);
+
+    // Opaque: the address it was built from never comes back out.
+    STATIC_EXPECT_FALSE((::std::is_convertible_v<scl::hierarchy::identity, void const *>));
+
+    mock_node first;
+    mock_node second;
+
+    EXPECT_EQ(scl::hierarchy::identity{first}, scl::hierarchy::identity{first});
+    EXPECT_NE(scl::hierarchy::identity{first}, scl::hierarchy::identity{second});
+    EXPECT_EQ(scl::hierarchy::identity{}, scl::hierarchy::identity{});
+    EXPECT_NE(scl::hierarchy::identity{first}, scl::hierarchy::identity{});
+}
+
+/**
  * @test has_parent returns false for a root node.
  */
 TEST(HierarchyAlgorithmTest, HasParentFalseForRoot)

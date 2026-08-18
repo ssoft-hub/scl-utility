@@ -62,6 +62,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   answers `scl::type_key{}`. A comparison written as `*view.type_key() == key` loses the
   dereference, and one written against `nullptr` compares against `scl::type_key{}`.
 
+- **Breaking.** `scl::hierarchy::adl_identity` answers a `scl::hierarchy::identity` rather
+  than a `void const *`, for `scl::hierarchy::node` and for the tree's proxies alike. The
+  new token is a value carrying the address it stands for and handing it back to nobody,
+  which is what the customization point already promised - callers were told to treat the
+  result as opaque, and now the type enforces it. A foreign type adapting the hooks may
+  still answer any equality-comparable type of its own.
+
 - **Breaking.** The constructor `scl::flags::const_iterator(flags const *, std::size_t)` is
   private, befriended by `scl::flags`, the way `scl::hierarchy::tree::iterator` already keeps
   its own. Only `begin()` and `end()` ever built an iterator over a set, and the default

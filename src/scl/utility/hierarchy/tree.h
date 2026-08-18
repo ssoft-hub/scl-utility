@@ -1119,9 +1119,9 @@ namespace scl::hierarchy
 
     template <concepts::node_proxy Ref>
     [[nodiscard]]
-    constexpr void const * adl_identity(Ref self) noexcept
+    constexpr identity adl_identity(Ref self) noexcept
     {
-        return ::std::addressof(self.leaf());
+        return identity{self.leaf()};
     }
 
 } // namespace scl::hierarchy
@@ -2418,12 +2418,12 @@ namespace scl::hierarchy
  * @brief Customization point answering @ref scl::hierarchy::are_identical for a
  *        @ref scl::hierarchy::tree proxy.
  *
- * Returns the address of the wrapped node rather than of the proxy: the proxies
+ * The token stands for the wrapped node rather than for the proxy: the proxies
  * are transient and passed by value, so two of them denoting the same node must
  * still compare identical.
  *
  * @tparam Ref   @ref scl::hierarchy::tree::reference or
  *               @ref scl::hierarchy::tree::const_reference.
  * @param  self  The proxy to identify.
- * @return The address of the node @p self denotes.
+ * @return A @ref scl::hierarchy::identity standing for the node @p self denotes.
  */
