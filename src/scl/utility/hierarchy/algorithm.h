@@ -33,9 +33,9 @@
  *   `adl_parent` (`has_parent`'s `noexcept` is likewise computed from
  *   `noexcept(adl_has_parent(self))`).
  * - `adl_identity(self)` — returns an opaque token identifying the node
- *   `self` denotes; any type with `operator==` works (`node`/`tree` use
- *   `void const *`) — callers must treat it as opaque, not assume it is an
- *   address. Two calls on the *same* underlying node must compare equal;
+ *   `self` denotes; any type with `operator==` works (`node`/`tree` answer a
+ *   ::scl::hierarchy::identity) — callers must treat it as opaque, not assume
+ *   it is an address. Two calls on the *same* underlying node must compare equal;
  *   two calls on *different* nodes must compare unequal, even when their
  *   payloads are equal — identity is never value equality. Unlike the two
  *   hooks above, `noexcept` here is a hard requirement: `are_identical` (see
@@ -57,7 +57,10 @@
  *     constexpr widget & adl_parent(widget & self) noexcept { return *self.parent; }
  *     constexpr widget const & adl_parent(widget const & self) noexcept { return *self.parent; }
  *     constexpr bool adl_has_parent(widget const & self) noexcept { return self.parent != nullptr; }
- *     constexpr void const * adl_identity(widget const & self) noexcept { return &self; }
+ *     constexpr scl::hierarchy::identity adl_identity(widget const & self) noexcept
+ *     {
+ *         return scl::hierarchy::identity{self};
+ *     }
  * }
  *
  * my_lib::widget root, child;
@@ -68,10 +71,29 @@
  * @endcode
  */
 
+#include <memory>
 #include <utility>
 
 namespace scl::hierarchy
 {
+    class identity
+    {
+    private:
+        void const * m_node = nullptr;
+
+    public:
+        constexpr identity() = default;
+
+        template <typename Node>
+        constexpr explicit identity(Node const & node) noexcept
+            : m_node{::std::addressof(node)}
+        {}
+
+    private:
+        [[nodiscard]]
+        friend constexpr bool operator==(identity const &, identity const &) noexcept = default;
+    };
+
     /**
      * @brief Returns the parent of @p value, found via ADL.
      * @ingroup scl_utility_hierarchy
@@ -284,3 +306,47 @@ namespace scl::hierarchy
     }
 
 } // namespace scl::hierarchy
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @class scl::hierarchy::identity
+ * @ingroup scl_utility_hierarchy
+ * @brief Token standing for one node, comparable and nothing else
+ *
+ * What `adl_identity` answers for @ref scl::hierarchy::node and for the tree's
+ * proxies. It is built from the address of the node it stands for, and that
+ * address never leaves it: a caller compares two tokens and can do nothing else
+ * with one, which is the whole contract @ref scl::hierarchy::are_identical needs.
+ *
+ * A default-built token stands for no node and equals only another such one.
+ *
+ * @par Example
+ * @code
+ * scl::hierarchy::node<int> first{1};
+ * scl::hierarchy::node<int> second{1};
+ * assert(scl::hierarchy::identity{first} != scl::hierarchy::identity{second});
+ * @endcode
+ */
+
+/**
+ * @fn scl::hierarchy::identity::identity()
+ * @brief Builds the token standing for no node.
+ */
+
+/**
+ * @fn scl::hierarchy::identity::identity(Node const & node)
+ * @brief Builds the token standing for @p node.
+ * @tparam Node  Deduced type of the node being identified.
+ * @param  node  The node this token stands for; its address is taken and never
+ *               handed back out.
+ */
+
+/**
+ * @fn scl::hierarchy::identity::operator==(identity const &, identity const &)
+ * @brief Compares two tokens for the node each stands for.
+ * @return `true` when both stand for the same node; `!=` is synthesised from
+ *         this.
+ */

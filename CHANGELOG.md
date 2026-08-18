@@ -49,6 +49,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Breaking.** `scl::type_key` is a value rather than an identity reached through a
+  reference. It gains an empty state, spelled `scl::type_key{}`, and copying, moving and
+  assignment; `type_key_of<T>()` still answers a reference to the per-type constant, so the
+  address fast path in `operator==` survives for a caller that keeps one. What ends is
+  holding a key as `type_key const *`: a handle with no type to report answers
+  an empty key instead of `nullptr`, which is what lets the identity queries hand out
+  a value. Nothing has been released, so the old spelling is gone rather than deprecated.
+
+- **Breaking.** `scl::any_view::type_key()` and `scl::any_argument::type_key()` answer a
+  `scl::type_key` by value, the way `scl::basic_any::type_key()` does, and an empty handle
+  answers `scl::type_key{}`. A comparison written as `*view.type_key() == key` loses the
+  dereference, and one written against `nullptr` compares against `scl::type_key{}`.
+
+- **Breaking.** `scl::hierarchy::adl_identity` answers a `scl::hierarchy::identity` rather
+  than a `void const *`, for `scl::hierarchy::node` and for the tree's proxies alike. The
+  new token is a value carrying the address it stands for and handing it back to nobody,
+  which is what the customization point already promised - callers were told to treat the
+  result as opaque, and now the type enforces it. A foreign type adapting the hooks may
+  still answer any equality-comparable type of its own.
+
+- **Breaking.** The constructor `scl::flags::const_iterator(flags const *, std::size_t)` is
+  private, befriended by `scl::flags`, the way `scl::hierarchy::tree::iterator` already keeps
+  its own. Only `begin()` and `end()` ever built an iterator over a set, and the default
+  constructor the iterator concept demands stays public.
+
 - `scl::flags` finds its set bits a byte at a time. Iteration and `size()` ask
   `std::countr_zero`, `std::countl_zero` and `std::popcount` about a whole storage byte
   instead of testing each bit in turn, so a byte with nothing set costs one test rather

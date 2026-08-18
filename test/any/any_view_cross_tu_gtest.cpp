@@ -29,7 +29,7 @@ TEST(AnyViewCrossTuTest, SameNamedTuLocalTypesDoNotMatch)
     ::scl::any_view const view = any_view_cross_tu_provider_duck();
 
     EXPECT_EQ(view.type_name(), ::scl::type_name<AnyCrossTuDuck>());
-    EXPECT_NE(view.type_key(), &::scl::type_key_of<AnyCrossTuDuck>());
+    EXPECT_FALSE(view.type_key() == ::scl::type_key_of<AnyCrossTuDuck>());
     EXPECT_EQ(::scl::any_cast<AnyCrossTuDuck>(&view), nullptr);
 }
 
@@ -41,7 +41,7 @@ TEST(AnyViewCrossTuTest, SharedExternalTypeMatches)
 {
     ::scl::any_view const view = any_view_cross_tu_provider_goose();
 
-    EXPECT_EQ(view.type_key(), &::scl::type_key_of<AnyViewShared::Goose>());
+    EXPECT_TRUE(view.type_key() == ::scl::type_key_of<AnyViewShared::Goose>());
     auto const * goose = ::scl::any_cast<AnyViewShared::Goose>(&view);
     ASSERT_NE(goose, nullptr);
     EXPECT_EQ(goose->id, 9);

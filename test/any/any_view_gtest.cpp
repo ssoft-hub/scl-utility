@@ -100,8 +100,8 @@ TEST(AnyViewTest, ConstexprIdentityOnRawBacking)
     STATIC_EXPECT_TRUE(view.has_value());
     STATIC_EXPECT_FALSE(::scl::any_view{}.has_value());
     STATIC_EXPECT_TRUE(view.type_name() == ::scl::type_name<int>());
-    STATIC_EXPECT_TRUE(*view.type_key() == ::scl::type_key_of<int>());
-    STATIC_EXPECT_TRUE(::scl::any_view{}.type_key() == nullptr);
+    STATIC_EXPECT_TRUE(view.type_key() == ::scl::type_key_of<int>());
+    STATIC_EXPECT_TRUE(::scl::any_view{}.type_key() == ::scl::type_key{});
 }
 
 TEST(AnyViewTest, QualifiersDoNotAffectIdentity)
@@ -118,8 +118,8 @@ TEST(AnyViewTest, QualifiersDoNotAffectIdentity)
     EXPECT_EQ(over_const.type_name(), over_mutable.type_name());
     EXPECT_EQ(over_volatile.type_name(), over_mutable.type_name());
 
-    EXPECT_EQ(over_const.type_key(), over_mutable.type_key());
-    EXPECT_EQ(over_volatile.type_key(), over_mutable.type_key());
+    EXPECT_TRUE(over_const.type_key() == over_mutable.type_key());
+    EXPECT_TRUE(over_volatile.type_key() == over_mutable.type_key());
 
     ASSERT_NE(::scl::any_cast<counted>(&over_mutable), nullptr);
     ASSERT_NE(::scl::any_cast<counted>(&over_const), nullptr);
@@ -275,17 +275,17 @@ TEST(AnyViewTest, IdentityDistinguishesEveryState)
     EXPECT_EQ(over_any.type_name(), ::scl::type_name<::std::any>());
     EXPECT_TRUE(empty.type_name().empty());
 
-    EXPECT_NE(raw.type_key(), over_any.type_key());
-    EXPECT_NE(over_any.type_key(), empty.type_key());
-    EXPECT_NE(raw.type_key(), empty.type_key());
+    EXPECT_FALSE(raw.type_key() == over_any.type_key());
+    EXPECT_FALSE(over_any.type_key() == empty.type_key());
+    EXPECT_FALSE(raw.type_key() == empty.type_key());
 
-    EXPECT_EQ(raw.type_key(), &::scl::type_key_of<counted>());
-    EXPECT_EQ(over_any.type_key(), &::scl::type_key_of<::std::any>());
-    EXPECT_EQ(empty.type_key(), nullptr);
+    EXPECT_TRUE(raw.type_key() == ::scl::type_key_of<counted>());
+    EXPECT_TRUE(over_any.type_key() == ::scl::type_key_of<::std::any>());
+    EXPECT_TRUE(empty.type_key() == ::scl::type_key{});
 
     // The key a non-empty view hands out always names the type the view reports.
-    EXPECT_EQ(raw.type_key()->name(), raw.type_name());
-    EXPECT_EQ(over_any.type_key()->name(), over_any.type_name());
+    EXPECT_EQ(raw.type_key().name(), raw.type_name());
+    EXPECT_EQ(over_any.type_key().name(), over_any.type_name());
 }
 
 // The std::any backing delegates to std::any_cast, but it reaches that delegation through

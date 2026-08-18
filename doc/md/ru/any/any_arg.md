@@ -111,7 +111,7 @@ void foo(scl::any_arg value)
 {
     value.has_value();
     value.type_name();   // имя типа объекта; для std::any отвечает "std::any"
-    value.type_key();    // scl::type_key const *, обозначающий этот тип
+    value.type_key();    // scl::type_key, обозначающий этот тип
 }
 ```
 

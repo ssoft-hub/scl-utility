@@ -6,6 +6,8 @@
  * @ingroup scl_utility_hierarchy
  */
 
+#include <scl/utility/hierarchy/algorithm.h>
+
 #include <algorithm>
 #include <concepts>
 #include <list>
@@ -406,9 +408,9 @@ namespace scl::hierarchy
 
     template <typename Payload, template <typename> class Allocator>
     [[nodiscard]]
-    constexpr void const * adl_identity(node<Payload, Allocator> const & self) noexcept
+    constexpr identity adl_identity(node<Payload, Allocator> const & self) noexcept
     {
-        return ::std::addressof(self);
+        return identity{self};
     }
 
 } // namespace scl::hierarchy
@@ -1248,6 +1250,6 @@ namespace scl::hierarchy
  * @brief Customization point answering @ref scl::hierarchy::are_identical for a node.
  *
  * @param  self  The node to identify.
- * @return The node's own address — a node is reached by reference, so it is
- *         its own identity.
+ * @return A @ref scl::hierarchy::identity standing for this node — a node is
+ *         reached by reference, so it is its own identity.
  */

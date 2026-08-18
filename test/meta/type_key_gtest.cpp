@@ -31,16 +31,40 @@ namespace TypeKeyNs
 } // namespace TypeKeyNs
 
 /**
- * @test Verify a key cannot be built by hand, copied, or moved: it is an
- *       identity with reference semantics, held by reference or pointer.
+ * @test Verify a key is an ordinary value: default-built, copied, moved and
+ *       assigned, so a handle can answer one without handing out a pointer.
  */
 TEST(TypeKeyTest, TypeProperties)
 {
-    STATIC_EXPECT_FALSE(::std::is_default_constructible_v<::scl::type_key>);
-    STATIC_EXPECT_FALSE(::std::is_copy_constructible_v<::scl::type_key>);
-    STATIC_EXPECT_FALSE(::std::is_move_constructible_v<::scl::type_key>);
-    STATIC_EXPECT_FALSE(::std::is_copy_assignable_v<::scl::type_key>);
-    STATIC_EXPECT_FALSE(::std::is_move_assignable_v<::scl::type_key>);
+    STATIC_EXPECT_TRUE(::std::is_default_constructible_v<::scl::type_key>);
+    STATIC_EXPECT_TRUE(::std::is_copy_constructible_v<::scl::type_key>);
+    STATIC_EXPECT_TRUE(::std::is_move_constructible_v<::scl::type_key>);
+    STATIC_EXPECT_TRUE(::std::is_copy_assignable_v<::scl::type_key>);
+    STATIC_EXPECT_TRUE(::std::is_move_assignable_v<::scl::type_key>);
+}
+
+/**
+ * @test Verify the empty key names no type and matches a default-built one.
+ */
+TEST(TypeKeyTest, EmptyKeyNamesNothing)
+{
+    STATIC_EXPECT_TRUE(::scl::type_key{} == ::scl::type_key{});
+    STATIC_EXPECT_TRUE(::scl::type_key{}.name().empty());
+    STATIC_EXPECT_FALSE(::scl::type_key_of<int>() == ::scl::type_key{});
+}
+
+/**
+ * @test Verify a copy of a key keeps naming the same type as its source.
+ */
+TEST(TypeKeyTest, ACopyNamesTheSameType)
+{
+    ::scl::type_key copy = ::scl::type_key_of<int>();
+
+    EXPECT_TRUE(copy == ::scl::type_key_of<int>());
+    EXPECT_FALSE(copy == ::scl::type_key_of<double>());
+
+    copy = ::scl::type_key_of<double>();
+    EXPECT_TRUE(copy == ::scl::type_key_of<double>());
 }
 
 /**

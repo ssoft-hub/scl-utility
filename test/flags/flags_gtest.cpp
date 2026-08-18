@@ -7,6 +7,7 @@
 #include <iterator>
 #include <ranges>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 namespace
@@ -196,6 +197,9 @@ TEST(FlagsTest, WholeMaskQueries)
 TEST(FlagsTest, RangeConceptsAndSize)
 {
     static_assert(::std::bidirectional_iterator<flag_numbers::const_iterator>);
+
+    // Only flags builds an iterator over a set: the owner-taking constructor is its own.
+    static_assert(!::std::is_constructible_v<flag_numbers::const_iterator, flag_numbers const *, ::std::size_t>);
     static_assert(::std::ranges::bidirectional_range<flag_numbers>);
     static_assert(::std::ranges::sized_range<flag_numbers>);
 

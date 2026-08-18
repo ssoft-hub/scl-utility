@@ -35,13 +35,17 @@ namespace scl
 {
     class type_key
     {
+    private:
+        ::std::string_view m_name;
+        void const * m_tu = nullptr;
+
     public:
-        type_key() = delete;
-        type_key(type_key const &) = delete;
-        type_key(type_key &&) = delete;
-        type_key & operator=(type_key const &) = delete;
-        type_key & operator=(type_key &&) = delete;
-        ~type_key() = default;
+        constexpr type_key() = default;
+        constexpr type_key(type_key const &) = default;
+        constexpr type_key(type_key &&) = default;
+        constexpr type_key & operator=(type_key const &) = default;
+        constexpr type_key & operator=(type_key &&) = default;
+        constexpr ~type_key() = default;
 
         [[nodiscard]]
         constexpr ::std::string_view name() const noexcept
@@ -49,28 +53,22 @@ namespace scl
             return m_name;
         }
 
-        friend constexpr bool operator==(type_key const & left, type_key const & right) noexcept
-        {
-            // Address identity first: keys live in per-type inline variables,
-            // merged within a module, so comparing a stored reference against
-            // type_key_of<T>() reduces to one pointer compare. Keys from
-            // another module fall back to content.
-            if (&left == &right)
-                return true;
-            return left.m_name == right.m_name && left.m_tu == right.m_tu;
-        }
-
     private:
-        template <typename T>
-        friend constexpr type_key detail::make_type_key() noexcept;
-
         constexpr type_key(::std::string_view name, void const * tu) noexcept
             : m_name{name}
             , m_tu{tu}
         {}
 
-        ::std::string_view m_name;
-        void const * m_tu;
+        [[nodiscard]]
+        friend constexpr bool operator==(type_key const & left, type_key const & right) noexcept
+        {
+            if (&left == &right)
+                return true;
+            return left.m_tu == right.m_tu && left.m_name == right.m_name;
+        }
+
+        template <typename T>
+        friend constexpr type_key detail::make_type_key() noexcept;
     };
 
 } // namespace scl
@@ -89,18 +87,11 @@ namespace scl::detail
     constexpr type_key make_type_key() noexcept
     {
         void const * tu = nullptr;
-        // The discarded branch of the dependent condition is not instantiated:
-        // an external-type instantiation must not name the internal-linkage
-        // anchor inside this inline entity (that would be an ODR violation).
         if constexpr (is_tu_local_v<T>)
             tu = &tu_anchor;
         return type_key{type_name<T>(), tu};
     }
 
-    // ICF cannot break the address fast path: a const object is foldable only
-    // with a bit-identical one, and bit-identical keys carry equal {name, tu}
-    // — the content comparison already deems such types equal, so folding
-    // creates no new false match.
     template <typename T>
     inline constexpr type_key type_key_v = make_type_key<T>();
 
@@ -141,15 +132,17 @@ namespace scl
  *   unmerged inline instantiations (Windows DLLs) cannot break equality.
  *
  * Keys are exposed by ::scl::type_key_of<T>() as references to per-type
- * constants and are fully usable in constant expressions. Only
- * `type_key_of` can produce a key: the members are private, the default
- * constructor is deleted, and there is no mutating API, so a hand-built key
- * pairing one type's name with another type's discriminator cannot exist.
+ * constants and are fully usable in constant expressions. Only `type_key_of`
+ * produces a key naming a type: the members are private and there is no
+ * mutating API, so a hand-built key pairing one type's name with another
+ * type's discriminator cannot exist. The one key a caller can spell is the
+ * empty one, `type_key{}`, which names nothing.
  *
- * The key is an identity with reference semantics and is therefore
- * non-copyable and non-movable (the precedent is `std::type_info`): a copy
- * would silently drop the address fast path and invite storing keys by
- * value. Consumers hold `type_key const &` or `type_key const *`.
+ * The key is a value: a `std::string_view` beside a discriminator, copied the
+ * way that view is copied, and a handle that has no type to report answers
+ * an empty key rather than an absent one. Comparing against
+ * `type_key_of<T>()` still short-circuits on address identity where the
+ * caller kept a reference to the per-type constant.
  *
  * The key is intentionally not ordered (no `operator<=>`, no `std::less`
  * support): its identity involves object addresses, whose relative order is
@@ -168,30 +161,30 @@ namespace scl
 
 /**
  * @fn scl::type_key::type_key()
- * @brief Deleted: a key is produced only by ::scl::type_key_of, which pairs a
- *        type's name with the discriminator that belongs to it.
+ * @brief Constructs the key that names no type.
+ *
+ * A key naming a type comes from @ref scl::type_key_of and from nowhere else,
+ * so this is the one key a caller can spell.
  */
 
 /**
  * @fn scl::type_key::type_key(type_key const &)
- * @brief Deleted: a key is an identity with reference semantics, so a copy
- *        would drop the address fast path @ref scl::type_key::operator==
- *        relies on. Hold `type_key const &` or `type_key const *` instead.
+ * @brief Copies the key; a key is a value, not a handle to one.
  */
 
 /**
  * @fn scl::type_key::type_key(type_key &&)
- * @brief Deleted, for the same reason as the copy constructor.
+ * @brief Same as the copy constructor: there is nothing to steal.
  */
 
 /**
  * @fn scl::type_key::operator=(type_key const &)
- * @brief Deleted: a key denotes one type for its whole lifetime.
+ * @brief Replaces which type this key names.
  */
 
 /**
  * @fn scl::type_key::operator=(type_key &&)
- * @brief Deleted, for the same reason as copy assignment.
+ * @brief Same as copy assignment.
  */
 
 /**
@@ -226,9 +219,9 @@ namespace scl
  * The key is a per-type `inline constexpr` variable: every use of
  * `type_key_of<T>()` for an external T inside one module refers to the same
  * object, which makes equality against a stored reference an address
- * comparison. The key is non-copyable, so consumers storing keys long-term
- * (type-erasure wrappers) hold `type_key const &` or `type_key const *` to
- * the per-type constant — exactly the form that keeps the fast path.
+ * comparison. A consumer storing keys long-term may hold either the
+ * reference, which keeps that fast path, or a copy of the key, which compares
+ * by content.
  *
  * For an external type the key is `{type_name<T>(), nullptr}` — identical in
  * every translation unit and across shared-library boundaries. For a TU-local

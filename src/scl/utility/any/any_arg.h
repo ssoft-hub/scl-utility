@@ -274,7 +274,7 @@ namespace scl
     {
     public:
         constexpr bool has_value() const noexcept;
-        constexpr ::scl::type_key const * type_key() const noexcept;
+        constexpr ::scl::type_key type_key() const noexcept;
         constexpr name type_name() const noexcept;
     };
 } // namespace scl
@@ -507,9 +507,8 @@ namespace scl
 /**
  * @fn scl::any_argument::type_key() const
  * @brief Returns the identity key of the viewed type.
- * @return The @ref scl::type_key of the viewed type — the very object
- *         @ref scl::type_key_of returns for it, so comparison is a pointer
- *         comparison; `nullptr` for an argument that adopted the referent of an
+ * @return The @ref scl::type_key of the viewed type, answered by value;
+ *         `scl::type_key{}` for an argument that adopted the referent of an
  *         empty @ref scl::any_view, exactly as @ref scl::any_view::type_key.
  */
 

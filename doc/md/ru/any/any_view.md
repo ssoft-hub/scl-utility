@@ -89,7 +89,7 @@ scl::any_view raw{text};
 raw.has_value();   // true
 raw.type_name();   // имя типа std::string; точное написание даёт компилятор,
                    // например "std::basic_string<char>"
-raw.type_key();    // scl::type_key const *, обозначающий std::string
+raw.type_key();    // scl::type_key, обозначающий std::string
 ```
 
 `has_value()` отвечает `false` в двух случаях: представление пустое или оно ссылается на
@@ -99,16 +99,13 @@ raw.type_key();    // scl::type_key const *, обозначающий std::strin
 ссылается на объект напрямую, это имя самого типа объекта. Когда оно ссылается на
 `std::any`, это имя `std::any`, а не имя типа, лежащего внутри.
 
-`type_key()` возвращает указатель, а не ссылку, потому что
-[`scl::type_key`](../meta/type_key.md) не имеет пустого значения, а пустое представление
-не обозначает никакого типа - в этом случае метод возвращает `nullptr`. Ненулевой
-результат совпадает с объектом, который возвращает `scl::type_key_of<T>()`, поэтому
-сравнение с ним стоит одного сравнения указателей. Равенство
-`type_key()->name() == type_name()` выполняется всегда:
+`type_key()` возвращает [`scl::type_key`](../meta/type_key.md) по значению. Пустое
+представление не обозначает никакого типа и возвращает `scl::type_key{}` - ключ, который
+не называет ничего. Равенство `type_key().name() == type_name()` выполняется всегда:
 
 ```cpp
-raw.type_key() == &scl::type_key_of<std::string>();   // true
-scl::any_view{}.type_key();                           // nullptr
+raw.type_key() == scl::type_key_of<std::string>();      // true
+scl::any_view{}.type_key() == scl::type_key{};          // true
 ```
 
 Чтобы узнать тип объекта внутри `std::any`, вызывайте `any_cast<T>` с самим этим типом
