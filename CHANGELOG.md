@@ -62,6 +62,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   answers `scl::type_key{}`. A comparison written as `*view.type_key() == key` loses the
   dereference, and one written against `nullptr` compares against `scl::type_key{}`.
 
+- **Breaking.** The constructor `scl::flags::const_iterator(flags const *, std::size_t)` is
+  private, befriended by `scl::flags`, the way `scl::hierarchy::tree::iterator` already keeps
+  its own. Only `begin()` and `end()` ever built an iterator over a set, and the default
+  constructor the iterator concept demands stays public.
+
 - `scl::flags` finds its set bits a byte at a time. Iteration and `size()` ask
   `std::countr_zero`, `std::countl_zero` and `std::popcount` about a whole storage byte
   instead of testing each bit in turn, so a byte with nothing set costs one test rather

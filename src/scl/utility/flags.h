@@ -362,11 +362,6 @@ namespace scl
     public:
         constexpr const_iterator() noexcept = default;
 
-        constexpr const_iterator(flags const * owner, ::std::size_t position) noexcept
-            : m_owner{owner}
-            , m_position{position}
-        {}
-
         [[nodiscard]]
         constexpr Enum operator*() const
         {
@@ -406,6 +401,14 @@ namespace scl
         {
             return m_position == other.m_position;
         }
+
+    private:
+        constexpr const_iterator(flags const * owner, ::std::size_t position) noexcept
+            : m_owner{owner}
+            , m_position{position}
+        {}
+
+        friend class flags;
     };
 } // namespace scl
 
@@ -871,13 +874,6 @@ namespace scl
  * @fn scl::flags::const_iterator::const_iterator()
  * @brief Constructs a singular iterator owning no flags, as the forward
  *        iterator requirements demand. Comparable, but not dereferenceable.
- */
-
-/**
- * @fn scl::flags::const_iterator::const_iterator(flags const * owner, ::std::size_t position)
- * @brief Constructs an iterator over @p owner positioned at bit @p position.
- * @param owner     The flags being iterated.
- * @param position  Current set-bit ordinal (`bit_count` for the end iterator).
  */
 
 /**
