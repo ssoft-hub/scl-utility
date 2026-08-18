@@ -49,6 +49,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Breaking.** `scl::type_key` is a value rather than an identity reached through a
+  reference. It gains an empty state, spelled `scl::type_key{}`, and copying, moving and
+  assignment; `type_key_of<T>()` still answers a reference to the per-type constant, so the
+  address fast path in `operator==` survives for a caller that keeps one. What ends is
+  holding a key as `type_key const *`: a handle with no type to report answers
+  an empty key instead of `nullptr`, which is what lets the identity queries hand out
+  a value. Nothing has been released, so the old spelling is gone rather than deprecated.
+
 - `scl::flags` finds its set bits a byte at a time. Iteration and `size()` ask
   `std::countr_zero`, `std::countl_zero` and `std::popcount` about a whole storage byte
   instead of testing each bit in turn, so a byte with nothing set costs one test rather

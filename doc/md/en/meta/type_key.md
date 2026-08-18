@@ -14,8 +14,9 @@ Contents:
 
 ## type_key
 
-An equality-comparable identity key of a type: the pair of its compile-time name string and a
-per-translation-unit discriminator, exposed through an encapsulated class.
+`scl::type_key` identifies one type. Two keys compare equal when they identify the same type.
+The key holds that type's name, obtained at compile time, beside a per-translation-unit
+discriminator.
 
 - Header: `#include <scl/utility/meta/type_key.h>`
 - Declaration:
@@ -24,11 +25,12 @@ per-translation-unit discriminator, exposed through an encapsulated class.
 class type_key
 {
 public:
-    type_key() = delete;
-    type_key(type_key const &) = delete;
-    type_key(type_key &&) = delete;
-    type_key & operator=(type_key const &) = delete;
-    type_key & operator=(type_key &&) = delete;
+    constexpr type_key() = default;
+    constexpr type_key(type_key const &) = default;
+    constexpr type_key(type_key &&) = default;
+    constexpr type_key & operator=(type_key const &) = default;
+    constexpr type_key & operator=(type_key &&) = default;
+    constexpr ~type_key() = default;
 
     constexpr std::string_view name() const noexcept;
 
@@ -39,71 +41,76 @@ public:
 
 ### Semantics
 
-- `name()` is the [`type_name<T>()`](type_name.md) string of the identified type. The private
-  discriminator is `nullptr` for ordinary (external-linkage) types; for TU-local types it holds
-  the address of an anchor object private to the including translation unit, so same-named
-  anonymous-namespace types from different translation units carry different values.
-- Equality short-circuits on **address identity** first: keys live in per-type constants (see
-  `type_key_of`), so comparing stored references resolves to one pointer comparison. Otherwise
-  it falls back to content — name and discriminator both equal. For types declared at namespace
-  scope this never falsely matches (same-named TU-local types differ by discriminator) and
-  never falsely rejects (an external type used from an executable and a shared library compares
-  by name with a null discriminator on both sides — unmerged inline instantiations on Windows
-  cannot break it).
-- Only `type_key_of<T>()` can produce a key: members are private, the default constructor is
-  deleted, and there is no mutating API. A hand-built key pairing one type's name with another
-  type's discriminator cannot exist.
-- The key is an identity with reference semantics and is therefore **non-copyable and
-  non-movable** (the precedent is `std::type_info`): a copy would silently drop the address
-  fast path and invite storing keys by value. Consumers hold `type_key const &` or
-  `type_key const *`.
-- The key is intentionally **not ordered** (no `operator<=>`, no `std::less` support): its
-  identity involves object addresses, whose relative order is unspecified between unrelated
-  objects and unusable in constant expressions. Hashing support is deferred until a real
-  consumer exists.
+`name()` answers the name of the identified type as a string - the one
+[`type_name<T>()`](type_name.md) produces.
+
+The discriminator is never handed out. It is `nullptr` for a type with external linkage; for a
+type from an anonymous namespace it holds the address of an anchor object, one per translation
+unit, so same-named types from different translation units carry different discriminators.
+
+Comparison starts with addresses. `type_key_of<T>()` answers a reference to a constant, one per
+type, so comparing two such references costs a single pointer comparison. Where the addresses
+differ, the contents are compared: name and discriminator. For a type declared at namespace
+scope this yields neither a false match nor a false reject. Same-named types from anonymous
+namespaces differ by discriminator; an external type used from an executable and from a shared
+library compares by name with a null discriminator on both sides, and unmerged inline
+instantiations on Windows do not break it.
+
+Only `type_key_of<T>()` hands out a key that identifies a type. Building one by hand, pairing
+one type's name with another type's discriminator, is impossible: the members are private and
+nothing modifies a key. The one key a caller writes for itself is the empty one,
+`scl::type_key{}`. It identifies no type and equals no key `type_key_of` produces.
+
+A key is a **value**: it copies, moves and assigns. A copy identifies the type its source
+identifies, and equals it.
+
+Keys carry no order: neither `operator<=>` nor `std::less`. Identity rests on object addresses,
+whose relative order between unrelated objects the standard leaves unspecified and constant
+expressions cannot read. Nor does a hash function come with the key; the example at the end of
+the page writes one and puts a key into an unordered container.
 
 ### Key lifetime
 
-A key is a view into the module (executable or shared library) that produced it: `name()`
-points into that module's signature literal and the discriminator into that module's anchor.
-**A key must not outlive its producing module.** After `FreeLibrary`/`dlclose` the pointers
-dangle, and a module later mapped at the same base address can even resurrect a stale TU-local
-key into falsely matching a fresh unrelated one. Drop stored keys when unloading the module
-that produced them.
+A key points into the module - executable or shared library - that produced it: `name()` at
+that module's string literal, the discriminator at its anchor. **A key must not outlive the
+module that produced it.** After `FreeLibrary` or `dlclose` both pointers dangle, and a module
+loaded afterwards at the same base address can make a stale key compare equal to a fresh,
+unrelated one. Destroy stored keys before unloading the module that produced them.
 
 ---
 
 ## type_key_of<T>
 
-Returns a reference to the per-type `type_key` identifying `T`.
+Returns a reference to the `type_key` that identifies `T`.
 
 - Header: `#include <scl/utility/meta/type_key.h>`
 - Declaration: `template <typename T> constexpr type_key const & type_key_of() noexcept;`
 
-The key is a per-type `inline constexpr` variable: every use of `type_key_of<T>()` for an
-external `T` inside one module refers to the same object, which makes equality against a stored
-reference a single address comparison. The key is non-copyable, so consumers storing keys
-long-term (type-erasure wrappers) hold `type_key const &` or `type_key const *` to the per-type
-constant — exactly the form that keeps the fast path.
+The key sits in an `inline constexpr` variable, one per type. Inside one module every call to
+`type_key_of<T>()` for an external `T` reaches the same object, so comparing against a stored
+reference costs one address comparison. Code that keeps a key for long - a type-erasure wrapper,
+say - holds either that reference, which keeps the fast path, or a copy, which compares by
+content.
 
 ### Precondition
 
-`T` must be declared at namespace scope. Local classes and closure types are outside the
-contract: compilers render them without a reliable marker, and no compile-time guard can detect
-the violation. On Clang a local class renders as its bare name, so its key is byte-identical to
-the key of a same-named namespace-scope type — two genuinely different types compare equal:
+`T` must be declared at namespace scope. Local classes and closure types stay outside the
+contract: a compiler writes their name without a reliable marker of locality, and no check at
+compile time catches the violation. Clang writes a local class as its bare name, so its key is
+byte-identical to the key of a same-named type at namespace scope, and two genuinely different
+types compare equal:
 
 ```cpp
 struct duck {};                     // namespace scope
 int main() {
-    struct duck {};                 // local class — outside the contract
+    struct duck {};                 // local class - outside the contract
     // passes on Clang: a false match against the ordinary external type
     static_assert(scl::type_key_of<::duck>() == scl::type_key_of<duck>());
 }
 ```
 
-(GCC renders `main()::duck` and MSVC `struct main::duck`, which do not collide.) To give such a
-type a well-defined key, move it into an anonymous namespace of the same translation unit:
+GCC writes `main()::duck` and MSVC `struct main::duck`, and those do not collide. To give such
+a type a well-defined key, move it into an anonymous namespace of the same translation unit:
 
 ```cpp
 namespace { struct duck {}; }             // well-defined key
@@ -125,22 +132,22 @@ static_assert(anon_key != ext_key);
 static_assert(&scl::type_key_of<goose>() == &ext_key);  // one object per type
 ```
 
-Same-named anonymous-namespace types from different translation units produce keys with equal
-`name()` strings but different discriminators — the keys compare unequal, which is exactly what
-a type-erasure facility needs before a `static_cast` back from an erased state.
+Same-named types from anonymous namespaces of different translation units produce keys with
+equal `name()` strings and different discriminators. The keys compare unequal, which is exactly
+what a type-erasure facility needs before casting back from an erased state.
 
 ### Typical Use Cases
 
-Type-erased storage (`any`-like wrappers, function-argument views) that must recover the typed
-pointer by comparing a stored marker, without enabling RTTI and without the undefined behaviour
-a string-only comparison would allow on the anonymous-namespace collision.
+Type-erased storage - `any`-like wrappers, views over a function argument - that has to recover
+the typed pointer by comparing a stored key. No RTTI, and none of the undefined behaviour a
+comparison by name alone would allow when two anonymous namespaces spell the same name.
 
 ---
 
 ## is_tu_local<T>
 
-Detects whether `T` is local to the current translation unit, i.e. declared in an anonymous
-namespace directly or as a component of a compound type.
+Answers whether `T` is local to the current translation unit, that is, declared in an anonymous
+namespace either directly or as part of a compound type.
 
 - Header: `#include <scl/utility/meta/tu_local.h>`
 - Declaration:
@@ -152,17 +159,18 @@ template <typename T> inline constexpr bool is_tu_local_v;   // = is_tu_local<T>
 
 ### Semantics
 
-Detection derives the compiler's anonymous-namespace marker at compile time — by diffing the
-`type_name<T>()` rendering of a TU-local probe type against an external probe of the same
-shape — and searches the rendered name of `T` for it. Two markers are derived, because MSVC
-spells the marker differently for top-level types and for types nested inside template
-arguments. Deriving instead of hardcoding keeps the trait working on untested compilers.
+The compiler's anonymous-namespace marker is derived at compile time: the name of a probe type
+local to the translation unit is compared against the name of an external probe of the same
+shape, and the marker that differs is then looked for in the name of `T`. Two markers are
+derived, because MSVC writes it one way for a top-level type and another for a type inside a
+template argument. Deriving it rather than listing it keeps the trait working on a compiler
+nobody has tested it against.
 
 A marker is accepted anywhere outside string and character literals, so compound types are
-covered: a pointer to, reference to, or template specialization over a TU-local type is
-TU-local itself. String and character non-type template parameters render inside quoted
-literals (or as character codes on MSVC), and literal contents are skipped — an NTTP spelling
-the marker cannot misclassify an external type.
+covered: a pointer to a local type, a reference to one, and a template specialization over one
+are local themselves. A string or character template parameter is written inside a quoted
+literal, as character codes on MSVC, and literal contents are skipped - so a parameter that
+spells the marker cannot put an external type in the local class by mistake.
 
 ### Example
 
@@ -182,6 +190,6 @@ static_assert(!scl::is_tu_local_v<int>);
 
 ## See also
 
-- [`example/meta/type_key/meta_type_key_example.cpp`](../../../../example/meta/type_key/meta_type_key_example.cpp) —
+- [`example/meta/type_key/meta_type_key_example.cpp`](../../../../example/meta/type_key/meta_type_key_example.cpp) -
   runnable version: a hashable handle over `type_key`, kept consistent with the key's
   identity and used directly as an unordered-container key.
