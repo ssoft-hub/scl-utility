@@ -39,6 +39,11 @@ namespace scl
 
     public:
         constexpr any_view() noexcept = default;
+        constexpr any_view(any_view const &) = default;
+        constexpr any_view(any_view &&) = default;
+        constexpr any_view & operator=(any_view const &) = default;
+        constexpr any_view & operator=(any_view &&) = default;
+        constexpr ~any_view() = default;
 
 #if SCL_HAS_RTTI || defined(DOXYGEN)
         // cppcheck-suppress noExplicitConstructor
@@ -257,6 +262,31 @@ namespace scl
 /**
  * @fn scl::any_view::any_view()
  * @brief Constructs an empty view referring to no object.
+ */
+
+/**
+ * @fn scl::any_view::any_view(any_view const &)
+ * @brief Copies the view; both then refer to the same object.
+ */
+
+/**
+ * @fn scl::any_view::any_view(any_view &&)
+ * @brief Moves the view, which copies it: a view owns nothing to hand over.
+ */
+
+/**
+ * @fn scl::any_view::operator=(any_view const &)
+ * @brief Rebinds this view to what @p other refers to.
+ */
+
+/**
+ * @fn scl::any_view::operator=(any_view &&)
+ * @brief Rebinds this view, which copies: a view owns nothing to hand over.
+ */
+
+/**
+ * @fn scl::any_view::~any_view()
+ * @brief Trivial: the view owns neither the referent nor the descriptor.
  */
 
 /**

@@ -49,7 +49,7 @@ namespace scl
         any_argument(any_argument &&) = delete;
         any_argument & operator=(any_argument const &) = delete;
         any_argument & operator=(any_argument &&) = delete;
-        ~any_argument() = default;
+        constexpr ~any_argument() = default;
 
 #if SCL_HAS_RTTI || defined(DOXYGEN)
         // std::any has no volatile-qualified members, so a volatile std::any is excluded
