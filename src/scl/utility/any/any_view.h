@@ -30,10 +30,11 @@ namespace scl
 
     class any_view : detail::any_base
     {
-        using base_type = detail::any_base;
-
     public:
-        using name = base_type::name;
+        using name = detail::any_base::name;
+
+    private:
+        using base_type = detail::any_base;
 
     public:
         constexpr any_view() noexcept = default;
@@ -78,9 +79,10 @@ namespace scl
 
     private:
         // An argument reaches this to hand over a referent it already narrowed with
-        // any_base::const_descriptor.
-        constexpr explicit any_view(void const volatile * object, base_type::descriptor_type const * descriptor) noexcept
-            : base_type{object, descriptor}
+        // any_base::const_descriptor. The referent travels as the base holds it, so a
+        // holder remembered during constant evaluation stays one.
+        constexpr explicit any_view(base_type const & bound, base_type::descriptor_type const * descriptor) noexcept
+            : base_type{bound, descriptor}
         {}
 
         friend class ::scl::any_argument;

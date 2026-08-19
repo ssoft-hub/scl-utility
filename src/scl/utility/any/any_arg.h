@@ -76,11 +76,13 @@ namespace scl
 
     class any_argument : detail::any_base
     {
+    public:
+        using name = detail::any_base::name;
+
+    private:
         using base_type = detail::any_base;
 
     public:
-        using name = base_type::name;
-
         // Passing an argument on binds another reference, so the only use left for a copy
         // is storing one, which the contract forbids.
         any_argument() = delete;
@@ -107,7 +109,7 @@ namespace scl
         // Not lifetime-bound: what is adopted is the referent, so the view may die first.
         // cppcheck-suppress noExplicitConstructor
         constexpr any_argument(any_view const & view) noexcept // NOLINT(*-explicit-*): adopts the referent
-            : base_type{view.object(), view.const_descriptor()}
+            : base_type{view, view.const_descriptor()}
         {}
 
         // Unwrapped to its content, bound with the constness of the any it was taken from.
@@ -171,21 +173,20 @@ namespace scl
         }
 #endif
 
-    private:
-        // Named rather than a conversion, and private: a view may be stored and an
-        // argument may not, so a caller never obtains one from the other.
-        [[nodiscard]]
-        constexpr any_view as_view() const noexcept
-        {
-            return any_view{object(), const_descriptor()};
-        }
-
     public:
         using base_type::has_value;
         using base_type::type_key;
         using base_type::type_name;
 
     private:
+        // Named rather than a conversion, and private: a view may be stored and an
+        // argument may not, so a caller never obtains one from the other.
+        [[nodiscard]]
+        constexpr any_view as_view() const noexcept
+        {
+            return any_view{*this, const_descriptor()};
+        }
+
         // An explicit object parameter in the base deduces this type, not the base, and
         // private inheritance would otherwise refuse that conversion.
         friend class ::scl::detail::any_base;

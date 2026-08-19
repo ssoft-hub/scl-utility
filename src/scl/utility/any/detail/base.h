@@ -341,7 +341,13 @@ namespace scl::detail
         using name = any_name;
 
     private:
-        void const volatile * m_object = nullptr;
+        // Only constant evaluation activates the holder, and it never reaches run time: an
+        // owning any allocates there, and such an allocation dies inside the evaluation.
+        union
+        {
+            void const volatile * m_object = nullptr;
+            any_holder_base const * m_held;
+        };
         descriptor_type const * m_descriptor = nullptr;
 
     public:
@@ -422,9 +428,35 @@ namespace scl::detail
         constexpr any_base() noexcept = default;
 
         constexpr any_base(void const volatile * object, descriptor_type const * descriptor) noexcept
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access): the union is the referent
             : m_object{object}
             , m_descriptor{descriptor}
         {}
+
+        // The parameter type is what tells the two forms apart: a holder pointer converts to
+        // `void const volatile *`, so the form above would take it as an address and lose
+        // which of the two the referent is.
+        constexpr any_base(any_holder_base const * held, descriptor_type const * descriptor) noexcept
+            : m_held{held}
+            , m_descriptor{descriptor}
+        {}
+
+        // Hands the referent on as it is held: passing the address would fix one shape and
+        // lose the other.
+        constexpr any_base(any_base const & bound, descriptor_type const * descriptor) noexcept
+            : any_base{bound}
+        {
+            m_descriptor = descriptor;
+        }
+
+        // Anywhere but constant evaluation over an owner this reads the union's other
+        // member, which constant evaluation diagnoses.
+        [[nodiscard]]
+        constexpr any_holder_base const * held() const noexcept
+        {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access): the union is the referent
+            return m_held;
+        }
 
         // The request must cover every cv-qualifier of the referent and of the handle it
         // is reached through; the latter is static, so it comes from the object parameter.
@@ -463,12 +495,14 @@ namespace scl::detail
         [[nodiscard]]
         constexpr void const volatile * object() const noexcept
         {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access): the union is the referent
             return m_object;
         }
 
         [[nodiscard]]
         void const volatile * object() const volatile noexcept
         {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access): the union is the referent
             return m_object;
         }
 
@@ -559,7 +593,7 @@ namespace scl::detail
             if (*m_descriptor->type != ::scl::type_key_of<::std::any>())
                 return nullptr;
             // No constructor binds a volatile std::any, so dropping the qualifier is safe.
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): see above
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-type-union-access)
             return static_cast<::std::any const *>(const_cast<void const *>(m_object));
         }
 
@@ -571,7 +605,7 @@ namespace scl::detail
             if (*m_descriptor->type != ::scl::type_key_of<::std::any>())
                 return nullptr;
             // No constructor binds a volatile std::any, so dropping the qualifier is safe.
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): see above
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-type-union-access)
             return static_cast<::std::any const *>(const_cast<void const *>(m_object));
         }
 #endif
