@@ -89,6 +89,15 @@ namespace
 
     template <typename Target, typename Source>
     concept swapped_with = requires(Target & target, Source & source) { target.swap(source); };
+
+    constexpr bool view_over_an_any_names_the_stored_type()
+    {
+        ::scl::any const value{42};
+        ::scl::any_view const view{value};
+
+        return view.has_value() && view.type_key() == ::scl::type_key_of<int>() &&
+            view.type_name() == ::scl::type_name<int>();
+    }
 } // namespace
 
 TEST(AnyInteropTest, ViewOverAnAnyReadsItsContent)
@@ -104,6 +113,11 @@ TEST(AnyInteropTest, ViewOverAnAnyReadsItsContent)
 TEST(AnyInteropTest, ViewOverAnAnyTemporaryIsRefused)
 {
     STATIC_EXPECT_FALSE(view_from_rvalue<::scl::any>);
+}
+
+TEST(AnyInteropTest, ViewOverAnAnyNamesTheStoredTypeDuringConstantEvaluation)
+{
+    STATIC_EXPECT_TRUE(view_over_an_any_names_the_stored_type());
 }
 
 TEST(AnyInteropTest, AnAnyBuiltFromAnArgumentTakesTheValue)

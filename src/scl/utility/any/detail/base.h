@@ -194,9 +194,11 @@ namespace scl::detail
     }
 
     // Only the type says where inside the holder its object sits, so a view asks for it.
+    // Constexpr, unlike the storage-taking operations beside it: the address comes from a
+    // holder reached by a downcast, which a constant expression allows.
     template <typename Type>
     [[nodiscard]]
-    void const * any_object_at(any_holder_base const * held) noexcept
+    constexpr void const * any_object_at(any_holder_base const * held) noexcept
     {
         return static_cast<void const *>(any_holder_object<Type>(held));
     }
