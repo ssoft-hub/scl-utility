@@ -108,6 +108,73 @@ namespace
         return (reached != nullptr) ? *reached * 2 : -1;
     }
 
+    constexpr int take_a_referent_from_a_view_over_an_any()
+    {
+        ::scl::any const source{42};
+        ::scl::any_view const view{source};
+        ::scl::any const copy{view};
+        auto const * reached = ::scl::any_cast<int>(&copy);
+
+        return (reached != nullptr) ? *reached : -1;
+    }
+
+    constexpr int take_a_referent_from_an_argument_over_an_any()
+    {
+        ::scl::any source{21};
+        ::scl::any_argument const subject{source};
+        ::scl::any const copy{subject};
+        auto const * reached = ::scl::any_cast<int>(&copy);
+
+        return (reached != nullptr) ? *reached * 2 : -1;
+    }
+
+    constexpr int assign_a_referent_from_a_view_over_an_any()
+    {
+        ::scl::any const source{42};
+        ::scl::any_view const view{source};
+        ::scl::any taker{7};
+        taker = view;
+        auto const * reached = ::scl::any_cast<int>(&taker);
+
+        return (reached != nullptr) ? *reached : -1;
+    }
+
+    constexpr int assign_a_view_of_the_any_itself()
+    {
+        ::scl::any value{42};
+        ::scl::any_view const view{value};
+        value = view;
+        auto const * reached = ::scl::any_cast<int>(&value);
+
+        return (reached != nullptr) ? *reached : -1;
+    }
+
+    // Literal, unlike std::unique_ptr before C++23: the refusal has to be observable in a
+    // constant expression too.
+    struct movable_only
+    {
+        int value = 0;
+
+        constexpr explicit movable_only(int number) noexcept
+            : value{number}
+        {}
+
+        movable_only(movable_only const &) = delete;
+        constexpr movable_only(movable_only &&) noexcept = default;
+        movable_only & operator=(movable_only const &) = delete;
+        constexpr movable_only & operator=(movable_only &&) noexcept = default;
+        constexpr ~movable_only() = default;
+    };
+
+    constexpr bool taking_an_uncopyable_referent_answers_an_empty_any()
+    {
+        ::scl::any source{movable_only{42}};
+        ::scl::any_view const view{source};
+        ::scl::any const copy{view};
+
+        return !copy.has_value();
+    }
+
     constexpr bool view_over_an_any_names_the_stored_type()
     {
         ::scl::any const value{42};
@@ -146,6 +213,31 @@ TEST(AnyInteropTest, ViewOverAnAnyReadsItsContentDuringConstantEvaluation)
 TEST(AnyInteropTest, ArgumentOverAnAnyReadsItsContentDuringConstantEvaluation)
 {
     STATIC_EXPECT_TRUE(read_through_an_argument_over_an_any() == 42);
+}
+
+TEST(AnyInteropTest, AnAnyTakesAReferentFromAViewDuringConstantEvaluation)
+{
+    STATIC_EXPECT_TRUE(take_a_referent_from_a_view_over_an_any() == 42);
+}
+
+TEST(AnyInteropTest, AnAnyTakesAReferentFromAnArgumentDuringConstantEvaluation)
+{
+    STATIC_EXPECT_TRUE(take_a_referent_from_an_argument_over_an_any() == 42);
+}
+
+TEST(AnyInteropTest, AnAnyIsAssignedFromAViewDuringConstantEvaluation)
+{
+    STATIC_EXPECT_TRUE(assign_a_referent_from_a_view_over_an_any() == 42);
+}
+
+TEST(AnyInteropTest, AssigningAViewOfTheAnyItselfKeepsTheValueDuringConstantEvaluation)
+{
+    STATIC_EXPECT_TRUE(assign_a_view_of_the_any_itself() == 42);
+}
+
+TEST(AnyInteropTest, TakingAnUncopyableReferentAnswersAnEmptyAnyDuringConstantEvaluation)
+{
+    STATIC_EXPECT_TRUE(taking_an_uncopyable_referent_answers_an_empty_any());
 }
 
 TEST(AnyInteropTest, AnAnyBuiltFromAnArgumentTakesTheValue)

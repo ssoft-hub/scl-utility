@@ -355,6 +355,15 @@ namespace scl::detail
             return handle.descriptor();
         }
 
+        // A taker needs the holder rather than the address, since the copy it makes is
+        // typed and an address is not.
+        template <typename Handle>
+        [[nodiscard]]
+        static constexpr any_holder_base const * held(Handle const & handle) noexcept
+        {
+            return handle.held();
+        }
+
         template <typename Handle>
         [[nodiscard]]
         static void const * referent(Handle const & handle) noexcept
