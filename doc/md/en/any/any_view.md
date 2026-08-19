@@ -189,22 +189,49 @@ scl::any_cast<int volatile>(&view); // reads normally
 ### Constant evaluation
 
 Building a view and asking it for `type_name()`, `type_key()` and `has_value()` all run
-during constant evaluation, on the C++20 baseline. `any_cast`, however, runs at run time
-there - exactly as `std::any_cast` does.
+during constant evaluation, on the C++20 baseline. A cast folds there as well, though not
+for every object: the library has to answer with a typed pointer, and recovering one from
+`void const *` is not a constant expression before P2738, that is, before C++26. What is
+allowed instead is a downcast along a class hierarchy, and that needs an object of a class
+the compiler knows to exist beside the referent.
 
-The limit comes from the way a view binds, not from type erasure as such. A view refers to
-an object of any type, so the only way it can remember the address is as `void const *`, and
-recovering a typed pointer from `void const *` becomes a constant expression only on
-compilers that implement P2738 (C++26).
+For a value an [`scl::any`](any.md) owns, such an object is already there: the owner keeps
+the value inside a holder of its own, and the cast comes back down to it. A view over an
+`scl::any` therefore reads during constant evaluation with no caveat, stored in a variable
+included:
 
-The other way - erasing to a common base class - is a constant expression on C++20 already,
-but it needs an instance of that class to exist beside the object, and someone has to keep
-that instance alive for as long as the type description lives. For a method parameter
-[`any_arg`](any_arg.md#constant-evaluation) does exactly that: the caller creates such an
-instance per binding, and a call outlives its own arguments by construction. A view, on the
-other hand, can be stored for as long as one likes, and no one is there to provide that
-instance. For a stored view over someone else's object, C++26 therefore remains the earliest
-level at which the cast folds at compile time.
+```cpp
+constexpr int read()
+{
+    scl::any const value{42};
+    scl::any_view const view{value};
+
+    return *scl::any_cast<int>(&view);
+}
+
+static_assert(read() == 42);
+```
+
+For a plain object no such companion exists, and the view cannot create one: it owns
+nothing, and keeping one inside itself would mean either copying the object or allocating
+storage a non-owning view has no one to release. The caller declares the companion instead -
+that is [`scl::any_anchor`](any_anchor.md):
+
+```cpp
+static constexpr int probe = 42;
+static constexpr scl::any_anchor anchor{probe};
+constexpr scl::any_view view{anchor};
+
+static_assert(*scl::any_cast<int>(&view) == 42);
+```
+
+Without an anchor a cast to a plain object stops during constant evaluation with a compiler
+diagnostic rather than answering wrongly. At run time the anchor changes nothing: the view
+records the same shared type description an ordinary binding gives it.
+
+From C++26 on no anchor is needed: recovering the pointer from `void const *` is a constant
+expression by itself there, and a cast folds for any object. The type stays in the interface
+so that code written against the C++20 baseline keeps compiling.
 
 ### Identity across module boundaries
 
@@ -228,6 +255,7 @@ The two limits of the key apply here as well:
   a working example: one function reads both a view and an argument, casts in both forms and
   identity queries.
 - [any_arg](any_arg.md) - a view for a method parameter that also grants write access
+- [any_anchor](any_anchor.md) - the anchor that folds a cast to a plain object on C++20
 - [any_switch](any_switch.md) - a chain of branches that reads a value without a run of casts
 - [any](any.md) - the owning type these views read
 - [type_key](../meta/type_key.md) - the identity key `type_key()` answers with

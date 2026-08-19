@@ -219,17 +219,21 @@ without this machinery.
 
 The limits follow from that.
 
-- The argument has to be a **parameter**. If an `any_arg` is declared as a local variable
-  bound to an argument built on the spot, the anchor is already destroyed by the time of the
-  cast. The cast - and with it the identity query - then stops with a compiler diagnostic
-  rather than answering something wrong. Only Clang diagnoses this reliably: GCC and MSVC
-  extend the lifetime of the temporary further and accept such code, so do not take their
-  agreement as a guarantee.
+- The argument has to be a **parameter** while the anchor is the default one. If an
+  `any_arg` is declared as a local variable bound to an argument built on the spot, that
+  anchor is already destroyed by the time of the cast. The cast - and with it the identity
+  query - then stops with a compiler diagnostic rather than answering something wrong. Only
+  Clang diagnoses this reliably: GCC and MSVC extend the lifetime of the temporary further
+  and accept such code, so do not take their agreement as a guarantee. Declare the anchor
+  yourself - [`scl::any_anchor`](any_anchor.md) - and the position stops mattering.
 - A `constexpr` variable of type `any_arg` does not exist: its value would hold a pointer to
   a temporary, which a constant expression forbids. Write the work as a `constexpr`
   function instead.
-- A `std::any`, and an object taken over from a view, carry no anchor, so their casts run at
-  run time - exactly as a view's do.
+- An argument over an [`scl::any`](any.md) reads during constant evaluation in any position
+  and with no anchor: the owner keeps the object inside a holder of its own, and the cast
+  comes back down to it.
+- A `std::any` carries no anchor, so its casts run at run time. An object taken over from a
+  view reads during constant evaluation exactly when the view itself can.
 - None of this concerns run time. There every position works and every request answers, the
   width is the same two pointers, and the cost equals that of a view.
 
@@ -303,6 +307,7 @@ A function that only reads a value for the duration of a call therefore declares
   a working example: the argument binds a temporary, grants the write a view does not, and
   folds its casts at compile time.
 - [any_view](any_view.md) - the view that can be stored
+- [any_anchor](any_anchor.md) - the anchor that frees an argument from the parameter position
 - [any_switch](any_switch.md) - a chain of branches over the same value, one branch per type
 - [any](any.md) - the owning type both handles read
 - [Russian documentation](../../ru/any/any_arg.md)

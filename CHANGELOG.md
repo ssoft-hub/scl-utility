@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::any_anchor` (`#include <scl/utility/any/any_anchor.h>`) — a companion object a
+  caller declares beside a value so that `scl::any_view` and `scl::any_arg` can cast to
+  that value during constant evaluation on the C++20 baseline. Recovering a typed pointer
+  from `void const *` is not a constant expression before P2738 (C++26); a downcast to a
+  class the object really is, is one, and an anchor is that class — a type description
+  carrying the typed pointer. A handle over an `scl::any` needs none, since the object
+  already sits in a holder. The anchor is read only during constant evaluation, so a
+  binding costs run time nothing, and the type stays in the interface on C++26, where the
+  recovery folds on its own, so that C++20 code keeps compiling. See
+  [`doc/md/en/any/any_anchor.md`](doc/md/en/any/any_anchor.md).
+
 - `scl::any` (`#include <scl/utility/any.h>`) — an owning holder of a single object of any
   type, doing what `std::any` does in the two configurations `std::any` cannot serve. It
   names types through `scl::type_key` instead of `typeid`, so it compiles with RTTI
@@ -88,6 +99,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   beside them.
 
 ### Changed
+
+- `scl::any_view`, `scl::any_arg` and `scl::any_switch` read a value an `scl::any` owns
+  during constant evaluation on the C++20 baseline, and an `scl::any` takes a value from
+  one of them there too — by construction and by assignment alike, with the default
+  allocator. Reaching a stored object is a downcast to the holder an owner keeps it in,
+  which a constant expression allows, rather than a recovery from `void const *`, which it
+  does not before P2738 (C++26). The run-time path is untouched: a handle stays two
+  pointers wide and its cast costs what it did. The limits that remain are stated in
+  [`doc/md/en/any/any_view.md`](doc/md/en/any/any_view.md) — a plain lvalue needs an
+  `scl::any_anchor`, a `std::any` backing has no constant-evaluation form at all, and an
+  `scl::basic_any` with an allocator of its own reads but is not taken from.
 
 - **Breaking.** `scl::type_key` is a value rather than an identity reached through a
   reference. It gains an empty state, spelled `scl::type_key{}`, and copying, moving and
