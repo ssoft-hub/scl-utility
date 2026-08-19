@@ -12,6 +12,7 @@
  */
 
 #include <scl/utility/any/any.h>
+#include <scl/utility/any/any_anchor.h>
 #include <scl/utility/any/any_arg.h>
 #include <scl/utility/any/any_switch.h>
 #include <scl/utility/any/any_view.h>

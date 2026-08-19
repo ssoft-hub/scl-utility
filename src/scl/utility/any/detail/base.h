@@ -510,6 +510,7 @@ namespace scl::detail
         [[nodiscard]]
         constexpr void const volatile * object(this Self && self) noexcept
         {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access): the union is the referent
             return self.m_object;
         }
 
