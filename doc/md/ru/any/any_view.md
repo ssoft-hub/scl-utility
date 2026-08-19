@@ -9,7 +9,7 @@
 
 ## Обзор
 
-Отношение `scl::any_view` к `std::any` такое же, какое `std::string_view` имеет
+Отношение `scl::any_view` к [`scl::any`](any.md) такое же, какое `std::string_view` имеет
 к `std::string`. Функция, которой нужно прочитать значение неизвестного типа, принимает
 представление и не заставляет вызывающую сторону складывать значение в контейнер.
 Копирование и выделение памяти при этом не выполняются.
@@ -129,10 +129,22 @@ if (auto const * s = scl::any_cast<std::string>(&raw))
 `scl::bad_any_cast`, если тип не совпал. Результат-ссылка связывается с объектом без
 копирования:
 
+<!-- snippet: example/any/common/any_common_example.cpp reference_cast -->
 ```cpp
-std::string copy = scl::any_cast<std::string>(raw);                 // копия значения
-std::string const & ref = scl::any_cast<std::string const &>(raw);  // без копирования
-// scl::any_cast<std::string &>(raw);   // не компилируется: представление не пишет
+static void show_reference_cast()
+{
+    ::std::string const text{"Hello Any!"};
+
+    // Bind through a NAMED view: casting `T const &` through a temporary view
+    // would trip GCC's -Wdangling-reference, even though the payload outlives it.
+    ::scl::any_view const view{text};
+
+    auto const copy = ::scl::any_cast<::std::string>(view);          // independent copy
+    auto const & ref = ::scl::any_cast<::std::string const &>(view); // zero-copy reference
+
+    ::std::cout << "copy == \"" << copy << "\" (own object)\n";
+    ::std::cout << "ref  == \"" << ref << "\" bound to source? " << (&ref == &text) << '\n'; // 1
+}
 ```
 
 Форма со ссылкой объявлена только там, где
@@ -226,5 +238,6 @@ scl::any_cast<int volatile>(&view); // читает нормально
 - [any_arg](any_arg.md) - представление для параметра метода, дающее доступ на запись
 - [any_switch](any_switch.md) - цепочка ветвей, которая читает значение без череды
   приведений
+- [any](any.md) - контейнер, значение которого эти представления читают
 - [type_key](../meta/type_key.md) - ключ идентичности, который возвращает `type_key()`
 - [Английская документация](../../en/any/any_view.md)

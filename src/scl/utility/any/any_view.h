@@ -6,6 +6,7 @@
  * @ingroup scl_utility_any
  */
 
+#include <scl/utility/any/bad_any_cast.h>
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
 #include <scl/utility/attribute/likely.h>
@@ -27,11 +28,6 @@ namespace scl
     class any_view;
     class any_argument;
 
-    // Never std::bad_any_cast under RTTI: a base type that depends on SCL_HAS_RTTI
-    // is an ODR trap for a binary linking RTTI and -fno-rtti translation units.
-    struct bad_any_cast : ::std::bad_cast
-    {};
-
     class any_view : detail::any_base
     {
         using base_type = detail::any_base;
@@ -45,18 +41,28 @@ namespace scl
 #if SCL_HAS_RTTI || defined(DOXYGEN)
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(::std::any const & value SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
-            : base_type{::std::addressof(value), &detail::any_view_descriptor_of<::std::any const &>}
+            : base_type{::std::addressof(value), &detail::any_type_descriptor_of<::std::any const &>}
         {}
 
         any_view(::std::any const &&) = delete;
 #endif
 
+        // An owning any is excluded here and unwrapped below, or it would be viewed as the
+        // box it is.
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(Type & object SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*): implicit view by design
             requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>)
-            : base_type{::std::addressof(object), &detail::any_view_descriptor_of<Type &>}
+            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>) &&
+            (!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<Type>>)
+            : base_type{::std::addressof(object), &detail::any_type_descriptor_of<Type &>}
+        {}
+
+        template <typename AnyType>
+        // cppcheck-suppress noExplicitConstructor
+        constexpr any_view(AnyType const & owner SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
+            requires(::std::is_base_of_v<detail::any_owner_tag, AnyType>)
+            : base_type{owner.viewed_object(), owner.viewed_const_descriptor()}
         {}
 
         // Only the view's own copy escapes the refusal.
@@ -82,6 +88,7 @@ namespace scl
         // An explicit object parameter in the base deduces this type, not the base, and
         // private inheritance would otherwise refuse that conversion.
         friend class ::scl::detail::any_base;
+        friend struct ::scl::detail::any_handle_access;
 
         template <typename Type, typename View>
         friend constexpr Type const * any_cast(View * view) noexcept
@@ -153,17 +160,6 @@ namespace scl
 // =============================================================================
 // Documentation
 // =============================================================================
-
-/**
- * @struct scl::bad_any_cast
- * @ingroup scl_utility_any
- * @brief Exception thrown by the throwing form of @ref scl::any_cast on a type
- *        mismatch
- *
- * Derives from `std::bad_cast` in every configuration — never from
- * `std::bad_any_cast`, so this class stays a single, RTTI-independent type and
- * a `catch (std::bad_cast const &)` handler catches it regardless of build.
- */
 
 /**
  * @class scl::any_view
@@ -272,6 +268,24 @@ namespace scl
  *
  * @tparam Type  Deduced reference type of the viewed lvalue.
  * @param  object  The lvalue to view.
+ */
+
+/**
+ * @fn scl::any_view::any_view(AnyType const & owner)
+ * @brief Constructs a view over the object an owning any holds, rather than over
+ *        the any itself.
+ *
+ * Unlike the `std::any` backing, which names the box and leaves unwrapping to
+ * @ref scl::any_cast, this view refers straight to the content: `type_name()`
+ * answers the stored type and a cast costs the same one key comparison it costs
+ * over a plain lvalue.
+ *
+ * @tparam AnyType  Deduced @ref scl::basic_any specialization.
+ * @param  owner  The any whose content is viewed.
+ *
+ * @warning The view refers into the any's own storage, so emptying it,
+ *          reassigning it or moving it leaves the view dangling - the caveat
+ *          `std::string_view` carries over `std::string`.
  */
 
 /**

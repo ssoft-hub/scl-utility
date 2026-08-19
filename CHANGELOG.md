@@ -8,6 +8,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::any` (`#include <scl/utility/any.h>`) — an owning holder of a single object of any
+  type, doing what `std::any` does in the two configurations `std::any` cannot serve. It
+  names types through `scl::type_key` instead of `typeid`, so it compiles with RTTI
+  disabled, and its whole lifecycle — construction, `emplace`, `any_cast`, destruction —
+  runs during constant evaluation. `sizeof(scl::any)` is two pointers, the size `std::any`
+  has on libstdc++ and less than it has elsewhere. An object of at most `sizeof(void *)`
+  bytes that is nothrow-movable and no more aligned than a pointer is stored inside the any;
+  anything else is allocated
+  through the allocator, which `scl::basic_any<Allocator, Capacity>` takes as a parameter
+  along with a wider in-place capacity. A stored type has to be destructible,
+  constructible from the arguments given and aligned no more strictly than 64 bytes — the
+  widest storage the allocator path serves; an immovable type is admitted because it is
+  allocated and the any moves by handing over the pointer. Copying is not a
+  constructor — the type is move-only, which is what lets a non-copyable object be stored
+  at all. A copy is asked for through `try_copy()`, which answers an empty any when the
+  stored type has no copy constructor; `copyable()` reports that ahead of the attempt. An
+  allocator with state is supported, `std::pmr::polymorphic_allocator` included, and it
+  travels with the object on move and on swap: storage acquired by one allocator can only
+  be released by that same one. `scl::any_view`, `scl::any_arg` and `scl::any_switch`
+  accept an `scl::any` and reach its **content**, not the box: `type_name()` answers the
+  stored type and a cast costs the same one key comparison it costs over a plain lvalue.
+  The view refers into the any's own storage, so emptying, reassigning or moving the any
+  leaves it dangling, exactly as `std::string_view` does over `std::string`. The direction
+  reverses as well: an `scl::any` built or assigned from an `scl::any_view` or an
+  `scl::any_arg` stores a copy of the **referent**, never the handle — a referent with no
+  copy constructor leaves the any empty, and storing the handle itself is the explicit
+  spelling `scl::any{std::in_place_type<scl::any_view>, view}`. Replacing an allocated object
+  with one that is allocated as well and has the same size and alignment keeps the storage
+  already held, so repeating it with one type stops consuming a
+  `std::pmr::monotonic_buffer_resource`, which never reclaims what it hands out. `emplace`
+  does that for any type, since it is defined to destroy first, and leaves the any empty when
+  a constructor throws; assignment reaches it while the stored type moves without throwing and
+  is no wider than 256 bytes - the value it takes aside is what keeps the stored object alive
+  until the replacement stands, so a throwing constructor leaves the any untouched. A referent
+  assigned through an `scl::any_view` or an `scl::any_arg` is taken on the same terms. The stored
+  object is a new one either way: the assignment operator of the stored type is never called,
+  as with `std::any`. Assigning the stored object to its own any - as a
+  value or through a handle - does nothing at all, which is what keeps a value whose type
+  cannot be copied, where a replacement would leave the any empty.
+
 - `scl::flags` subtracts one set from another: `a - b` and `a -= b` keep the flags set in
   `a` and absent from `b`, in the flags-flags and the flags-`Enum` form alike. The
   difference was previously spelled `a ^ (a & b)`, and it is what expresses "everything in

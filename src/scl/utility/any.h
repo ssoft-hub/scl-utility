@@ -8,9 +8,11 @@
 
 /**
  * @defgroup scl_utility_any ScL Any
- * @brief Non-owning, read-only views over a `std::any` or a typed value.
+ * @brief Type-erased handling of a single object: owned, or viewed in place.
  */
 
+#include <scl/utility/any/any.h>
 #include <scl/utility/any/any_arg.h>
 #include <scl/utility/any/any_switch.h>
 #include <scl/utility/any/any_view.h>
+#include <scl/utility/any/bad_any_cast.h>

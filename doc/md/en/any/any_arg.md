@@ -154,17 +154,15 @@ int const * r = scl::any_cast<int const>(&value); // a const object as well
 This is where an argument differs from a view. A view only reads, so a request there may
 name any qualification, but the result always comes back with `const`.
 
+<!-- snippet: example/any/common/any_common_example.cpp write_through_argument -->
 ```cpp
-void bump(scl::any_arg value)
+static void bump(::scl::any_arg value)
 {
-    if (auto * number = scl::any_cast<int>(&value))
-        ++*number;                              // the write is visible to the caller
+    if (auto * number = ::scl::any_cast<int>(&value))
+        ++*number;
+    else
+        ::std::cout << "  refused: the referent is not a writable int\n";
 }
-
-int counter = 0;
-bump(counter);            // counter becomes 1
-int const frozen = 0;
-bump(frozen);             // no write happens: the object is const, the cast answers nullptr
 ```
 
 The reference form expresses the same choice through the reference type: `any_cast<int &>`
@@ -306,4 +304,5 @@ A function that only reads a value for the duration of a call therefore declares
   folds its casts at compile time.
 - [any_view](any_view.md) - the view that can be stored
 - [any_switch](any_switch.md) - a chain of branches over the same value, one branch per type
+- [any](any.md) - the owning type both handles read
 - [Russian documentation](../../ru/any/any_arg.md)

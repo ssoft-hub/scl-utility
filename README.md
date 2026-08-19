@@ -21,7 +21,9 @@ documentation runs.
 
 Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all ten.
 
-- **Any** — erased views over a value (`#include <scl/utility/any.h>`):
+- **Any** — one erased object, owned or viewed in place (`#include <scl/utility/any.h>`):
+  - `any` — owning holder of one object of any type; two pointers wide, no RTTI, whole
+    lifecycle usable in constant evaluation, small objects stored in place
   - `any_view` — storable read-only view over a typed lvalue or a `std::any`; two pointers
     wide, no allocation, no RTTI required
   - `any_arg` — parameter-position companion that also binds temporaries and grants write
@@ -353,6 +355,8 @@ reference.
 
 - [`example/any/common`](example/any/common/any_common_example.cpp) — `any_view` over a typed lvalue and over a
   `std::any`, `any_arg` in parameter position, and an `any_switch` chain.
+- [`example/any/owning`](example/any/owning/any_owning_example.cpp) — `scl::any` storing in place or through an
+  allocator, its lifecycle at compile time, copying on request, and the views reading its content.
 - [`example/flags/common`](example/flags/common/flags_common_example.cpp) — combining and querying flags, set
   algebra between two masks, and iterating the set flags.
 - [`example/hash/key_nttp`](example/hash/key_nttp/hash_key_nttp_example.cpp) — `hash::key` as a non-type template
