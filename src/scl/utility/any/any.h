@@ -532,6 +532,14 @@ namespace scl
             return (m_descriptor != nullptr) ? m_descriptor->object(held()) : nullptr;
         }
 
+        // At run time a handle keeps the object's address instead, which is what spares its
+        // cast an indirection.
+        [[nodiscard]]
+        constexpr detail::any_holder_base const * viewed_held() const noexcept
+        {
+            return ::std::is_constant_evaluated() ? held() : nullptr;
+        }
+
         [[nodiscard]]
         constexpr detail::any_type_descriptor const * viewed_descriptor() const noexcept
         {

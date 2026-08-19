@@ -90,6 +90,24 @@ namespace
     template <typename Target, typename Source>
     concept swapped_with = requires(Target & target, Source & source) { target.swap(source); };
 
+    constexpr int read_through_a_view_over_an_any()
+    {
+        ::scl::any const value{42};
+        ::scl::any_view const view{value};
+        auto const * reached = ::scl::any_cast<int>(&view);
+
+        return (reached != nullptr) ? *reached : -1;
+    }
+
+    constexpr int read_through_an_argument_over_an_any()
+    {
+        ::scl::any const value{21};
+        ::scl::any_argument const subject{value};
+        auto const * reached = ::scl::any_cast<int const>(&subject);
+
+        return (reached != nullptr) ? *reached * 2 : -1;
+    }
+
     constexpr bool view_over_an_any_names_the_stored_type()
     {
         ::scl::any const value{42};
@@ -118,6 +136,16 @@ TEST(AnyInteropTest, ViewOverAnAnyTemporaryIsRefused)
 TEST(AnyInteropTest, ViewOverAnAnyNamesTheStoredTypeDuringConstantEvaluation)
 {
     STATIC_EXPECT_TRUE(view_over_an_any_names_the_stored_type());
+}
+
+TEST(AnyInteropTest, ViewOverAnAnyReadsItsContentDuringConstantEvaluation)
+{
+    STATIC_EXPECT_TRUE(read_through_a_view_over_an_any() == 42);
+}
+
+TEST(AnyInteropTest, ArgumentOverAnAnyReadsItsContentDuringConstantEvaluation)
+{
+    STATIC_EXPECT_TRUE(read_through_an_argument_over_an_any() == 42);
 }
 
 TEST(AnyInteropTest, AnAnyBuiltFromAnArgumentTakesTheValue)

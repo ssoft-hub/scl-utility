@@ -259,7 +259,49 @@ namespace scl::detail
         any_duplicate_function<Allocator> duplicate;
     };
 
+    // The two cv-forms live in one object so that each can name the other: a handle
+    // narrowed to const still reaches the value form, and both carry what only an owner has.
+    template <typename Allocator>
+    struct any_owned_forms
+    {
+        any_descriptor<Allocator> value;
+        any_descriptor<Allocator> constant;
+    };
+
+    // Named rather than two pointers in a row, which read alike and swap unnoticed.
+    struct any_owned_links
+    {
+        any_type_descriptor const * as_const;
+        any_type_descriptor const * as_value;
+    };
+
+    [[nodiscard]]
+    constexpr any_type_descriptor
+    any_owned_form(any_type_descriptor described, any_owned_links links) noexcept
+    {
+        // What tells a cast that the handle remembers a holder; the shared forms describe
+        // a plain binding.
+        described.binding = any_binding::holder;
+        described.as_const = links.as_const;
+        described.as_value = links.as_value;
+        return described;
+    }
+
     template <typename Type, typename Allocator>
-    inline constexpr any_descriptor<Allocator> any_descriptor_of{any_type_descriptor_of<Type &>,
-        &any_destroy_holder<Type, Allocator>, any_duplicate_operation_of<Type, Allocator>()};
+    inline constexpr any_owned_forms<Allocator> any_owned_forms_of{
+        .value = {any_owned_form(any_type_descriptor_of<Type &>,
+                  {.as_const = &any_owned_forms_of<Type, Allocator>.constant,
+                  .as_value = &any_owned_forms_of<Type, Allocator>.value}),
+                  &any_destroy_holder<Type, Allocator>, any_duplicate_operation_of<Type, Allocator>()},
+        .constant = {
+                  any_owned_form(any_type_descriptor_of<Type const &>,
+                  {.as_const = &any_owned_forms_of<Type, Allocator>.constant,
+                  .as_value = &any_owned_forms_of<Type, Allocator>.value}),
+                  &any_destroy_holder<Type, Allocator>, any_duplicate_operation_of<Type, Allocator>()}
+    };
+
+    template <typename Type, typename Allocator>
+    inline constexpr any_descriptor<Allocator> const & any_descriptor_of =
+        any_owned_forms_of<Type, Allocator>.value;
+
 } // namespace scl::detail

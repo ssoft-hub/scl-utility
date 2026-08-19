@@ -63,7 +63,7 @@ namespace scl
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(AnyType const & owner SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
             requires(::std::is_base_of_v<detail::any_owner_tag, AnyType>)
-            : base_type{owner.viewed_object(), owner.viewed_const_descriptor()}
+            : base_type{owner.viewed_held(), owner.viewed_object(), owner.viewed_const_descriptor()}
         {}
 
         // Only the view's own copy escapes the refusal.
@@ -116,7 +116,20 @@ namespace scl
         // The referred-to type answers first, so a request for std::any stops at the box
         // rather than asking whether another one is nested inside it.
         if (*descriptor->type == ::scl::type_key_of<bare>())
+        {
+            if (::std::is_constant_evaluated())
+            {
+                // Recovering a typed pointer from `void const *` is not a constant
+                // expression before P2738, while a downcast to the holder an owner keeps is
+                // one. A plain binding falls through to that recovery, which folds from
+                // C++26 on and stops the evaluation before it, rather than answering an
+                // address whose type nothing here can vouch for.
+                if (descriptor->binding == detail::any_binding::holder)
+                    return detail::any_holder_object<bare>(view->held());
+            }
+
             SCL_LIKELY return detail::erased_cast<Type const>(view->object());
+        }
 #if SCL_HAS_RTTI
         if (auto const * boxed = view->std_any())
             return ::std::any_cast<bare>(boxed);

@@ -21,6 +21,22 @@
 #include <any>
 #endif
 
+/**
+ * @internal
+ * @def SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST
+ * @brief Whether P2738 (C++26) is available, making the recovery of a typed
+ *        pointer from `void const *` a constant expression.
+ *
+ * That recovery is what every workaround in this group exists to stand in for,
+ * and several branches turn on it — spelled once here rather than comparing
+ * `__cpp_constexpr` against a bare 202306L at each of them.
+ */
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 202306L
+#define SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST 1
+#else
+#define SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST 0
+#endif
+
 namespace scl::detail
 {
     using any_name = ::std::string_view;
@@ -51,6 +67,16 @@ namespace scl::detail
     {
         return static_cast<any_qualifier>(~static_cast<unsigned char>(value));
     }
+
+    // How a handle remembers its referent during constant evaluation: a shared descriptor
+    // stands for the object's address, an owner-made one for the holder, and an anchor for
+    // the typed pointer it carries itself.
+    enum class any_binding : unsigned char
+    {
+        object = 0,
+        holder = 1,
+        anchor = 2
+    };
 
     template <typename Type>
     [[nodiscard]]
@@ -260,6 +286,9 @@ namespace scl::detail
         // One key object per bare type, so identity is a pointer comparison within a module.
         ::scl::type_key const * type;
         any_qualifier qualifiers;
+        // Beside the qualifiers: the alignment after them already holds this byte, so the
+        // descriptor does not grow by carrying it.
+        any_binding binding;
         // Already-const forms point at themselves, which terminates the chain.
         any_type_descriptor const * as_const;
         // What `place` builds: the referent's decayed form, which is what an owner ends up
@@ -282,6 +311,7 @@ namespace scl::detail
     inline constexpr any_type_descriptor any_type_descriptor_of{
         .type = &::scl::type_key_of<::std::remove_cvref_t<Type>>(),
         .qualifiers = any_qualifiers_of<Type>(),
+        .binding = any_binding::object,
         .as_const = &any_type_descriptor_of<::std::remove_reference_t<Type> const &>,
         .as_value = &any_type_descriptor_of<::std::decay_t<Type> &>,
         .size = sizeof(any_holder<::std::remove_cvref_t<Type>>),
@@ -433,13 +463,19 @@ namespace scl::detail
             , m_descriptor{descriptor}
         {}
 
-        // The parameter type is what tells the two forms apart: a holder pointer converts to
-        // `void const volatile *`, so the form above would take it as an address and lose
-        // which of the two the referent is.
-        constexpr any_base(any_holder_base const * held, descriptor_type const * descriptor) noexcept
-            : m_held{held}
-            , m_descriptor{descriptor}
-        {}
+        // Both shapes arrive and the body picks the live one: a mem-initializer cannot
+        // choose a union member on a condition.
+        constexpr any_base(
+            any_holder_base const * held, void const volatile * object, descriptor_type const * descriptor) noexcept
+            : m_descriptor{descriptor}
+        {
+            // NOLINTBEGIN(cppcoreguidelines-pro-type-union-access): the union is the referent
+            if (::std::is_constant_evaluated())
+                m_held = held;
+            else
+                m_object = object;
+            // NOLINTEND(cppcoreguidelines-pro-type-union-access)
+        }
 
         // Hands the referent on as it is held: passing the address would fix one shape and
         // lose the other.
@@ -453,6 +489,15 @@ namespace scl::detail
         // member, which constant evaluation diagnoses.
         [[nodiscard]]
         constexpr any_holder_base const * held() const noexcept
+        {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access): the union is the referent
+            return m_held;
+        }
+
+        // Declared for a volatile handle, which compiles the constant-evaluation branch of
+        // a cast without ever reaching it: no volatile object exists in a constant expression.
+        [[nodiscard]]
+        any_holder_base const * held() const volatile noexcept
         {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access): the union is the referent
             return m_held;

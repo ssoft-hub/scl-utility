@@ -23,23 +23,6 @@
 
 #include "detail/base.h"
 
-/**
- * @internal
- * @def SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST
- * @brief Whether P2738 (C++26) is available, making the recovery of a typed
- *        pointer from `void const *` a constant expression.
- *
- * That recovery is the one thing the anchor below exists to work around, and
- * several branches turn on it — spelled once here rather than comparing
- * `__cpp_constexpr` against a bare 202306L at each of them.
- */
-#if defined(__cpp_constexpr) && __cpp_constexpr >= 202306L
-#define SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST 1
-#else
-#define SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST 0
-#endif
-
-#if !SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST
 namespace scl::detail
 {
     // Recovering a typed pointer from `void const *` is not a constant expression before
@@ -48,13 +31,21 @@ namespace scl::detail
     // pointer, created per binding at the call site, where it outlives the call it was
     // made for. Being a descriptor is what keeps the view two pointers wide - the one it
     // already spends on a descriptor does for both.
+    // A cast reads this to tell an anchor from the form an owner's holder carries.
+    [[nodiscard]]
+    constexpr any_type_descriptor any_anchored_form(any_type_descriptor described) noexcept
+    {
+        described.binding = any_binding::anchor;
+        return described;
+    }
+
     template <typename Type>
     struct any_anchor : any_type_descriptor
     {
         // Spelled out rather than left to aggregate initialisation, which would also admit
         // a default-constructed anchor - one describing no type at all.
         constexpr explicit any_anchor(any_type_descriptor const & descriptor) noexcept
-            : any_type_descriptor{descriptor}
+            : any_type_descriptor{any_anchored_form(descriptor)}
         {}
 
         // Named for what it holds rather than `object`, which any_base already spells as
@@ -63,7 +54,6 @@ namespace scl::detail
         mutable Type * referent = nullptr;
     };
 } // namespace scl::detail
-#endif
 
 namespace scl
 {
@@ -118,7 +108,7 @@ namespace scl
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): binds, never forwards
         constexpr any_argument(AnyType && owner SCL_LIFETIMEBOUND) noexcept
             requires(::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<AnyType>>)
-            : base_type{owner.viewed_object(),
+            : base_type{owner.viewed_held(), owner.viewed_object(),
                   ::std::is_const_v<::std::remove_reference_t<AnyType>>
                       ? owner.viewed_const_descriptor()
                       : owner.viewed_descriptor()}
@@ -208,21 +198,23 @@ namespace scl
             SCL_UNLIKELY return nullptr;
         if (!arg->binding_accepts(detail::any_qualifiers_of<Type &>()))
             return nullptr;
-#if !SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST
         if (::std::is_constant_evaluated())
         {
-            // The anchor is typed, so it may only be reached once the descriptor has said
-            // which type it holds. A type mismatch leaves the cast below to answer null;
-            // a binding whose descriptor is not an anchor - a std::any backing, or a
-            // referent adopted from an any_view - stops the evaluation on the downcast,
-            // which is the honest outcome, since answering null would report a type
-            // mismatch that did not happen.
+            // Both shapes are typed, so either may only be reached once the descriptor has
+            // said which type it holds. A plain binding falls through to the recovery from
+            // `void const *`, which folds from C++26 on.
             using bare = ::std::remove_cv_t<Type>;
 
             if (*arg->descriptor()->type == ::scl::type_key_of<bare>())
-                return static_cast<detail::any_anchor<bare> const *>(arg->descriptor())->referent;
+            {
+                if (arg->descriptor()->binding == detail::any_binding::anchor)
+                    return static_cast<detail::any_anchor<bare> const *>(arg->descriptor())->referent;
+
+                if (arg->descriptor()->binding == detail::any_binding::holder)
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): binding_accepts() covered it
+                    return const_cast<bare *>(detail::any_holder_object<bare>(arg->held()));
+            }
         }
-#endif
         // Through the view, not object(): for the std::any backing the stored address is
         // the box, and a cast must reach what is inside it.
         any_view const view = arg->as_view();
