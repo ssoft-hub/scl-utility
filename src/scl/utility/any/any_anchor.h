@@ -40,6 +40,28 @@ namespace scl::detail
         // expression, and an anchor a caller declares is exactly such an object.
         Type * referent;
     };
+
+    // Sound only once the caller has proved the request covers the referent's qualifiers.
+    template <typename Type, typename Handle>
+    [[nodiscard]]
+    constexpr Type * any_constant_referent(Handle const & handle) noexcept
+    {
+        using bare = ::std::remove_cv_t<Type>;
+
+        auto const * const described = any_handle_access::descriptor(handle);
+        if (*described->type != ::scl::type_key_of<bare>())
+            return nullptr;
+
+        if (described->binding == any_binding::anchor)
+            return static_cast<any_anchored_descriptor<bare> const *>(described)->referent;
+
+        // Only this branch may read the holder: elsewhere it is the union's inactive member.
+        if (described->binding == any_binding::holder)
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): the caller covered it
+            return const_cast<bare *>(any_holder_object<bare>(any_handle_access::held(handle)));
+
+        return nullptr;
+    }
 } // namespace scl::detail
 
 namespace scl

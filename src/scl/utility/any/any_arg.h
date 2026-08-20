@@ -182,23 +182,8 @@ namespace scl
         if (!arg->binding_accepts(detail::any_qualifiers_of<Type &>()))
             return nullptr;
         if (::std::is_constant_evaluated())
-        {
-            // Both shapes are typed, so either may only be reached once the descriptor has
-            // said which type it holds. A plain binding falls through to the recovery from
-            // `void const *`, which folds from C++26 on.
-            using bare = ::std::remove_cv_t<Type>;
-
-            if (*arg->descriptor()->type == ::scl::type_key_of<bare>())
-            {
-                if (arg->descriptor()->binding == detail::any_binding::anchor)
-                    return static_cast<detail::any_anchored_descriptor<bare> const *>(arg->descriptor())
-                        ->referent;
-
-                if (arg->descriptor()->binding == detail::any_binding::holder)
-                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): binding_accepts() covered it
-                    return const_cast<bare *>(detail::any_holder_object<bare>(arg->held()));
-            }
-        }
+            if (auto * const reached = detail::any_constant_referent<Type>(*arg))
+                return reached;
         // Through the view, not object(): for the std::any backing the stored address is
         // the box, and a cast must reach what is inside it.
         any_view const view = arg->as_view();
