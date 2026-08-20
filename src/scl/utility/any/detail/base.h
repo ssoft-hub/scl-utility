@@ -397,10 +397,6 @@ namespace scl::detail
         [[nodiscard]]
         constexpr bool has_value(this Self && self) noexcept
         {
-#if SCL_HAS_RTTI
-            if (auto const * boxed = self.std_any())
-                return boxed->has_value();
-#endif
             return self.m_descriptor != nullptr;
         }
 
@@ -421,20 +417,12 @@ namespace scl::detail
         [[nodiscard]]
         constexpr bool has_value() const noexcept
         {
-#if SCL_HAS_RTTI
-            if (auto const * boxed = std_any())
-                return boxed->has_value();
-#endif
             return m_descriptor != nullptr;
         }
 
         [[nodiscard]]
         bool has_value() const volatile noexcept
         {
-#if SCL_HAS_RTTI
-            if (auto const * boxed = std_any())
-                return boxed->has_value();
-#endif
             return m_descriptor != nullptr;
         }
 

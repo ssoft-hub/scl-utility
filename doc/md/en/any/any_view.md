@@ -87,8 +87,9 @@ raw.type_name();   // the name of std::string; the exact spelling comes from the
 raw.type_key();    // the scl::type_key identifying std::string
 ```
 
-`has_value()` answers `false` in two cases: the view is empty, or it refers to an empty
-`std::any`.
+`has_value()` answers `false` only when the view is empty. A view over a `std::any`
+answers `true` regardless of what that `std::any` holds - the view refers to the box
+itself, a value like any other.
 
 `type_name()` answers the name of the type known at compile time. When the view refers to an
 object directly, that is the name of the object's own type. When it refers to a `std::any`,

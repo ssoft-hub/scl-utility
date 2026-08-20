@@ -491,7 +491,7 @@ TEST(AnyArgTest, ViewOverEmptyStdAny)
     ::std::any const empty_any{};
     ::scl::any_arg arg{empty_any};
 
-    EXPECT_FALSE(arg.has_value());
+    EXPECT_TRUE(arg.has_value());
     EXPECT_EQ(arg.type_name(), ::scl::type_name<::std::any>());
 }
 

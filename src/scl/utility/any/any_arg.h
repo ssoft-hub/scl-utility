@@ -514,9 +514,10 @@ namespace scl
 
 /**
  * @fn scl::any_argument::has_value() const
- * @brief Reports whether the view refers to a live value.
- * @return `false` for a view over an empty `std::any` or an argument adopted
- *         from an empty `any_view`; `true` otherwise.
+ * @brief Reports whether the argument refers to anything at all.
+ * @return `false` for an argument that refers to nothing, one adopted from an
+ *         empty `any_view` included; `true` otherwise, an argument over a
+ *         `std::any` included regardless of what that `std::any` holds.
  */
 
 /**
