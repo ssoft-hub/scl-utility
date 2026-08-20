@@ -931,7 +931,8 @@ namespace scl
 /**
  * @fn scl::basic_any::has_value() const
  * @brief Reports whether this any holds an object.
- * @return `true` while an object is held; `false` for an empty any.
+ * @return `true` while an object is held, a `std::any` included regardless of what it
+ *         holds; `false` for an empty any.
  */
 
 /**

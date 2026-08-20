@@ -258,7 +258,7 @@ TEST(AnyViewTest, ViewOverEmptyStdAny)
     ::std::any empty_any{};
     ::scl::any_view view{empty_any};
 
-    EXPECT_FALSE(view.has_value());
+    EXPECT_TRUE(view.has_value());
     EXPECT_EQ(view.type_name(), ::scl::type_name<::std::any>());
 }
 

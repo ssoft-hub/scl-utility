@@ -97,9 +97,9 @@ An `any_arg` cannot be declared without an argument: there is no default constru
 is no assignment either, so an empty instance would stay empty forever - nothing could fill
 it. The binding is fixed once, at construction, and never changes afterwards.
 
-`has_value()` may still answer `false`. That is what an argument bound to an empty
-`std::any`, or one that took the object of an empty view, answers: the argument was passed,
-but its source holds no content.
+`has_value()` answers `false` only when the argument refers to nothing at all - one adopted
+from an empty view, for instance. An argument bound to a `std::any` answers `true` even
+when that `std::any` holds nothing: the argument still refers to a value, the box itself.
 
 ### Observation
 

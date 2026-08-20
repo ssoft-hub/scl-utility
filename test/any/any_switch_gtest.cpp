@@ -810,13 +810,19 @@ TEST(AnySwitchTest, StdAnySubjectMatchesTheStdAnyCase)
     EXPECT_TRUE(matched);
 }
 
-TEST(AnySwitchTest, EmptyStdAnyMatchesTheVoidCase)
+TEST(AnySwitchTest, EmptyStdAnyDoesNotMatchTheVoidCase)
 {
     ::std::any const empty;
-    bool seen = false;
+    bool matched_void = false;
+    bool matched_any = false;
 
-    ::scl::any_switch<>().in_case<void>([&seen]() { seen = true; }).apply(empty);
+    ::scl::any_switch<>()
+        .in_case<void>([&matched_void]() { matched_void = true; })
+        .in_case<::std::any const &>([&matched_any](::std::any const & box) {
+        matched_any = !box.has_value();
+    }).apply(empty);
 
-    EXPECT_TRUE(seen);
+    EXPECT_FALSE(matched_void);
+    EXPECT_TRUE(matched_any);
 }
 #endif

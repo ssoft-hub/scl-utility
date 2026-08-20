@@ -1,7 +1,11 @@
 #include <gtest_utils.h>
 
 #include <scl/utility/any.h>
+#include <scl/utility/preprocessor/rtti.h>
 
+#if SCL_HAS_RTTI
+#include <any>
+#endif
 #include <array>
 #include <memory>
 #include <memory_resource>
@@ -463,3 +467,17 @@ TEST(AnyInteropTest, AnAnyIsStoredInsideAnotherOnlyWhenSpelledOut)
     EXPECT_EQ(nested.type_name(), ::scl::type_name<roomy_any>());
     EXPECT_EQ(*::scl::any_cast<::std::string>(::scl::any_cast<roomy_any>(&nested)), "inner");
 }
+
+#if SCL_HAS_RTTI
+// has_value() looks at the handle, not at what a std::any inside it holds.
+TEST(AnyInteropTest, AnEmptyStdAnyStoredInAnAnswersTheSameThroughEveryHandle)
+{
+    ::scl::any const owner{::std::any{}};
+    ::scl::any_view const over_owner{owner};
+    ::scl::any_argument const over_owner_arg{owner};
+
+    EXPECT_TRUE(owner.has_value());
+    EXPECT_TRUE(over_owner.has_value());
+    EXPECT_TRUE(over_owner_arg.has_value());
+}
+#endif

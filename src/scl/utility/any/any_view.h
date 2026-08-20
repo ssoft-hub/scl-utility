@@ -361,9 +361,9 @@ namespace scl
 
 /**
  * @fn scl::any_view::has_value() const
- * @brief Reports whether the view refers to a live value.
- * @return `false` for an empty view or a view over an empty `std::any`;
- *         `true` otherwise.
+ * @brief Reports whether the view refers to anything at all.
+ * @return `false` for an empty view; `true` otherwise, a view over a `std::any`
+ *         included regardless of what that `std::any` holds.
  */
 
 /**
