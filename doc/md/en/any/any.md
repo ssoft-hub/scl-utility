@@ -383,6 +383,30 @@ constant evaluation has to be released before that evaluation ends, and the in-p
 is unavailable there: no object exists in raw bytes at compile time. C++26 does not lift
 this restriction.
 
+Views and arguments over an `scl::any` read during constant evaluation as the owner itself
+does, and they need no anchor for it: the object sits inside a holder the owner creates
+anyway, and the cast comes back down to it. The other direction - taking the value out of a
+handle - runs there as well:
+
+```cpp
+constexpr int taken()
+{
+    scl::any const source{42};
+    scl::any_view const view{source};
+    scl::any const copy{view};
+
+    return *scl::any_cast<int>(&copy);
+}
+
+static_assert(taken() == 42);
+```
+
+Taking a value during constant evaluation is available to `scl::any`, that is, to the
+specialization with the default allocator. For an `scl::basic_any` with another allocator,
+reading through a handle works as before while copying the value stays a run-time operation:
+the type description a handle carries is one per type and cannot name the rebound form of an
+allocator it knows nothing about.
+
 ### Reading through the views
 
 [`any_view`](any_view.md), [`any_arg`](any_arg.md) and [`any_switch`](any_switch.md) accept

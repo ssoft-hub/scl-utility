@@ -82,8 +82,7 @@ namespace scl
         constexpr basic_any(HandleType const & handle) // NOLINT(*-explicit-*): takes the value
             requires(::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<HandleType>>)
         {
-            take_referent(detail::any_handle_access::descriptor(handle),
-                detail::any_handle_access::referent(handle));
+            take_referent_from(handle);
         }
 
         basic_any(basic_any const &) = delete;
@@ -119,6 +118,21 @@ namespace scl
         constexpr basic_any & operator=(HandleType const & handle)
             requires(::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<HandleType>>)
         {
+            if (::std::is_constant_evaluated())
+            {
+                // The paths below read an address and reuse storage, and neither is
+                // available here.
+                if (holds(detail::any_handle_access::held(handle)))
+                    return *this;
+
+                basic_any replacement{::std::allocator_arg, m_allocator};
+                replacement.take_referent_from(handle);
+
+                destroy_held();
+                take(replacement);
+                return *this;
+            }
+
             auto const * const described = detail::any_handle_access::descriptor(handle);
             void const * const referent = detail::any_handle_access::referent(handle);
 
@@ -404,8 +418,47 @@ namespace scl
         }
 
         // A referent reached through a handle: its type is known only to the descriptor the
-        // handle carries, so the copy runs through that descriptor's operation. Nothing here
-        // is available during constant evaluation, where a handle's referent is unreachable.
+        // handle carries, so the copy runs through that descriptor's operation.
+        template <typename HandleType>
+        constexpr void take_referent_from(HandleType const & handle)
+        {
+            auto const * const described = detail::any_handle_access::descriptor(handle);
+            if (described == nullptr)
+                return;
+
+            if (::std::is_constant_evaluated())
+            {
+                take_held_referent(described, detail::any_handle_access::held(handle));
+                return;
+            }
+
+            take_referent(described, detail::any_handle_access::referent(handle));
+        }
+
+        // Constant evaluation allocates through the typed allocator, and only an owner-made
+        // descriptor names one, so the referent has to arrive from a handle over an owning
+        // any whose allocator this any shares. Anything else stops on the cast below.
+        constexpr void
+        take_held_referent(detail::any_type_descriptor const * described, detail::any_holder_base const * held)
+        {
+            auto const * const stored =
+                static_cast<detail::any_descriptor<Allocator> const *>(described->as_value);
+
+            // Refused on the same terms as at run time.
+            if (stored->duplicate == nullptr || stored->alignment > detail::any_widest_alignment)
+                return;
+
+            m_storage.adopt(stored->duplicate(held, m_allocator));
+            m_descriptor = stored;
+        }
+
+        // What `overlaps_held_object` answers about an address at run time.
+        [[nodiscard]]
+        constexpr bool holds(detail::any_holder_base const * candidate) const noexcept
+        {
+            return m_descriptor != nullptr && candidate != nullptr && candidate == held();
+        }
+
         constexpr void
         take_referent(detail::any_type_descriptor const * described, void const * referent)
         {
@@ -530,6 +583,14 @@ namespace scl
         constexpr void const * viewed_object() const noexcept
         {
             return (m_descriptor != nullptr) ? m_descriptor->object(held()) : nullptr;
+        }
+
+        // At run time a handle keeps the object's address instead, which is what spares its
+        // cast an indirection.
+        [[nodiscard]]
+        constexpr detail::any_holder_base const * viewed_held() const noexcept
+        {
+            return ::std::is_constant_evaluated() ? held() : nullptr;
         }
 
         [[nodiscard]]

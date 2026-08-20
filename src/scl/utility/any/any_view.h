@@ -6,6 +6,7 @@
  * @ingroup scl_utility_any
  */
 
+#include <scl/utility/any/any_anchor.h>
 #include <scl/utility/any/bad_any_cast.h>
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
@@ -30,13 +31,19 @@ namespace scl
 
     class any_view : detail::any_base
     {
+    public:
+        using name = detail::any_base::name;
+
+    private:
         using base_type = detail::any_base;
 
     public:
-        using name = base_type::name;
-
-    public:
         constexpr any_view() noexcept = default;
+        constexpr any_view(any_view const &) = default;
+        constexpr any_view(any_view &&) = default;
+        constexpr any_view & operator=(any_view const &) = default;
+        constexpr any_view & operator=(any_view &&) = default;
+        constexpr ~any_view() = default;
 
 #if SCL_HAS_RTTI || defined(DOXYGEN)
         // cppcheck-suppress noExplicitConstructor
@@ -48,21 +55,31 @@ namespace scl
 #endif
 
         // An owning any is excluded here and unwrapped below, or it would be viewed as the
-        // box it is.
+        // box it is; an anchor is excluded for the same reason, since a view of one is the
+        // referent it stands for rather than the anchor itself.
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(Type & object SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*): implicit view by design
             requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<Type>>)
+            (!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<Type>>) &&
+            (!detail::is_any_anchor_v<::std::remove_cvref_t<Type>>)
             : base_type{::std::addressof(object), &detail::any_type_descriptor_of<Type &>}
+        {}
+
+        // The anchor is what lets the cast answer during constant evaluation for an object
+        // no any owns.
+        template <typename Type>
+        // cppcheck-suppress noExplicitConstructor
+        constexpr any_view(any_anchor<Type> const & bound SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
+            : base_type{bound.bound_object(), bound.bound_descriptor()}
         {}
 
         template <typename AnyType>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(AnyType const & owner SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
             requires(::std::is_base_of_v<detail::any_owner_tag, AnyType>)
-            : base_type{owner.viewed_object(), owner.viewed_const_descriptor()}
+            : base_type{owner.viewed_held(), owner.viewed_object(), owner.viewed_const_descriptor()}
         {}
 
         // Only the view's own copy escapes the refusal.
@@ -78,9 +95,10 @@ namespace scl
 
     private:
         // An argument reaches this to hand over a referent it already narrowed with
-        // any_base::const_descriptor.
-        constexpr explicit any_view(void const volatile * object, base_type::descriptor_type const * descriptor) noexcept
-            : base_type{object, descriptor}
+        // any_base::const_descriptor. The referent travels as the base holds it, so a
+        // holder remembered during constant evaluation stays one.
+        constexpr explicit any_view(base_type const & bound, base_type::descriptor_type const * descriptor) noexcept
+            : base_type{bound, descriptor}
         {}
 
         friend class ::scl::any_argument;
@@ -114,7 +132,22 @@ namespace scl
         // The referred-to type answers first, so a request for std::any stops at the box
         // rather than asking whether another one is nested inside it.
         if (*descriptor->type == ::scl::type_key_of<bare>())
+        {
+            if (::std::is_constant_evaluated())
+            {
+                // Recovering a typed pointer from `void const *` is not a constant
+                // expression before P2738, while a downcast to a class the object really is
+                // - an anchor, or the holder an owner keeps - is one. A plain binding falls
+                // through to that recovery, which folds from C++26 on.
+                if (descriptor->binding == detail::any_binding::anchor)
+                    return static_cast<detail::any_anchored_descriptor<bare> const *>(descriptor)->referent;
+
+                if (descriptor->binding == detail::any_binding::holder)
+                    return detail::any_holder_object<bare>(view->held());
+            }
+
             SCL_LIKELY return detail::erased_cast<Type const>(view->object());
+        }
 #if SCL_HAS_RTTI
         if (auto const * boxed = view->std_any())
             return ::std::any_cast<bare>(boxed);
@@ -232,6 +265,31 @@ namespace scl
  */
 
 /**
+ * @fn scl::any_view::any_view(any_view const &)
+ * @brief Copies the view; both then refer to the same object.
+ */
+
+/**
+ * @fn scl::any_view::any_view(any_view &&)
+ * @brief Moves the view, which copies it: a view owns nothing to hand over.
+ */
+
+/**
+ * @fn scl::any_view::operator=(any_view const &)
+ * @brief Rebinds this view to what @p other refers to.
+ */
+
+/**
+ * @fn scl::any_view::operator=(any_view &&)
+ * @brief Rebinds this view, which copies: a view owns nothing to hand over.
+ */
+
+/**
+ * @fn scl::any_view::~any_view()
+ * @brief Trivial: the view owns neither the referent nor the descriptor.
+ */
+
+/**
  * @fn scl::any_view::any_view(::std::any const & value)
  * @brief Constructs a view over the object held in @p value without copying it.
  * @param value  The `std::any` to view; its contained object is referenced in
@@ -268,6 +326,19 @@ namespace scl
  *
  * @tparam Type  Deduced reference type of the viewed lvalue.
  * @param  object  The lvalue to view.
+ */
+
+/**
+ * @fn scl::any_view::any_view(any_anchor<Type> const & bound)
+ * @brief Constructs a view over the object @p bound stands for.
+ *
+ * The referent is the anchored object, never the anchor: `type_name()` and
+ * `type_key()` answer for the object, and @ref scl::any_cast reaches it. What the
+ * anchor adds is constant evaluation — see @ref scl::any_anchor for why a plain
+ * lvalue needs one on the C++20 baseline and why C++26 does not.
+ *
+ * @tparam Type  The anchored object's type, qualifiers included.
+ * @param  bound  The anchor standing for the object to view.
  */
 
 /**
