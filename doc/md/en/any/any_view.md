@@ -176,15 +176,14 @@ scl::any_cast<int const volatile &>(view); // reads the volatile object
 The other direction is always allowed: a request carrying `volatile` also passes for an
 object without qualifiers.
 
-The same rule covers the view itself. When the variable is declared `any_view volatile`,
-that qualifier has to be requested too, whatever the qualifiers of the object are:
+The view's own qualifiers take no part in the request: they govern the view, not the object
+it refers to.
 
 ```cpp
 int number = 0;
 scl::any_view volatile view{number};
 
-scl::any_cast<int>(&view);          // nullptr: the view itself is volatile
-scl::any_cast<int volatile>(&view); // reads normally
+scl::any_cast<int>(&view);   // reads normally: the object carries no qualifier
 ```
 
 ### Constant evaluation

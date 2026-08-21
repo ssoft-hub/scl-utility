@@ -289,29 +289,34 @@ TEST(AnyViewTest, IdentityDistinguishesEveryState)
 }
 
 // The std::any backing delegates to std::any_cast, but it reaches that delegation through
-// the same handle the raw backing does, so the handle's own qualifiers gate it identically.
-TEST(AnyViewTest, VolatileHandleRequiresVolatileRequestOverStdAny)
+// the same handle the raw backing does, so the handle's own qualifiers govern it identically.
+TEST(AnyViewTest, VolatileHandleLeavesTheRequestAloneOverStdAny)
 {
     ::std::any boxed{7};
     ::scl::any_view volatile view{boxed};
 
-    EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
-    auto const * reached = ::scl::any_cast<int volatile>(&view);
+    auto const * reached = ::scl::any_cast<int>(&view);
     ASSERT_NE(reached, nullptr);
     EXPECT_EQ(*reached, 7);
 }
 
 #endif // SCL_HAS_RTTI
 
-TEST(AnyViewTest, VolatileHandleRequiresVolatileRequest)
+TEST(AnyViewTest, VolatileHandleLeavesTheRequestAlone)
 {
-    // The handle's own volatile is a qualifier the request must cover too, on top of
-    // whatever the referent itself was bound with — here, nothing.
+    // The handle's own volatile governs the handle, not the object it refers to, so the
+    // request answers to the referent's qualifiers alone - here, none.
     int value = 1;
     ::scl::any_view volatile view{value};
 
-    EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
-    auto const * p = ::scl::any_cast<int volatile>(&view);
-    ASSERT_NE(p, nullptr);
-    EXPECT_EQ(*p, 1);
+    auto const * reached = ::scl::any_cast<int>(&view);
+    ASSERT_NE(reached, nullptr);
+    EXPECT_EQ(*reached, 1);
+
+    // A volatile referent still requires the request to carry the qualifier.
+    int volatile sensor = 2;
+    ::scl::any_view volatile over_sensor{sensor};
+
+    EXPECT_EQ(::scl::any_cast<int>(&over_sensor), nullptr);
+    ASSERT_NE(::scl::any_cast<int volatile>(&over_sensor), nullptr);
 }

@@ -336,17 +336,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     throwing value/reference form where `T const &` binds with no copy. A cast
     must carry every cv-qualifier the referent was bound with, so a `volatile`
     object is read as `T volatile`, and a write — which carries none — reaches
-    only an unqualified referent. For an `any_view` the coverage rule reaches the
-    handle itself, so a `volatile` view requires `volatile` in the request the
-    same way a `volatile` referent does. An argument adds nothing of its own: it
-    is reached through a `const` reference wherever it appears, so its rights come
-    from the binding alone. A request naming `std::any` is answered by the box
-    itself — the type the identity queries already report for that backing — so a
-    `std::any` is taken out of a handle without naming what it holds, and a
-    non-`const` binding hands it out for writing. A `std::any` argument converts
-    implicitly, so one `any_cast` serves both backings. Recovering the object is
-    a runtime step on C++20 (constant-evaluable under P2738/C++26), as with
-    `std::any_cast`.
+    only an unqualified referent. A handle's own cv-qualification governs the
+    handle and not what it refers to, so it takes no part in the request: a
+    `volatile` view over an unqualified object answers `any_cast<T>`, and the
+    rights come from the binding alone. A request naming `std::any` is answered
+    by the box itself — the type the identity queries already report for that
+    backing — so a `std::any` is taken out of a handle without naming what it
+    holds, and a non-`const` binding hands it out for writing. A `std::any`
+    argument converts implicitly, so one `any_cast` serves both backings.
+    Recovering the object is a runtime step on C++20 (constant-evaluable under
+    P2738/C++26), as with `std::any_cast`.
   - `scl::bad_any_cast` — thrown on mismatch; derives from `std::bad_cast` in
     every configuration, never `std::bad_any_cast`, so the type stays
     RTTI-independent and safe to link across mixed RTTI/-fno-rtti builds.

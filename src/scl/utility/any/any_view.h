@@ -114,7 +114,8 @@ namespace scl
         ;
     };
 
-    // View is deduced so that the caller's own cv-qualification reaches accepts().
+    // View is deduced so that a cv-qualified handle binds at all; its qualification governs
+    // the handle, not the referent, so it takes no part in the request.
     template <typename Type, typename View>
     [[nodiscard]]
     SCL_HOT constexpr Type const * any_cast(View * view) noexcept
@@ -127,7 +128,7 @@ namespace scl
             SCL_UNLIKELY return nullptr;
         // Ahead of the std::any branch, which delegates to std::any_cast and so knows
         // nothing of this view's qualifiers.
-        if (!view->accepts(detail::any_qualifiers_of<Type const &>()))
+        if (!view->binding_accepts(detail::any_qualifiers_of<Type const &>()))
             return nullptr;
         // The referred-to type answers first, so a request for std::any stops at the box
         // rather than asking whether another one is nested inside it.
@@ -400,9 +401,9 @@ namespace scl
  * `any_cast<T>`. The reverse always works: the request may add qualifiers the
  * referent lacks.
  *
- * `view` itself may be `volatile`-qualified, and that is a qualifier the request
- * must cover too: a `volatile any_view` answers `any_cast<T volatile>` and refuses
- * `any_cast<T>`, on top of whatever the referent's own qualifiers require.
+ * `view` itself may be `volatile`-qualified, and that qualifier takes no part in the
+ * request: it governs the view, not the object the view refers to. A `volatile
+ * any_view` over an unqualified object therefore answers `any_cast<T>`.
  *
  * A request naming `std::any` is answered by the box itself — the object the view
  * refers to, and the type @ref scl::any_view::type_name and
@@ -413,8 +414,8 @@ namespace scl
  * any other type it does not refer to.
  *
  * @tparam Type     The expected object type; a reference type is rejected.
- * @tparam View     Deduced `any_view`, possibly `volatile`-qualified — that
- *                  qualification is itself a requirement the request must cover.
+ * @tparam View     Deduced `any_view`, possibly `volatile`-qualified; that
+ *                  qualification governs the view alone.
  * @param  view  The view to read (may be null).
  * @return `const Type *` to the viewed object on a type match; `nullptr` on
  *         mismatch, a qualifier the request does not cover, a null pointer, or an

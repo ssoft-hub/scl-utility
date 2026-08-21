@@ -285,8 +285,8 @@ TEST(AnyArgTest, ConstexprCastThroughParameter)
 
 TEST(AnyArgTest, ConstexprCastObeysQualifierCoverage)
 {
-    // The anchor answers only what accepts() has already granted — it is reached after
-    // the coverage check, never instead of it.
+    // Constant evaluation reaches the referent through an anchor, and that path runs after
+    // the qualifier check rather than instead of it.
     STATIC_EXPECT_TRUE(const_referent_refuses_write());
     STATIC_EXPECT_TRUE(volatile_referent_needs_volatile());
 }
