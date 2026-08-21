@@ -29,6 +29,9 @@ project/doxygen/     — Doxyfile
 - Example, test and benchmark sources are named by the rule in **Source file naming** below; every new public API must have a GoogleTest (`*_gtest.cpp`) test
 - No comments unless the WHY is non-obvious
 - All source comments and identifiers in **English**
+- A template parameter is spelled `typename`, never `class` — a template template parameter
+  included (`template <typename...> typename Operation`), where C++17 made the spelling
+  available. `enum class`, a `friend class` declaration and a class definition keep the keyword
 - A `requires` clause goes **after** the declaration, never between the template head and
   the declaration:
 

@@ -61,7 +61,7 @@ namespace scl::hierarchy
      * @tparam Observer  Observer policy template instantiated as `Observer<tree>`.
      * @tparam Allocator Allocator template forwarded to the underlying node list.
      */
-    template <typename Payload, template <typename> class Observer, template <typename> class Allocator = ::std::allocator>
+    template <typename Payload, template <typename> typename Observer, template <typename> typename Allocator = ::std::allocator>
     class tree
     {
     public:
@@ -1094,7 +1094,7 @@ namespace scl::hierarchy
     };
 
     // Out-of-line definition for reference::operator== (needs const_reference complete)
-    template <typename Payload, template <typename> class Observer, template <typename> class Allocator>
+    template <typename Payload, template <typename> typename Observer, template <typename> typename Allocator>
     constexpr bool tree<Payload, Observer, Allocator>::reference::operator==(/**/
         const_reference other) const noexcept
     {

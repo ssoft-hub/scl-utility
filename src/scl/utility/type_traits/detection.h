@@ -24,7 +24,7 @@ namespace scl::detail
      * 
      * This specialization is selected when Operation<Arguments...> is ill-formed.
      */
-    template <typename Default, typename AlwaysVoid, template <typename...> class Operation, typename... Arguments>
+    template <typename Default, typename AlwaysVoid, template <typename...> typename Operation, typename... Arguments>
     struct detector
     {
         using value_t = ::std::false_type;
@@ -41,7 +41,7 @@ namespace scl::detail
      * 
      * This specialization is selected when Operation<Arguments...> is well-formed.
      */
-    template <typename Default, template <typename...> class Operation, typename... Arguments>
+    template <typename Default, template <typename...> typename Operation, typename... Arguments>
     struct detector<Default, ::std::void_t<Operation<Arguments...>>, Operation, Arguments...>
     {
         using value_t = ::std::true_type;
@@ -68,7 +68,7 @@ namespace scl
      * static_assert(is_detected<has_foo_t, MyClass>::value);
      * @endcode
      */
-    template <template <typename...> class Operation, typename... Arguments>
+    template <template <typename...> typename Operation, typename... Arguments>
     using is_detected = detail::detector<void, void, Operation, Arguments...>::value_t;
 
     /**
@@ -81,7 +81,7 @@ namespace scl
      * if constexpr (is_detected_v<has_foo_t, MyClass>) { ... }
      * @endcode
      */
-    template <template <typename...> class Operation, typename... Arguments>
+    template <template <typename...> typename Operation, typename... Arguments>
     inline constexpr bool is_detected_v = is_detected<Operation, Arguments...>::value;
 
     /**
@@ -94,7 +94,7 @@ namespace scl
      * using result = detected_t<has_foo_t, MyClass>;
      * @endcode
      */
-    template <template <typename...> class Operation, typename... Arguments>
+    template <template <typename...> typename Operation, typename... Arguments>
     using detected_t = detail::detector<void, void, Operation, Arguments...>::type;
 
     /**
@@ -107,7 +107,7 @@ namespace scl
      * Provides nested type 'type' which is either Operation<Arguments...>
      * if well-formed, or Default otherwise.
      */
-    template <typename Default, template <typename...> class Operation, typename... Arguments>
+    template <typename Default, template <typename...> typename Operation, typename... Arguments>
     using detected_or = detail::detector<Default, void, Operation, Arguments...>;
 
     /**
@@ -121,7 +121,7 @@ namespace scl
      * using result = detected_or_t<int, has_foo_t, MyClass>;
      * @endcode
      */
-    template <typename Default, template <typename...> class Operation, typename... Arguments>
+    template <typename Default, template <typename...> typename Operation, typename... Arguments>
     using detected_or_t = detected_or<Default, Operation, Arguments...>::type;
 
     /**
@@ -135,7 +135,7 @@ namespace scl
      * static_assert(is_detected_exact<int, get_value_type_t, MyClass>::value);
      * @endcode
      */
-    template <typename Expected, template <typename...> class Operation, typename... Arguments>
+    template <typename Expected, template <typename...> typename Operation, typename... Arguments>
     using is_detected_exact = ::std::is_same<Expected, detected_t<Operation, Arguments...>>;
 
     /**
@@ -145,7 +145,7 @@ namespace scl
      * @tparam Operation Template to instantiate
      * @tparam Arguments Arguments for the template
      */
-    template <typename Expected, template <typename...> class Operation, typename... Arguments>
+    template <typename Expected, template <typename...> typename Operation, typename... Arguments>
     inline constexpr bool is_detected_exact_v = is_detected_exact<Expected, Operation, Arguments...>::value;
 
     /**
@@ -159,7 +159,7 @@ namespace scl
      * static_assert(is_detected_convertible<double, get_value_t, MyClass>::value);
      * @endcode
      */
-    template <typename To, template <typename...> class Operation, typename... Arguments>
+    template <typename To, template <typename...> typename Operation, typename... Arguments>
     using is_detected_convertible = ::std::is_convertible<detected_t<Operation, Arguments...>, To>;
 
     /**
@@ -169,7 +169,7 @@ namespace scl
      * @tparam Operation Template to instantiate
      * @tparam Arguments Arguments for the template
      */
-    template <typename To, template <typename...> class Operation, typename... Arguments>
+    template <typename To, template <typename...> typename Operation, typename... Arguments>
     inline constexpr bool is_detected_convertible_v = is_detected_convertible<To, Operation, Arguments...>::value;
 
 } // namespace scl

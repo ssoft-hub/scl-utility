@@ -16,7 +16,7 @@
 
 namespace scl::hierarchy
 {
-    template <typename Payload, template <typename> class Allocator = ::std::allocator>
+    template <typename Payload, template <typename> typename Allocator = ::std::allocator>
     class node
     {
     public:
@@ -361,7 +361,7 @@ namespace scl::hierarchy::concepts
         struct is_node : ::std::false_type
         {};
 
-        template <typename Payload, template <typename> class Allocator>
+        template <typename Payload, template <typename> typename Allocator>
         struct is_node<::scl::hierarchy::node<Payload, Allocator>> : ::std::true_type
         {};
     } // namespace detail
@@ -382,7 +382,7 @@ namespace scl::hierarchy
 {
     // Two overloads rather than one forwarding-reference template, so the
     // constness of the parent always matches the constness of self.
-    template <typename Payload, template <typename> class Allocator>
+    template <typename Payload, template <typename> typename Allocator>
     [[nodiscard]]
     constexpr node<Payload, Allocator> & adl_parent(node<Payload, Allocator> & self) /**/
         noexcept(noexcept(self.parent()))
@@ -390,7 +390,7 @@ namespace scl::hierarchy
         return self.parent();
     }
 
-    template <typename Payload, template <typename> class Allocator>
+    template <typename Payload, template <typename> typename Allocator>
     [[nodiscard]]
     constexpr node<Payload, Allocator> const & adl_parent(node<Payload, Allocator> const & self) /**/
         noexcept(noexcept(self.parent()))
@@ -398,7 +398,7 @@ namespace scl::hierarchy
         return self.parent();
     }
 
-    template <typename Payload, template <typename> class Allocator>
+    template <typename Payload, template <typename> typename Allocator>
     [[nodiscard]]
     constexpr bool adl_has_parent(node<Payload, Allocator> const & self) /**/
         noexcept(noexcept(self.has_parent()))
@@ -406,7 +406,7 @@ namespace scl::hierarchy
         return self.has_parent();
     }
 
-    template <typename Payload, template <typename> class Allocator>
+    template <typename Payload, template <typename> typename Allocator>
     [[nodiscard]]
     constexpr identity adl_identity(node<Payload, Allocator> const & self) noexcept
     {
