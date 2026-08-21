@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::any_mutable_view` (`#include <scl/utility/any/any_mutable_view.h>`) — `scl::any_view`
+  granting write access. The Any group tells its handles apart by whether a handle may be
+  stored and whether it writes, and one of the four combinations had no handle of its own:
+  `scl::any_view` is storable and reads, `scl::any_arg` writes and reads but is valid only
+  for the duration of a call, and a write that has to outlive the call setting it up — a
+  slot filled later, a binding that pushes a value back — had nowhere to go.
+  The new view is the reading one without the narrowing to `const`: two pointers wide,
+  trivially copyable, owning nothing. It pays for the write by refusing a `const` object and
+  a temporary of any constness outright, at the point of binding rather than at the cast; a
+  `volatile` referent binds and is reached under the same qualifier-coverage rule the rest
+  of the group obeys. A handle's own cv-qualification governs the handle alone and takes no
+  part in a request: a `const` view still hands out a `T *`, and a `volatile` view over an
+  unqualified object answers `any_cast<T>`. It converts to `scl::any_view`, which drops the
+  write, and to `scl::any_arg`, which keeps it for the duration of a call; neither converts
+  back. `scl::any_switch` takes one as a subject, an `in_case<T &>` branch reaches the
+  caller's object through it, and an `scl::any` built or assigned from one stores a copy of
+  the referent. Identity queries and constant evaluation behave as `scl::any_view`'s
+  do, the P2738 limit on casts included. See
+  [`doc/md/en/any/any_mutable_view.md`](doc/md/en/any/any_mutable_view.md).
+
 - `scl::any_anchor` (`#include <scl/utility/any/any_anchor.h>`) — a companion object a
   caller declares beside a value so that `scl::any_view` and `scl::any_arg` can cast to
   that value during constant evaluation on the C++20 baseline. Recovering a typed pointer

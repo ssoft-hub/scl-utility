@@ -1,8 +1,8 @@
 # Any view
 
-`scl::any_view` refers to an existing object whose type is known only at run time, and lets
-a caller read it. The view neither creates, copies nor destroys that object: it holds its
-address and the description of its type.
+`scl::any_view` refers to an existing object without naming its type, and lets a caller read
+it. The view neither creates, copies nor destroys that object: it holds its address and the
+description of its type.
 
 - Header: `#include <scl/utility/any/any_view.h>`
 
@@ -254,6 +254,7 @@ The two limits of the key apply here as well:
 - [`example/any/common/any_common_example.cpp`](../../../../example/any/common/any_common_example.cpp) -
   a working example: one function reads both a view and an argument, casts in both forms and
   identity queries.
+- [any_mutable_view](any_mutable_view.md) - the same view with write access
 - [any_arg](any_arg.md) - a view for a method parameter that also grants write access
 - [any_anchor](any_anchor.md) - the anchor that folds a cast to a plain object on C++20
 - [any_switch](any_switch.md) - a chain of branches that reads a value without a run of casts

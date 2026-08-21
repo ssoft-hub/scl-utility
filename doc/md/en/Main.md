@@ -54,6 +54,7 @@ Then include the umbrella header or individual component headers:
 |-----------|--------|-------------|
 | [any](any/any.md) | `<scl/utility/any/any.h>` | Owning holder of one object of any type; no RTTI, usable in constant evaluation, two pointers wide |
 | [any_view](any/any_view.md) | `<scl/utility/any/any_view.h>` | Storable read-only view over a `std::any` or a typed lvalue; accepts lvalues only |
+| [any_mutable_view](any/any_mutable_view.md) | `<scl/utility/any/any_mutable_view.h>` | Storable view over a `std::any` or a typed lvalue that grants write access; accepts non-`const` lvalues only |
 | [any_arg](any/any_arg.md) | `<scl/utility/any/any_arg.h>` | Parameter-only view that also binds rvalues; valid for the duration of the call |
 | [any_anchor](any/any_anchor.md) | `<scl/utility/any/any_anchor.h>` | An anchor: declared beside a value, it lets a handle read that value during constant evaluation |
 | [any_switch](any/any_switch.md) | `<scl/utility/any/any_switch.h>` | Branch chain running one branch, chosen by the type an erased value holds; holds no subject |

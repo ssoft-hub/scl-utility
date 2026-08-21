@@ -221,7 +221,7 @@ else is given fresh memory, and the old object is destroyed only once the replac
 stands.
 
 A value arriving through [`any_view`](any_view.md) or [`any_arg`](any_arg.md) is taken on
-the same terms. The type of such a value is known only at run time, so the temporary copy is
+the same terms. The type of such a value is not named here, so the temporary copy is
 built by an operation the source carries in its type description.
 
 ### Copying
@@ -444,11 +444,11 @@ scl::any taken = scl::any_arg{"abc"};  // char const *: the array decays to a po
 `std::any` cannot do the same: its own constructor accepts a view as an ordinary value and
 stores the view itself.
 
-The type of the object the handle refers to is known only at run time, so the copy is made
-through the type description the handle carries. For the same reason a failure is discovered
-at run time: if the object has no copy constructor, or its alignment is stricter than 64
-bytes, the `scl::any` stays empty. During constant evaluation this copy is unavailable,
-because the object behind the handle cannot be reached there.
+The type of the object the handle refers to is not named here, so the copy is made through
+the type description the handle carries. A failure is therefore discovered at run time: if
+the object has no copy constructor, or its alignment is stricter than 64 bytes, the
+`scl::any` stays empty. During constant evaluation this copy is unavailable, because the
+object behind the handle cannot be reached there.
 
 Storing the handle itself remains possible, but has to be said explicitly:
 
@@ -468,6 +468,7 @@ itself must not outlive the module that created it.
   a working example: storage, constant evaluation, copying on request, a stateful allocator
   and views over an `scl::any`.
 - [any_view](any_view.md) - a read-only view that owns nothing
+- [any_mutable_view](any_mutable_view.md) - a storable view that grants write access
 - [any_arg](any_arg.md) - a view for a method parameter that also grants write access
 - [any_switch](any_switch.md) - a chain of branches that selects one by the type of a value
 - [type_key](../meta/type_key.md) - the identity key `type_key()` answers with

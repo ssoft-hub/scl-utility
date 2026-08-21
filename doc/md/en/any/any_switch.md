@@ -7,11 +7,11 @@ one that matches the actual type of the value it is given.
 
 ## Overview
 
-Reading a value whose type is known only at run time used to mean a run of
-[`scl::any_cast`](any_view.md) attempts: one call per candidate type, an `if` around each,
-and the "none of them matched" case written out separately. The type appears twice in every
-branch - in the cast and in the variable the cast fills - and nothing stops two branches from
-covering each other or from never running at all.
+Reading a value whose type is erased used to mean a run of [`scl::any_cast`](any_view.md)
+attempts: one call per candidate type, an `if` around each, and the "none of them matched"
+case written out separately. The type appears twice in every branch - in the cast and in
+the variable the cast fills - and nothing stops two branches from covering each other or
+from never running at all.
 
 `scl::any_switch` reduces that to one expression. A branch names its type once, the first
 matching branch runs, and the fallback stands in the same chain. The chain reads whatever
@@ -268,5 +268,6 @@ does.
   a working example: one chain instead of a run of casts, over a view and over an argument.
 - [any_arg](any_arg.md) - the type every branch reads the value through
 - [any_view](any_view.md) - the view the chain also accepts as a value
+- [any_mutable_view](any_mutable_view.md) - the view granting write access, accepted as a value
 - [any](any.md) - the owning type whose value the chain reads
 - [Russian documentation](../../ru/any/any_switch.md)

@@ -1,7 +1,7 @@
 # Any arg
 
-`scl::any_arg` refers to an existing object whose type is known only at run time, and is
-meant for a method parameter. A function declares a parameter with it to read - and
+`scl::any_arg` refers to an existing object without naming its type, and is meant for a
+method parameter. A function declares a parameter with it to read - and
 sometimes to modify - an argument of an unknown type, copying nothing and allocating
 nothing.
 
@@ -307,6 +307,7 @@ A function that only reads a value for the duration of a call therefore declares
   a working example: the argument binds a temporary, grants the write a view does not, and
   folds its casts at compile time.
 - [any_view](any_view.md) - the view that can be stored
+- [any_mutable_view](any_mutable_view.md) - the storable view granting write access
 - [any_anchor](any_anchor.md) - the anchor that frees an argument from the parameter position
 - [any_switch](any_switch.md) - a chain of branches over the same value, one branch per type
 - [any](any.md) - the owning type both handles read
