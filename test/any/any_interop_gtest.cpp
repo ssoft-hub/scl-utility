@@ -268,6 +268,32 @@ TEST(AnyInteropTest, AnAnyBuiltFromAViewCopiesTheReferent)
     EXPECT_EQ(*::scl::any_cast<::std::string>(&value), "Hello Any!");
 }
 
+TEST(AnyInteropTest, AnAnyBuiltFromAWritingViewCopiesTheReferent)
+{
+    ::std::string text{"Hello Any!"};
+    ::scl::any_mutable_view const view{text};
+
+    ::scl::any const value = view;
+
+    EXPECT_EQ(value.type_name(), ::scl::type_name<::std::string>());
+    EXPECT_NE(::scl::any_cast<::std::string>(&value), ::std::addressof(text));
+
+    text = "changed";
+    EXPECT_EQ(*::scl::any_cast<::std::string>(&value), "Hello Any!");
+}
+
+TEST(AnyInteropTest, AssigningAWritingViewTakesTheValueToo)
+{
+    ::std::string text{"Hello Any!"};
+    ::scl::any value{42};
+
+    value = ::scl::any_mutable_view{text};
+
+    EXPECT_NE(::scl::any_cast<::std::string>(&value), ::std::addressof(text));
+    text = "changed";
+    EXPECT_EQ(*::scl::any_cast<::std::string>(&value), "Hello Any!");
+}
+
 TEST(AnyInteropTest, ASmallReferentIsTakenAsACopyIntoTheBuffer)
 {
     int number = 42;

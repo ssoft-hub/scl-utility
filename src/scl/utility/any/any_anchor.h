@@ -66,8 +66,9 @@ namespace scl::detail
 
 namespace scl
 {
-    class any_view;
     class any_argument;
+    class any_mutable_view;
+    class any_view;
 
     template <typename Type>
     class any_anchor;
@@ -123,8 +124,9 @@ namespace scl
 #endif
         }
 
-        friend class ::scl::any_view;
         friend class ::scl::any_argument;
+        friend class ::scl::any_mutable_view;
+        friend class ::scl::any_view;
     };
 
 #ifndef DOXYGEN

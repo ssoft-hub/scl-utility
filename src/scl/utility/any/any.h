@@ -22,8 +22,9 @@
 
 namespace scl
 {
-    class any_view;
     class any_argument;
+    class any_mutable_view;
+    class any_view;
 
     template <typename ValueType, typename AnyType>
     [[nodiscard]]
@@ -605,8 +606,9 @@ namespace scl
             return (m_descriptor != nullptr) ? m_descriptor->as_const : nullptr;
         }
 
-        friend class ::scl::any_view;
         friend class ::scl::any_argument;
+        friend class ::scl::any_mutable_view;
+        friend class ::scl::any_view;
 
         template <typename ValueType, typename AnyType>
         friend constexpr auto ::scl::any_cast(AnyType * any) noexcept
@@ -731,6 +733,7 @@ namespace scl
  * @endcode
  *
  * @see scl::any_view - the non-owning, read-only companion
+ * @see scl::any_mutable_view - the non-owning companion that writes
  * @see scl::make_any - construction of an @ref scl::any in one call
  */
 
@@ -798,8 +801,8 @@ namespace scl
  * A handle stands for a value it does not own, so what is stored is that value
  * rather than the handle - the mistake `std::any` cannot refuse to make, since
  * its own constructor is an exact match for a view and cannot be excluded. The
- * referent's type is known only at run time, so the copy is made through the
- * handle rather than by naming a type here.
+ * referent's type is not named here, so the copy is made through the handle
+ * rather than by naming one.
  *
  * The referent decays on the way in, as a value does when it reaches an any
  * directly: an array is taken as the pointer it decays to.

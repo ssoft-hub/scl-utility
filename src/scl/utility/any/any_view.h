@@ -26,8 +26,9 @@
 
 namespace scl
 {
-    class any_view;
     class any_argument;
+    class any_mutable_view;
+    class any_view;
 
     class any_view : detail::any_base
     {
@@ -101,7 +102,16 @@ namespace scl
             : base_type{bound, descriptor}
         {}
 
+        // From the parts rather than from a handle: a volatile handle is not copyable as a
+        // base, and only run time reaches this, where the address is the shape the base keeps.
+        any_view(detail::any_holder_base const * held,
+            void const volatile * object,
+            base_type::descriptor_type const * descriptor) noexcept
+            : base_type{held, object, descriptor}
+        {}
+
         friend class ::scl::any_argument;
+        friend class ::scl::any_mutable_view;
 
         // An explicit object parameter in the base deduces this type, not the base, and
         // private inheritance would otherwise refuse that conversion.
@@ -251,6 +261,7 @@ namespace scl
  * bar(boxed);                              // std::any backing (RTTI builds)
  * @endcode
  *
+ * @see scl::any_mutable_view — the same view, granting write access
  * @see scl::any_arg — the parameter-only companion, which also grants write access
  * @see scl::any_switch — a branch chain reading a view without a cascade of casts
  */
@@ -402,8 +413,9 @@ namespace scl
  * referent lacks.
  *
  * `view` itself may be `volatile`-qualified, and that qualifier takes no part in the
- * request: it governs the view, not the object the view refers to. A `volatile
- * any_view` over an unqualified object therefore answers `any_cast<T>`.
+ * request: it governs the view, not the object the view refers to, exactly as it
+ * does for a pointer. A `volatile any_view` over an unqualified object therefore
+ * answers `any_cast<T>`.
  *
  * A request naming `std::any` is answered by the box itself — the object the view
  * refers to, and the type @ref scl::any_view::type_name and
