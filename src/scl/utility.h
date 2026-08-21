@@ -85,8 +85,9 @@
  * @section features Features
  *
  * - **Any** (@ref scl_utility_any) — erased views over a value: any_view stores one,
- *   any_arg takes one as a parameter and also binds temporaries, any_switch runs the
- *   branch matching the type held, and any_cast recovers the value.
+ *   any_mutable_view stores one and writes through it, any_arg takes one as a parameter
+ *   and also binds temporaries, any_switch runs the branch matching the type held, and
+ *   any_cast recovers the value.
  * - **Attribute** (@ref scl_utility_attribute) — portable macros for
  *   [[no_unique_address]], optimizer hints (SCL_ASSUME, SCL_UNREACHABLE),
  *   and inlining control (SCL_FORCE_INLINE, SCL_NOINLINE).

@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::any_mutable_view` (`#include <scl/utility/any/any_mutable_view.h>`) — `scl::any_view`
+  granting write access. The Any group tells its handles apart by whether a handle may be
+  stored and whether it writes, and one of the four combinations had no handle of its own:
+  `scl::any_view` is storable and reads, `scl::any_arg` writes and reads but is valid only
+  for the duration of a call, and a write that has to outlive the call setting it up — a
+  slot filled later, a binding that pushes a value back — had nowhere to go.
+  The new view is the reading one without the narrowing to `const`: two pointers wide,
+  trivially copyable, owning nothing. It pays for the write by refusing a `const` object and
+  a temporary of any constness outright, at the point of binding rather than at the cast; a
+  `volatile` referent binds and is reached under the same qualifier-coverage rule the rest
+  of the group obeys. A handle's own cv-qualification governs the handle alone and takes no
+  part in a request: a `const` view still hands out a `T *`, and a `volatile` view over an
+  unqualified object answers `any_cast<T>`. It converts to `scl::any_view`, which drops the
+  write, and to `scl::any_arg`, which keeps it for the duration of a call; neither converts
+  back. `scl::any_switch` takes one as a subject, an `in_case<T &>` branch reaches the
+  caller's object through it, and an `scl::any` built or assigned from one stores a copy of
+  the referent. Identity queries and constant evaluation behave as `scl::any_view`'s
+  do, the P2738 limit on casts included. See
+  [`doc/md/en/any/any_mutable_view.md`](doc/md/en/any/any_mutable_view.md).
+
 - `scl::any_anchor` (`#include <scl/utility/any/any_anchor.h>`) — a companion object a
   caller declares beside a value so that `scl::any_view` and `scl::any_arg` can cast to
   that value during constant evaluation on the C++20 baseline. Recovering a typed pointer
@@ -336,17 +356,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     throwing value/reference form where `T const &` binds with no copy. A cast
     must carry every cv-qualifier the referent was bound with, so a `volatile`
     object is read as `T volatile`, and a write — which carries none — reaches
-    only an unqualified referent. For an `any_view` the coverage rule reaches the
-    handle itself, so a `volatile` view requires `volatile` in the request the
-    same way a `volatile` referent does. An argument adds nothing of its own: it
-    is reached through a `const` reference wherever it appears, so its rights come
-    from the binding alone. A request naming `std::any` is answered by the box
-    itself — the type the identity queries already report for that backing — so a
-    `std::any` is taken out of a handle without naming what it holds, and a
-    non-`const` binding hands it out for writing. A `std::any` argument converts
-    implicitly, so one `any_cast` serves both backings. Recovering the object is
-    a runtime step on C++20 (constant-evaluable under P2738/C++26), as with
-    `std::any_cast`.
+    only an unqualified referent. A handle's own cv-qualification governs the
+    handle and not what it refers to, so it takes no part in the request: a
+    `volatile` view over an unqualified object answers `any_cast<T>`, and the
+    rights come from the binding alone. A request naming `std::any` is answered
+    by the box itself — the type the identity queries already report for that
+    backing — so a `std::any` is taken out of a handle without naming what it
+    holds, and a non-`const` binding hands it out for writing. A `std::any`
+    argument converts implicitly, so one `any_cast` serves both backings.
+    Recovering the object is a runtime step on C++20 (constant-evaluable under
+    P2738/C++26), as with `std::any_cast`.
   - `scl::bad_any_cast` — thrown on mismatch; derives from `std::bad_cast` in
     every configuration, never `std::bad_any_cast`, so the type stays
     RTTI-independent and safe to link across mixed RTTI/-fno-rtti builds.

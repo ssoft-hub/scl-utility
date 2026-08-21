@@ -215,6 +215,27 @@ TEST(AnySwitchTest, MatchingCaseRunsItsHandler)
     EXPECT_EQ(seen, 7);
 }
 
+TEST(AnySwitchTest, WritingViewIsAcceptedAsASubject)
+{
+    int value = 7;
+    ::scl::any_mutable_view const subject{value};
+    int seen = 0;
+
+    ::scl::any_switch<>().in_case<int>([&seen](int number) { seen = number; }).apply(subject);
+
+    EXPECT_EQ(seen, 7);
+}
+
+TEST(AnySwitchTest, WritingViewSubjectReachesTheCallersObject)
+{
+    int value = 7;
+    ::scl::any_mutable_view const subject{value};
+
+    ::scl::any_switch<>().in_case<int &>([](int & number) { number = 11; }).apply(subject);
+
+    EXPECT_EQ(value, 11);
+}
+
 TEST(AnySwitchTest, FirstMatchingCaseWins)
 {
     int value = 7;

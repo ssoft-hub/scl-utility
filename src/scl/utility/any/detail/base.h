@@ -94,12 +94,12 @@ namespace scl::detail
             (has_volatile ? any_qualifier::volatile_qualified : any_qualifier::none);
     }
 
-    // Sound only after any_base::accepts proved Target covers the referent's qualifiers.
+    // Sound only after any_base::binding_accepts proved Target covers the referent's qualifiers.
     template <typename Target>
     [[nodiscard]]
     constexpr Target * erased_cast(void const volatile * object) noexcept
     {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): guarded by accepts()
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): guarded by binding_accepts()
         return static_cast<Target *>(const_cast<void *>(object));
     }
 
@@ -500,8 +500,6 @@ namespace scl::detail
             return m_held;
         }
 
-        // The request must cover every cv-qualifier of the referent and of the handle it
-        // is reached through; the latter is static, so it comes from the object parameter.
 #ifdef __cpp_explicit_this_parameter
         template <typename Self>
         [[nodiscard]]
@@ -524,15 +522,6 @@ namespace scl::detail
         constexpr descriptor_type const * const_descriptor(this Self && self) noexcept
         {
             return (self.m_descriptor != nullptr) ? self.m_descriptor->as_const : nullptr;
-        }
-
-        template <typename Self>
-        [[nodiscard]]
-        constexpr bool accepts(this Self && self, any_qualifier requested) noexcept
-        {
-            return self.m_descriptor != nullptr &&
-                ((self.m_descriptor->qualifiers | any_qualifiers_of<::std::remove_reference_t<Self> &>()) &
-                    ~requested) == any_qualifier::none;
         }
 #else
         [[nodiscard]]
@@ -573,41 +562,18 @@ namespace scl::detail
         {
             return (m_descriptor != nullptr) ? m_descriptor->as_const : nullptr;
         }
+#endif
 
+        // A handle's own cv-qualification governs the handle and not what it refers to, so
+        // the rights come from the binding alone.
         [[nodiscard]]
-        constexpr bool accepts(any_qualifier requested) noexcept
+        constexpr bool binding_accepts(any_qualifier requested) const noexcept
         {
             return m_descriptor != nullptr && (m_descriptor->qualifiers & ~requested) == any_qualifier::none;
         }
 
         [[nodiscard]]
-        constexpr bool accepts(any_qualifier requested) const noexcept
-        {
-            return m_descriptor != nullptr &&
-                ((m_descriptor->qualifiers | any_qualifier::const_qualified) & ~requested) == any_qualifier::none;
-        }
-
-        [[nodiscard]]
-        bool accepts(any_qualifier requested) volatile noexcept
-        {
-            return m_descriptor != nullptr &&
-                ((m_descriptor->qualifiers | any_qualifier::volatile_qualified) & ~requested) ==
-                any_qualifier::none;
-        }
-
-        [[nodiscard]]
-        bool accepts(any_qualifier requested) const volatile noexcept
-        {
-            return m_descriptor != nullptr &&
-                ((m_descriptor->qualifiers | any_qualifier::const_qualified | any_qualifier::volatile_qualified) &
-                    ~requested) == any_qualifier::none;
-        }
-#endif
-
-        // For a handle whose own cv-qualification is fixed by its declaration and so states
-        // nothing, the rights come from the binding alone.
-        [[nodiscard]]
-        constexpr bool binding_accepts(any_qualifier requested) const noexcept
+        bool binding_accepts(any_qualifier requested) const volatile noexcept
         {
             return m_descriptor != nullptr && (m_descriptor->qualifiers & ~requested) == any_qualifier::none;
         }

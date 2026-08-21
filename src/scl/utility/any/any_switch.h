@@ -511,6 +511,7 @@ namespace scl
  *
  * @see scl::any_arg — the subject type every branch reads through
  * @see scl::any_view — the storable read-only view, also accepted as a subject
+ * @see scl::any_mutable_view — the storable view granting write access, a subject too
  */
 
 /**

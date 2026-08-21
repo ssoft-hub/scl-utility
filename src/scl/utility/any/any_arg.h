@@ -7,6 +7,7 @@
  */
 
 #include <scl/utility/any/any_anchor.h>
+#include <scl/utility/any/any_mutable_view.h>
 #include <scl/utility/any/any_view.h>
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
@@ -69,6 +70,12 @@ namespace scl
         // cppcheck-suppress noExplicitConstructor
         constexpr any_argument(any_view const & view) noexcept // NOLINT(*-explicit-*): adopts the referent
             : base_type{view, view.const_descriptor()}
+        {}
+
+        // The view promises the write, so its binding is adopted as it stands.
+        // cppcheck-suppress noExplicitConstructor
+        constexpr any_argument(any_mutable_view const & view) noexcept // NOLINT(*-explicit-*)
+            : base_type{view, view.descriptor()}
         {}
 
         // Unwrapped to its content, bound with the constness of the any it was taken from.
@@ -182,23 +189,8 @@ namespace scl
         if (!arg->binding_accepts(detail::any_qualifiers_of<Type &>()))
             return nullptr;
         if (::std::is_constant_evaluated())
-        {
-            // Both shapes are typed, so either may only be reached once the descriptor has
-            // said which type it holds. A plain binding falls through to the recovery from
-            // `void const *`, which folds from C++26 on.
-            using bare = ::std::remove_cv_t<Type>;
-
-            if (*arg->descriptor()->type == ::scl::type_key_of<bare>())
-            {
-                if (arg->descriptor()->binding == detail::any_binding::anchor)
-                    return static_cast<detail::any_anchored_descriptor<bare> const *>(arg->descriptor())
-                        ->referent;
-
-                if (arg->descriptor()->binding == detail::any_binding::holder)
-                    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): binding_accepts() covered it
-                    return const_cast<bare *>(detail::any_holder_object<bare>(arg->held()));
-            }
-        }
+            if (auto * const reached = detail::any_constant_referent<Type>(*arg))
+                return reached;
         // Through the view, not object(): for the std::any backing the stored address is
         // the box, and a cast must reach what is inside it.
         any_view const view = arg->as_view();
@@ -381,6 +373,7 @@ namespace scl
  * @endcode
  *
  * @see scl::any_view — the storable companion
+ * @see scl::any_mutable_view — the storable companion that also writes
  * @see scl::any_switch — a branch chain over the same subject, one branch per type
  */
 
@@ -477,6 +470,23 @@ namespace scl
  * descriptor, so the argument may outlive the view it was built from; a temporary
  * view is a valid source, and what has to stay alive is the object that view
  * refers to.
+ *
+ * @param view  The view whose referent to adopt; the argument refers to the
+ *              same object, not to the view.
+ */
+
+/**
+ * @fn scl::any_argument::any_argument(any_mutable_view const & view)
+ * @brief Adopts the referent of @ref scl::any_mutable_view, with its binding untouched.
+ *
+ * That view promises the write, so unlike the @ref scl::any_view form this
+ * one narrows nothing: a request to write is granted exactly where the view
+ * would grant it.
+ *
+ * The parameter is not lifetime-bound (@ref SCL_LIFETIMEBOUND) for the reason the
+ * `any_view` form is not: what is adopted is the referent and a static
+ * descriptor, so the argument may outlive the view it was built from, and what
+ * has to stay alive is the object that view refers to.
  *
  * @param view  The view whose referent to adopt; the argument refers to the
  *              same object, not to the view.
@@ -591,7 +601,7 @@ namespace scl
  *       request with `nullptr`.
  *
  * @tparam Type      The requested result type — a non-`const` lvalue reference.
- * @tparam Argument  Deduced; must be `scl::any_argument`.
+ * @tparam LValueArgument  Deduced; must be `scl::any_argument`.
  * @param  arg  The argument view to write through.
  * @return The viewed object as @p Type.
  * @throws scl::bad_any_cast  If the viewed type does not match, or the request does
@@ -612,7 +622,7 @@ namespace scl
  * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`.
  *
  * @tparam Type      The requested result type — an object type.
- * @tparam Argument  Deduced; must be `scl::any_argument`.
+ * @tparam ValueArgument  Deduced; must be `scl::any_argument`.
  * @param  arg  The argument view to copy the value out of.
  * @return A copy of the viewed object, as @p Type.
  * @throws scl::bad_any_cast  If the viewed type does not match, or the request does
@@ -631,7 +641,7 @@ namespace scl
  * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`.
  *
  * @tparam Type      The requested result type — a `const` lvalue reference.
- * @tparam Argument  Deduced; must be `scl::any_argument`.
+ * @tparam ConstLValueArgument  Deduced; must be `scl::any_argument`.
  * @param  arg  The argument view to bind to.
  * @return The viewed object as @p Type.
  * @throws scl::bad_any_cast  If the viewed type does not match, or the request does
