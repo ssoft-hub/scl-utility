@@ -14,7 +14,7 @@ Contents:
 Selects a specific overload of a function or member function pointer based on argument types.
 
 - Header: `#include <scl/utility/type_traits/overload_cast.h>`
-- Declaration: `template <class... Args> inline constexpr detail::overload_cast<Args...> overload_cast{};`
+- Declaration: `template <typename... Args> inline constexpr detail::overload_cast<Args...> overload_cast{};`
 
 ### Semantics
 

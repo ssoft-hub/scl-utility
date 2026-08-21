@@ -50,6 +50,8 @@ ctest --test-dir build/gcc --output-on-failure
 - Follow the existing `.clang-format` configuration.
 - Use `#pragma once` as include guard.
 - Root namespace: `scl`. Implementation details go in `scl::detail` or sub-namespace `::detail`.
+- Spell a type parameter `typename`, never `class`; spell a template template parameter
+  `class` (`template <typename...> class Operation`).
 - Prefer `constexpr` and `noexcept` where applicable.
 
 ## Code quality checks

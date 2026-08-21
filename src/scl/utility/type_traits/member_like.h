@@ -19,7 +19,7 @@
 
 namespace scl::detail
 {
-    template <class Type, class Signature>
+    template <typename Type, typename Signature>
     struct member_function_like;
 
     enum class member_function_noexcept : bool
@@ -29,7 +29,7 @@ namespace scl::detail
     };
 
     // Common builder parametrized by Noex (controls noexcept on the member function)
-    template <class Type, class Result, member_function_noexcept Noexcept, class... Arguments>
+    template <typename Type, typename Result, member_function_noexcept Noexcept, typename... Arguments>
     struct build_member_function_like
     {
     private:
@@ -69,7 +69,7 @@ namespace scl::detail
                 ::std::conditional_t<(is_c && is_v), cv, ::std::conditional_t<is_c, c, ::std::conditional_t<is_v, v, un>>>>>;
     };
 
-    template <class Type, class Result, class... Arguments>
+    template <typename Type, typename Result, typename... Arguments>
     struct build_member_function_like<Type, Result, member_function_noexcept::enabled, Arguments...>
     {
     private:
@@ -110,26 +110,26 @@ namespace scl::detail
     };
 
     // Entry: Signature without noexcept
-    template <class Type, class Result, class... Arguments>
+    template <typename Type, typename Result, typename... Arguments>
     struct member_function_like<Type, Result(Arguments...)>
         : build_member_function_like<Type, Result, member_function_noexcept::disabled, Arguments...>
     {};
 
     // Entry: Signature with noexcept
-    template <class Type, class Result, class... Arguments>
+    template <typename Type, typename Result, typename... Arguments>
     struct member_function_like<Type, Result(Arguments...) noexcept>
         : build_member_function_like<Type, Result, member_function_noexcept::enabled, Arguments...>
     {};
 
     // Fallback for non-function Signature
-    template <class Type, class Signature>
+    template <typename Type, typename Signature>
     struct member_function_like
     {
         static_assert(::std::is_function_v<Signature>,
             "::scl::member_function_like_t requires a function type like Result(Arguments...) or Result(Arguments...) noexcept");
     };
 
-    template <class Type, class Member>
+    template <typename Type, typename Member>
     struct member_property_like
     {
     private:
@@ -150,14 +150,14 @@ namespace scl::detail
         using type = member_like_cv_t(class_t::*);
     };
 
-    template <class Type, class T, bool IsFunction = ::std::is_function_v<T>>
+    template <typename Type, typename T, bool IsFunction = ::std::is_function_v<T>>
     struct member_like;
 
-    template <class Type, class Signature>
+    template <typename Type, typename Signature>
     struct member_like<Type, Signature, true> : member_function_like<Type, Signature>
     {};
 
-    template <class Type, class Member>
+    template <typename Type, typename Member>
     struct member_like<Type, Member, false> : member_property_like<Type, Member>
     {};
 
@@ -185,7 +185,7 @@ namespace scl
      *     using P3 = scl::member_function_like_t<Foo const&&, void() noexcept>; // void (Foo::*)() const && noexcept
      * @endcode
      */
-    template <class Type, class Signature>
+    template <typename Type, typename Signature>
     using member_function_like_t = typename ::scl::detail::member_function_like<Type, Signature>::type;
 
     /**
@@ -203,7 +203,7 @@ namespace scl
      *   using P2 = scl::member_property_like_t<Foo, int const>;   // int Foo::*
      * @endcode
      */
-    template <class Type, class Member>
+    template <typename Type, typename Member>
     using member_property_like_t = typename ::scl::detail::member_property_like<Type, Member>::type;
 
     /**
@@ -239,6 +239,6 @@ namespace scl
      *     using M3 = scl::member_like_t<Foo const, int>;  // int const Foo::*
      * @endcode
      */
-    template <class Type, class Member>
+    template <typename Type, typename Member>
     using member_like_t = typename ::scl::detail::member_like<Type, Member>::type;
 } // namespace scl
