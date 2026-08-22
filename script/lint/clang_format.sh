@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # clang-format lint — single source of truth for CI and local (IDE) runs.
-# Mirrors the clang-format job in .gitlab-ci.yml / .github/workflows/lint.yml.
+# Run by the clang job in .gitlab-ci.yml and the clang-format job in
+# .github/workflows/lint.yml.
 #
 # Scans the sources as well as the headers, and the test and example trees as well
 # as src: formatting is checked over everything a contributor writes, so a tree

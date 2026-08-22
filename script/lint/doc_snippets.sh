@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # Documentation snippet lint — single source of truth for CI and local (IDE) runs.
-# Mirrors the doc-snippets job in .gitlab-ci.yml / .github/workflows/lint.yml.
+# Run by the doxygen job in .gitlab-ci.yml and the doc-snippets job in
+# .github/workflows/lint.yml.
 #
 # A Markdown code block that copies a compiled program drifts from it silently: the
 # program keeps building, the page keeps rendering, and only a reader finds out. A block

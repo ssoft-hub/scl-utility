@@ -301,6 +301,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### CI
 
+- The GitLab pipeline runs for a merge request, `dev`, `main` and a tag only; the checks
+  sharing an image share a job, `clang-tidy` scans headers in parallel under clang 22 on
+  both forges, and the GitHub lint workflow no longer runs for a pull request.
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart
