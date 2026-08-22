@@ -187,16 +187,32 @@ namespace scl::detail
 
 namespace scl
 {
+#ifndef DOXYGEN
+    template <typename... Args>
+    inline constexpr detail::overload_cast<Args...> overload_cast{};
+#endif
+
+} // namespace scl
+
+// =============================================================================
+// Documentation-only declarations
+// =============================================================================
+
+// The real declaration names its type in `scl::detail`, which the reference excludes: a
+// reader would be given a type they cannot reach. Doxygen sees the type unspecified instead.
+#ifdef DOXYGEN
+namespace scl
+{
     /**
      * @brief A helper utility to select a specific overload of a function or member function.
      * @ingroup scl_utility_type_traits
-     * 
-     * This template class provides a set of call operators that disambiguate overloaded 
-     * functions based on their argument types (Args...) and qualifiers (const, volatile, 
-     * lvalue/rvalue references, and noexcept).
-     * 
-     * @tparam Args The exact argument types used to identify the desired overload.
-     * 
+     *
+     * Its call operators disambiguate overloaded functions by their argument types
+     * (`Args...`) and their qualifiers — `const`, `volatile`, lvalue and rvalue reference,
+     * and `noexcept`.
+     *
+     * @tparam Args  The exact argument types used to identify the desired overload.
+     *
      * @code
      * struct X {
      *   void foo(int) &;
@@ -214,6 +230,6 @@ namespace scl
      * @endcode
      */
     template <typename... Args>
-    inline constexpr detail::overload_cast<Args...> overload_cast{};
-
+    inline constexpr auto overload_cast;
 } // namespace scl
+#endif
