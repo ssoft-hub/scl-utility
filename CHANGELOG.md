@@ -329,6 +329,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### CI
 
+- The documentation jobs run one pinned generator,
+  `registry.gitlab.com/ssoft-docker/ci-images/doxygen:1.18.0-2`, named by tag and digest, on
+  GitLab and on the GitHub mirror alike. They installed Doxygen from a rolling distribution
+  before, so the version was decided by the date the pipeline ran and a passing tree started
+  failing on a Doxyfile tag the newer release calls obsolete. The publishing job takes its
+  generator from the same image, so what is checked and what is published no longer come
+  from two independent installations.
+- The Doxyfile no longer names the four `CLANG_*` tags. Clang-assisted parsing was off, so
+  they changed nothing about the reference, while the pinned generator is built without
+  libclang — 140 MB of an image that never called it — and reports each of them as an option
+  it was not compiled with, which the documentation check counts as output and fails on.
 - The GitHub workflows check out with `actions/checkout@v7`, the current major, instead of
   `v6`.
 - The GitLab pipeline runs for a merge request, for `dev` and `main`, and for a version
