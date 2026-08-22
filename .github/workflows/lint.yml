@@ -7,7 +7,7 @@ on:
 jobs:
   clang-tidy:
     runs-on: ubuntu-latest
-    container: silkeh/clang:21
+    container: silkeh/clang:22
     steps:
       - uses: actions/checkout@v7
 

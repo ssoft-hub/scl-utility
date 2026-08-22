@@ -315,6 +315,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   which halves the longest check on a two-core runner. On GitHub the lint workflow no
   longer runs for a pull request — the repository is a read-only mirror whose pull
   requests a workflow of its own closes.
+- `readability-redundant-typename` is on for `src/`. It was switched off when the Detection
+  Idiom aliases looked as though `typename` were mandatory there, which was the C++17 rule;
+  P0634R3 made it optional in a defining-type-id, so the diagnostic was right. The check
+  exists only from clang-tidy 22 on, so both `clang-tidy` jobs move to that image — a
+  contributor writing the keyword where it is redundant now hears about it.
+
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart
