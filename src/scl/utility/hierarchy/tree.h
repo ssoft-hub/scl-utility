@@ -1308,11 +1308,14 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::get_observer()
  * @brief Returns a mutable reference to the observer.
+ * @return The observer this tree notifies, writable in place; the tree keeps notifying
+ *         that same object.
  */
 
 /**
  * @fn scl::hierarchy::tree::get_observer() const
  * @brief Returns an immutable reference to the observer.
+ * @return The observer this tree notifies, readable only.
  */
 
 // -----------------------------------------------------------------------------
@@ -1322,35 +1325,41 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::empty() const
  * @brief Returns `true` when the tree has no root nodes.
+ * @return `true` while the root list is empty.
  */
 
 /**
  * @fn scl::hierarchy::tree::size() const
  * @brief Returns the number of root nodes.
+ * @return The number of roots; a node deeper in a subtree is not counted.
  */
 
 /**
  * @fn scl::hierarchy::tree::front()
  * @brief Returns a proxy over the first root node.
  * @pre `!empty()`
+ * @return A proxy over the first root.
  */
 
 /**
  * @fn scl::hierarchy::tree::front() const
  * @brief Returns a proxy over the first root node.
  * @pre `!empty()`
+ * @return A read-only proxy over the first root.
  */
 
 /**
  * @fn scl::hierarchy::tree::back()
  * @brief Returns a proxy over the last root node.
  * @pre `!empty()`
+ * @return A proxy over the last root.
  */
 
 /**
  * @fn scl::hierarchy::tree::back() const
  * @brief Returns a proxy over the last root node.
  * @pre `!empty()`
+ * @return A read-only proxy over the last root.
  */
 
 // -----------------------------------------------------------------------------
@@ -1360,36 +1369,47 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::push_back(Argument &&)
  * @brief Appends a new root at the back.
+ * @param  argument  The value the new root's payload is constructed from, forwarded
+ *                   into it.
  * @return Iterator to the appended root; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::emplace_back(Arguments &&...)
  * @brief Constructs a root payload in-place at the back.
+ * @param  arguments  Forwarded to the payload's constructor.
  * @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::push_front(Argument &&)
  * @brief Prepends a new root at the front.
+ * @param  argument  The value the new root's payload is constructed from, forwarded
+ *                   into it.
  * @return Iterator to the prepended root; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::emplace_front(Arguments &&...)
  * @brief Constructs a root payload in-place at the front.
+ * @param  arguments  Forwarded to the payload's constructor.
  * @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::insert(const_iterator, Argument &&)
  * @brief Inserts a new root at @p where.
+ * @param  where     Root before which to insert; `cend()` appends.
+ * @param  argument  The value the new root's payload is constructed from, forwarded
+ *                   into it.
  * @return Iterator to the inserted root; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::emplace(const_iterator, Arguments &&...)
  * @brief Constructs a root payload in-place at @p where.
+ * @param  where      Root before which to construct; `cend()` appends.
+ * @param  arguments  Forwarded to the payload's constructor.
  * @return Iterator to the newly constructed root; notifies the observer (`on_insert`).
  */
 
@@ -1414,6 +1434,7 @@ namespace scl::hierarchy
  * @brief Erases the root at @p position; notifies the observer (`on_erase`,
  *        bottom-up).
  * @pre    @p position has no parent (it is a root).
+ * @param  position  The root to erase, together with its subtree.
  * @return Iterator to the root that followed the erased one, or `end()`.
  */
 
@@ -1422,6 +1443,8 @@ namespace scl::hierarchy
  * @brief Erases roots in [@p first, @p last); notifies the observer (`on_erase`,
  *        bottom-up, once per erased node).
  * @pre    @p first has no parent (it is a root).
+ * @param  first  First root to erase.
+ * @param  last   One past the last root to erase; the end iterator erases to the end.
  * @return Iterator to the root that followed the last erased one, or `end()`.
  */
 
@@ -1437,6 +1460,7 @@ namespace scl::hierarchy
  * @fn scl::hierarchy::tree::remove(Iterator)
  * @brief Removes the node at @p position from its parent or the root list —
  *        whichever it currently lives in; the caller doesn't need to know which.
+ * @param  position  The node to remove, whether it is a root or a child.
  */
 
 // -----------------------------------------------------------------------------
@@ -1448,6 +1472,7 @@ namespace scl::hierarchy
  * @brief Moves all roots of @p from to the back of this tree's root list. O(1).
  *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
  *        destination, once per moved node.
+ * @param  from  The tree to empty; its roots keep their subtrees and their order.
  */
 
 /**
@@ -1455,6 +1480,9 @@ namespace scl::hierarchy
  * @brief Moves all roots of @p from to where @p where. O(1).
  *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
  *        destination, once per moved node.
+ * @param  where  Root of this tree before which the moved roots land; `cend()` appends,
+ *                which is what the overloads without a `where` do.
+ * @param  from   The tree to empty; its roots keep their subtrees and their order.
  */
 
 /**
@@ -1462,6 +1490,8 @@ namespace scl::hierarchy
  * @brief Moves the single root at @p first in @p from to the back of this
  *        tree's root list. O(1). Cross-tree: fires `on_erase` on the source and
  *        `on_insert` on the destination.
+ * @param  from   The tree the root is taken from.
+ * @param  first  The root to move, with its subtree.
  */
 
 /**
@@ -1469,6 +1499,9 @@ namespace scl::hierarchy
  * @brief Moves the single root at @p first in @p from to where @p where. O(1).
  *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
  *        destination.
+ * @param  where  Root of this tree before which the moved root lands; `cend()` appends.
+ * @param  from   The tree the root is taken from.
+ * @param  first  The root to move, with its subtree.
  */
 
 /**
@@ -1476,6 +1509,9 @@ namespace scl::hierarchy
  * @brief Moves roots in [@p first, @p last) from @p from to the back of this
  *        tree's root list. O(distance). Cross-tree: fires `on_erase` on the
  *        source and `on_insert` on the destination, once per moved node.
+ * @param  from   The tree the roots are taken from.
+ * @param  first  First root to move.
+ * @param  last   One past the last root to move; it stays in @p from.
  */
 
 /**
@@ -1483,6 +1519,11 @@ namespace scl::hierarchy
  * @brief Moves roots in [@p first, @p last) from @p from to where @p where.
  *        O(distance). Cross-tree: fires `on_erase` on the source and
  *        `on_insert` on the destination, once per moved node.
+ * @param  where  Root of this tree before which the moved roots land; `cend()` appends,
+ *                which is what the overloads without a `where` do.
+ * @param  from   The tree the roots are taken from.
+ * @param  first  First root to move.
+ * @param  last   One past the last root to move; it stays in @p from.
  */
 
 /**
@@ -1507,61 +1548,78 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::begin()
  * @brief Returns a mutable iterator to the first root node.
+ * @return An iterator over the roots, dereferencing to a `reference` proxy by value.
  */
 
 /**
  * @fn scl::hierarchy::tree::end()
  * @brief Returns a mutable past-the-end sentinel for the root list.
+ * @return The past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::tree::begin() const
  * @brief Returns an immutable iterator to the first root node.
+ * @return An iterator over the roots, dereferencing to a `const_reference` proxy by
+ *         value.
  */
 
 /**
  * @fn scl::hierarchy::tree::end() const
  * @brief Returns an immutable past-the-end sentinel for the root list.
+ * @return The past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::tree::cbegin() const
  * @brief Returns an immutable iterator to the first root node.
+ * @return The iterator `begin() const` answers, spelled so that `auto` deduces the
+ *         immutable one.
  */
 
 /**
  * @fn scl::hierarchy::tree::cend() const
  * @brief Returns an immutable past-the-end sentinel for the root list.
+ * @return The immutable past-the-end sentinel.
  */
 
 /**
  * @fn scl::hierarchy::tree::rbegin()
  * @brief Returns a mutable reverse iterator to the last root node.
+ * @return A reverse iterator whose first step is the last root, dereferencing to a
+ *         `reference` proxy.
  */
 
 /**
  * @fn scl::hierarchy::tree::rend()
  * @brief Returns a mutable reverse past-the-end sentinel for the root list.
+ * @return The reverse past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::tree::rbegin() const
  * @brief Returns an immutable reverse iterator to the last root node.
+ * @return A reverse iterator whose first step is the last root, dereferencing to a
+ *         `const_reference` proxy.
  */
 
 /**
  * @fn scl::hierarchy::tree::rend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the root list.
+ * @return The immutable reverse past-the-end sentinel.
  */
 
 /**
  * @fn scl::hierarchy::tree::crbegin() const
  * @brief Returns an immutable reverse iterator to the last root node.
+ * @return The iterator `rbegin() const` answers, spelled so that `auto` deduces the
+ *         immutable one.
  */
 
 /**
  * @fn scl::hierarchy::tree::crend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the root list.
+ * @return The immutable reverse past-the-end sentinel.
  */
 
 // -----------------------------------------------------------------------------
@@ -1911,31 +1969,42 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::reference::tree()
  * @brief Returns the tree this node belongs to.
+ * @return The tree itself, writable through the reference; a proxy never owns it.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::tree() const
  * @brief Returns the tree this node belongs to, immutably.
+ * @return The tree itself, readable only.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::set_value(Arguments &&...)
  * @brief Replaces the payload and notifies the observer (`on_change`).
+ * @param  arguments  Forwarded to the payload's constructor. The new value is built first,
+ *                    so the observer sees the old and the new side by side, and the old
+ *                    payload is then move-assigned from it.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::value() const
  * @brief Returns a const reference to the node's payload.
+ * @return The payload itself, readable only; a write goes through `set_value`, which is
+ *         what lets the observer see the change.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::leaf() const
  * @brief Returns the underlying node this proxy wraps.
+ * @return The node itself, readable only, even through a mutable proxy: the tree's
+ *         structure is changed by the proxy's own operations, not through the node.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::operator==(const_reference) const
  * @brief Returns `true` when @p other denotes the same node — identity, not value.
+ * @param  other   The proxy to compare against, mutable or immutable.
+ * @return `true` when both proxies stand for one node, whatever the payloads hold.
  */
 
 /**
@@ -1943,6 +2012,8 @@ namespace scl::hierarchy
  * @brief Negation of @ref scl::hierarchy::tree::reference::operator==, spelled
  *        out because the proxies compare across their mutable and immutable
  *        forms rather than only against their own type.
+ * @param  other   The proxy to compare against, mutable or immutable.
+ * @return `true` when the two proxies stand for different nodes.
  */
 
 // -----------------------------------------------------------------------------
@@ -1952,18 +2023,21 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::reference::has_parent() const
  * @brief Returns `true` when this node is attached to a parent.
+ * @return `true` when a parent holds this node, `false` when it is a root of the tree.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::parent()
  * @brief Returns a proxy over the parent node.
  * @pre `has_parent()`
+ * @return A proxy over the parent, writable through.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::parent() const
  * @brief Returns an immutable proxy over the parent node.
  * @pre `has_parent()`
+ * @return A read-only proxy over the parent.
  */
 
 // -----------------------------------------------------------------------------
@@ -1973,35 +2047,41 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::reference::empty() const
  * @brief Returns `true` when this node has no direct children.
+ * @return `true` when no direct child is attached; a grandchild does not count.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::size() const
  * @brief Returns the number of direct children.
+ * @return The number of direct children; a grandchild is not counted.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::front()
  * @brief Returns a proxy over the first direct child.
  * @pre `!empty()`
+ * @return A proxy over the first direct child, writable through.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::front() const
  * @brief Returns an immutable proxy over the first direct child.
  * @pre `!empty()`
+ * @return A read-only proxy over the first direct child.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::back()
  * @brief Returns a proxy over the last direct child.
  * @pre `!empty()`
+ * @return A proxy over the last direct child, writable through.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::back() const
  * @brief Returns an immutable proxy over the last direct child.
  * @pre `!empty()`
+ * @return A read-only proxy over the last direct child.
  */
 
 // -----------------------------------------------------------------------------
@@ -2011,6 +2091,8 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::reference::emplace(const_iterator, Arguments &&...)
  * @brief Constructs a child in-place at @p where.
+ * @param  where      Child before which to construct; `cend()` appends.
+ * @param  arguments  Forwarded to the payload's constructor.
  * @return Iterator to the newly constructed child; notifies the observer
  *         (`on_insert`, top-down when the child brings its own subtree).
  */
@@ -2018,30 +2100,39 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::reference::push_back(Argument &&)
  * @brief Appends a child at the back.
+ * @param  argument  The value the new child's payload is constructed from, forwarded
+ *                   into it.
  * @return Iterator to the appended child; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::emplace_back(Arguments &&...)
  * @brief Constructs a child payload in-place at the back.
+ * @param  arguments  Forwarded to the payload's constructor.
  * @return Iterator to the newly constructed child; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::push_front(Argument &&)
  * @brief Prepends a child at the front.
+ * @param  argument  The value the new child's payload is constructed from, forwarded
+ *                   into it.
  * @return Iterator to the prepended child; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::emplace_front(Arguments &&...)
  * @brief Constructs a child payload in-place at the front.
+ * @param  arguments  Forwarded to the payload's constructor.
  * @return Iterator to the newly constructed child; notifies the observer (`on_insert`).
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::insert(const_iterator, Argument &&)
  * @brief Inserts a child at @p where.
+ * @param  where     Child before which to insert; `cend()` appends.
+ * @param  argument  The value the new child's payload is constructed from, forwarded
+ *                   into it.
  * @return Iterator to the inserted child; notifies the observer (`on_insert`).
  */
 
@@ -2065,6 +2156,7 @@ namespace scl::hierarchy
  * @fn scl::hierarchy::tree::reference::erase(Iterator)
  * @brief Erases the child at @p position; notifies the observer (`on_erase`,
  *        bottom-up).
+ * @param  position  The child to erase, together with its subtree.
  * @return Iterator to the child that followed the erased one, or `end()`.
  */
 
@@ -2072,6 +2164,8 @@ namespace scl::hierarchy
  * @fn scl::hierarchy::tree::reference::erase(Iterator, Iterator)
  * @brief Erases children in [@p first, @p last); notifies the observer
  *        (`on_erase`, bottom-up, once per erased node).
+ * @param  first  First child to erase.
+ * @param  last   One past the last child to erase; the end iterator erases to the end.
  * @return Iterator to the child that followed the last erased one, or `end()`.
  */
 
@@ -2093,12 +2187,16 @@ namespace scl::hierarchy
  * @fn scl::hierarchy::tree::reference::take_first()
  * @brief Detaches and returns the first child.
  * @pre `!empty()`
+ * @return The detached child, a node of its own that carries the subtree with it and
+ *         reports no parent.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::take_last()
  * @brief Detaches and returns the last child.
  * @pre `!empty()`
+ * @return The detached child, a node of its own that carries the subtree with it and
+ *         reports no parent.
  */
 
 // -----------------------------------------------------------------------------
@@ -2110,6 +2208,7 @@ namespace scl::hierarchy
  * @brief Moves all children of @p from to the back of this node's child list.
  *        O(1). Cross-tree: fires `on_erase` on the source and `on_insert` on
  *        the destination, once per moved node.
+ * @param  from  The node to empty of children; they keep their subtrees and order.
  */
 
 /**
@@ -2117,6 +2216,9 @@ namespace scl::hierarchy
  * @brief Moves all children of @p from to where @p where. O(1).
  *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
  *        destination, once per moved node.
+ * @param  where  Child of this node before which the moved children land; `cend()`
+ *                appends, which is what the overloads without a `where` do.
+ * @param  from   The node to empty of children; they keep their subtrees and order.
  */
 
 /**
@@ -2124,6 +2226,8 @@ namespace scl::hierarchy
  * @brief Moves the single child at @p first in @p from to the back of this
  *        node's child list. O(1). Cross-tree: fires `on_erase` on the source
  *        and `on_insert` on the destination.
+ * @param  from   The node the child is taken from.
+ * @param  first  The child to move, with its subtree.
  */
 
 /**
@@ -2131,6 +2235,9 @@ namespace scl::hierarchy
  * @brief Moves the single child at @p first in @p from to where @p where. O(1).
  *        Cross-tree: fires `on_erase` on the source and `on_insert` on the
  *        destination.
+ * @param  where  Child of this node before which the moved child lands; `cend()` appends.
+ * @param  from   The node the child is taken from.
+ * @param  first  The child to move, with its subtree.
  */
 
 /**
@@ -2138,6 +2245,9 @@ namespace scl::hierarchy
  * @brief Moves children in [@p first, @p last) from @p from to the back of
  *        this node's child list. O(distance). Cross-tree: fires `on_erase`
  *        on the source and `on_insert` on the destination, once per moved node.
+ * @param  from   The node the children are taken from.
+ * @param  first  First child to move.
+ * @param  last   One past the last child to move; it stays in @p from.
  */
 
 /**
@@ -2145,6 +2255,11 @@ namespace scl::hierarchy
  * @brief Moves children in [@p first, @p last) from @p from to where @p where.
  *        O(distance). Cross-tree: fires `on_erase` on the source and
  *        `on_insert` on the destination, once per moved node.
+ * @param  where  Child of this node before which the moved children land; `cend()`
+ *                appends, which is what the overloads without a `where` do.
+ * @param  from   The node the children are taken from.
+ * @param  first  First child to move.
+ * @param  last   One past the last child to move; it stays in @p from.
  */
 
 // -----------------------------------------------------------------------------
@@ -2154,61 +2269,79 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::reference::begin()
  * @brief Returns a mutable iterator to the first direct child.
+ * @return An iterator over the direct children, dereferencing to a `reference` proxy by
+ *         value.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::end()
  * @brief Returns a mutable past-the-end sentinel for the direct child list.
+ * @return The past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::begin() const
  * @brief Returns an immutable iterator to the first direct child.
+ * @return An iterator over the direct children, dereferencing to a `const_reference`
+ *         proxy by value.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::end() const
  * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ * @return The past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::cbegin() const
  * @brief Returns an immutable iterator to the first direct child.
+ * @return The iterator `begin() const` answers, spelled so that `auto` deduces the
+ *         immutable one.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::cend() const
  * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ * @return The immutable past-the-end sentinel.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::rbegin()
  * @brief Returns a mutable reverse iterator to the last direct child.
+ * @return A reverse iterator whose first step is the last direct child, dereferencing to
+ *         a `reference` proxy.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::rend()
  * @brief Returns a mutable reverse past-the-end sentinel for the direct child list.
+ * @return The reverse past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::rbegin() const
  * @brief Returns an immutable reverse iterator to the last direct child.
+ * @return A reverse iterator whose first step is the last direct child, dereferencing to
+ *         a `const_reference` proxy.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::rend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ * @return The immutable reverse past-the-end sentinel.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::crbegin() const
  * @brief Returns an immutable reverse iterator to the last direct child.
+ * @return The iterator `rbegin() const` answers, spelled so that `auto` deduces the
+ *         immutable one.
  */
 
 /**
  * @fn scl::hierarchy::tree::reference::crend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ * @return The immutable reverse past-the-end sentinel.
  */
 
 // -----------------------------------------------------------------------------
@@ -2264,32 +2397,39 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::tree::const_reference::const_reference(reference)
  * @brief Converts a mutable `reference` to a `const_reference`, over the same node.
+ * @param  other  The mutable proxy to narrow; both then stand for the same node.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::tree() const
  * @brief Returns the tree this node belongs to.
+ * @return The tree itself, readable only.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::value() const
  * @brief Returns a const reference to the node's payload.
+ * @return The payload itself, readable only; no proxy of this type can replace it.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::has_parent() const
  * @brief Returns `true` when this node is attached to a parent.
+ * @return `true` when a parent holds this node, `false` when it is a root of the tree.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::parent() const
  * @brief Returns a proxy over the parent node.
  * @pre `has_parent()`
+ * @return A read-only proxy over the parent.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::operator==(const_reference) const
  * @brief Returns `true` when @p other denotes the same node — identity, not value.
+ * @param  other   The proxy to compare against, mutable or immutable.
+ * @return `true` when both proxies stand for one node, whatever the payloads hold.
  */
 
 /**
@@ -2297,73 +2437,92 @@ namespace scl::hierarchy
  * @brief Negation of @ref scl::hierarchy::tree::const_reference::operator==,
  *        spelled out because the proxies compare across their mutable and
  *        immutable forms rather than only against their own type.
+ * @param  other   The proxy to compare against, mutable or immutable.
+ * @return `true` when the two proxies stand for different nodes.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::empty() const
  * @brief Returns `true` when this node has no direct children.
+ * @return `true` when no direct child is attached; a grandchild does not count.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::size() const
  * @brief Returns the number of direct children.
+ * @return The number of direct children; a grandchild is not counted.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::leaf() const
  * @brief Returns the underlying node this proxy wraps.
+ * @return The node itself, readable only.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::front() const
  * @brief Returns a proxy over the first direct child.
  * @pre `!empty()`
+ * @return A read-only proxy over the first direct child.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::back() const
  * @brief Returns a proxy over the last direct child.
  * @pre `!empty()`
+ * @return A read-only proxy over the last direct child.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::begin() const
  * @brief Returns an immutable iterator to the first direct child.
+ * @return An iterator over the direct children, dereferencing to a `const_reference`
+ *         proxy by value.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::end() const
  * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ * @return The past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::cbegin() const
  * @brief Returns an immutable iterator to the first direct child.
+ * @return The iterator `begin() const` answers; it exists so that this proxy reads like
+ *         `reference`, whose `cbegin()` does differ from `begin()`.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::cend() const
  * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ * @return The immutable past-the-end sentinel.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::rbegin() const
  * @brief Returns an immutable reverse iterator to the last direct child.
+ * @return A reverse iterator whose first step is the last direct child, dereferencing to
+ *         a `const_reference` proxy.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::rend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ * @return The immutable reverse past-the-end sentinel.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::crbegin() const
  * @brief Returns an immutable reverse iterator to the last direct child.
+ * @return The iterator `rbegin() const` answers; it exists so that this proxy reads like
+ *         `reference`, whose `crbegin()` does differ from `rbegin()`.
  */
 
 /**
  * @fn scl::hierarchy::tree::const_reference::crend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ * @return The immutable reverse past-the-end sentinel.
  */
 
 // -----------------------------------------------------------------------------

@@ -63,7 +63,7 @@ namespace scl::hierarchy
          *
          * @tparam T  One of the `Observers...` types. Ill-formed if `T` does not
          *            appear exactly once in the pack — same rule as `std::get<T>`.
-         * @return    The inner observer of type `T`.
+         * @return    A `T &` to the observer this tuple holds, never a copy of it.
          *
          * @par Example
          * @code
@@ -81,6 +81,7 @@ namespace scl::hierarchy
          * @brief Returns an immutable reference to the inner observer of type @p T.
          * @tparam T  One of the `Observers...` types. Ill-formed if `T` does not
          *            appear exactly once in the pack — same rule as `std::get<T>`.
+         * @return    A `T const &` to the observer this tuple holds, never a copy of it.
          */
         template <typename T>
         [[nodiscard]]

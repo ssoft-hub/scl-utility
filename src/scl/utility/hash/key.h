@@ -156,6 +156,8 @@ struct std::hash<::scl::hash::key<Hasher>>
 /**
  * @fn scl::hash::key::operator value_type() const
  * @brief Implicit conversion to the raw integer hash value.
+ * @return The digest `Hasher` produced for the range this key was built from, which is
+ *         what lets a key stand where an integer is expected.
  */
 
 /**

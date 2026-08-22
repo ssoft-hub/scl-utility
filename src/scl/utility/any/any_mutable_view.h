@@ -328,11 +328,13 @@ namespace scl
 /**
  * @fn scl::any_mutable_view::operator=(any_mutable_view const &)
  * @brief Rebinds this view to what the assigned view refers to.
+ * @return This view.
  */
 
 /**
  * @fn scl::any_mutable_view::operator=(any_mutable_view &&)
  * @brief Rebinds this view, which copies: a view owns nothing to hand over.
+ * @return This view.
  */
 
 /**
