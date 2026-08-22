@@ -328,7 +328,7 @@ namespace scl
         [[nodiscard]]
         constexpr bool matches(any_arg subject) const noexcept
         {
-            using case_type = typename ::std::tuple_element_t<Index, branches_type>::case_type;
+            using case_type = ::std::tuple_element_t<Index, branches_type>::case_type;
 
             if constexpr (::std::is_same_v<case_type, detail::any_switch_fallback>)
                 return true;
