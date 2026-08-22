@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     container: silkeh/clang:22
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Run clang-tidy
         run: bash script/lint/clang_tidy.sh
@@ -20,7 +20,7 @@ jobs:
     # spaces it out.
     container: silkeh/clang:22
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Check formatting
         run: bash script/lint/clang_format.sh
@@ -32,7 +32,7 @@ jobs:
       - name: Install git
         run: pacman -Sy --noconfirm git ca-certificates
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install doxygen
         run: |
@@ -45,7 +45,7 @@ jobs:
   doc-snippets:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Check documentation snippets
         run: bash script/lint/doc_snippets.sh
@@ -53,7 +53,7 @@ jobs:
   cppcheck:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install cppcheck
         run: |
