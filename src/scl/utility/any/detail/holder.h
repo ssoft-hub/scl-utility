@@ -30,8 +30,7 @@ namespace scl::detail
     // Typed rather than byte-sized: this is what aligns an over-aligned object and what
     // makes the allocation a constant expression.
     template <typename Type, typename Allocator>
-    using any_holder_allocator =
-        typename ::std::allocator_traits<Allocator>::template rebind_alloc<any_holder<Type>>;
+    using any_holder_allocator = ::std::allocator_traits<Allocator>::template rebind_alloc<any_holder<Type>>;
 
     template <typename Type, typename Allocator, typename... Arguments>
     [[nodiscard]]

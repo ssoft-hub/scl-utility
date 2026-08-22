@@ -186,7 +186,7 @@ namespace scl
      * @endcode
      */
     template <typename Type, typename Signature>
-    using member_function_like_t = typename ::scl::detail::member_function_like<Type, Signature>::type;
+    using member_function_like_t = ::scl::detail::member_function_like<Type, Signature>::type;
 
     /**
      * @brief Pointer-to-data-member type for class Type and member type Member.
@@ -204,7 +204,7 @@ namespace scl
      * @endcode
      */
     template <typename Type, typename Member>
-    using member_property_like_t = typename ::scl::detail::member_property_like<Type, Member>::type;
+    using member_property_like_t = ::scl::detail::member_property_like<Type, Member>::type;
 
     /**
      * @brief Generic pointer-to-member type selector for class Type and Member.
@@ -240,5 +240,5 @@ namespace scl
      * @endcode
      */
     template <typename Type, typename Member>
-    using member_like_t = typename ::scl::detail::member_like<Type, Member>::type;
+    using member_like_t = ::scl::detail::member_like<Type, Member>::type;
 } // namespace scl
