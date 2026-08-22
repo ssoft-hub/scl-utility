@@ -66,7 +66,6 @@ namespace scl::hierarchy
     {
     public:
         using payload = Payload;
-        using payload_reference = payload &;
         using const_payload_reference = payload const &;
 
         using observer = Observer<tree>;
@@ -254,7 +253,6 @@ namespace scl::hierarchy
             using node_reference = node &;
             using const_node_reference = node const &;
 
-            using payload_reference = payload &;
             using const_payload_reference = payload const &;
 
             using iterator = tree::iterator;
@@ -1233,11 +1231,6 @@ namespace scl::hierarchy
  */
 
 /**
- * @typedef scl::hierarchy::tree::payload_reference
- * @brief Mutable reference to a stored payload (`payload &`).
- */
-
-/**
  * @typedef scl::hierarchy::tree::const_payload_reference
  * @brief Immutable reference to a stored payload (`payload const &`).
  */
@@ -1874,11 +1867,6 @@ namespace scl::hierarchy
 /**
  * @typedef scl::hierarchy::tree::reference::const_node_reference
  * @brief Immutable reference to the underlying `node` (`node const &`).
- */
-
-/**
- * @typedef scl::hierarchy::tree::reference::payload_reference
- * @brief Mutable reference to the node's payload (`payload &`).
  */
 
 /**
