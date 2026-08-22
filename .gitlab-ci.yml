@@ -26,11 +26,10 @@ clang:
 
 doxygen:
   stage: lint
-  image: archlinux:latest
+  image: registry.gitlab.com/ssoft-docker/ci-images/doxygen:1.18.0-2@sha256:156901db0bf2d3c4c690c1f1f17341d1969f7d6dd08e3c0f4b23d65eec2ee839
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   before_script:
-    - pacman -Sy --noconfirm doxygen
     - doxygen --version
   script:
     - bash script/lint/doxygen.sh
@@ -52,14 +51,14 @@ cppcheck:
 # ---------------------
 pages:
   stage: publish
-  image: archlinux:latest
+  image: registry.gitlab.com/ssoft-docker/ci-images/doxygen:1.18.0-2@sha256:156901db0bf2d3c4c690c1f1f17341d1969f7d6dd08e3c0f4b23d65eec2ee839
   rules:
     - if: $CI_COMMIT_BRANCH == "dev"
     - if: $CI_COMMIT_TAG =~ /^v[0-9]/
   variables:
     GIT_DEPTH: 0
   before_script:
-    - pacman -Sy --noconfirm doxygen graphviz python git ca-certificates
+    - doxygen --version
     - git fetch --prune --tags
   script:
     - sh script/ci/deploy_versioned_docs.sh public
