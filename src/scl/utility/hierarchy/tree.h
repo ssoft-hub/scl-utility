@@ -172,10 +172,10 @@ namespace scl::hierarchy
             using iterator_concept = ::std::bidirectional_iterator_tag;
             using iterator_category = ::std::bidirectional_iterator_tag;
 
-            using value_type = tree::reference;
+            using value_type = tree::const_reference;
             using difference_type = tree::difference_type;
             using pointer = void;
-            using reference = tree::reference;
+            using reference = tree::const_reference;
             using const_reference = tree::const_reference;
 
         private:
@@ -259,7 +259,7 @@ namespace scl::hierarchy
 
             using iterator = tree::iterator;
             using const_iterator = tree::const_iterator;
-            using reverse_iterator = tree::const_reverse_iterator;
+            using reverse_iterator = tree::reverse_iterator;
             using const_reverse_iterator = tree::const_reverse_iterator;
 
             using size_type = node::size_type;
@@ -1710,8 +1710,8 @@ namespace scl::hierarchy
 
 /**
  * @typedef scl::hierarchy::tree::const_iterator::reference
- * @brief The mutable proxy type of the owning tree, kept for symmetry with
- *        `iterator`; `operator*` yields `const_reference`.
+ * @brief The immutable proxy `operator*` yields, the same type as
+ *        `const_reference`.
  */
 
 /**
