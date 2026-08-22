@@ -224,6 +224,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- `scl::hierarchy::tree::payload_reference` and
+  `scl::hierarchy::tree::reference::payload_reference`. Both named a mutable reference to a
+  stored payload, and neither the tree nor its proxy ever hands one out: a payload is read
+  through `value()`, which answers `const_payload_reference`, and written through
+  `set_value()`, which notifies the observer. An alias promising direct write access
+  advertised a way past `on_change` that does not exist. `node::payload_reference` stays —
+  `node::get()` does return one, a node having no observer to notify.
+
 - `scl::flags::operator~` and `scl::flags::all()`. Both were defined over the storage
   width rather than over the flags a caller put in: the complement of a mask whose
   enumeration declares fewer enumerators than `capacity` bits, or spreads them apart,
