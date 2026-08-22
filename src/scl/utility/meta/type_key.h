@@ -180,11 +180,13 @@ namespace scl
 /**
  * @fn scl::type_key::operator=(type_key const &)
  * @brief Replaces which type this key names.
+ * @return This key.
  */
 
 /**
  * @fn scl::type_key::operator=(type_key &&)
  * @brief Same as copy assignment.
+ * @return This key.
  */
 
 /**
@@ -196,6 +198,9 @@ namespace scl
  * @fn scl::type_key::name()
  * @brief Fully qualified compile-time type name, as ::scl::type_name<T>()
  *        renders it for the current compiler.
+ * @return A view of that name; an empty view for an empty key. The characters live in the
+ *         module that produced the key, so a key that outlives its module is left pointing
+ *         at nothing — see the warning on the class.
  */
 
 /**

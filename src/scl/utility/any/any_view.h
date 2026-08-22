@@ -288,12 +288,14 @@ namespace scl
 
 /**
  * @fn scl::any_view::operator=(any_view const &)
- * @brief Rebinds this view to what @p other refers to.
+ * @brief Rebinds this view to what the assigned view refers to.
+ * @return This view.
  */
 
 /**
  * @fn scl::any_view::operator=(any_view &&)
  * @brief Rebinds this view, which copies: a view owns nothing to hand over.
+ * @return This view.
  */
 
 /**

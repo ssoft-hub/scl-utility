@@ -74,6 +74,15 @@ namespace scl
      *
      * Example: `forward_like<const T&, x>(some_val)` will forward `some_val`
      * as a `const` lvalue reference if `T` is const.
+     *
+     * @tparam Base  The type whose value category is imposed and whose cv-qualification is
+     *               added to what `T` already carries.
+     * @tparam T     Deduced from the argument; its reference is stripped, its own `const` and
+     *               `volatile` are kept and `Base`'s are added to them.
+     * @param  t     The object to forward. It is cast, never copied or moved here.
+     * @return A reference to @p t as ::scl::forward_like_t<Base, T &&> — an lvalue
+     *         reference when `Base` is one, an rvalue reference otherwise, carrying `Base`'s
+     *         `const` and `volatile` on top of whatever `T` already had.
      */
     template <typename Base, typename T>
     constexpr decltype(auto) forward_like(T && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)

@@ -766,6 +766,8 @@ namespace scl::hierarchy
  * A node has no parent immediately after construction, after being moved from,
  * and after being detached via `take()`.
  *
+ * @return `true` when a parent holds this node, `false` while it stands on its own.
+ *
  * @par Example
  * @code
  * Node root{"root"};
@@ -785,6 +787,8 @@ namespace scl::hierarchy
  *
  * @pre `has_parent()` must be `true`; dereferencing a null pointer otherwise.
  *
+ * @return The parent itself, writable through the reference, never a copy of it.
+ *
  * @par Example
  * @code
  * Node root{"root"};
@@ -798,6 +802,7 @@ namespace scl::hierarchy
  * @fn scl::hierarchy::node::parent() const
  * @brief Returns an immutable reference to the parent node.
  * @pre `has_parent()` must be `true`; dereferencing a null pointer otherwise.
+ * @return The parent itself, readable only.
  */
 
 // -----------------------------------------------------------------------------
@@ -807,6 +812,7 @@ namespace scl::hierarchy
 /**
  * @fn scl::hierarchy::node::empty() const
  * @brief Returns `true` when this node has no direct children.
+ * @return `true` when no direct child is attached; a grandchild does not count.
  */
 
 /**
@@ -814,30 +820,39 @@ namespace scl::hierarchy
  * @brief Returns the number of direct children.
  *
  * @note `std::list::size()` is O(1) since C++11 (required by the standard).
+ * @return The number of direct children; a grandchild is not counted.
  */
 
 /**
  * @fn scl::hierarchy::node::front()
  * @brief Returns a mutable reference to the first direct child.
  * @pre `!empty()`
+ * @return The first direct child, writable; the reference lives until that child is
+ *         erased or taken; a transfer only re-links it.
  */
 
 /**
  * @fn scl::hierarchy::node::front() const
  * @brief Returns an immutable reference to the first direct child.
  * @pre `!empty()`
+ * @return The first direct child, readable only; the reference lives until that child
+ *         is erased or taken; a transfer only re-links it.
  */
 
 /**
  * @fn scl::hierarchy::node::back()
  * @brief Returns a mutable reference to the last direct child.
  * @pre `!empty()`
+ * @return The last direct child, writable; the reference lives until that child is
+ *         erased or taken; a transfer only re-links it.
  */
 
 /**
  * @fn scl::hierarchy::node::back() const
  * @brief Returns an immutable reference to the last direct child.
  * @pre `!empty()`
+ * @return The last direct child, readable only; the reference lives until that child
+ *         is erased or taken; a transfer only re-links it.
  */
 
 // -----------------------------------------------------------------------------
@@ -1152,61 +1167,77 @@ namespace scl::hierarchy
  * @fn scl::hierarchy::node::begin()
  * @brief Returns a mutable iterator to the first direct child.
  *        Equal to `end()` when `empty()`.
+ * @return An iterator over the direct children, dereferencing to a writable `node &`.
  */
 
 /**
  * @fn scl::hierarchy::node::end()
  * @brief Returns a mutable past-the-end sentinel for the direct child list.
+ * @return The mutable past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::node::begin() const
  * @brief Returns an immutable iterator to the first direct child.
+ * @return An iterator over the direct children, dereferencing to a `node const &`.
  */
 
 /**
  * @fn scl::hierarchy::node::end() const
  * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ * @return The immutable past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::node::cbegin() const
  * @brief Returns an immutable iterator to the first direct child.
+ * @return The iterator `begin() const` answers, spelled so that `auto` deduces the
+ *         immutable one.
  */
 
 /**
  * @fn scl::hierarchy::node::cend() const
  * @brief Returns an immutable past-the-end sentinel for the direct child list.
+ * @return The immutable past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::node::rbegin()
  * @brief Returns a mutable reverse iterator to the last direct child.
+ * @return A reverse iterator whose first step is the last direct child, dereferencing
+ *         to a writable `node &`.
  */
 
 /**
  * @fn scl::hierarchy::node::rend()
  * @brief Returns a mutable reverse past-the-end sentinel for the direct child list.
+ * @return The mutable reverse past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::node::rbegin() const
  * @brief Returns an immutable reverse iterator to the last direct child.
+ * @return A reverse iterator whose first step is the last direct child, dereferencing
+ *         to a `node const &`.
  */
 
 /**
  * @fn scl::hierarchy::node::rend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ * @return The immutable reverse past-the-end sentinel, which is not dereferenceable.
  */
 
 /**
  * @fn scl::hierarchy::node::crbegin() const
  * @brief Returns an immutable reverse iterator to the last direct child.
+ * @return The iterator `rbegin() const` answers, spelled so that `auto` deduces the
+ *         immutable one.
  */
 
 /**
  * @fn scl::hierarchy::node::crend() const
  * @brief Returns an immutable reverse past-the-end sentinel for the direct child list.
+ * @return The immutable reverse past-the-end sentinel, which is not dereferenceable.
  */
 
 // -----------------------------------------------------------------------------
