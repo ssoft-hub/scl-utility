@@ -157,7 +157,13 @@ Every public header, class, struct, function, and type alias must have a Doxygen
 - A block spanning more than one line is written as `/** */`, one `*` per line; `///` is
   left to a comment that says everything in a single line, and `///<` to a trailing one
 - Use `@brief` for one-line description
-- Use `@tparam`, `@param`, `@return` where applicable
+- A documented function describes every parameter and its return value; where the value
+  carries nothing beyond its type — a chaining `operator=`, an iterator's sentinel — say so
+  in one line rather than omitting `@return`. A deleted member, and a defaulted constructor
+  or destructor, is the exception: it says what it does or why it is refused, and nothing
+  else. A defaulted assignment operator is not — it hands back a reference, and the check
+  asks about it
+- Use `@tparam` for every template parameter
 - Every entity must declare `@ingroup <group>` matching its thematic group
 - Groups are defined with `@defgroup` in the top-level module header or dedicated group header
 
@@ -258,6 +264,11 @@ page against its member rows.
 The public API is documented in full — every public member carries a block, deleted and
 defaulted special members, type aliases and iterator boilerplate included. A one-line
 `@brief` is enough where there is nothing more to say.
+
+No gate holds this for a `= delete` or `= default` member: `WARN_IF_UNDOCUMENTED` never
+reports one, and Doxygen leaves such a member off its class page instead of listing it
+undescribed, so an omission shows up neither in the log nor in the reference. Write the block
+when the declaration goes in.
 
 Private and protected members stay out of the reference. A block written for one, because a
 reader of the code needs it, carries `@internal`.

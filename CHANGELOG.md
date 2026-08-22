@@ -343,12 +343,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   which halves the longest check on a two-core runner. On GitHub the lint workflow no
   longer runs for a pull request — the repository is a read-only mirror whose pull
   requests a workflow of its own closes.
+- The documentation check holds description coverage rather than attachment alone.
+  `WARN_NO_PARAMDOC` is on, so a documented function that names its target and then leaves a
+  parameter or its return value undescribed fails it; the 136 omissions that switch reported
+  across `hierarchy`, `hash`, `meta` and `type_traits` are described rather than silenced.
+- `scl::basic_any`'s two deleted copy members and its destructor reach the reference with a
+  description, and `scl::overload_cast` is declared there without naming a type in
+  `scl::detail`, on its own page and on both Markdown pages. A `= delete` or `= default`
+  member draws no `WARN_IF_UNDOCUMENTED` warning and is left off its class page instead of
+  being listed there undescribed, so those three were absent from the reference with nothing
+  reporting it.
 - `readability-redundant-typename` is on for `src/`. It was switched off when the Detection
   Idiom aliases looked as though `typename` were mandatory there, which was the C++17 rule;
   P0634R3 made it optional in a defining-type-id, so the diagnostic was right. The check
   exists only from clang-tidy 22 on, so both `clang-tidy` jobs move to that image — a
   contributor writing the keyword where it is redundant now hears about it.
-
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart

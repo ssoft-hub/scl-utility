@@ -150,6 +150,14 @@ first benchmark.
 ## Documentation
 
 - All public APIs must have Doxygen comments in the header files.
+- A documented function describes every parameter and its return value; where the value says
+  nothing its type does not — a chaining `operator=`, an iterator's sentinel — write that in
+  one line instead of omitting `@return`. A deleted member, and a defaulted constructor or
+  destructor, is the exception: it says what it does or why it is refused and nothing else. A
+  defaulted assignment operator still describes the reference it hands back.
+- A `= delete` or `= default` member needs its block written by hand: no gate reports one,
+  and Doxygen leaves an undescribed member of that shape off its class page rather than
+  listing it there.
 - Markdown documentation is maintained per language under `doc/md/<language>/`:
   - English: `doc/md/en/`
   - Russian: `doc/md/ru/`
