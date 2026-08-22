@@ -253,6 +253,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   hands out and a generic algorithm taking `iterator_traits<I>::reference` by reference did
   not compile.
 
+- `operator->` reaches a proxy through a reverse iterator of a tree. Both iterators named
+  their `pointer` `void` while offering `operator->`, and `std::reverse_iterator` returns
+  that `pointer` from its own `operator->`, so `it->push_back(1)` compiled and
+  `rit->push_back(1)` did not — on every standard library. The alias now names what
+  `operator->` hands back.
+
 - A range the hash functions accept is hashed by every bit of every element. An element
   wider than a byte reached the hash function as its low byte alone, so `L"Ā"` and
   `L"Ȁ"` produced one value, as did `L"AB"` and `L"Łł"`; `std::vector<int>`

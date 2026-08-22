@@ -115,7 +115,7 @@ namespace scl::hierarchy
 
             using value_type = tree::reference;
             using difference_type = tree::difference_type;
-            using pointer = void;
+            using pointer = arrow_wrapper<tree::reference>;
             using reference = tree::reference;
             using const_reference = tree::const_reference;
 
@@ -174,7 +174,7 @@ namespace scl::hierarchy
 
             using value_type = tree::const_reference;
             using difference_type = tree::difference_type;
-            using pointer = void;
+            using pointer = arrow_wrapper<tree::const_reference>;
             using reference = tree::const_reference;
             using const_reference = tree::const_reference;
 
@@ -1603,9 +1603,9 @@ namespace scl::hierarchy
 
 /**
  * @typedef scl::hierarchy::tree::iterator::pointer
- * @brief `void`: `operator*` returns a transient proxy by value, so there is no
- *        pointer into the sequence to name. `operator->` returns a wrapper that
- *        keeps the proxy alive for the duration of the access.
+ * @brief What `operator->` hands back: a wrapper holding the proxy for the
+ *        duration of the access, there being no pointer into the sequence to
+ *        name. Naming it here is what lets a reverse iterator offer `->` too.
  */
 
 /**
@@ -1704,8 +1704,8 @@ namespace scl::hierarchy
 
 /**
  * @typedef scl::hierarchy::tree::const_iterator::pointer
- * @brief `void`, for the same reason as
- *        @ref scl::hierarchy::tree::iterator::pointer.
+ * @brief The wrapper `operator->` hands back, as
+ *        @ref scl::hierarchy::tree::iterator::pointer describes.
  */
 
 /**
