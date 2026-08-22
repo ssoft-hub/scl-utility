@@ -332,6 +332,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scl::basic_any`'s two deleted copy members and its destructor reach the reference with a
   description, and `scl::overload_cast` is declared there without naming a type in
   `scl::detail`. A `= delete` member draws no warning and was left off its class page.
+- The four Doxygen jobs run in one pinned container image on both forges, named by tag and
+  digest, so a check and the published reference come from the same build. The Doxyfile no
+  longer carries the four `CLANG_*` tags that image reports as options its Doxygen was not
+  built with.
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart
@@ -524,10 +528,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `script/ci/deploy_versioned_docs.sh` — builds versioned Doxygen HTML for
   all version tags (immutable) and `dev` (latest); injects version-selector
   nav bar; manages `versions.json` and root `index.html` on the pages branch.
-- `.gitlab-ci.yml` pages job: switched to `archlinux:latest` for up-to-date
-  Doxygen; triggers on version tags; deploys via `deploy_versioned_docs.sh`.
-- `.github/workflows/docs.yml`: runs in `archlinux:latest` container; installs
-  git before checkout; deploys to `gh-pages` via `deploy_versioned_docs.sh`.
+- `.gitlab-ci.yml` pages job: triggers on `dev` and on a version tag; deploys
+  via `deploy_versioned_docs.sh`.
+- `.github/workflows/docs.yml`: builds with `deploy_versioned_docs.sh` and
+  deploys the result through `actions/deploy-pages`.
 - `script/ci/mirror_github.sh`: exclude `pages` branch from GitHub mirror;
   preserve `gh-pages` from `--prune`; add `--prune-tags`.
 

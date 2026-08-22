@@ -19,6 +19,11 @@ variables:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
+# The check and the publish run one generator. The two GitHub workflows repeat this same
+# reference, which a raised pin has to reach as well.
+.doxygen_image:
+  image: registry.gitlab.com/ssoft-docker/ci-images/doxygen:1.18.0-2@sha256:156901db0bf2d3c4c690c1f1f17341d1969f7d6dd08e3c0f4b23d65eec2ee839
+
 clang:
   stage: lint
   # 22 for both tools: 21 reads `is_same_v<X &&, ...>` as a comparison and spaces it out.
@@ -32,10 +37,8 @@ clang:
 
 doxygen:
   stage: lint
-  image: archlinux:latest
-  extends: .lint_rules
+  extends: [.lint_rules, .doxygen_image]
   before_script:
-    - pacman -Sy --noconfirm doxygen
     - doxygen --version
   script:
     - status=0
@@ -58,14 +61,14 @@ cppcheck:
 # ---------------------
 pages:
   stage: publish
-  image: archlinux:latest
+  extends: .doxygen_image
   rules:
     - if: $CI_COMMIT_BRANCH == "dev"
     - if: $CI_COMMIT_TAG =~ /^v[0-9]/
   variables:
     GIT_DEPTH: 0
   before_script:
-    - pacman -Sy --noconfirm doxygen graphviz python git ca-certificates
+    - doxygen --version
     - git fetch --prune --tags
   script:
     - sh script/ci/deploy_versioned_docs.sh public
