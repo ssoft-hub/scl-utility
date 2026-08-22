@@ -343,6 +343,32 @@ TEST(HierarchyTreeTest, ReverseIteratorMutabilityFollowsTheProxy)
     EXPECT_EQ((*(*root).crbegin()).value(), 1);
 }
 
+/**
+ * @test `operator->` reaches a proxy's members through a reverse iterator as it does
+ *       through a forward one, and `iterator_traits` names what it hands back.
+ */
+TEST(HierarchyTreeTest, ArrowReachesTheProxyThroughAReverseIterator)
+{
+    STATIC_EXPECT_TRUE((std::is_same_v<std::iterator_traits<int_tree::iterator>::pointer,
+        decltype(std::declval<int_tree::iterator const &>().operator->())>));
+    STATIC_EXPECT_TRUE((std::is_same_v<std::iterator_traits<int_tree::const_iterator>::pointer,
+        decltype(std::declval<int_tree::const_iterator const &>().operator->())>));
+
+    int_tree t;
+    auto root = t.push_back(0);
+    root->push_back(1);
+    root->push_back(2);
+
+    auto reverse = (*root).rbegin();
+    reverse->set_value(99);
+
+    auto const const_reverse = (*root).crbegin();
+
+    EXPECT_EQ((*root).back().value(), 99);
+    EXPECT_EQ(const_reverse->value(), 99);
+    EXPECT_EQ(t.get_observer().changed, 1);
+}
+
 // =============================================================================
 // observer_tuple fan-out
 // =============================================================================

@@ -247,6 +247,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `reference` named the mutable proxy, so `std::iterator_traits` answered with a type the
   iterator never hands out and an algorithm taking that reference did not compile.
 
+- `operator->` reaches a proxy through a reverse iterator of a tree. Both iterators named
+  their `pointer` `void`, and `std::reverse_iterator` returns that `pointer` from its own,
+  so `it->push_back(1)` compiled and `rit->push_back(1)` did not.
+
 - A range the hash functions accept is hashed by every bit of every element. An element
   wider than a byte reached the hash function as its low byte alone, so `L"Ā"` and
   `L"Ȁ"` produced one value, as did `L"AB"` and `L"Łł"`; `std::vector<int>`
