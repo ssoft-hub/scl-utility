@@ -239,6 +239,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `scl::hierarchy::tree::reference` hands out mutable reverse iterators. Its
+  `reverse_iterator` aliased the const one, so `rbegin()` reached children that could only
+  be read while `begin()` reached children that could be written.
+
+- `scl::hierarchy::tree::const_iterator` reports the proxy it yields. Its `value_type` and
+  `reference` named the mutable proxy, so `std::iterator_traits` answered with a type the
+  iterator never hands out and an algorithm taking that reference did not compile.
+
 - A range the hash functions accept is hashed by every bit of every element. An element
   wider than a byte reached the hash function as its low byte alone, so `L"Ā"` and
   `L"Ȁ"` produced one value, as did `L"AB"` and `L"Łł"`; `std::vector<int>`
