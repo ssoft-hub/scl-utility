@@ -6,6 +6,7 @@
  * @ingroup scl_utility_any
  */
 
+#include <scl/utility/concepts/reference.h>
 #include <scl/utility/meta/type_key.h>
 #include <scl/utility/preprocessor/rtti.h>
 
@@ -78,10 +79,9 @@ namespace scl::detail
         anchor = 2
     };
 
-    template <typename Type>
+    template <::scl::concepts::reference Type>
     [[nodiscard]]
     constexpr any_qualifier any_qualifiers_of() noexcept
-        requires ::std::is_reference_v<Type>
     {
         using referent = ::std::remove_reference_t<Type>;
 
