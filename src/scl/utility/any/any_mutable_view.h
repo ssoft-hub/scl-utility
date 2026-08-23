@@ -164,10 +164,10 @@ namespace scl
 #if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
     // Pinned to this class by deduction: a plain parameter would admit the conversion from
     // a reading handle, and with it a write that handle never promised.
-    template <::scl::concepts::lvalue_reference Type, typename LValueView>
+    template <::scl::concepts::lvalue_reference Type, typename WriteView>
     [[nodiscard]]
-    constexpr Type any_cast(LValueView & view)
-        requires(::std::same_as<::std::remove_cv_t<LValueView>, any_mutable_view>) &&
+    constexpr Type any_cast(WriteView & view)
+        requires(::std::same_as<::std::remove_cv_t<WriteView>, any_mutable_view>) &&
         (!::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         auto * const reached = any_cast<::std::remove_reference_t<Type>>(&view);
@@ -188,10 +188,10 @@ namespace scl
         return *reached;
     }
 
-    template <::scl::concepts::lvalue_reference Type, typename ConstLValueView>
+    template <::scl::concepts::lvalue_reference Type, typename ReadView>
     [[nodiscard]]
-    constexpr Type any_cast(ConstLValueView & view)
-        requires(::std::same_as<::std::remove_cv_t<ConstLValueView>, any_mutable_view>) &&
+    constexpr Type any_cast(ReadView & view)
+        requires(::std::same_as<::std::remove_cv_t<ReadView>, any_mutable_view>) &&
         (::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         // remove_reference_t keeps the request's cv: T const volatile & must reach a volatile referent.
@@ -466,10 +466,10 @@ namespace scl
  * identity queries already report for that backing; a view over anything else
  * refuses the request, as it refuses any other type it does not refer to.
  *
- * @tparam Type        The requested object type with its qualification; a reference
- *                     type is rejected.
+ * @tparam Type         The requested object type with its qualification; a reference
+ *                      type is rejected.
  * @tparam MutableView  Deduced `any_mutable_view`, possibly cv-qualified; that
- *                     qualification governs the view alone.
+ *                      qualification governs the view alone.
  * @param  view  The view to reach through (may be null).
  * @return `Type *` to the viewed object on a type match whose qualifiers the
  *         request covers; `nullptr` otherwise, or on a null pointer. Never
@@ -478,14 +478,14 @@ namespace scl
  */
 
 /**
- * @fn scl::any_cast(LValueView & view)
+ * @fn scl::any_cast(WriteView & view)
  * @ingroup scl_utility_any
  * @brief Writes through the viewed object, or throws.
  *
  * Three forms share this shape, told apart by @p Type: this one takes a
  * non-`const` lvalue reference and writes through it,
  * @ref scl::any_cast(ValueView & view) copies the value out, and
- * @ref scl::any_cast(ConstLValueView & view) binds it as a `const` reference
+ * @ref scl::any_cast(ReadView & view) binds it as a `const` reference
  * without copying. Writing is granted under the coverage rule stated on the
  * pointer form.
  *
@@ -497,8 +497,8 @@ namespace scl
  *       translation unit compiled without exceptions keeps the pointer form,
  *       which answers a failed request with `nullptr`.
  *
- * @tparam Type        The requested result type — a non-`const` lvalue reference.
- * @tparam LValueView  Deduced; must be `scl::any_mutable_view`.
+ * @tparam Type       The requested result type — a non-`const` lvalue reference.
+ * @tparam WriteView  Deduced; must be `scl::any_mutable_view`.
  * @param  view  The view to write through.
  * @return The viewed object as @p Type.
  * @throws scl::bad_any_cast  If the viewed type does not match, or the request
@@ -525,7 +525,7 @@ namespace scl
  */
 
 /**
- * @fn scl::any_cast(ConstLValueView & view)
+ * @fn scl::any_cast(ReadView & view)
  * @ingroup scl_utility_any
  * @brief Binds the viewed object as a `const` reference without copying, or
  *        throws.
@@ -536,8 +536,8 @@ namespace scl
  *
  * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`.
  *
- * @tparam Type             The requested result type — a `const` lvalue reference.
- * @tparam ConstLValueView  Deduced; must be `scl::any_mutable_view`.
+ * @tparam Type      The requested result type — a `const` lvalue reference.
+ * @tparam ReadView  Deduced; must be `scl::any_mutable_view`.
  * @param  view  The view to bind to.
  * @return The viewed object as @p Type.
  * @throws scl::bad_any_cast  If the viewed type does not match, or the request
