@@ -201,10 +201,10 @@ namespace scl
 #if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
     // Constrained to the argument itself, not to any_base: a view converts to one
     // implicitly, and admitting that conversion would hand it write access.
-    template <::scl::concepts::lvalue_reference Type, typename LValueArgument>
+    template <::scl::concepts::lvalue_reference Type, typename WriteArgument>
     [[nodiscard]]
-    constexpr Type any_cast(LValueArgument & arg SCL_LIFETIMEBOUND)
-        requires(::std::same_as<::std::remove_cv_t<LValueArgument>, any_argument>) &&
+    constexpr Type any_cast(WriteArgument & arg SCL_LIFETIMEBOUND)
+        requires(::std::same_as<::std::remove_cv_t<WriteArgument>, any_argument>) &&
         (!::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         auto * pointer = any_cast<::std::remove_reference_t<Type>>(&arg);
@@ -229,10 +229,10 @@ namespace scl
         return *pointer;
     }
 
-    template <::scl::concepts::lvalue_reference Type, typename ConstLValueArgument>
+    template <::scl::concepts::lvalue_reference Type, typename ReadArgument>
     [[nodiscard]]
-    constexpr Type any_cast(ConstLValueArgument & arg SCL_LIFETIMEBOUND)
-        requires(::std::same_as<::std::remove_cv_t<ConstLValueArgument>, any_argument>) &&
+    constexpr Type any_cast(ReadArgument & arg SCL_LIFETIMEBOUND)
+        requires(::std::same_as<::std::remove_cv_t<ReadArgument>, any_argument>) &&
         (::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         // remove_reference_t keeps the request's cv: T const volatile & must reach a
@@ -439,7 +439,7 @@ namespace scl
  * participate: `std::any` has no volatile-qualified members, so nothing could
  * reach the object afterwards.
  *
- * @tparam Any    Deduced (forwarding) reference type of the `std::any`.
+ * @tparam Any  Deduced (forwarding) reference type of the `std::any`.
  * @param  value  The `std::any` to view. Only available when RTTI is enabled.
  */
 
@@ -577,13 +577,13 @@ namespace scl
  */
 
 /**
- * @fn scl::any_cast(LValueArgument & arg)
+ * @fn scl::any_cast(WriteArgument & arg)
  * @ingroup scl_utility_any
  * @brief Writes through the viewed object, or throws.
  *
  * Three forms share this shape, told apart by @p Type: this one takes a non-`const`
  * lvalue reference and writes through it, @ref scl::any_cast(ValueArgument & arg)
- * copies the value out, and @ref scl::any_cast(ConstLValueArgument & arg) binds it as a
+ * copies the value out, and @ref scl::any_cast(ReadArgument & arg) binds it as a
  * `const` reference without copying. Reading supplies the `const` itself, exactly
  * as @ref scl::any_view does; writing is granted under the coverage rule stated on
  * the pointer form.
@@ -598,8 +598,8 @@ namespace scl
  *       unit compiled without exceptions keeps the pointer form, which answers a failed
  *       request with `nullptr`.
  *
- * @tparam Type            The requested result type — a non-`const` lvalue reference.
- * @tparam LValueArgument  Deduced; must be `scl::any_argument`.
+ * @tparam Type           The requested result type — a non-`const` lvalue reference.
+ * @tparam WriteArgument  Deduced; must be `scl::any_argument`.
  * @param  arg  The argument view to write through.
  * @return The viewed object as @p Type.
  * @throws scl::bad_any_cast  If the viewed type does not match, or the request does
@@ -628,7 +628,7 @@ namespace scl
  */
 
 /**
- * @fn scl::any_cast(ConstLValueArgument & arg)
+ * @fn scl::any_cast(ReadArgument & arg)
  * @ingroup scl_utility_any
  * @brief Binds the viewed object as a `const` reference without copying, or throws.
  *
@@ -638,8 +638,8 @@ namespace scl
  *
  * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`.
  *
- * @tparam Type                 The requested result type — a `const` lvalue reference.
- * @tparam ConstLValueArgument  Deduced; must be `scl::any_argument`.
+ * @tparam Type          The requested result type — a `const` lvalue reference.
+ * @tparam ReadArgument  Deduced; must be `scl::any_argument`.
  * @param  arg  The argument view to bind to.
  * @return The viewed object as @p Type.
  * @throws scl::bad_any_cast  If the viewed type does not match, or the request does

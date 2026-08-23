@@ -205,7 +205,7 @@ fix on the declaration side:
   `any_cast(Wrapper * arg)` in another collapse into a single member and one of the two
   blocks is dropped without a warning. Give the deduced template parameters distinct names
   so the rendered signatures differ, naming each after the role it plays —
-  `ValueArgument`, `LValueArgument`, `ConstLValueArgument` for the three `any_cast` forms
+  `ValueArgument`, `WriteArgument`, `ReadArgument` for the three `any_cast` forms
   that read and write through an argument. A trailing `requires` clause tells such
   overloads apart for the compiler but not for Doxygen, so the names are what make each
   addressable from an `@fn` block.
