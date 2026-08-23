@@ -520,7 +520,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   std concept equivalent (`#include <scl/utility/concepts.h>`):
   - `scl::concepts::reference`, `lvalue_reference`, `rvalue_reference`
   - `scl::concepts::const_type`, `volatile_type`, `cv_type`
-  - `scl::concepts::enum_type`, `void_type`, `pointer`, `null_pointer`
+  - `scl::concepts::enum_type`, `scoped_enum`, `void_type`, `pointer`, `null_pointer`
   - `scl::concepts::member_pointer`, `member_object_pointer`, `member_function_pointer`
   - `scl::concepts::array_type`, `bounded_array`, `unbounded_array`
   - `scl::concepts::function_type`, `class_type`, `union_type`

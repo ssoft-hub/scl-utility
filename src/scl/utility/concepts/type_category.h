@@ -64,6 +64,34 @@ namespace scl::concepts
     concept enum_value = ::std::is_enum_v<decltype(V)>;
 
     /**
+     * @brief Satisfied when T is a scoped enumeration - an `enum class` or `enum struct`.
+     * @ingroup scl_utility_concepts
+     * @tparam T type to check
+     * @note A scoped enumeration is one whose enumerators do not implicitly convert
+     *       to the underlying type, so an enumerator cannot silently become an
+     *       integer.
+     * @note `std::is_scoped_enum` says the same thing but arrives in C++23; this concept
+     *       uses it where the standard library offers it and derives the answer from the
+     *       conversion otherwise.
+     * @par Example
+     * @code{.cpp}
+     * enum class Dir { North, South };
+     * enum Color { Red, Green };
+     *
+     * static_assert( scl::concepts::scoped_enum<Dir>);
+     * static_assert(!scl::concepts::scoped_enum<Color>);
+     * static_assert(!scl::concepts::scoped_enum<int>);
+     * @endcode
+     */
+#if (defined(__cpp_lib_is_scoped_enum) && __cpp_lib_is_scoped_enum >= 202011L) || defined(DOXYGEN)
+    template <typename T>
+    concept scoped_enum = enum_type<T> && ::std::is_scoped_enum_v<T>;
+#else
+    template <typename T>
+    concept scoped_enum = enum_type<T> && !::std::is_convertible_v<T, ::std::underlying_type_t<T> >;
+#endif
+
+    /**
      * @brief Satisfied when T is void.
      * @ingroup scl_utility_concepts
      * @tparam T type to check
