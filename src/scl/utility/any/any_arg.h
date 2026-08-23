@@ -11,7 +11,6 @@
 #include <scl/utility/any/any_view.h>
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
-#include <scl/utility/attribute/likely.h>
 #include <scl/utility/concepts/reference.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/preprocessor/exceptions.h>
@@ -183,8 +182,8 @@ namespace scl
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(any_argument const * arg) noexcept
     {
-        if (arg == nullptr)
-            SCL_UNLIKELY return nullptr;
+        if (arg == nullptr) [[unlikely]]
+            return nullptr;
         if (!arg->binding_accepts(detail::any_qualifiers_of<Type &>()))
             return nullptr;
         if (::std::is_constant_evaluated())

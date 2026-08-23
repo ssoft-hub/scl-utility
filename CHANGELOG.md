@@ -141,6 +141,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   constructor from one, so the set is spelled `flags{A, B}` there - a compile error rather
   than a silent difference. Code that compiled before compiles unchanged.
 
+- The library spells a standard attribute as itself. `[[nodiscard]]`, `[[likely]]` and
+  `[[unlikely]]` replace the `SCL_` macros at the eight sites that used them, and the
+  attribute includes they needed are gone. At the C++20 baseline each of those macros
+  expands to exactly the attribute it wraps on every supported compiler, so the indirection
+  bought nothing and cost three things: an include, a layout `clang-format` handles natively
+  only for the raw form, and a `modernize-use-nodiscard` fix-it that asks for the raw form by
+  name. A macro stays where the spelling really differs by toolchain, `SCL_FORCE_INLINE` and
+  `SCL_LIFETIMEBOUND` among them, and `attribute/` still offers one for every standard
+  attribute for a consumer compiling below C++20.
+
 - `scl::any_view`, `scl::any_arg` and `scl::any_switch` read a value an `scl::any` owns
   during constant evaluation on the C++20 baseline, and an `scl::any` takes a value from
   one of them there too — by construction and by assignment alike, with the default

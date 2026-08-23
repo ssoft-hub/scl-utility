@@ -10,7 +10,6 @@
 #include <scl/utility/any/bad_any_cast.h>
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
-#include <scl/utility/attribute/likely.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/rtti.h>
@@ -134,8 +133,8 @@ namespace scl
         using bare = ::std::remove_cvref_t<Type>;
 
         auto const * descriptor = (view != nullptr) ? view->descriptor() : nullptr;
-        if (descriptor == nullptr)
-            SCL_UNLIKELY return nullptr;
+        if (descriptor == nullptr) [[unlikely]]
+            return nullptr;
         // Ahead of the std::any branch, which delegates to std::any_cast and so knows
         // nothing of this view's qualifiers.
         if (!view->binding_accepts(detail::any_qualifiers_of<Type const &>()))
@@ -157,7 +156,7 @@ namespace scl
                     return detail::any_holder_object<bare>(view->held());
             }
 
-            SCL_LIKELY return detail::erased_cast<Type const>(view->object());
+            [[likely]] return detail::erased_cast<Type const>(view->object());
         }
 #if SCL_HAS_RTTI
         if (auto const * boxed = view->std_any())

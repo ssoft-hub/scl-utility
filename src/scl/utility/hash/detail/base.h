@@ -7,7 +7,6 @@
 
 #include <scl/utility/attribute/inline.h>
 #include <scl/utility/attribute/lifetimebound.h>
-#include <scl/utility/attribute/nodiscard.h>
 #include <scl/utility/hash/concepts.h>
 
 #include <bit>
@@ -24,14 +23,15 @@ namespace scl::hash::detail
     concept character = ::std::same_as<Type, char> || ::std::same_as<Type, char8_t>;
 
     template <::scl::hash::concepts::byte_element Element>
-    SCL_NODISCARD SCL_FORCE_INLINE constexpr ::std::uint8_t as_byte(Element const value) noexcept
+    [[nodiscard]]
+    SCL_FORCE_INLINE constexpr ::std::uint8_t as_byte(Element const value) noexcept
     {
         return ::std::bit_cast<::std::uint8_t>(value);
     }
 
     template <::std::ranges::range Range>
-    SCL_NODISCARD SCL_FORCE_INLINE constexpr auto
-    without_terminator(Range const & range SCL_LIFETIMEBOUND) noexcept
+    [[nodiscard]]
+    SCL_FORCE_INLINE constexpr auto without_terminator(Range const & range SCL_LIFETIMEBOUND) noexcept
         requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         auto const first = ::std::ranges::begin(range);

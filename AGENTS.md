@@ -27,6 +27,13 @@ project/doxygen/     — Doxyfile
 - Every file starts with `#pragma once`
 - When adding a new header, include it in the corresponding top-level header (e.g. `src/scl/utility/meta.h`)
 - Example, test and benchmark sources are named by the rule in **Source file naming** below; every new public API must have a GoogleTest (`*_gtest.cpp`) test
+- A standard attribute is spelled as itself - `[[nodiscard]]`, `[[maybe_unused]]`,
+  `[[likely]]`. An `SCL_*` macro is for an annotation whose spelling differs by toolchain:
+  `SCL_FORCE_INLINE`, `SCL_HOT`, `SCL_LIFETIMEBOUND`, `SCL_NO_UNIQUE_ADDRESS`, `SCL_ASSUME`,
+  `SCL_UNLIKELY_EXPR`, `SCL_UNSEQUENCED`. `attribute/` offers a macro for every standard
+  attribute as well, for a consumer below the C++20 baseline; this library has that baseline
+  and gains nothing from the indirection - `clang-format` lays the raw attribute out on its
+  own line and `modernize-use-nodiscard` asks for it by name
 - No comments unless the WHY is non-obvious
 - All source comments and identifiers in **English**
 - A template parameter is spelled `typename`, never `class` — a template template parameter
@@ -121,7 +128,9 @@ whole tree the way CI does.
 - Supported compilers: MSVC 19.30+, GCC 13+, Clang 16+
 - Breaking change = removing or renaming any public API symbol; avoid unless necessary
 - Use C++ feature test macros (`__cpp_*`, `__has_cpp_attribute`) to guard functionality dependent on std version
-- Do not use compiler-specific extensions directly — abstract them via attribute or type_traits helpers in this library
+- Do not use compiler-specific extensions directly — abstract them via attribute or type_traits
+  helpers in this library. A standard attribute is not an extension; it is spelled as itself,
+  see **Code Conventions**
 
 ## Before PR/MR
 1. Update `CHANGELOG.md` with a description of the change

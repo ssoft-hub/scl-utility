@@ -11,7 +11,6 @@
 #include <scl/utility/any/bad_any_cast.h>
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
-#include <scl/utility/attribute/likely.h>
 #include <scl/utility/concepts/reference.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/preprocessor/exceptions.h>
@@ -144,8 +143,8 @@ namespace scl
     SCL_HOT constexpr Type * any_cast(MutableView * view) noexcept
         requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>)
     {
-        if (view == nullptr)
-            SCL_UNLIKELY return nullptr;
+        if (view == nullptr) [[unlikely]]
+            return nullptr;
         if (!view->binding_accepts(detail::any_qualifiers_of<Type &>()))
             return nullptr;
         if (::std::is_constant_evaluated())
