@@ -22,6 +22,22 @@ namespace
 
     struct S
     {};
+
+    enum class Scoped
+    {
+        x,
+        y
+    };
+
+    enum class ScopedSized : unsigned char
+    {
+        x
+    };
+
+    enum PlainSized : unsigned char
+    {
+        c
+    };
 } // namespace
 
 TEST(TypeCategory, enum_type)
@@ -29,6 +45,16 @@ TEST(TypeCategory, enum_type)
     STATIC_EXPECT_TRUE(enum_type<Plain>);
     STATIC_EXPECT_FALSE(enum_type<int>);
     STATIC_EXPECT_FALSE(enum_type<S>);
+}
+
+TEST(TypeCategory, scoped_enum)
+{
+    STATIC_EXPECT_TRUE(scoped_enum<Scoped>);
+    STATIC_EXPECT_TRUE(scoped_enum<ScopedSized>);
+    STATIC_EXPECT_FALSE(scoped_enum<Plain>);
+    STATIC_EXPECT_FALSE(scoped_enum<PlainSized>);
+    STATIC_EXPECT_FALSE(scoped_enum<int>);
+    STATIC_EXPECT_FALSE(scoped_enum<S>);
 }
 
 TEST(TypeCategory, enum_value)

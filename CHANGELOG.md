@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::concepts::scoped_enum` - satisfied by an `enum class` or `enum struct` and by
+  nothing else. `std::is_scoped_enum` arrives in C++23 and no standard concept spells it,
+  which is what this group is for. Uses the trait where the standard library offers it and
+  derives the answer from the conversion otherwise.
+
 - `scl::any_mutable_view` (`#include <scl/utility/any/any_mutable_view.h>`) — `scl::any_view`
   granting write access. The Any group tells its handles apart by whether a handle may be
   stored and whether it writes, and one of the four combinations had no handle of its own:
