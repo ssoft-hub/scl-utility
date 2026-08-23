@@ -55,6 +55,7 @@ namespace scl::hash
      * @endcode
      */
     template <::std::ranges::range Range>
+    [[nodiscard]]
     constexpr ::std::uint64_t sdbm(Range const & range, ::std::uint64_t h = 0ull)
         requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
@@ -74,6 +75,7 @@ namespace scl::hash
         using result_type = ::std::uint64_t;
 
         template <::std::ranges::range Range>
+        [[nodiscard]]
         constexpr result_type operator()(Range const & range) const noexcept
             requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {

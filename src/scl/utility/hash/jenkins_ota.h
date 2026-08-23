@@ -60,6 +60,7 @@ namespace scl::hash
      * @endcode
      */
     template <::std::ranges::range Range>
+    [[nodiscard]]
     constexpr ::std::uint32_t jenkins_ota(Range const & range)
         requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
@@ -89,6 +90,7 @@ namespace scl::hash
         using result_type = ::std::uint32_t;
 
         template <::std::ranges::range Range>
+        [[nodiscard]]
         constexpr result_type operator()(Range const & range) const noexcept
             requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
