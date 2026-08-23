@@ -11,6 +11,8 @@
 #include <scl/utility/any/any_view.h>
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
+#include <scl/utility/concepts/reference.h>
+#include <scl/utility/concepts/type_category.h>
 #include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/rtti.h>
 
@@ -28,10 +30,9 @@ namespace scl
 {
     class any_argument;
 
-    template <typename Type>
+    template <::scl::concepts::object_type Type>
     [[nodiscard]]
-    SCL_HOT constexpr Type * any_cast(any_argument const * arg) noexcept
-        requires(::std::is_object_v<Type>);
+    SCL_HOT constexpr Type * any_cast(any_argument const * arg) noexcept;
 
     class any_argument : detail::any_base
     {
@@ -171,17 +172,15 @@ namespace scl
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
 
-        template <typename Type>
-        friend constexpr Type * scl::any_cast(any_argument const * arg) noexcept
-            requires(::std::is_object_v<Type>);
+        template <::scl::concepts::object_type Type>
+        friend constexpr Type * scl::any_cast(any_argument const * arg) noexcept;
     };
 
     using any_arg = any_argument const &;
 
-    template <typename Type>
+    template <::scl::concepts::object_type Type>
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(any_argument const * arg) noexcept
-        requires(::std::is_object_v<Type>)
     {
         if (arg == nullptr) [[unlikely]]
             return nullptr;
@@ -202,11 +201,11 @@ namespace scl
 #if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
     // Constrained to the argument itself, not to any_base: a view converts to one
     // implicitly, and admitting that conversion would hand it write access.
-    template <typename Type, typename LValueArgument>
+    template <::scl::concepts::lvalue_reference Type, typename LValueArgument>
     [[nodiscard]]
     constexpr Type any_cast(LValueArgument & arg SCL_LIFETIMEBOUND)
         requires(::std::same_as<::std::remove_cv_t<LValueArgument>, any_argument>) &&
-        (::std::is_lvalue_reference_v<Type>) && (!::std::is_const_v<::std::remove_reference_t<Type>>)
+        (!::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         auto * pointer = any_cast<::std::remove_reference_t<Type>>(&arg);
         if (pointer == nullptr)
@@ -219,10 +218,10 @@ namespace scl
     // ability to answer during constant evaluation. Reading supplies the `const` itself,
     // as the view does.
     // Not lifetime-bound: the result is a copy, and it outlives the argument by design.
-    template <typename Type, typename ValueArgument>
+    template <::scl::concepts::object_type Type, typename ValueArgument>
     [[nodiscard]]
     constexpr Type any_cast(ValueArgument & arg)
-        requires(::std::same_as<::std::remove_cv_t<ValueArgument>, any_argument>) && (::std::is_object_v<Type>)
+        requires(::std::same_as<::std::remove_cv_t<ValueArgument>, any_argument>)
     {
         auto const * pointer = any_cast<Type const>(&arg);
         if (pointer == nullptr)
@@ -230,11 +229,11 @@ namespace scl
         return *pointer;
     }
 
-    template <typename Type, typename ConstLValueArgument>
+    template <::scl::concepts::lvalue_reference Type, typename ConstLValueArgument>
     [[nodiscard]]
     constexpr Type any_cast(ConstLValueArgument & arg SCL_LIFETIMEBOUND)
         requires(::std::same_as<::std::remove_cv_t<ConstLValueArgument>, any_argument>) &&
-        (::std::is_lvalue_reference_v<Type>) && (::std::is_const_v<::std::remove_reference_t<Type>>)
+        (::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         // remove_reference_t keeps the request's cv: T const volatile & must reach a
         // volatile referent.

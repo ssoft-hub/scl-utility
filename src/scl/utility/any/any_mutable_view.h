@@ -11,6 +11,8 @@
 #include <scl/utility/any/bad_any_cast.h>
 #include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
+#include <scl/utility/concepts/reference.h>
+#include <scl/utility/concepts/type_category.h>
 #include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/rtti.h>
 
@@ -28,11 +30,10 @@ namespace scl
 {
     class any_mutable_view;
 
-    template <typename Type, typename MutableView>
+    template <::scl::concepts::object_type Type, typename MutableView>
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(MutableView * view) noexcept
-        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>)
-    ;
+        requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>);
 
     class any_mutable_view : detail::any_base
     {
@@ -130,18 +131,17 @@ namespace scl
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
 
-        template <typename Type, typename MutableView>
+        template <::scl::concepts::object_type Type, typename MutableView>
         friend constexpr Type * scl::any_cast(MutableView * view) noexcept
-            requires(::std::is_object_v<Type>) &&
-            (::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>);
+            requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>);
     };
 
     // The view type is deduced so that a cv-qualified handle binds at all; its qualification governs
     // the handle, not the referent, so it takes no part in the request.
-    template <typename Type, typename MutableView>
+    template <::scl::concepts::object_type Type, typename MutableView>
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(MutableView * view) noexcept
-        requires(::std::is_object_v<Type>) && (::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>)
+        requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>)
     {
         if (view == nullptr) [[unlikely]]
             return nullptr;
@@ -163,11 +163,11 @@ namespace scl
 #if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
     // Pinned to this class by deduction: a plain parameter would admit the conversion from
     // a reading handle, and with it a write that handle never promised.
-    template <typename Type, typename LValueView>
+    template <::scl::concepts::lvalue_reference Type, typename LValueView>
     [[nodiscard]]
     constexpr Type any_cast(LValueView & view)
         requires(::std::same_as<::std::remove_cv_t<LValueView>, any_mutable_view>) &&
-        (::std::is_lvalue_reference_v<Type>) && (!::std::is_const_v<::std::remove_reference_t<Type>>)
+        (!::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         auto * const reached = any_cast<::std::remove_reference_t<Type>>(&view);
         if (reached == nullptr)
@@ -176,10 +176,10 @@ namespace scl
     }
 
     // Not lifetime-bound: the result is a copy, and it outlives the view by design.
-    template <typename Type, typename ValueView>
+    template <::scl::concepts::object_type Type, typename ValueView>
     [[nodiscard]]
     constexpr Type any_cast(ValueView & view)
-        requires(::std::same_as<::std::remove_cv_t<ValueView>, any_mutable_view>) && (::std::is_object_v<Type>)
+        requires(::std::same_as<::std::remove_cv_t<ValueView>, any_mutable_view>)
     {
         auto const * const reached = any_cast<Type const>(&view);
         if (reached == nullptr)
@@ -187,11 +187,11 @@ namespace scl
         return *reached;
     }
 
-    template <typename Type, typename ConstLValueView>
+    template <::scl::concepts::lvalue_reference Type, typename ConstLValueView>
     [[nodiscard]]
     constexpr Type any_cast(ConstLValueView & view)
         requires(::std::same_as<::std::remove_cv_t<ConstLValueView>, any_mutable_view>) &&
-        (::std::is_lvalue_reference_v<Type>) && (::std::is_const_v<::std::remove_reference_t<Type>>)
+        (::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         // remove_reference_t keeps the request's cv: T const volatile & must reach a volatile referent.
         auto const * const reached = any_cast<::std::remove_reference_t<Type>>(&view);

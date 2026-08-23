@@ -9,6 +9,7 @@
 #include <scl/utility/any/bad_any_cast.h>
 #include <scl/utility/attribute/likely.h>
 #include <scl/utility/attribute/no_unique_address.h>
+#include <scl/utility/concepts/type_category.h>
 #include <scl/utility/meta/type_key.h>
 #include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/type_traits/forward_like.h>
@@ -26,12 +27,11 @@ namespace scl
     class any_mutable_view;
     class any_view;
 
-    template <typename ValueType, typename AnyType>
+    template <::scl::concepts::object_type ValueType, typename AnyType>
     [[nodiscard]]
     constexpr auto any_cast(AnyType * any) noexcept
         -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
-        requires(::std::is_object_v<ValueType>) &&
-        (::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>);
+        requires(::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>);
 
     template <typename Allocator = ::std::allocator<::std::byte>, ::std::size_t Capacity = sizeof(void *)>
     class basic_any : detail::any_owner_tag
@@ -610,21 +610,19 @@ namespace scl
         friend class ::scl::any_mutable_view;
         friend class ::scl::any_view;
 
-        template <typename ValueType, typename AnyType>
+        template <::scl::concepts::object_type ValueType, typename AnyType>
         friend constexpr auto ::scl::any_cast(AnyType * any) noexcept
             -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
-            requires(::std::is_object_v<ValueType>) &&
-            (::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>);
+            requires(::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>);
     };
 
     using any = basic_any<>;
 
-    template <typename ValueType, typename AnyType>
+    template <::scl::concepts::object_type ValueType, typename AnyType>
     [[nodiscard]]
     constexpr auto any_cast(AnyType * any) noexcept
         -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
-        requires(::std::is_object_v<ValueType>) &&
-        (::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>)
+        requires(::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>)
     {
         using bare = ::std::remove_cv_t<ValueType>;
 
