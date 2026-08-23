@@ -139,6 +139,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
+    [[nodiscard]]
     constexpr auto type_name() noexcept
     {
         constexpr auto pattern_text = detail::type_name_pattern_text<T>();
@@ -171,6 +172,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
+    [[nodiscard]]
     constexpr auto type_short_name() noexcept
     {
         return detail::short_name_from(type_name<T>());
