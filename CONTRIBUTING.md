@@ -144,8 +144,25 @@ is named `common`, as in `example/any/common/any_common_example.cpp`. Every exam
 directory of its own: all sources under one example root link into a single program, so a
 second `main` beside it is a link error.
 
-No `benchmark/` tree exists yet. The rule is written now; the plumbing lands with the
-first benchmark.
+## Benchmarks
+
+The benchmark `<tool>` token is `gbench`, for Google Benchmark, so a `benchmark/<group>/`
+directory builds into `utility_<group>_gbench`. One group is measured per task, so the tree
+grows a directory at a time.
+
+Benchmarks are not CTest tests, and they are off by default: a run is long and its numbers
+only mean anything in a Release build. There is no benchmark preset, because every preset
+in the matrix names a toolchain and "build the benchmarks" is a separate axis - pass the
+options to whichever preset you want to measure:
+
+```sh
+script/ci/build.sh clang-x64 Release -DSCL_BUILD_BENCHMARKS=ON -DSCL_BUILD_TESTS=OFF
+script/ci/run_benchmarks.sh clang-x64
+```
+
+`run_benchmarks.sh` fixes the repetition count, so two runs of the same suite are directly
+comparable - which is what a before/after figure in an issue or MR has to be. Both scripts
+live in the super-project, since the benchmark targets are configured there.
 
 ## Documentation
 

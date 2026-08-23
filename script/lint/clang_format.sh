@@ -3,21 +3,21 @@
 # clang-format lint — single source of truth for CI and local (IDE) runs.
 # Mirrors the clang-format job in .gitlab-ci.yml / .github/workflows/lint.yml.
 #
-# Scans the sources as well as the headers, and the test and example trees as well
-# as src: formatting is checked over everything a contributor writes, so a tree
-# nobody scans cannot drift away from .clang-format unnoticed.
+# Scans the sources as well as the headers, and the test, example and benchmark
+# trees as well as src: formatting is checked over everything a contributor writes,
+# so a tree nobody scans cannot drift away from .clang-format unnoticed.
 #
 # The lint jobs run clang-format 22, and a local run wants the same: 21 formats a
 # `is_same_v<X &&, ...>` in the test tree differently from every version around it.
 #
 # Env overrides:
-#   SCL_FORMAT_DIRS  directories to scan, space-separated (default: src test example)
+#   SCL_FORMAT_DIRS  directories to scan, space-separated (default: src test example benchmark)
 #   CLANG_FORMAT     clang-format executable (default: clang-format on PATH)
 #
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-SCL_FORMAT_DIRS="${SCL_FORMAT_DIRS:-src test example}"
+SCL_FORMAT_DIRS="${SCL_FORMAT_DIRS:-src test example benchmark}"
 CLANG_FORMAT="${CLANG_FORMAT:-clang-format}"
 
 dirs=()

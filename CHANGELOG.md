@@ -487,12 +487,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   P0634R3 made it optional in a defining-type-id, so the diagnostic was right. The check
   exists only from clang-tidy 22 on, so both `clang-tidy` jobs move to that image — a
   contributor writing the keyword where it is redundant now hears about it.
+- `project/cmake/benchmark/CMakeLists.txt` builds a `benchmark/` tree with Google Benchmark,
+  one target per subdirectory. The naming rule was already written; this is the plumbing it
+  was waiting for. The `<tool>` token is `gbench`, so a `benchmark/<group>/` directory builds
+  into `utility_<group>_gbench`. No group is measured yet - each arrives with the task that
+  measures it, so with no `benchmark/` directory the option configures and produces nothing.
+  Benchmarks are off by default and have no preset of their own - see CONTRIBUTING.md
+  "Benchmarks" for the two commands.
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart
   unnoticed. `script/lint/doc_snippets.sh` documents the exact spelling.
-- The formatting gate covers `test/` and `example/` as well as `src/`, and the
-  sources as well as the headers. It previously read `src/*.h` only, so three
+- The formatting gate covers `test/`, `example/` and `benchmark/` as well as `src/`, and
+  the sources as well as the headers. It previously read `src/*.h` only, so three
   files had drifted away from `.clang-format` with nothing reporting it; they are
   reformatted. Set `SCL_FORMAT_DIRS` to narrow the scan.
 - The formatting job runs clang-format 22. On 21 it reads `is_same_v<X &&, ...>`
