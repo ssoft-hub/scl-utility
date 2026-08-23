@@ -64,6 +64,38 @@ namespace scl::concepts
     concept enum_value = ::std::is_enum_v<decltype(V)>;
 
     /**
+     * @brief Satisfied when T is a scoped enumeration - an `enum class` or `enum struct`
+     * @ingroup scl_utility_concepts
+     * @tparam T type to check
+     * @details A scoped enumeration is the one whose enumerators do not convert to the
+     *          underlying type on their own, so it cannot be mixed with integers by
+     *          accident. That is what makes it the right key type for a bitmask wrapper
+     *          such as @ref scl::flags.
+     * @note `std::is_scoped_enum` says the same thing but arrives in C++23; this concept
+     *       uses it where the standard library offers it and derives the answer from the
+     *       conversion otherwise.
+     * @par Example
+     * @code{.cpp}
+     * enum class Dir { North, South };
+     * enum Color { Red, Green };
+     *
+     * static_assert( scl::concepts::scoped_enum<Dir>);
+     * static_assert(!scl::concepts::scoped_enum<Color>);
+     * static_assert(!scl::concepts::scoped_enum<int>);
+     *
+     * template <scl::concepts::scoped_enum Enum>
+     * class bitmask;
+     * @endcode
+     */
+#if defined(__cpp_lib_is_scoped_enum) && __cpp_lib_is_scoped_enum >= 202011L
+    template <typename T>
+    concept scoped_enum = ::std::is_scoped_enum_v<T>;
+#else
+    template <typename T>
+    concept scoped_enum = enum_type<T> && !::std::is_convertible_v<T, ::std::underlying_type_t<T> >;
+#endif
+
+    /**
      * @brief Satisfied when T is void.
      * @ingroup scl_utility_concepts
      * @tparam T type to check
