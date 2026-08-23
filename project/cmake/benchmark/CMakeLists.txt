@@ -26,6 +26,22 @@ if (EXISTS "${SCL_UTILITY_BENCHMARK_DIR}")
                     target_include_directories(${tgt} PRIVATE "${SCL_UTILITY_BENCHMARK_DIR}")
                 endif()
             endif()
+
+            # --- Code size ---
+            # A library, not an executable, and with no framework behind it: these
+            # sources are compiled to be measured with `size`, never linked or run.
+            # That is what lets the target build for a bare-metal cross compiler,
+            # where no benchmark framework and no startup code exist.
+            file(GLOB_RECURSE srcs CONFIGURE_DEPENDS
+                "${subdir}/*size.c" "${subdir}/*size.cc" "${subdir}/*size.cpp"
+            )
+            if (srcs)
+                set(tgt "utility_${name}_size")
+                add_library(${tgt} STATIC ${srcs})
+                target_link_libraries(${tgt} PRIVATE scl::utility)
+                target_compile_features(${tgt} PRIVATE cxx_std_20)
+                target_include_directories(${tgt} PRIVATE "${SCL_UTILITY_BENCHMARK_DIR}")
+            endif()
         endif()
     endforeach()
 endif()
