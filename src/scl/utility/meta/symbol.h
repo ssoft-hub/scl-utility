@@ -110,6 +110,7 @@ namespace scl
      * @endcode
      */
     template <auto S>
+    [[nodiscard]]
     constexpr ::std::string_view symbol_name() noexcept
     {
         constexpr auto text = detail::symbol_pattern_text<S>();
@@ -150,6 +151,7 @@ namespace scl
      * @endcode
      */
     template <auto S>
+    [[nodiscard]]
     constexpr ::std::string_view symbol_short_name() noexcept
     {
         constexpr auto result = symbol_name<S>();

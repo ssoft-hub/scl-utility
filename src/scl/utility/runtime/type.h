@@ -71,6 +71,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
+    [[nodiscard]]
     ::std::string type_name(T const & obj)
     {
         return detail::demangle(typeid(obj).name());
@@ -93,6 +94,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
+    [[nodiscard]]
     ::std::string type_short_name(T const & obj)
     {
         ::std::string const full = detail::demangle(typeid(obj).name());

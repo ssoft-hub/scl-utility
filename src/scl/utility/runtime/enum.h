@@ -45,6 +45,7 @@ namespace scl
      * @endcode
      */
     template <concepts::enum_type E>
+    [[nodiscard]]
     ::std::string enum_value(E value)
     {
 #ifdef __cpp_lib_format

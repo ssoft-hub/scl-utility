@@ -146,6 +146,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and its comparison, and the `std::hash` specialisation. None of them has an effect other
   than its return value, so a discarded call was always a mistake and nothing said so.
 
+- Dropping the result of a hash, a name lookup or a member-pointer cast is a diagnostic.
+  `[[nodiscard]]` covers the whole public surface of `hash/` - the five hash functions, every
+  hasher `operator()`, `key`'s conversion and its comparison, and the `std::hash`
+  specialisation; the entry points of `meta/` (`enum_name`, `enum_short_name`, `symbol_name`,
+  `symbol_short_name`, `type_name`, `type_short_name`) and of `runtime/` (`enum_value`,
+  `type_name`, `type_short_name`); and `forward_like` with all twenty-six `overload_cast`
+  `operator()`s. None of them has an effect other than its return value, so a discarded call
+  was always a mistake and nothing said so.
+
 - The library spells a standard attribute as itself. `[[nodiscard]]`, `[[likely]]` and
   `[[unlikely]]` replace the `SCL_` macros at the eight sites that used them, and the
   attribute includes they needed are gone. At the C++20 baseline each of those macros
