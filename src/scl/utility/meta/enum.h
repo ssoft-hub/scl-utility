@@ -89,6 +89,7 @@ namespace scl
      * @endcode
      */
     template <concepts::enum_type auto V>
+    [[nodiscard]]
     constexpr ::std::string_view enum_name() noexcept
     {
         constexpr auto text = detail::enum_name_pattern_text<V>();
@@ -120,6 +121,7 @@ namespace scl
      * @endcode
      */
     template <concepts::enum_type auto V>
+    [[nodiscard]]
     constexpr ::std::string_view enum_short_name() noexcept
     {
         constexpr auto result = enum_name<V>();

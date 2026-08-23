@@ -67,10 +67,11 @@ namespace scl
      * struct Derived : Base {};
      *
      * Base* p = new Derived{};
-     * ::scl::type_name(*p); // "Derived" (GCC/Clang), "struct Derived" (MSVC)
+     * auto const derived_name = ::scl::type_name(*p); // "Derived" (GCC/Clang), "struct Derived" (MSVC)
      * @endcode
      */
     template <typename T>
+    [[nodiscard]]
     ::std::string type_name(T const & obj)
     {
         return detail::demangle(typeid(obj).name());
@@ -89,10 +90,11 @@ namespace scl
      * namespace app { template <typename T> struct Task : Base {}; }
      *
      * Base* p = new app::Task<int>{};
-     * ::scl::type_short_name(*p); // "Task"
+     * auto const task_short = ::scl::type_short_name(*p); // "Task"
      * @endcode
      */
     template <typename T>
+    [[nodiscard]]
     ::std::string type_short_name(T const & obj)
     {
         ::std::string const full = detail::demangle(typeid(obj).name());

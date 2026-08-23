@@ -124,8 +124,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `[[unlikely]]` replace the `SCL_*` macros, and the includes those headers carried for
   them are gone. A consumer can no longer shape these three by predefining the macro;
   every macro stays in `attribute/`.
-- Discarding the result of a hash now draws `-Wunused-result`: the hash functions, every
-  hasher and `std::hash` `operator()`, and `scl::hash::key`'s conversion and comparison.
+- Discarding a returned value now draws `-Wunused-result` in `hash/`, `meta/`, `runtime/`
+  and two `type_traits/` entry points: the hash functions, every hasher and `std::hash`
+  `operator()`, `scl::hash::key`'s conversion and comparison, and every `overload_cast`
+  call operator.
 - `scl::any_view`, `scl::any_arg` and `scl::any_switch` read a value an `scl::any` owns
   during constant evaluation on the C++20 baseline, and an `scl::any` takes a value from
   one of them there too — by construction and by assignment alike, with the default

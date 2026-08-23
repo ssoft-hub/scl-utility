@@ -41,15 +41,15 @@ struct Child : Base {};
 
 // Фундаментальный тип
 int i = 0;
-scl::type_name(i);   // "int"
+auto const int_name     = scl::type_name(i);   // "int"
 
 // Статический тип
 Child c;
-scl::type_name(c);   // "Child"
+auto const child_name   = scl::type_name(c);   // "Child"
 
 // Полиморфизм: возвращает динамический тип через ссылку на базовый класс
 std::unique_ptr<Base> p = std::make_unique<Child>();
-scl::type_name(*p);  // "Child"  (не "Base")
+auto const dynamic_name = scl::type_name(*p);  // "Child"  (не "Base")
 ```
 
 ### Сравнение с аналогом времени компиляции
@@ -80,8 +80,8 @@ scl::type_name(*p);  // "Child"  (не "Base")
 namespace app { template <typename T> struct Task : Base {}; }
 
 std::unique_ptr<Base> p = std::make_unique<app::Task<int>>();
-scl::type_name(*p);        // "app::Task<int>"
-scl::type_short_name(*p);  // "Task"
+auto const task_name  = scl::type_name(*p);        // "app::Task<int>"
+auto const task_short = scl::type_short_name(*p);  // "Task"
 ```
 
 ## Смотрите также
