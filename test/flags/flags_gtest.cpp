@@ -21,6 +21,18 @@ namespace
 
     using flag_numbers = ::scl::flags<flag_number>;
 
+    enum plain_flag
+    {
+        PlainFirst,
+        PlainSecond,
+        PlainThird,
+    };
+
+    using plain_flags = ::scl::flags<plain_flag>;
+
+    template <typename Type>
+    concept flags_over = requires { typename ::scl::flags<Type>; };
+
     // Ordinals on the byte boundaries: the last bit of a byte, the first of the next one,
     // the last valid bit of a 12-bit mask, and a bit two bytes from the first.
     enum class wide_flag
@@ -192,6 +204,23 @@ TEST(FlagsTest, WholeMaskQueries)
 
     STATIC_EXPECT_FALSE(static_cast<bool>(tiny{}));
     STATIC_EXPECT_TRUE(static_cast<bool>(tiny(One)));
+}
+
+TEST(FlagsTest, AcceptsAnyEnumeration)
+{
+    STATIC_EXPECT_TRUE(flags_over<flag_number>);
+    STATIC_EXPECT_TRUE(flags_over<plain_flag>);
+    STATIC_EXPECT_FALSE(flags_over<int>);
+}
+
+TEST(FlagsTest, UnscopedEnumerationHoldsItsValues)
+{
+    constexpr plain_flags held{PlainFirst, PlainThird};
+
+    STATIC_EXPECT_TRUE(held[PlainFirst]);
+    STATIC_EXPECT_FALSE(held[PlainSecond]);
+    STATIC_EXPECT_TRUE(held[PlainThird]);
+    STATIC_EXPECT_EQ(held.size(), ::std::size_t{2});
 }
 
 TEST(FlagsTest, RangeConceptsAndSize)
