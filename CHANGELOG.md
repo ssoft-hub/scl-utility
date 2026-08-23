@@ -141,6 +141,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   constructor from one, so the set is spelled `flags{A, B}` there - a compile error rather
   than a silent difference. Code that compiled before compiles unchanged.
 
+- Dropping the result of a hash is a diagnostic. `[[nodiscard]]` covers the whole public
+  surface of `hash/` - the five hash functions, every hasher `operator()`, `key`'s conversion
+  and its comparison, and the `std::hash` specialisation. None of them has an effect other
+  than its return value, so a discarded call was always a mistake and nothing said so.
+
 - The library spells a standard attribute as itself. `[[nodiscard]]`, `[[likely]]` and
   `[[unlikely]]` replace the `SCL_` macros at the eight sites that used them, and the
   attribute includes they needed are gone. At the C++20 baseline each of those macros

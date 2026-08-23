@@ -104,8 +104,13 @@ namespace scl::hash
             : value{Hasher{}(range)}
         {}
 
-        constexpr operator value_type() const noexcept { return value; }
+        [[nodiscard]]
+        constexpr operator value_type() const noexcept
+        {
+            return value;
+        }
 
+        [[nodiscard]]
         friend constexpr auto operator<=>(key const &, key const &) noexcept = default;
     };
 
@@ -119,6 +124,7 @@ template <typename Hasher>
 // NOLINTNEXTLINE(bugprone-std-namespace-modification)
 struct std::hash<::scl::hash::key<Hasher>>
 {
+    [[nodiscard]]
     constexpr ::std::size_t operator()(::scl::hash::key<Hasher> const & k) const noexcept
     {
         return ::std::hash<typename ::scl::hash::key<Hasher>::value_type>{}(k.value);
