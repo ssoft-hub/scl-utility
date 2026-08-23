@@ -268,6 +268,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Every attribute macro tests `__has_cpp_attribute` behind `defined(...)`, the way each one
+  already tested `__has_attribute` and `__has_builtin`. A preprocessor without the operator
+  reads `#if __has_cpp_attribute(nodiscard)` as a syntax error rather than as zero, so on the
+  one toolchain class the fallback chains exist for - a compiler old enough to lack
+  `[[nodiscard]]` is old enough to lack the operator that asks for it - the header failed to
+  preprocess and the fallback below it was unreachable. GCC, Clang and MSVC all provide the
+  operator in every language mode, so nothing changes for them.
+
 - `scl::hierarchy::tree::reference` hands out mutable reverse iterators. Its
   `reverse_iterator` aliased the tree's *const* one, so `rbegin()` and `rend()` on a mutable
   proxy reached children that could only be read, while `begin()` and `end()` on the same

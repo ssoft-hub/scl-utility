@@ -28,9 +28,9 @@
  * @endcode
  */
 #ifndef SCL_NO_UNIQUE_ADDRESS
-#if __has_cpp_attribute(no_unique_address)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(no_unique_address)
 #define SCL_NO_UNIQUE_ADDRESS [[no_unique_address]]
-#elif __has_cpp_attribute(msvc::no_unique_address)
+#elif defined(__has_cpp_attribute) && __has_cpp_attribute(msvc::no_unique_address)
 #define SCL_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #else
 #define SCL_NO_UNIQUE_ADDRESS

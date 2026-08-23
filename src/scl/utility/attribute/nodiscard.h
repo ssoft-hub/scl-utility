@@ -54,10 +54,10 @@
  */
 
 #ifndef SCL_NODISCARD
-#if __has_cpp_attribute(nodiscard) >= 201907L
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(nodiscard) >= 201907L
 #define SCL_NODISCARD [[nodiscard]]
 #define SCL_NODISCARD_MSG(msg) [[nodiscard(msg)]]
-#elif __has_cpp_attribute(nodiscard)
+#elif defined(__has_cpp_attribute) && __has_cpp_attribute(nodiscard)
 #define SCL_NODISCARD [[nodiscard]]
 #define SCL_NODISCARD_MSG(msg) [[nodiscard]]
 #elif defined(__has_attribute) && __has_attribute(warn_unused_result)

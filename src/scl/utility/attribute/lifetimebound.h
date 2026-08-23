@@ -51,7 +51,7 @@
 #ifndef SCL_LIFETIMEBOUND
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_LIFETIMEBOUND
-#elif __has_cpp_attribute(clang::lifetimebound)
+#elif defined(__has_cpp_attribute) && __has_cpp_attribute(clang::lifetimebound)
 #define SCL_LIFETIMEBOUND [[clang::lifetimebound]]
 #elif defined(__has_attribute) && __has_attribute(lifetimebound)
 #define SCL_LIFETIMEBOUND __attribute__((lifetimebound))

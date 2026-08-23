@@ -98,7 +98,7 @@
  */
 
 #ifndef SCL_LIKELY
-#if __has_cpp_attribute(likely)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(likely)
 #define SCL_LIKELY [[likely]]
 #else
 #define SCL_LIKELY
@@ -106,7 +106,7 @@
 #endif
 
 #ifndef SCL_UNLIKELY
-#if __has_cpp_attribute(unlikely)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(unlikely)
 #define SCL_UNLIKELY [[unlikely]]
 #else
 #define SCL_UNLIKELY

@@ -35,7 +35,7 @@
  */
 
 #ifndef SCL_FALLTHROUGH
-#if __has_cpp_attribute(fallthrough)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(fallthrough)
 #define SCL_FALLTHROUGH [[fallthrough]]
 #elif defined(__has_attribute) && __has_attribute(fallthrough)
 #define SCL_FALLTHROUGH __attribute__((fallthrough))

@@ -35,7 +35,7 @@
  */
 
 #ifndef SCL_MAYBE_UNUSED
-#if __has_cpp_attribute(maybe_unused)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(maybe_unused)
 #define SCL_MAYBE_UNUSED [[maybe_unused]]
 #elif defined(__has_attribute) && __has_attribute(unused)
 #define SCL_MAYBE_UNUSED __attribute__((unused))
