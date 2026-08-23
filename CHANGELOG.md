@@ -125,6 +125,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Where a template parameter is classified by one of the `scl::concepts` concepts, the
+  classification appears in the template parameter list rather than in a trailing
+  `requires` clause: every `any_cast` overload over an `any_view`, an `any_mutable_view` or
+  an `any_argument` takes a `concepts::object_type` or a `concepts::lvalue_reference`, and
+  `detail::any_qualifiers_of` takes a `concepts::reference`. The constraint is visible in the
+  declaration and a failure names the concept instead of the underlying trait. Which
+  specialisations are viable is unchanged.
+
 - `scl::flags` accepts any enumeration, not only a scoped one. The narrowing was a
   `static_assert` in the class body, and nothing in the implementation justified it: the
   only thing read off a value is its underlying integer, and the variadic predicates match
