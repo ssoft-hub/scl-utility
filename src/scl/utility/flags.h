@@ -2,7 +2,7 @@
 
 /**
  * @file flags.h
- * @brief Type-safe set of scoped-enum values, one bit per enumerator.
+ * @brief Type-safe set of enumeration values, one bit per enumerator.
  * @ingroup scl_utility_flags
  */
 
@@ -26,7 +26,7 @@
 
 /**
  * @defgroup scl_utility_flags ScL Flags
- * @brief Type-safe set `scl::flags` of the values of a scoped `enum class`.
+ * @brief Type-safe set `scl::flags` of the values of an enumeration.
  */
 
 namespace scl::detail
@@ -50,9 +50,6 @@ namespace scl
     template <concepts::enum_type Enum, ::std::size_t bit_count = 32> // NOLINT(readability-identifier-naming)
     class flags
     {
-        static_assert(!::std::is_convertible_v<Enum, ::std::underlying_type_t<Enum>>,
-            "scl::flags requires a scoped enum (enum class)");
-
     public:
         class const_iterator;
 
@@ -419,7 +416,7 @@ namespace scl
 /**
  * @class scl::flags
  * @ingroup scl_utility_flags
- * @brief Type-safe set of scoped-enum values, each held as the bit at its
+ * @brief Type-safe set of enumeration values, each held as the bit at its
  *        enumerator ordinal
  *
  * A `flags` holds the enum values put into it.  It stores them as one bit per
@@ -447,8 +444,12 @@ namespace scl
  * values held" query: `all_of(all_values)` asks it against the set the caller
  * names.
  *
- * Only scoped enumerations are accepted; a non-scoped `enum` is rejected by a
- * `static_assert`.  An enumerator whose ordinal is `>= bit_count` is out of
+ * Any enumeration is accepted: nothing here depends on the enumeration being
+ * scoped, only on the underlying value of an enumerator.  A set is spelled
+ * `flags<Enum>{A, B}` for either kind - `Enum` occurs only inside the parameter
+ * pack, so it is never deduced - and `A | B` builds none: over an unscoped
+ * enumeration it is an integer, which no constructor takes, and over a scoped
+ * one it does not compile.  An enumerator whose ordinal is `>= bit_count` is out of
  * range: the offending call throws `std::out_of_range` at runtime and is
  * ill-formed in constant evaluation.  The predicate queries are the exception —
  * they never throw and read an out-of-range ordinal as not held.
@@ -457,7 +458,7 @@ namespace scl
  * `std::abort()` instead, and stays ill-formed in constant evaluation.  Every
  * `@throws` clause below describes the build that has exceptions.
  *
- * @tparam Enum      Scoped enumeration whose enumerators name the values held.
+ * @tparam Enum      Enumeration whose enumerators name the values held.
  * @tparam bit_count Storage width in bits (default 32); valid ordinals are `[0, bit_count)`.
  *
  * @par Example
@@ -478,7 +479,7 @@ namespace scl
 
 /**
  * @typedef scl::flags::enum_type
- * @brief The scoped enumeration this set is built over (same as `Enum`).
+ * @brief The enumeration this set is built over (same as `Enum`).
  */
 
 /**

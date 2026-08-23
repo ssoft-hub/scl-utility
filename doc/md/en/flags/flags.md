@@ -1,6 +1,6 @@
 # Flags
 
-A type-safe set of scoped-enum values.
+A type-safe set of enumeration values.
 
 - Header: `#include <scl/utility/flags.h>`
 
@@ -16,8 +16,13 @@ The bits live in a `std::array<std::byte>` sized to `bit_count` (default 32), so
 every operation is usable in constant evaluation on the C++20 baseline — unlike
 `std::bitset`, whose query and mutate members only became `constexpr` in C++23.
 
-Only scoped enumerations are accepted; a non-scoped `enum` is rejected by a
-`static_assert`. An enumerator whose ordinal is `>= bit_count` is out of range:
+`scl::flags` accepts any enumeration, scoped or not: the template parameter is
+constrained by `scl::concepts::enum_type`, and the implementation depends on nothing
+but the underlying value of an enumerator. A set is spelled `flags<Enum>{A, B}` for
+either kind, since `Enum` occurs only inside the parameter pack and is never deduced.
+`A | B` builds no set: over an unscoped enumeration it is an integer, which no
+constructor takes, and over a scoped one it does not compile.
+An enumerator whose ordinal is `>= bit_count` is out of range:
 the constructor and `operator[]` throw `std::out_of_range` at runtime and are
 ill-formed in constant evaluation. The predicate queries never throw — an
 out-of-range ordinal simply reads as not held. Where
