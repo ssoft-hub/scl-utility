@@ -116,6 +116,7 @@ namespace scl::hash
      * @see https://www.131002.net/siphash/ — original paper and reference vectors
      */
     template <::std::ranges::range Range>
+    [[nodiscard]]
     constexpr ::std::uint64_t siphash(Range const & range, siphash_key const key = siphash_default_key)
         requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
@@ -179,6 +180,7 @@ namespace scl::hash
         using result_type = ::std::uint64_t;
 
         template <::std::ranges::range Range>
+        [[nodiscard]]
         constexpr result_type operator()(Range const & range) const noexcept
             requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
