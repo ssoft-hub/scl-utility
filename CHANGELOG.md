@@ -125,6 +125,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `scl::flags` accepts any enumeration, not only a scoped one. The narrowing was a
+  `static_assert` in the class body, and nothing in the implementation justified it: the
+  only thing read off a value is its underlying integer, and the variadic predicates match
+  the enumeration exactly rather than by conversion, so no integer leaks in. Over an
+  unscoped enumeration `A | B` is an `int` by integral promotion and there is no
+  constructor from one, so the set is spelled `flags{A, B}` there - a compile error rather
+  than a silent difference. Code that compiled before compiles unchanged.
+
 - `scl::any_view`, `scl::any_arg` and `scl::any_switch` read a value an `scl::any` owns
   during constant evaluation on the C++20 baseline, and an `scl::any` takes a value from
   one of them there too — by construction and by assignment alike, with the default
