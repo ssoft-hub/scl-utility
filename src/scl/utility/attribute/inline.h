@@ -48,7 +48,7 @@
 #ifndef SCL_FORCE_INLINE
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_FORCE_INLINE __forceinline
-#elif __has_cpp_attribute(gnu::always_inline)
+#elif defined(__has_cpp_attribute) && __has_cpp_attribute(gnu::always_inline)
 #define SCL_FORCE_INLINE [[gnu::always_inline]] inline
 #else
 #define SCL_FORCE_INLINE inline
@@ -58,7 +58,7 @@
 #ifndef SCL_NOINLINE
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_NOINLINE __declspec(noinline)
-#elif __has_cpp_attribute(gnu::noinline)
+#elif defined(__has_cpp_attribute) && __has_cpp_attribute(gnu::noinline)
 #define SCL_NOINLINE [[gnu::noinline]]
 #else
 #define SCL_NOINLINE

@@ -57,7 +57,7 @@
  */
 
 #ifndef SCL_DEPRECATED
-#if __has_cpp_attribute(deprecated)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(deprecated)
 #define SCL_DEPRECATED [[deprecated]]
 #define SCL_DEPRECATED_MSG(msg) [[deprecated(msg)]]
 #elif defined(_MSC_VER) && !defined(__clang__)

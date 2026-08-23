@@ -65,7 +65,7 @@
  */
 
 #ifndef SCL_ASSUME
-#if __has_cpp_attribute(assume)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(assume)
 #define SCL_ASSUME(expr) [[assume(expr)]]
 #elif defined(_MSC_VER) && !defined(__clang__)
 #define SCL_ASSUME(expr) __assume(expr)

@@ -36,7 +36,7 @@
  */
 
 #ifndef SCL_INDETERMINATE
-#if __has_cpp_attribute(indeterminate)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(indeterminate)
 #define SCL_INDETERMINATE [[indeterminate]]
 #else
 #define SCL_INDETERMINATE

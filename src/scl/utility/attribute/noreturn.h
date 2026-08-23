@@ -38,7 +38,7 @@
  */
 
 #ifndef SCL_NORETURN
-#if __has_cpp_attribute(noreturn)
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(noreturn)
 #define SCL_NORETURN [[noreturn]]
 #elif defined(_MSC_VER) && !defined(__clang__)
 #define SCL_NORETURN __declspec(noreturn)
