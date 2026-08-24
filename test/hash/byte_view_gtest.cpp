@@ -183,3 +183,57 @@ TEST(HashByteViewTest, ByteElementIsUnchanged)
 {
     STATIC_EXPECT_EQ(fnv1a(byte_view(::std::string_view{"hello"})), fnv1a(::std::string_view{"hello"}));
 }
+
+/**
+ * @test A wide literal is hashed as its text, without the terminating element.
+ */
+TEST(HashByteViewTest, WideLiteralDropsItsTerminator)
+{
+    STATIC_EXPECT_EQ(fnv1a(byte_view(u"AB")), fnv1a(byte_view(::std::u16string_view{u"AB"})));
+    STATIC_EXPECT_EQ(fnv1a(byte_view(U"AB")), fnv1a(byte_view(::std::u32string_view{U"AB"})));
+    STATIC_EXPECT_EQ(fnv1a(byte_view(u8"AB")), fnv1a(byte_view(::std::u8string_view{u8"AB"})));
+}
+
+/**
+ * @test Every hasher agrees on a wide literal and its view spelling.
+ */
+TEST(HashByteViewTest, WideLiteralMatchesItsViewForEveryHasher)
+{
+    STATIC_EXPECT_EQ(djb2(byte_view(u"start")), djb2(byte_view(::std::u16string_view{u"start"})));
+    STATIC_EXPECT_EQ(sdbm(byte_view(u"start")), sdbm(byte_view(::std::u16string_view{u"start"})));
+    STATIC_EXPECT_EQ(jenkins_ota(byte_view(u"start")),
+        jenkins_ota(byte_view(::std::u16string_view{u"start"})));
+    STATIC_EXPECT_EQ(siphash(byte_view(u"start")), siphash(byte_view(::std::u16string_view{u"start"})));
+
+    static constexpr key<> from_literal{byte_view(u"start")};
+    static constexpr key<> from_view{byte_view(::std::u16string_view{u"start"})};
+    STATIC_EXPECT_EQ(from_literal, from_view);
+}
+
+/**
+ * @test A wide array that does not end in zero is hashed whole, the way a narrow one is.
+ */
+TEST(HashByteViewTest, WideArrayWithoutTerminatingZeroHashedWhole)
+{
+    static constexpr char16_t raw[3]{u'A', u'B', u'C'};
+    STATIC_EXPECT_EQ(fnv1a(byte_view(raw)), fnv1a(byte_view(::std::u16string_view{u"ABC"})));
+}
+
+/**
+ * @test An array of a non-character element keeps its trailing zero: there it is data.
+ */
+TEST(HashByteViewTest, NonCharacterArrayKeepsItsTrailingZero)
+{
+    static constexpr ::std::uint16_t with_zero[3]{1, 2, 0};
+    static constexpr ::std::uint16_t without[2]{1, 2};
+    STATIC_EXPECT_NE(fnv1a(byte_view(with_zero)), fnv1a(byte_view(without)));
+}
+
+/**
+ * @test A narrow literal reaches the same value through the adapter as without it.
+ */
+TEST(HashByteViewTest, NarrowLiteralThroughTheAdapterMatchesTheDirectPath)
+{
+    STATIC_EXPECT_EQ(fnv1a(byte_view("hello")), fnv1a("hello"));
+    STATIC_EXPECT_EQ(fnv1a(byte_view(u8"hello")), fnv1a(u8"hello"));
+}

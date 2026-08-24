@@ -8,6 +8,7 @@
 #include <scl/utility/attribute/inline.h>
 #include <scl/utility/attribute/lifetimebound.h>
 #include <scl/utility/hash/concepts.h>
+#include <scl/utility/hash/detail/character.h>
 
 #include <bit>
 #include <concepts>
@@ -17,10 +18,6 @@
 
 namespace scl::hash::detail
 {
-    // Only these two spell text a terminator belongs to; std::byte and the one-byte
-    // element types carry data, where a zero is a value like every other.
-    template <typename Type>
-    concept character = ::std::same_as<Type, char> || ::std::same_as<Type, char8_t>;
 
     template <::scl::hash::concepts::byte_element Element>
     [[nodiscard]]
