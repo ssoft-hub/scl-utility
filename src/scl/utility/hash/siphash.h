@@ -6,8 +6,11 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/hash/constant_bytes.h>
+
 #include <bit>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <ranges>
 #include <utility>
@@ -208,6 +211,34 @@ namespace scl::hash
         return ::scl::hash::siphash<Element const[Size]>(data, key);
     }
     // NOLINTEND(*-avoid-c-arrays)
+
+    /**
+     * @brief Hashes the bytes of a bounded array at translation time.
+     * @ingroup scl_utility_hash
+     *
+     * @ref scl::hash::byte_view answers a @ref scl::hash::constant_bytes for a bounded
+     * array, which is the shape a range of wider elements takes when the translation
+     * already holds it. Hashing one is therefore a constant, on the same terms as the
+     * overload above: the result is a constant or the program is ill-formed.
+     *
+     * @tparam Capacity  Bytes the array occupied, terminator included.
+     * @param  bytes     Bytes to hash, as @ref scl::hash::byte_view spelled them.
+     * @param  key   Key, as the range overload takes it.
+     * @return Hash value of @p bytes.
+     *
+     * @par Example
+     * @code
+     * foo(::scl::hash::siphash(::scl::hash::byte_view(u"event.started")));  // a constant
+     * @endcode
+     */
+    template <::std::size_t Capacity>
+    [[nodiscard]]
+    consteval ::std::uint64_t
+    siphash(constant_bytes<Capacity> const & bytes, siphash_key const key = siphash_default_key)
+    {
+        // Explicit, so this overload does not select itself.
+        return ::scl::hash::siphash<constant_bytes<Capacity>>(bytes, key);
+    }
 
     /**
      * @brief Callable wrapper around @ref siphash for use with @ref scl::hash::key.

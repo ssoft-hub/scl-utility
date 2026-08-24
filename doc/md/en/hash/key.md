@@ -39,6 +39,13 @@ Each element contributes `sizeof(element)` bytes, least significant first, whate
 host's own byte order — two machines hash one input alike. A byte-sized element passes
 through unchanged, so saying `byte_view` where none is needed changes nothing.
 
+A bounded array reaching `byte_view` is a case of its own. Its contents are content the
+translation already holds, so the adapter answers a
+`scl::hash::constant_bytes` — the bytes as a value — and the hash
+over it is `consteval`. `fnv1a(byte_view(u"start"))` is therefore a constant wherever it
+is written, not only where it is bound to one. A range known at run time selects the lazy
+adapter as before.
+
 Two element types stay out of `byte_view` as well. A floating-point one, because its bytes
 tell apart values that compare equal (`0.0` against `-0.0`, one `NaN` against another); and
 `wchar_t`, because its width is what the platform says it is — two bytes on Windows, four

@@ -196,7 +196,11 @@ foo(value);
 ```
 
 A bounded array is a shape the compiler already holds, so the entry point that takes one
-is `consteval`: its result is a constant or the program does not compile. A sequence known
+is `consteval`: its result is a constant or the program does not compile. The same holds
+for a wide literal, which reaches a hash through `scl::hash::byte_view`: the adapter
+answers the bytes of a bounded array as a `scl::hash::constant_bytes` value, and the hash
+over that is `consteval` too, so `siphash(byte_view(u"name"))` is a constant on every
+compiler rather than on the one that chose to fold it. A sequence known
 only at run time is spelled as a view, which is what selects the `constexpr` entry point.
 
 ```cpp

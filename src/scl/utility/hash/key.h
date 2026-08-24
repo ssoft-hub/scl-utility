@@ -7,6 +7,7 @@
  */
 
 #include <scl/utility/hash/concepts.h>
+#include <scl/utility/hash/constant_bytes.h>
 #include <scl/utility/hash/siphash.h>
 
 #include <concepts>
@@ -112,6 +113,11 @@ namespace scl::hash
         {}
         // NOLINTEND(*-avoid-c-arrays)
 
+        template <::std::size_t Capacity>
+        explicit consteval key(constant_bytes<Capacity> const & bytes) noexcept
+            : value{Hasher{}(bytes)}
+        {}
+
         [[nodiscard]]
         constexpr operator value_type() const noexcept
         {
@@ -156,6 +162,18 @@ struct std::hash<::scl::hash::key<Hasher>>
 /**
  * @var scl::hash::key::value
  * @brief The hash value itself.
+ */
+
+/**
+ * @fn scl::hash::key::key(constant_bytes<Capacity> const & bytes)
+ * @brief Constructs the hash value from bytes the translation already holds.
+ *
+ * @ref scl::hash::byte_view answers a @ref scl::hash::constant_bytes for a bounded array,
+ * which is how a range of wider elements arrives when its contents are known at
+ * translation time. The key built from one is a constant or the program is ill-formed.
+ *
+ * @tparam Capacity  Bytes the array occupied, terminator included.
+ * @param  bytes     Bytes to hash, as @ref scl::hash::byte_view spelled them.
  */
 
 /**

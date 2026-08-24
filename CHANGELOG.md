@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `scl::hash::constant_bytes` (`#include <scl/utility/hash/constant_bytes.h>`) - the bytes of
+  a range the translation already holds. `scl::hash::byte_view` answers one for a bounded
+  array, and only for a bounded array, through a `consteval` overload: an array declared with
+  its contents is content the translation has, so its bytes are a value rather than a view
+  reading through to something else. Each hash function and `scl::hash::key` take one through
+  a `consteval` overload of their own, which makes `hash(byte_view(u"name"))` a constant on
+  every compiler where it was the optimiser's choice before - GCC folded it, Clang and MSVC
+  left the loop to run on every call.
+
+  Nothing else produces a `constant_bytes`, which is what lets those overloads exist without
+  standing in the way of a shape known only at run time: a `std::u16string_view` still selects
+  the lazy adapter and is still hashed at run time. Declaring one is not the intended use, and
+  hashing one filled at run time does not compile.
+
+  The count of bytes that are text is a member rather than a second template parameter.
+  Whether an array ends in a terminator is a property of its contents, not of its type -
+  `char16_t const raw[3]{u'A', u'B', u'C'}` carries none - and a return type cannot depend on
+  the contents of the argument that produced it.
+
 - `scl::concepts::scoped_enum` - satisfied by an `enum class` or `enum struct` and by
   nothing else. `std::is_scoped_enum` arrives in C++23 and no standard concept spells it,
   which is what this group is for. Uses the trait where the standard library offers it and

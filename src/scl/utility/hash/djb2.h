@@ -6,7 +6,10 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/hash/constant_bytes.h>
+
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <numeric>
 #include <ranges>
@@ -107,6 +110,33 @@ namespace scl::hash
         return ::scl::hash::djb2<Element const[Size]>(data, h);
     }
     // NOLINTEND(*-avoid-c-arrays)
+
+    /**
+     * @brief Hashes the bytes of a bounded array at translation time.
+     * @ingroup scl_utility_hash
+     *
+     * @ref scl::hash::byte_view answers a @ref scl::hash::constant_bytes for a bounded
+     * array, which is the shape a range of wider elements takes when the translation
+     * already holds it. Hashing one is therefore a constant, on the same terms as the
+     * overload above: the result is a constant or the program is ill-formed.
+     *
+     * @tparam Capacity  Bytes the array occupied, terminator included.
+     * @param  bytes     Bytes to hash, as @ref scl::hash::byte_view spelled them.
+     * @param  h     Initial hash value, as the range overload takes it.
+     * @return Hash value of @p bytes.
+     *
+     * @par Example
+     * @code
+     * foo(::scl::hash::djb2(::scl::hash::byte_view(u"event.started")));  // a constant
+     * @endcode
+     */
+    template <::std::size_t Capacity>
+    [[nodiscard]]
+    consteval ::std::uint64_t djb2(constant_bytes<Capacity> const & bytes, ::std::uint64_t h = 5381ull)
+    {
+        // Explicit, so this overload does not select itself.
+        return ::scl::hash::djb2<constant_bytes<Capacity>>(bytes, h);
+    }
 
     /**
      * @brief Callable wrapper around @ref djb2 for use with @ref scl::hash::key.

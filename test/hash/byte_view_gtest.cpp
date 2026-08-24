@@ -60,6 +60,14 @@ namespace
 /**
  * @test A range of byte-sized elements is accepted, `std::byte` included.
  */
+// A key standing as a template argument is what proves the value is a constant, not merely
+// foldable: a template argument admits nothing else.
+template <key<> Id>
+struct wide_tag
+{
+    static constexpr int value = 1;
+};
+
 TEST(HashElementTest, ByteSizedElementsAccepted)
 {
     STATIC_EXPECT_TRUE(hashable<::std::string_view>);
@@ -236,4 +244,31 @@ TEST(HashByteViewTest, NarrowLiteralThroughTheAdapterMatchesTheDirectPath)
 {
     STATIC_EXPECT_EQ(fnv1a(byte_view("hello")), fnv1a("hello"));
     STATIC_EXPECT_EQ(fnv1a(byte_view(u8"hello")), fnv1a(u8"hello"));
+}
+
+/**
+ * @test A bounded array answers its bytes as a value, without its terminating element.
+ */
+TEST(HashByteViewTest, BoundedArrayAnswersConstantBytes)
+{
+    static constexpr auto wide = byte_view(u"AB");
+    STATIC_EXPECT_EQ(wide.count, 4U);
+    STATIC_EXPECT_EQ(sizeof(wide.bytes), 6U);
+
+    static constexpr auto narrow = byte_view("hello");
+    STATIC_EXPECT_EQ(narrow.count, 5U);
+
+    static constexpr ::std::uint16_t data[3]{1, 2, 0};
+    static constexpr auto whole = byte_view(data);
+    STATIC_EXPECT_EQ(whole.count, 6U);
+}
+
+/**
+ * @test A key over a wide literal is a constant, so it stands as a template argument.
+ */
+TEST(HashByteViewTest, KeyFromWideLiteralIsAConstant)
+{
+    static constexpr key<> id{byte_view(u"event.started")};
+    STATIC_EXPECT_EQ(wide_tag<id>::value, 1);
+    STATIC_EXPECT_NE(id, key<>{byte_view(u"event.stopped")});
 }

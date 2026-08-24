@@ -8,13 +8,13 @@
 
 #include <scl/utility/attribute/lifetimebound.h>
 #include <scl/utility/hash/concepts.h>
+#include <scl/utility/hash/constant_bytes.h>
 #include <scl/utility/hash/detail/character.h>
 
 #include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <ranges>
-#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -92,18 +92,22 @@ namespace scl::hash
     }
 
     /**
-     * @brief Views a character array as the little-endian bytes of its text.
+     * @brief Spells the bytes of a bounded array at translation time.
      * @ingroup scl_utility_hash
      *
-     * A character array carries a terminating zero its text does not, so the last element
-     * is dropped when it is zero. The hash functions apply that rule to an array of `char`
-     * or `char8_t` themselves; a wider element reaches them only through this adapter, and
-     * the array is visible here and nowhere later, so the rule is applied here.
+     * A bounded array is content the translation already holds, so its bytes are answered as
+     * a value and the call is a constant or the program is ill-formed. A sequence known only
+     * at run time selects the overload above and reads through to it lazily.
      *
-     * @tparam Element  Character type: `char`, `char8_t`, `char16_t` or `char32_t`.
+     * A character array carries a terminating zero its text does not, and it is dropped here.
+     * The hash functions apply that rule to an array of `char` or `char8_t` themselves; a
+     * wider element reaches them only through this adapter, and the array is visible here and
+     * nowhere later, so the rule has to be applied here.
+     *
+     * @tparam Element  Element type satisfying @ref scl::hash::concepts::integer_element.
      * @tparam Size     Number of elements the array holds, terminator included.
-     * @param  text     Array to view. Must outlive the view.
-     * @return A `std::ranges::view` of `std::uint8_t` over the text, without its terminator.
+     * @param  range    Array to spell.
+     * @return A @ref scl::hash::constant_bytes over the text of @p range.
      *
      * @par Example
      * @code{.cpp}
@@ -113,12 +117,25 @@ namespace scl::hash
      * @endcode
      */
     // NOLINTBEGIN(*-avoid-c-arrays): a bounded array is what a literal is
-    template <detail::character Element, ::std::size_t Size>
+    template <concepts::integer_element Element, ::std::size_t Size>
     [[nodiscard]]
-    constexpr auto byte_view(Element const (&text SCL_LIFETIMEBOUND)[Size])
+    consteval auto byte_view(Element const (&range)[Size])
     {
-        auto const count = (Size != 0 && text[Size - 1] == Element{}) ? Size - 1 : Size;
-        return ::scl::hash::byte_view(::std::span{static_cast<Element const *>(text), count});
+        constexpr auto width = sizeof(Element);
+
+        auto count = Size;
+        if constexpr (detail::character<Element>)
+        {
+            if (Size != 0 && range[Size - 1] == Element{})
+                --count;
+        }
+
+        constant_bytes<Size * width> result{};
+        result.count = count * width;
+        for (auto index = ::std::size_t{0}; index < result.count; ++index)
+            result.bytes[index] = detail::byte_of(range[index / width], index % width);
+
+        return result;
     }
     // NOLINTEND(*-avoid-c-arrays)
 } // namespace scl::hash
