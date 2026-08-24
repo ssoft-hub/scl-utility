@@ -8,11 +8,13 @@
 
 #include <scl/utility/attribute/lifetimebound.h>
 #include <scl/utility/hash/concepts.h>
+#include <scl/utility/hash/detail/character.h>
 
 #include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <ranges>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -65,8 +67,10 @@ namespace scl::hash
      *                a `std::string_view`, a `std::span`, or a named container.
      * @return A `std::ranges::view` of `std::uint8_t`.
      *
-     * @note A wide string spelled this way is a different input from its narrow
-     *       counterpart: `byte_view(u"AB")` carries the zero bytes that `"AB"` does not.
+     * @note A wide string is still a different input from its narrow counterpart, since
+     *       every element contributes its full width: `byte_view(u"AB")` is four bytes
+     *       where `"AB"` is two. What it does not carry is the terminator - a character
+     *       array is text, and the rule holds at every element width.
      */
     template <::std::ranges::viewable_range Range>
     [[nodiscard]]
@@ -87,4 +91,34 @@ namespace scl::hash
         });
     }
 
+    /**
+     * @brief Views a character array as the little-endian bytes of its text.
+     * @ingroup scl_utility_hash
+     *
+     * A character array carries a terminating zero its text does not, so the last element
+     * is dropped when it is zero. The hash functions apply that rule to an array of `char`
+     * or `char8_t` themselves; a wider element reaches them only through this adapter, and
+     * the array is visible here and nowhere later, so the rule is applied here.
+     *
+     * @tparam Element  Character type: `char`, `char8_t`, `char16_t` or `char32_t`.
+     * @tparam Size     Number of elements the array holds, terminator included.
+     * @param  text     Array to view. Must outlive the view.
+     * @return A `std::ranges::view` of `std::uint8_t` over the text, without its terminator.
+     *
+     * @par Example
+     * @code{.cpp}
+     * // Four bytes, not six: the terminating element is not text.
+     * static_assert(scl::hash::fnv1a(scl::hash::byte_view(u"AB"))
+     *            == scl::hash::fnv1a(scl::hash::byte_view(std::u16string_view{u"AB"})));
+     * @endcode
+     */
+    // NOLINTBEGIN(*-avoid-c-arrays): a bounded array is what a literal is
+    template <detail::character Element, ::std::size_t Size>
+    [[nodiscard]]
+    constexpr auto byte_view(Element const (&text SCL_LIFETIMEBOUND)[Size])
+    {
+        auto const count = (Size != 0 && text[Size - 1] == Element{}) ? Size - 1 : Size;
+        return ::scl::hash::byte_view(::std::span{static_cast<Element const *>(text), count});
+    }
+    // NOLINTEND(*-avoid-c-arrays)
 } // namespace scl::hash

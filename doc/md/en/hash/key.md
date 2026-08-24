@@ -49,11 +49,13 @@ element where a hash value has to travel.
 > A string literal `"hello"` is a `const char[6]` whose last element is the
 > terminating zero. That zero is not part of the text and is not hashed, so
 > `"hello"`, `std::string_view{"hello"}` and `std::string{"hello"}` produce the
-> **same** hash value. The rule covers arrays of `char` and `char8_t` — the two
-> character types whose code unit is a byte — and only their last element: an array
-> that does not end in zero — `const char raw[3]{'a', 'b', 'c'}` — is hashed whole,
-> and so is an array of any other element type, where `std::uint8_t data[4]{1, 2, 3, 0}`
-> keeps all four bytes because a zero byte is data rather than a terminator.
+> **same** hash value. The rule covers a character array at every element width:
+> `char` and `char8_t` reach a hash function directly, and `char16_t` and `char32_t`
+> reach it through `byte_view`, which applies the rule where the array is still
+> visible. It touches only the last element: an array that does not end in zero —
+> `const char raw[3]{'a', 'b', 'c'}` — is hashed whole, and so is an array of any
+> other element type, where `std::uint8_t data[4]{1, 2, 3, 0}` keeps all four bytes
+> because there a zero byte is data rather than a terminator.
 
 ---
 

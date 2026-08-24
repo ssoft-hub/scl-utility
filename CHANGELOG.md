@@ -292,6 +292,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A wide string literal is hashed as its text, without the terminating element.
+  `scl::hash::byte_view` gains an overload for a bounded array of a character type, which
+  drops a trailing zero the way the hash functions already drop one from an array of `char`
+  or `char8_t`. `byte_view(u"AB")` was six bytes against four for
+  `byte_view(std::u16string_view{u"AB"})`, so a `case` label written `u"name"` never matched
+  a subject built from a run-time view and nothing reported it - the same defect that was
+  fixed for a narrow literal before `byte_view` existed, and that `byte_view` did not carry
+  across. The rule stays confined to the last element and to character types: a wide array
+  not ending in zero is hashed whole, and an array of any other element keeps its trailing
+  zero, where a zero is data rather than a terminator.
+
 - Every attribute macro tests `__has_cpp_attribute` behind `defined(...)`, the way each one
   already tested `__has_attribute` and `__has_builtin`. A preprocessor without the operator
   reads `#if __has_cpp_attribute(nodiscard)` as a syntax error rather than as zero, so on the
