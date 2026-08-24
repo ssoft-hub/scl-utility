@@ -177,6 +177,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The block boundary inside SipHash carries a `[[unlikely]]` branch hint. One iteration in
+  eight completes an eight-byte block, so the annotation states what the loop already does;
+  what it buys is code layout rather than prediction accuracy. Measured over four paired
+  rounds against a null channel whose p90 sits between 0.8% and 1.4%: MSVC 19.44 gains 9 to
+  11 per cent on a 63-byte input, Clang 22.1.8 is unmoved, and GCC 13.1.0 pays between one
+  and three. `.text` on `arm-none-eabi-g++` is unchanged at 1950 bytes. `doc/md/en/hash/benchmark.md`
+  carries the full matrix, including the two annotations that were measured and left out.
+
 - **Breaking.** The hash entry point taking a bounded array is `consteval`: a string
   literal, or an array declared with its contents, hashes at translation time or the
   program is ill-formed. `scl::hash::key` gains the matching constructor. Without it,

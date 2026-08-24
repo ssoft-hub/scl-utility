@@ -120,6 +120,10 @@ Then include the umbrella header or individual component headers:
 |-----------|--------|-------------|
 | [key](hash/key.md) | `<scl/utility/hash.h>` | Strongly-typed hash value; usable as switch label, map key, and NTTP |
 
+Measured numbers for this module - what an attribute annotation is worth, what it
+costs in code size, and which compiler folds the hash of a literal - are collected in
+[Hash Benchmarks](hash/benchmark.md).
+
 ### Flags — type-safe set of enumeration values
 
 | Component | Header | Description |

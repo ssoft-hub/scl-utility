@@ -137,7 +137,8 @@ namespace scl::hash
             shift += 8;
             ++len;
 
-            if (shift == 64) // full 8-byte block ready
+            // One iteration in eight completes a block, so this is the rarer branch.
+            if (shift == 64) [[unlikely]] // full 8-byte block ready
             {
                 v3 ^= m;
                 detail::sip_round(v0, v1, v2, v3); // c = 2
