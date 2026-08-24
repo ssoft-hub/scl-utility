@@ -555,6 +555,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   sites shows up instead of staying resident in L1 the way a single-site loop keeps it. And
   the accumulated `fnv1a` cases keep the result in a register across iterations rather than
   passing it through a barrier each time, which measures the hash instead of the barrier.
+- The second measured group is `flags`: `benchmark/flags/` times construction, the set
+  algebra, the predicates, `size()`, indexing and iteration in both directions, over a mask
+  with every fourth bit set, at 32 bits and again at 256. Two widths rather than one because
+  every whole-byte loop in the class is eight times longer in the wide case while the number
+  of set bits stays at eight, which separates a difference the loop carries from one the call
+  carries. `icache_gbench.cpp` walks a mask a thousand times in every case and varies only how
+  many distinct bodies those walks are spread over, from one site to a thousand, so what an
+  inlined walk costs once it stops fitting in the instruction cache is measurable rather than
+  assumed. `flags_size.cpp` gives each operation a wrapper of
+  its own, at both widths, so `-ffunction-sections` puts every one in a section that can be
+  read separately.
 - A second benchmark `<tool>` token, `size`: a `benchmark/<group>/*_size.cpp` source builds
   into `utility_<group>_size`, a static library whose sources are compiled to be measured and
   are never linked or run. That is what lets them build for a bare-metal cross compiler, so a
