@@ -494,6 +494,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   measures it, so with no `benchmark/` directory the option configures and produces nothing.
   Benchmarks are off by default and have no preset of their own - see CONTRIBUTING.md
   "Benchmarks" for the two commands.
+- The first measured group is `hash`: `benchmark/hash/` times the five hash functions at
+  8, 16 and 63 bytes, over a `std::string_view` whose length is a run-time value and over a
+  `std::array<char, N>` whose length the compiler sees, plus a `std::string` and a hasher
+  at the widest size. Three sizes rather than one because what an annotation is worth
+  depends on them: inlining removes per-call overhead, whose share grows as the input
+  shrinks, and 8 to 16 bytes is what a hash-map key usually is while 63 is the size the
+  claim on this work was first made at. The array form is a `std::array` rather than a
+  `char[]`, whose last element would be dropped as a terminator and leave the forms
+  measuring different amounts of work. `hash_size.cpp` gives each function a wrapper of its
+  own so `-ffunction-sections` puts every one in a section that can be read separately.
+
+  Four cases answer questions the plain timings cannot. A literal goes through a
+  non-inlinable wrapper, since its hash is loop-invariant and the benchmark loop would
+  otherwise hoist the call out and time an empty loop - which is what makes it visible
+  whether a compiler folded the hash to a constant or left the byte loop to run. A wide
+  range is timed through `byte_view` against a narrow range of the same 126 bytes, so the
+  adapter is the only difference between the two. `icache_gbench.cpp` calls the hash from a
+  thousand separate sites, so what an inlined body costs when it is duplicated across call
+  sites shows up instead of staying resident in L1 the way a single-site loop keeps it. And
+  the accumulated `fnv1a` cases keep the result in a register across iterations rather than
+  passing it through a barrier each time, which measures the hash instead of the barrier.
 - A second benchmark `<tool>` token, `size`: a `benchmark/<group>/*_size.cpp` source builds
   into `utility_<group>_size`, a static library whose sources are compiled to be measured and
   are never linked or run. That is what lets them build for a bare-metal cross compiler, so a
