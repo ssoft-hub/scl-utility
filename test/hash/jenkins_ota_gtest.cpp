@@ -2,8 +2,11 @@
 
 #include <scl/utility/hash/jenkins_ota.h>
 
+#include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -82,4 +85,22 @@ TEST(JenkinsOtaTest, ByteArrayKeepsTrailingZero)
 TEST(JenkinsOtaTest, HasherMatchesFreeFunction)
 {
     STATIC_EXPECT_EQ(jenkins_ota_hasher{}("hello"), jenkins_ota("hello"));
+}
+
+/**
+ * @test A sequence filled at run time is spelled as a view, and hashes to the value the
+ *       array spelling of the same bytes gives.
+ */
+TEST(JenkinsOtaTest, RunTimeViewMatchesArraySpelling)
+{
+    char text[8]{};
+    ::std::ranges::copy(::std::string_view{"hello"}, text);
+    EXPECT_EQ(jenkins_ota(::std::string_view{text, 5}), jenkins_ota("hello"));
+
+    ::std::uint8_t data[4]{};
+    for (auto index = ::std::size_t{0}; index < 4; ++index)
+        data[index] = static_cast<::std::uint8_t>(index);
+
+    static constexpr ::std::uint8_t expected[4]{0, 1, 2, 3};
+    EXPECT_EQ(jenkins_ota(::std::span{data}), jenkins_ota(expected));
 }

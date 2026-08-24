@@ -71,6 +71,49 @@ namespace scl::hash
     }
 
     /**
+     * @brief Hashes a bounded array at translation time.
+     * @ingroup scl_utility_hash
+     *
+     * A bounded array is content the translation already holds - a string literal, or an
+     * array declared with its contents. Hashing it is therefore a constant, and this
+     * overload is the one that says so: its result is a constant or the program is
+     * ill-formed. Without it, whether the loop survives to run time is the optimiser's
+     * choice, and the three supported compilers do not make the same one.
+     *
+     * A sequence whose contents are known only at run time is spelled as a view -
+     * `std::string_view` for a character element, `std::span` for any other - which is
+     * what selects the range overload. Neither spelling changes the hash value.
+     *
+     * @tparam Element  Element type, one byte wide.
+     * @tparam Size     Number of elements the array holds.
+     * @param  data     Array to hash. A trailing zero in an array of `char` or `char8_t`
+     *                  is a string terminator and is not hashed; in an array of any other
+     *                  element type it is a byte of data and is.
+     * @param  h     Initial hash value, as the range overload takes it.
+     * @return Hash value of @p data.
+     *
+     * @par Example
+     * @code
+     * constexpr char name[] = "event.started";
+     * foo(::scl::hash::fnv1a(name));                        // a constant, on every compiler
+     *
+     * char buffer[64];
+     * auto const size = receive(buffer);
+     * foo(::scl::hash::fnv1a(::std::string_view{buffer, size}));   // run time
+     * @endcode
+     */
+    // NOLINTBEGIN(*-avoid-c-arrays): a bounded array is what a literal is
+    template <::scl::hash::concepts::byte_element Element, ::std::size_t Size>
+    [[nodiscard]]
+    consteval ::std::uint64_t
+    fnv1a(Element const (&data)[Size], ::std::uint64_t h = 14695981039346656037ull)
+    {
+        // Explicit, so the array stays bounded - what decides if a trailing zero is text.
+        return ::scl::hash::fnv1a<Element const[Size]>(data, h);
+    }
+    // NOLINTEND(*-avoid-c-arrays)
+
+    /**
      * @brief Callable wrapper around @ref fnv1a for use with @ref scl::hash::key.
      * @ingroup scl_utility_hash
      */
@@ -83,7 +126,9 @@ namespace scl::hash
         constexpr result_type operator()(Range const & range) const noexcept
             requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
-            return ::scl::hash::fnv1a(range);
+            // Named explicitly: the argument is a parameter, so the consteval overload
+            // would make this operator immediate and reject every run-time call.
+            return ::scl::hash::fnv1a<Range>(range);
         }
     };
 

@@ -2,8 +2,11 @@
 
 #include <scl/utility/hash/sdbm.h>
 
+#include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -93,4 +96,22 @@ TEST(SdbmTest, ByteArrayKeepsTrailingZero)
 TEST(SdbmTest, HasherMatchesFreeFunction)
 {
     STATIC_EXPECT_EQ(sdbm_hasher{}("hello"), sdbm("hello"));
+}
+
+/**
+ * @test A sequence filled at run time is spelled as a view, and hashes to the value the
+ *       array spelling of the same bytes gives.
+ */
+TEST(SdbmTest, RunTimeViewMatchesArraySpelling)
+{
+    char text[8]{};
+    ::std::ranges::copy(::std::string_view{"hello"}, text);
+    EXPECT_EQ(sdbm(::std::string_view{text, 5}), sdbm("hello"));
+
+    ::std::uint8_t data[4]{};
+    for (auto index = ::std::size_t{0}; index < 4; ++index)
+        data[index] = static_cast<::std::uint8_t>(index);
+
+    static constexpr ::std::uint8_t expected[4]{0, 1, 2, 3};
+    EXPECT_EQ(sdbm(::std::span{data}), sdbm(expected));
 }

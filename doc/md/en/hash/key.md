@@ -8,7 +8,11 @@
 The `scl::hash` module provides a set of non-cryptographic hash functions and a
 strongly-typed hash-value wrapper `key<Hasher>`. Together they enable:
 
-- **Compile-time string hashing** — all functions and `key` are `constexpr`.
+- **Compile-time string hashing** — all functions and `key` are `constexpr`, and the
+  entry point taking a bounded array is `consteval`. Where a constant is not required,
+  `constexpr` permits compile-time evaluation rather than promising it —
+  [Hash Benchmarks](benchmark.md) has the measured numbers and the spelling that
+  guarantees it.
 - **`switch`/`case` dispatch on strings** — `key` converts implicitly to an
   integer, making it usable as a case label.
 - **STL container integration** — `std::hash<key<Hasher>>` is specialised.
@@ -265,9 +269,12 @@ is deduced from `Hasher::result_type`.
 ### Construction
 
 ```cpp
-constexpr key<> a{"hello"};              // string literal (includes '\0')
-constexpr key<> b{std::string_view{"hello"}};  // 5 bytes, no '\0'
-// a != b  — different byte sequences
+constexpr key<> a{"hello"};                    // 5 bytes: the terminator is not text
+constexpr key<> b{std::string_view{"hello"}};  // 5 bytes
+static_assert(a == b);                         // one text, one hash value
+
+constexpr std::uint8_t data[4]{1, 2, 3, 0};
+constexpr key<> c{data};                       // 4 bytes: a zero byte is data
 ```
 
 ### `switch`/`case` Dispatch

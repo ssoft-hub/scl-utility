@@ -177,6 +177,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Breaking.** The hash entry point taking a bounded array is `consteval`: a string
+  literal, or an array declared with its contents, hashes at translation time or the
+  program is ill-formed. `scl::hash::key` gains the matching constructor. Without it,
+  whether a literal is folded to a value is the optimiser's choice, and the three
+  supported compilers do not agree - GCC folds all five algorithms at `-O2`, Clang folds
+  every one but SipHash, and MSVC folds none, leaving 40 to 75 ns of loop on every call.
+
+  A sequence whose contents are known only at run time is now spelled as a view:
+  `std::string_view` for a character element, `std::span` for any other. Neither changes
+  the hash value - `std::string_view` stops at the same trailing zero the array form drops,
+  and the terminator rule never applied to a non-character element, so a `std::span` over
+  one covers exactly the bytes the array form covered. `std::array` is a container rather
+  than a bounded array and is unaffected.
+
+  A raw array filled at run time no longer compiles, and no compiler's wording points at
+  the fix - GCC reports a value not usable in a constant expression, Clang a call to a
+  consteval function that is not one, MSVC `C7595`. The fix is always to spell the view.
+
 - Where a template parameter is classified by one of the `scl::concepts` concepts, the
   classification appears in the template parameter list rather than in a trailing
   `requires` clause: every `scl::any_cast` form declared in
@@ -193,11 +211,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   unscoped enumeration `A | B` is an `int` by integral promotion and there is no
   constructor from one, so the set is spelled `flags{A, B}` there - a compile error rather
   than a silent difference. Code that compiled before compiles unchanged.
-
-- Dropping the result of a hash is a diagnostic. `[[nodiscard]]` covers the whole public
-  surface of `hash/` - the five hash functions, every hasher `operator()`, `key`'s conversion
-  and its comparison, and the `std::hash` specialisation. None of them has an effect other
-  than its return value, so a discarded call was always a mistake and nothing said so.
 
 - Dropping the result of a hash, a name lookup or a member-pointer cast is a diagnostic.
   `[[nodiscard]]` covers the whole public surface of `hash/` - the five hash functions, every

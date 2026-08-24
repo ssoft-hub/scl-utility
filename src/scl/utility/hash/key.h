@@ -10,6 +10,7 @@
 #include <scl/utility/hash/siphash.h>
 
 #include <concepts>
+#include <cstddef>
 #include <functional>
 #include <type_traits>
 #include <utility>
@@ -104,6 +105,13 @@ namespace scl::hash
             : value{Hasher{}(range)}
         {}
 
+        // NOLINTBEGIN(*-avoid-c-arrays): a bounded array is what a literal is
+        template <::scl::hash::concepts::byte_element Element, ::std::size_t Size>
+        explicit consteval key(Element const (&data)[Size]) noexcept
+            : value{Hasher{}(data)}
+        {}
+        // NOLINTEND(*-avoid-c-arrays)
+
         [[nodiscard]]
         constexpr operator value_type() const noexcept
         {
@@ -148,6 +156,21 @@ struct std::hash<::scl::hash::key<Hasher>>
 /**
  * @var scl::hash::key::value
  * @brief The hash value itself.
+ */
+
+/**
+ * @fn scl::hash::key::key(Element const (&data)[Size])
+ * @brief Constructs the hash value from a bounded array at translation time.
+ *
+ * A bounded array is content the translation already holds, so the key built from one is
+ * a constant or the program is ill-formed. A sequence known only at run time is spelled
+ * as a view, which selects the constructor below; neither spelling changes the value.
+ *
+ * @tparam Element  Element type, one byte wide.
+ * @tparam Size     Number of elements the array holds.
+ * @param  data     Array to hash. A trailing zero in an array of `char` or `char8_t` is a
+ *                  string terminator and is not hashed; in an array of any other element
+ *                  type it is a byte of data and is.
  */
 
 /**

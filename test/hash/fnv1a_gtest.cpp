@@ -2,8 +2,11 @@
 
 #include <scl/utility/hash/fnv1a.h>
 
+#include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -125,4 +128,22 @@ TEST(Fnv1aTest, ByteArrayKeepsTrailingZero)
 TEST(Fnv1aTest, HasherMatchesFreeFunction)
 {
     STATIC_EXPECT_EQ(fnv1a_hasher{}("hello"), fnv1a("hello"));
+}
+
+/**
+ * @test A sequence filled at run time is spelled as a view, and hashes to the value the
+ *       array spelling of the same bytes gives.
+ */
+TEST(Fnv1aTest, RunTimeViewMatchesArraySpelling)
+{
+    char text[8]{};
+    ::std::ranges::copy(::std::string_view{"hello"}, text);
+    EXPECT_EQ(fnv1a(::std::string_view{text, 5}), fnv1a("hello"));
+
+    ::std::uint8_t data[4]{};
+    for (auto index = ::std::size_t{0}; index < 4; ++index)
+        data[index] = static_cast<::std::uint8_t>(index);
+
+    static constexpr ::std::uint8_t expected[4]{0, 1, 2, 3};
+    EXPECT_EQ(fnv1a(::std::span{data}), fnv1a(expected));
 }

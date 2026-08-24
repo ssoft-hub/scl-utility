@@ -7,6 +7,7 @@
 #include <scl/utility/hash/sdbm.h>
 #include <scl/utility/hash/siphash.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -329,4 +330,20 @@ TEST(KeyCrossAlgorithmTest, AllHashersDistinct)
     STATIC_EXPECT_NE(h_djb, h_sdb);
     STATIC_EXPECT_NE(h_djb, h_sip);
     STATIC_EXPECT_NE(h_sdb, h_sip);
+}
+
+/**
+ * @test A key built from a sequence filled at run time holds the value the array
+ *       spelling of the same bytes gives.
+ */
+TEST(KeyDefaultTest, RunTimeViewMatchesArraySpelling)
+{
+    char text[8]{};
+    ::std::ranges::copy(::std::string_view{"start"}, text);
+    auto const from_view = key<>{
+        ::std::string_view{text, 5}
+    };
+    auto const from_array = key<>{"start"};
+
+    EXPECT_EQ(from_view, from_array);
 }
