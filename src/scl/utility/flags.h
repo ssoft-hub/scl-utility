@@ -6,6 +6,7 @@
  * @ingroup scl_utility_flags
  */
 
+#include <scl/utility/attribute/inline.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/preprocessor/exceptions.h>
 
@@ -296,7 +297,7 @@ namespace scl
         // Padding above `bit_count` is masked off here, so a scan over whole bytes cannot
         // report a position outside the mask even if a padding bit were ever set.
         [[nodiscard]]
-        constexpr ::std::uint8_t bits_at(::std::size_t index) const noexcept
+        SCL_FORCE_INLINE constexpr ::std::uint8_t bits_at(::std::size_t index) const noexcept
         {
             auto const bits = ::std::to_integer<::std::uint8_t>(m_bits[index]);
             if constexpr (bit_count % 8 != 0)
@@ -308,7 +309,7 @@ namespace scl
         }
 
         [[nodiscard]]
-        constexpr ::std::size_t next_set(::std::size_t from) const noexcept
+        SCL_FORCE_INLINE constexpr ::std::size_t next_set(::std::size_t from) const noexcept
         {
             if (from >= bit_count)
                 return bit_count;
@@ -317,7 +318,7 @@ namespace scl
             auto bits = static_cast<::std::uint8_t>(bits_at(index) & (0xFFu << (from % 8)));
             while (bits == 0)
             {
-                if (++index == byte_count)
+                if (++index == byte_count) [[unlikely]]
                     return bit_count;
                 bits = bits_at(index);
             }
@@ -325,7 +326,7 @@ namespace scl
         }
 
         [[nodiscard]]
-        constexpr ::std::size_t prev_set(::std::size_t before) const noexcept
+        SCL_FORCE_INLINE constexpr ::std::size_t prev_set(::std::size_t before) const noexcept
         {
             while (before > 0)
             {
@@ -333,7 +334,7 @@ namespace scl
                 auto const index = position / 8;
                 auto const bits = static_cast<::std::uint8_t>(bits_at(index) &
                     (0xFFu >> (7 - (position % 8))));
-                if (bits != 0)
+                if (bits != 0) [[likely]]
                     return (index * 8) + 7 - static_cast<::std::size_t>(::std::countl_zero(bits));
                 before = index * 8;
             }
@@ -360,33 +361,33 @@ namespace scl
         constexpr const_iterator() noexcept = default;
 
         [[nodiscard]]
-        constexpr Enum operator*() const
+        SCL_FORCE_INLINE constexpr Enum operator*() const
         {
             return static_cast<Enum>(m_position);
         }
 
-        constexpr const_iterator & operator++() noexcept
+        SCL_FORCE_INLINE constexpr const_iterator & operator++() noexcept
         {
             m_position = m_owner->next_set(m_position + 1);
             return *this;
         }
 
         [[nodiscard]]
-        constexpr const_iterator operator++(int) noexcept
+        SCL_FORCE_INLINE constexpr const_iterator operator++(int) noexcept
         {
             auto copy = *this;
             ++*this;
             return copy;
         }
 
-        constexpr const_iterator & operator--() noexcept
+        SCL_FORCE_INLINE constexpr const_iterator & operator--() noexcept
         {
             m_position = m_owner->prev_set(m_position);
             return *this;
         }
 
         [[nodiscard]]
-        constexpr const_iterator operator--(int) noexcept
+        SCL_FORCE_INLINE constexpr const_iterator operator--(int) noexcept
         {
             auto copy = *this;
             --*this;
@@ -394,13 +395,13 @@ namespace scl
         }
 
         [[nodiscard]]
-        constexpr bool operator==(const_iterator const & other) const noexcept
+        SCL_FORCE_INLINE constexpr bool operator==(const_iterator const & other) const noexcept
         {
             return m_position == other.m_position;
         }
 
     private:
-        constexpr const_iterator(flags const * owner, ::std::size_t position) noexcept
+        SCL_FORCE_INLINE constexpr const_iterator(flags const * owner, ::std::size_t position) noexcept
             : m_owner{owner}
             , m_position{position}
         {}

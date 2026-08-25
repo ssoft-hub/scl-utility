@@ -196,6 +196,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The ten members `scl::flags` iteration goes through carry `SCL_FORCE_INLINE`, and the two
+  branches inside `next_set` and `prev_set` carry `[[unlikely]]` and `[[likely]]`. MSVC 19.44
+  emits a call to `next_set` at `/O2` and iteration pays for it: over four paired rounds
+  against a null channel whose p90 sits under 0.7%, forward iteration gains 10 to 16 per cent
+  and reverse iteration 32 to 57 - a 32-bit mask walks backwards in 38.7 ns where it took
+  91.0. The hints are what GCC 13.1.0 gains from, 5 to 12 per cent on reverse iteration;
+  Clang 22.1.8 pays 3 per cent for them on one case and is unmoved otherwise. `.text` on
+  `arm-none-eabi-g++` grows from 1044 to 1136 bytes in a translation unit that walks two
+  widths. Annotating the whole class rather than the walk costs 202 bytes and buys nothing
+  further. `doc/md/en/flags/benchmark.md` carries the full matrix, including the four
+  annotations that were measured and left out.
 - The block boundary inside SipHash carries a `[[unlikely]]` branch hint. One iteration in
   eight completes an eight-byte block, so the annotation states what the loop already does;
   what it buys is code layout rather than prediction accuracy. Measured over four paired

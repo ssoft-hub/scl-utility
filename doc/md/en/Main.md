@@ -130,6 +130,10 @@ costs in code size, and which compiler folds the hash of a literal - are collect
 |-----------|--------|-------------|
 | [flags](flags/flags.md) | `<scl/utility/flags.h>` | Set of enumeration values: set algebra, set predicates, and a bidirectional range over the values held |
 
+Measured numbers for this group - what an annotation is worth on the walk, what it costs
+in code size, and where the control says a difference belongs to code layout instead - are
+collected in [Flags Benchmarks](flags/benchmark.md).
+
 ### Preprocessor — macro utilities
 
 | Component | Header | Description |
