@@ -577,6 +577,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   assumed. `flags_size.cpp` gives each operation a wrapper of
   its own, at both widths, so `-ffunction-sections` puts every one in a section that can be
   read separately.
+- The third measured group is `hierarchy`: `benchmark/hierarchy/` builds a tree eight children
+  wide and four levels deep, then times the walk over one level and over the whole tree, the
+  ancestor and sibling queries at one step and at full depth, and an insertion. The tree is
+  that shape so a walk costs more than the call reaching it and the ancestor query has
+  something to climb. `tree_gbench.cpp` repeats the walk and the insertion through
+  `scl::hierarchy::tree`, whose mutations also notify an observer, so the wrapper is measured
+  rather than assumed to cost what the node costs. `hierarchy_size.cpp` gives each operation a
+  wrapper of its own for `-ffunction-sections`.
 - A second benchmark `<tool>` token, `size`: a `benchmark/<group>/*_size.cpp` source builds
   into `utility_<group>_size`, a static library whose sources are compiled to be measured and
   are never linked or run. That is what lets them build for a bare-metal cross compiler, so a
