@@ -603,6 +603,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `scl::hierarchy::tree`, whose mutations also notify an observer, so the wrapper is measured
   rather than assumed to cost what the node costs. `hierarchy_size.cpp` gives each operation a
   wrapper of its own for `-ffunction-sections`.
+- The fourth measured group is `any`: `benchmark/any/` times `any_cast` through each of the
+  three handles at every outcome of the branch chain inside it - a hit, a miss, an empty handle
+  and a value boxed in a `std::any` - the switch chain at its first branch, its last and its
+  fallback, and assignment into an `scl::any` where the self-assignment guard answers no and
+  where it answers yes. This group is the one that already carried annotations, so the cases
+  exist to check them rather than to propose new ones: every branch a hint marks has a case on
+  each side of it. `any_size.cpp` gives each cast a wrapper of its own for
+  `-ffunction-sections`.
 - A second benchmark `<tool>` token, `size`: a `benchmark/<group>/*_size.cpp` source builds
   into `utility_<group>_size`, a static library whose sources are compiled to be measured and
   are never linked or run. That is what lets them build for a bare-metal cross compiler, so a
