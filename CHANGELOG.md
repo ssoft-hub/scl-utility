@@ -196,6 +196,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The range interface of `scl::hierarchy::node` and of `scl::hierarchy::tree`, and the members
+  of the proxy a tree iterator hands out, carry `SCL_FORCE_INLINE`. A tree reaches the node
+  through that proxy, and GCC 13.1.0 leaves the members a call there: annotating both sides of
+  the boundary takes a walk over a tree's children from 2.55 ns to 1.85, which is what the same
+  walk costs over a bare node. That is the only case that moved - Clang 22.1.8 and MSVC 19.44
+  read noise on every case of every variant, and so does GCC on all but this one. `.text` on
+  `arm-none-eabi-g++` is unchanged at 422 bytes, under this and under every variant measured.
+  `doc/md/en/hierarchy/benchmark.md` carries the full matrix, including `SCL_HOT` and the
+  branch hints on the ancestor climb, which are measured and not applied, and the one variant
+  that does not compile on GCC at all.
 - The ten members `scl::flags` iteration goes through carry `SCL_FORCE_INLINE`, and the two
   branches inside `next_set` and `prev_set` carry `[[unlikely]]` and `[[likely]]`. MSVC 19.44
   emits a call to `next_set` at `/O2` and iteration pays for it: over four paired rounds
@@ -566,6 +576,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   sites shows up instead of staying resident in L1 the way a single-site loop keeps it. And
   the accumulated `fnv1a` cases keep the result in a register across iterations rather than
   passing it through a barrier each time, which measures the hash instead of the barrier.
+- The third measured group is `hierarchy`: `benchmark/hierarchy/` builds a tree eight children
+  wide and four levels deep, then times the walk over one level and over the whole tree, the
+  ancestor and sibling queries at one step and at full depth, and an insertion. The tree is that
+  shape so a walk costs more than the call reaching it and the ancestor query has something to
+  climb. `tree_gbench.cpp` repeats the walk and the insertion through `scl::hierarchy::tree`,
+  whose mutations also notify an observer, so the wrapper is measured rather than assumed to cost
+  what the node costs. `hierarchy_size.cpp` gives each operation a wrapper of its own for
+  `-ffunction-sections`.
 - The second measured group is `flags`: `benchmark/flags/` times construction, the set
   algebra, the predicates, `size()`, indexing and iteration in both directions, over a mask
   with every fourth bit set, at 32 bits and again at 256. Two widths rather than one because

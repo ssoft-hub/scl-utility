@@ -6,6 +6,7 @@
  * @ingroup scl_utility_hierarchy
  */
 
+#include <scl/utility/attribute/inline.h>
 #include <scl/utility/hierarchy/algorithm.h>
 
 #include <algorithm>
@@ -279,73 +280,73 @@ namespace scl::hierarchy
         }
 
         [[nodiscard]]
-        constexpr iterator begin() noexcept
+        SCL_FORCE_INLINE constexpr iterator begin() noexcept
         {
             return m_nodes.begin();
         }
 
         [[nodiscard]]
-        constexpr iterator end() noexcept
+        SCL_FORCE_INLINE constexpr iterator end() noexcept
         {
             return m_nodes.end();
         }
 
         [[nodiscard]]
-        constexpr const_iterator begin() const noexcept
+        SCL_FORCE_INLINE constexpr const_iterator begin() const noexcept
         {
             return m_nodes.begin();
         }
 
         [[nodiscard]]
-        constexpr const_iterator end() const noexcept
+        SCL_FORCE_INLINE constexpr const_iterator end() const noexcept
         {
             return m_nodes.end();
         }
 
         [[nodiscard]]
-        constexpr const_iterator cbegin() const noexcept
+        SCL_FORCE_INLINE constexpr const_iterator cbegin() const noexcept
         {
             return m_nodes.cbegin();
         }
 
         [[nodiscard]]
-        constexpr const_iterator cend() const noexcept
+        SCL_FORCE_INLINE constexpr const_iterator cend() const noexcept
         {
             return m_nodes.cend();
         }
 
         [[nodiscard]]
-        constexpr reverse_iterator rbegin() noexcept
+        SCL_FORCE_INLINE constexpr reverse_iterator rbegin() noexcept
         {
             return m_nodes.rbegin();
         }
 
         [[nodiscard]]
-        constexpr reverse_iterator rend() noexcept
+        SCL_FORCE_INLINE constexpr reverse_iterator rend() noexcept
         {
             return m_nodes.rend();
         }
 
         [[nodiscard]]
-        constexpr const_reverse_iterator rbegin() const noexcept
+        SCL_FORCE_INLINE constexpr const_reverse_iterator rbegin() const noexcept
         {
             return m_nodes.rbegin();
         }
 
         [[nodiscard]]
-        constexpr const_reverse_iterator rend() const noexcept
+        SCL_FORCE_INLINE constexpr const_reverse_iterator rend() const noexcept
         {
             return m_nodes.rend();
         }
 
         [[nodiscard]]
-        constexpr const_reverse_iterator crbegin() const noexcept
+        SCL_FORCE_INLINE constexpr const_reverse_iterator crbegin() const noexcept
         {
             return m_nodes.crbegin();
         }
 
         [[nodiscard]]
-        constexpr const_reverse_iterator crend() const noexcept
+        SCL_FORCE_INLINE constexpr const_reverse_iterator crend() const noexcept
         {
             return m_nodes.crend();
         }

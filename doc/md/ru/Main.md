@@ -98,6 +98,10 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [observer_tuple](hierarchy/observer_tuple.md) | `<scl/utility/hierarchy/observer_tuple.h>` | Адаптер, объединяющий несколько наблюдателей в одного |
 | [algorithm](hierarchy/algorithm.md) | `<scl/utility/hierarchy/algorithm.h>` | `is_parent_of`, `is_ancestor_of`, `are_sibling` и другие; адаптируются через ADL |
 
+Измеренные числа по этой группе - чего стоит атрибут на обходе и на подъёме по родителям и
+почему он ничего не стоит по размеру кода - собраны в
+[Замерах hierarchy](hierarchy/benchmark.md).
+
 ### Meta — рефлексия на этапе компиляции
 
 | Компонент | Заголовок | Описание |

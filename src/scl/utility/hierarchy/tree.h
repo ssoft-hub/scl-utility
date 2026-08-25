@@ -6,6 +6,7 @@
  * @ingroup scl_utility_hierarchy
  */
 
+#include <scl/utility/attribute/inline.h>
 #include <scl/utility/hierarchy/algorithm.h>
 #include <scl/utility/hierarchy/node.h>
 
@@ -100,7 +101,10 @@ namespace scl::hierarchy
                 : m_value{::std::forward<Arguments>(arguments)...}
             {}
 
-            constexpr auto * operator->() && noexcept { return ::std::addressof(m_value); }
+            SCL_FORCE_INLINE constexpr auto * operator->() && noexcept
+            {
+                return ::std::addressof(m_value);
+            }
         };
 
     public:
@@ -136,7 +140,7 @@ namespace scl::hierarchy
             constexpr iterator() = default;
 
             [[nodiscard]]
-            constexpr bool operator==(iterator const & other) const noexcept
+            SCL_FORCE_INLINE constexpr bool operator==(iterator const & other) const noexcept
             {
                 assert(m_tree == nullptr || other.m_tree == nullptr || m_tree == other.m_tree);
                 return m_node_iter == other.m_node_iter;
@@ -149,15 +153,30 @@ namespace scl::hierarchy
                 return m_node_iter != other.m_node_iter;
             }
 
-            constexpr iterator & operator++() noexcept { return ++m_node_iter, *this; }
-            constexpr iterator & operator--() noexcept { return --m_node_iter, *this; }
-            // cppcheck-suppress postfixOperator
-            constexpr iterator operator++(int) noexcept { return {m_tree, m_node_iter++}; }
-            // cppcheck-suppress postfixOperator
-            constexpr iterator operator--(int) noexcept { return {m_tree, m_node_iter--}; }
+            SCL_FORCE_INLINE constexpr iterator & operator++() noexcept
+            {
+                return ++m_node_iter, *this;
+            }
+            SCL_FORCE_INLINE constexpr iterator & operator--() noexcept
+            {
+                return --m_node_iter, *this;
+            }
+            SCL_FORCE_INLINE constexpr iterator operator++(int) noexcept
+            {
+                // cppcheck-suppress postfixOperator
+                return {m_tree, m_node_iter++};
+            }
+            SCL_FORCE_INLINE constexpr iterator operator--(int) noexcept
+            {
+                // cppcheck-suppress postfixOperator
+                return {m_tree, m_node_iter--};
+            }
 
-            constexpr reference operator*() const noexcept { return {*m_tree, *m_node_iter}; }
-            constexpr auto operator->() const noexcept
+            SCL_FORCE_INLINE constexpr reference operator*() const noexcept
+            {
+                return {*m_tree, *m_node_iter};
+            }
+            SCL_FORCE_INLINE constexpr auto operator->() const noexcept
             {
                 return arrow_wrapper<reference>{*m_tree, *m_node_iter};
             }
@@ -212,7 +231,7 @@ namespace scl::hierarchy
             }
 
             [[nodiscard]]
-            constexpr bool operator==(const_iterator const & other) const noexcept
+            SCL_FORCE_INLINE constexpr bool operator==(const_iterator const & other) const noexcept
             {
                 assert(m_tree == nullptr || other.m_tree == nullptr || m_tree == other.m_tree);
                 return m_node_iter == other.m_node_iter;
@@ -225,16 +244,31 @@ namespace scl::hierarchy
                 return m_node_iter != other.m_node_iter;
             }
 
-            constexpr const_iterator & operator++() noexcept { return ++m_node_iter, *this; }
-            constexpr const_iterator & operator--() noexcept { return --m_node_iter, *this; }
+            SCL_FORCE_INLINE constexpr const_iterator & operator++() noexcept
+            {
+                return ++m_node_iter, *this;
+            }
+            SCL_FORCE_INLINE constexpr const_iterator & operator--() noexcept
+            {
+                return --m_node_iter, *this;
+            }
 
-            // cppcheck-suppress postfixOperator
-            constexpr const_iterator operator++(int) noexcept { return {m_tree, m_node_iter++}; }
-            // cppcheck-suppress postfixOperator
-            constexpr const_iterator operator--(int) noexcept { return {m_tree, m_node_iter--}; }
+            SCL_FORCE_INLINE constexpr const_iterator operator++(int) noexcept
+            {
+                // cppcheck-suppress postfixOperator
+                return {m_tree, m_node_iter++};
+            }
+            SCL_FORCE_INLINE constexpr const_iterator operator--(int) noexcept
+            {
+                // cppcheck-suppress postfixOperator
+                return {m_tree, m_node_iter--};
+            }
 
-            constexpr const_reference operator*() const noexcept { return {*m_tree, *m_node_iter}; }
-            constexpr auto operator->() const noexcept
+            SCL_FORCE_INLINE constexpr const_reference operator*() const noexcept
+            {
+                return {*m_tree, *m_node_iter};
+            }
+            SCL_FORCE_INLINE constexpr auto operator->() const noexcept
             {
                 return arrow_wrapper<const_reference>{*m_tree, *m_node_iter};
             }
@@ -357,7 +391,7 @@ namespace scl::hierarchy
             }
 
             [[nodiscard]]
-            constexpr bool operator==(const_reference other) const noexcept;
+            SCL_FORCE_INLINE constexpr bool operator==(const_reference other) const noexcept;
 
             [[nodiscard]]
             constexpr bool operator!=(const_reference other) const noexcept
@@ -546,73 +580,73 @@ namespace scl::hierarchy
             // Standard begin/end/cbegin/cend and reverse variants over direct children.
 
             [[nodiscard]]
-            constexpr iterator begin() noexcept
+            SCL_FORCE_INLINE constexpr iterator begin() noexcept
             {
                 return {::std::addressof(m_tree), m_node.begin()};
             }
 
             [[nodiscard]]
-            constexpr const_iterator begin() const noexcept
+            SCL_FORCE_INLINE constexpr const_iterator begin() const noexcept
             {
                 return cbegin();
             }
 
             [[nodiscard]]
-            constexpr const_iterator cbegin() const noexcept
+            SCL_FORCE_INLINE constexpr const_iterator cbegin() const noexcept
             {
                 return {::std::addressof(m_tree), m_node.cbegin()};
             }
 
             [[nodiscard]]
-            constexpr iterator end() noexcept
+            SCL_FORCE_INLINE constexpr iterator end() noexcept
             {
                 return {::std::addressof(m_tree), m_node.end()};
             }
 
             [[nodiscard]]
-            constexpr const_iterator end() const noexcept
+            SCL_FORCE_INLINE constexpr const_iterator end() const noexcept
             {
                 return cend();
             }
 
             [[nodiscard]]
-            constexpr const_iterator cend() const noexcept
+            SCL_FORCE_INLINE constexpr const_iterator cend() const noexcept
             {
                 return {::std::addressof(m_tree), m_node.cend()};
             }
 
             [[nodiscard]]
-            constexpr reverse_iterator rbegin() noexcept
+            SCL_FORCE_INLINE constexpr reverse_iterator rbegin() noexcept
             {
                 return reverse_iterator{end()};
             }
 
             [[nodiscard]]
-            constexpr reverse_iterator rend() noexcept
+            SCL_FORCE_INLINE constexpr reverse_iterator rend() noexcept
             {
                 return reverse_iterator{begin()};
             }
 
             [[nodiscard]]
-            constexpr const_reverse_iterator rbegin() const noexcept
+            SCL_FORCE_INLINE constexpr const_reverse_iterator rbegin() const noexcept
             {
                 return const_reverse_iterator{cend()};
             }
 
             [[nodiscard]]
-            constexpr const_reverse_iterator rend() const noexcept
+            SCL_FORCE_INLINE constexpr const_reverse_iterator rend() const noexcept
             {
                 return const_reverse_iterator{cbegin()};
             }
 
             [[nodiscard]]
-            constexpr const_reverse_iterator crbegin() const noexcept
+            SCL_FORCE_INLINE constexpr const_reverse_iterator crbegin() const noexcept
             {
                 return const_reverse_iterator{cend()};
             }
 
             [[nodiscard]]
-            constexpr const_reverse_iterator crend() const noexcept
+            SCL_FORCE_INLINE constexpr const_reverse_iterator crend() const noexcept
             {
                 return const_reverse_iterator{cbegin()};
             }
@@ -682,7 +716,7 @@ namespace scl::hierarchy
             }
 
             [[nodiscard]]
-            constexpr bool operator==(const_reference other) const noexcept
+            SCL_FORCE_INLINE constexpr bool operator==(const_reference other) const noexcept
             {
                 return ::scl::hierarchy::are_identical(m_node, other.m_node);
             }
@@ -726,49 +760,49 @@ namespace scl::hierarchy
             // Standard begin/end/cbegin/cend and reverse variants over direct children.
 
             [[nodiscard]]
-            constexpr const_iterator begin() const noexcept
+            SCL_FORCE_INLINE constexpr const_iterator begin() const noexcept
             {
                 return cbegin();
             }
 
             [[nodiscard]]
-            constexpr const_iterator cbegin() const noexcept
+            SCL_FORCE_INLINE constexpr const_iterator cbegin() const noexcept
             {
                 return {::std::addressof(m_tree), m_node.cbegin()};
             }
 
             [[nodiscard]]
-            constexpr const_iterator end() const noexcept
+            SCL_FORCE_INLINE constexpr const_iterator end() const noexcept
             {
                 return cend();
             }
 
             [[nodiscard]]
-            constexpr const_iterator cend() const noexcept
+            SCL_FORCE_INLINE constexpr const_iterator cend() const noexcept
             {
                 return {::std::addressof(m_tree), m_node.cend()};
             }
 
             [[nodiscard]]
-            constexpr const_reverse_iterator rbegin() const noexcept
+            SCL_FORCE_INLINE constexpr const_reverse_iterator rbegin() const noexcept
             {
                 return const_reverse_iterator{cend()};
             }
 
             [[nodiscard]]
-            constexpr const_reverse_iterator rend() const noexcept
+            SCL_FORCE_INLINE constexpr const_reverse_iterator rend() const noexcept
             {
                 return const_reverse_iterator{cbegin()};
             }
 
             [[nodiscard]]
-            constexpr const_reverse_iterator crbegin() const noexcept
+            SCL_FORCE_INLINE constexpr const_reverse_iterator crbegin() const noexcept
             {
                 return const_reverse_iterator{cend()};
             }
 
             [[nodiscard]]
-            constexpr const_reverse_iterator crend() const noexcept
+            SCL_FORCE_INLINE constexpr const_reverse_iterator crend() const noexcept
             {
                 return const_reverse_iterator{cbegin()};
             }
@@ -983,73 +1017,73 @@ namespace scl::hierarchy
         // Standard begin/end/cbegin/cend and reverse variants over root nodes.
 
         [[nodiscard]]
-        constexpr iterator begin() noexcept
+        SCL_FORCE_INLINE constexpr iterator begin() noexcept
         {
             return {this, m_nodes.begin()};
         }
 
         [[nodiscard]]
-        constexpr const_iterator begin() const noexcept
+        SCL_FORCE_INLINE constexpr const_iterator begin() const noexcept
         {
             return cbegin();
         }
 
         [[nodiscard]]
-        constexpr const_iterator cbegin() const noexcept
+        SCL_FORCE_INLINE constexpr const_iterator cbegin() const noexcept
         {
             return {this, m_nodes.cbegin()};
         }
 
         [[nodiscard]]
-        constexpr iterator end() noexcept
+        SCL_FORCE_INLINE constexpr iterator end() noexcept
         {
             return {this, m_nodes.end()};
         }
 
         [[nodiscard]]
-        constexpr const_iterator end() const noexcept
+        SCL_FORCE_INLINE constexpr const_iterator end() const noexcept
         {
             return cend();
         }
 
         [[nodiscard]]
-        constexpr const_iterator cend() const noexcept
+        SCL_FORCE_INLINE constexpr const_iterator cend() const noexcept
         {
             return {this, m_nodes.cend()};
         }
 
         [[nodiscard]]
-        constexpr reverse_iterator rbegin() noexcept
+        SCL_FORCE_INLINE constexpr reverse_iterator rbegin() noexcept
         {
             return reverse_iterator{end()};
         }
 
         [[nodiscard]]
-        constexpr reverse_iterator rend() noexcept
+        SCL_FORCE_INLINE constexpr reverse_iterator rend() noexcept
         {
             return reverse_iterator{begin()};
         }
 
         [[nodiscard]]
-        constexpr const_reverse_iterator rbegin() const noexcept
+        SCL_FORCE_INLINE constexpr const_reverse_iterator rbegin() const noexcept
         {
             return const_reverse_iterator{cend()};
         }
 
         [[nodiscard]]
-        constexpr const_reverse_iterator rend() const noexcept
+        SCL_FORCE_INLINE constexpr const_reverse_iterator rend() const noexcept
         {
             return const_reverse_iterator{cbegin()};
         }
 
         [[nodiscard]]
-        constexpr const_reverse_iterator crbegin() const noexcept
+        SCL_FORCE_INLINE constexpr const_reverse_iterator crbegin() const noexcept
         {
             return const_reverse_iterator{cend()};
         }
 
         [[nodiscard]]
-        constexpr const_reverse_iterator crend() const noexcept
+        SCL_FORCE_INLINE constexpr const_reverse_iterator crend() const noexcept
         {
             return const_reverse_iterator{cbegin()};
         }
@@ -1093,7 +1127,7 @@ namespace scl::hierarchy
 
     // Out-of-line definition for reference::operator== (needs const_reference complete)
     template <typename Payload, template <typename> typename Observer, template <typename> typename Allocator>
-    constexpr bool tree<Payload, Observer, Allocator>::reference::operator==(/**/
+    SCL_FORCE_INLINE constexpr bool tree<Payload, Observer, Allocator>::reference::operator==(/**/
         const_reference other) const noexcept
     {
         return ::scl::hierarchy::are_identical(m_node, other.m_node);

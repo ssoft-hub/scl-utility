@@ -97,6 +97,10 @@ Then include the umbrella header or individual component headers:
 | [observer_tuple](hierarchy/observer_tuple.md) | `<scl/utility/hierarchy/observer_tuple.h>` | Fan-out adapter composing several observers into one |
 | [algorithm](hierarchy/algorithm.md) | `<scl/utility/hierarchy/algorithm.h>` | `is_parent_of`, `is_ancestor_of`, `are_sibling` and friends, adaptable through ADL |
 
+Measured numbers for this group - what an annotation is worth on the walk and on the
+climb, and why it costs nothing in code size - are collected in
+[Hierarchy Benchmarks](hierarchy/benchmark.md).
+
 ### Meta — compile-time reflection
 
 | Component | Header | Description |
