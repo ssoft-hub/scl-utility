@@ -10,8 +10,7 @@
 
 namespace scl
 {
-    // Never std::bad_any_cast under RTTI: a base type that depends on SCL_HAS_RTTI
-    // is an ODR trap for a binary linking RTTI and -fno-rtti translation units.
+    // A base depending on SCL_HAS_RTTI is an ODR trap across mixed RTTI translation units.
     struct bad_any_cast : ::std::bad_cast
     {};
 } // namespace scl

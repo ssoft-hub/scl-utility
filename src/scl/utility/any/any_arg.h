@@ -43,8 +43,7 @@ namespace scl
         using base_type = detail::any_base;
 
     public:
-        // Passing an argument on binds another reference, so the only use left for a copy
-        // is storing one, which the contract forbids.
+        // Passing an argument on binds another reference; a copy would only be for storing it.
         any_argument() = delete;
         any_argument(any_argument const &) = delete;
         any_argument(any_argument &&) = delete;
@@ -53,8 +52,7 @@ namespace scl
         constexpr ~any_argument() = default;
 
 #if SCL_HAS_RTTI || defined(DOXYGEN)
-        // std::any has no volatile-qualified members, so a volatile std::any is excluded
-        // rather than bound as one nothing could later reach.
+        // A volatile std::any is excluded: nothing could later reach the object.
         template <typename Any>
         // cppcheck-suppress noExplicitConstructor
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
@@ -65,20 +63,19 @@ namespace scl
         {}
 #endif
 
-        // A view promises read access only, so the referent is adopted narrowed to it.
-        // Not lifetime-bound: what is adopted is the referent, so the view may die first.
+        // Not lifetime-bound: the referent is adopted, narrowed to reading, so the view may die.
         // cppcheck-suppress noExplicitConstructor
         constexpr any_argument(any_view const & view) noexcept // NOLINT(*-explicit-*): adopts the referent
             : base_type{view, view.const_descriptor()}
         {}
 
-        // The view promises the write, so its binding is adopted as it stands.
+        // The write survives because the binding is adopted as it stands.
         // cppcheck-suppress noExplicitConstructor
         constexpr any_argument(any_mutable_view const & view) noexcept // NOLINT(*-explicit-*)
             : base_type{view, view.descriptor()}
         {}
 
-        // Unwrapped to its content, bound with the constness of the any it was taken from.
+        // Unwrapped to its content, bound with the constness of the any it came from.
         template <typename AnyType>
         // cppcheck-suppress noExplicitConstructor
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): binds, never forwards
@@ -90,17 +87,14 @@ namespace scl
                       : owner.viewed_descriptor()}
         {}
 
-        // The anchor is what lets an argument that is not a parameter answer during
-        // constant evaluation: the default one below dies with the call that made it.
+        // The anchor below is what lets an argument outside a parameter answer at compile time.
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_argument(any_anchor<Type> const & bound SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
             : base_type{bound.bound_object(), bound.bound_descriptor()}
         {}
 
-        // Spelled once per branch rather than as one declaration with the anchor
-        // conditioned inside it: the parameter list is what differs, and a reader should
-        // see each form whole.
+        // Once per branch, not one declaration: the parameter list is what differs.
 #if SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
@@ -110,9 +104,7 @@ namespace scl
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>) &&
             (!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<Type>>) &&
             (!detail::is_any_anchor_v<::std::remove_cvref_t<Type>>)
-            // With the recovery constant-evaluable on its own, the binding is the plain one
-            // a view makes, and every restriction the anchor imposed on where an `any_arg`
-            // may sit goes with it.
+            // The recovery folds on its own here, so the anchor and its restrictions go.
             : base_type{::std::addressof(object), &detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
         {}
 #else
@@ -121,13 +113,9 @@ namespace scl
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
         constexpr any_argument(Type && object SCL_LIFETIMEBOUND
 #ifndef DOXYGEN
-            // The anchor is a caller's temporary, so it cannot be created inside this
-            // constructor; a default argument is what puts it in the caller's frame. It is
-            // an implementation detail of constant evaluation, never something to pass.
+            // A default argument is what puts the anchor in the caller's frame; never passed.
             ,
-            // Taken by rvalue reference and filled rather than moved from: bound to a const
-            // reference the temporary would be a const object, and writing through one is
-            // not a constant expression.
+            // Filled, not moved from: writing through a const temporary is no constant expression.
             // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
             detail::any_anchored_descriptor<::std::remove_cvref_t<Type>> && anchor = detail::any_anchored_descriptor<
                 ::std::remove_cvref_t<Type>>{detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
@@ -137,17 +125,13 @@ namespace scl
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>) &&
             (!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<Type>>) &&
             (!detail::is_any_anchor_v<::std::remove_cvref_t<Type>>)
-            // Only constant evaluation needs the anchor, and only constant evaluation takes
-            // it. The anchor dies with the full expression that made it, which spans the
-            // call it was made for and nothing beyond; at run time the descriptor is the
-            // static one, so an `any_arg` outside a parameter stays as valid as any other.
+            // The anchor dies with the full expression, which spans the call it was made for.
             : base_type{::std::addressof(object),
                   ::std::is_constant_evaluated()
                       ? static_cast<base_type::descriptor_type const *>(::std::addressof(anchor))
                       : &detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
         {
-            // The qualifiers dropped here are restored by any_cast, which hands out a
-            // pointer only once binding_accepts() has proved the request covers them.
+            // The qualifiers dropped here are restored by any_cast, once it proves them covered.
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): see above
             anchor.referent = const_cast<::std::remove_cvref_t<Type> *>(::std::addressof(object));
         }
@@ -167,8 +151,7 @@ namespace scl
             return any_view{*this, const_descriptor()};
         }
 
-        // An explicit object parameter in the base deduces this type, not the base, and
-        // private inheritance would otherwise refuse that conversion.
+        // An explicit object parameter deduces this type, which private inheritance refuses.
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
 
@@ -189,8 +172,7 @@ namespace scl
         if (::std::is_constant_evaluated())
             if (auto * const reached = detail::any_constant_referent<Type>(*arg))
                 return reached;
-        // Through the view, not object(): for the std::any backing the stored address is
-        // the box, and a cast must reach what is inside it.
+        // Through the view, not object(): a std::any backing stores the box, not what is inside.
         any_view const view = arg->as_view();
         auto const * reached = ::scl::any_cast<Type const>(&view);
         if (reached == nullptr)
@@ -199,8 +181,7 @@ namespace scl
     }
 
 #if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
-    // Constrained to the argument itself, not to any_base: a view converts to one
-    // implicitly, and admitting that conversion would hand it write access.
+    // Constrained to the argument, not any_base: a view converts and would gain the write.
     template <::scl::concepts::lvalue_reference Type, typename WriteArgument>
     [[nodiscard]]
     constexpr Type any_cast(WriteArgument & arg SCL_LIFETIMEBOUND)
@@ -213,11 +194,7 @@ namespace scl
         return *pointer;
     }
 
-    // The reading forms are spelled for an argument too, rather than left to the any_view
-    // conversion: before P2738 (C++26) that conversion drops the anchor, and with it the
-    // ability to answer during constant evaluation. Reading supplies the `const` itself,
-    // as the view does.
-    // Not lifetime-bound: the result is a copy, and it outlives the argument by design.
+    // Spelled for an argument too: before P2738 the view conversion drops the anchor.
     template <::scl::concepts::object_type Type, typename ValueArgument>
     [[nodiscard]]
     constexpr Type any_cast(ValueArgument & arg)
@@ -235,8 +212,7 @@ namespace scl
         requires(::std::same_as<::std::remove_cv_t<ReadArgument>, any_argument>) &&
         (::std::is_const_v<::std::remove_reference_t<Type>>)
     {
-        // remove_reference_t keeps the request's cv: T const volatile & must reach a
-        // volatile referent.
+        // remove_reference_t keeps the request's cv, so `T const volatile &` reaches a volatile one.
         auto const * pointer = any_cast<::std::remove_reference_t<Type>>(&arg);
         if (pointer == nullptr)
             throw bad_any_cast{};

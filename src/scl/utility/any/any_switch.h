@@ -16,20 +16,16 @@
 
 namespace scl::detail
 {
-    // A case selects the way any_cast does, so it is normalised to the request any_cast
-    // takes: a reference case asks for its referent as written, an object case asks to
-    // read. Two cases that normalise alike match alike, which is what makes a repeated
-    // case detectable.
+    // A case is normalised to the request any_cast takes, so two cases that normalise alike
+    // match alike - which is what makes a repeated case detectable.
     template <typename Case>
     using any_case_request_t =
         ::std::conditional_t<::std::is_reference_v<Case>, ::std::remove_reference_t<Case>, Case const>;
 
-    // An object case hands the handler a `const` reference and lets its parameter decide
-    // whether that becomes a copy; a reference case is passed as written.
+    // An object case is handed a `const` reference and its parameter decides on the copy.
     template <typename Case>
     using any_case_argument_t = ::std::conditional_t<::std::is_reference_v<Case>, Case, Case const &>;
 
-    // The case type of the fallback branch: it selects nothing, so it names no type.
     struct any_switch_fallback
     {};
 
@@ -37,7 +33,6 @@ namespace scl::detail
     struct any_switch_no_result
     {};
 
-    // The handler of a branch that matches and does nothing.
     struct any_switch_no_handler
     {};
 
@@ -49,8 +44,7 @@ namespace scl::detail
         Handler handler;
     };
 
-    // A case names something an object can be reached as, or the empty value. An rvalue
-    // reference is excluded for the reason a view excludes it: nothing here is movable-from.
+    // An rvalue reference is excluded for the reason a view excludes it: nothing is movable-from.
     template <typename Case>
     concept any_switch_case = ::std::is_void_v<Case> || ::std::is_object_v<Case> ||
         (::std::is_lvalue_reference_v<Case> && ::std::is_object_v<::std::remove_reference_t<Case>>);
@@ -59,20 +53,14 @@ namespace scl::detail
     inline constexpr bool any_switch_has_fallback_v =
         (::std::is_same_v<typename Branches::case_type, any_switch_fallback> || ...);
 
-    // One request covers another when it reaches every referent that one reaches. `accepts`
-    // lets a request reach a referent whose qualifiers its own cover, so a covering request
-    // is the same type carrying at least the qualifiers of the covered one: `T const`
-    // covers `T`, and `T` covers no request but itself.
+    // A covering request is the same type carrying at least the qualifiers of the covered one.
     template <typename Covering, typename Covered>
     inline constexpr bool any_request_covers_v =
         ::std::is_same_v<::std::remove_cv_t<Covering>, ::std::remove_cv_t<Covered>> &&
         (::std::is_const_v<Covering> || !::std::is_const_v<Covered>) &&
         (::std::is_volatile_v<Covering> || !::std::is_volatile_v<Covered>);
 
-    // Cases are compared as the requests they normalise to, so a case an earlier one
-    // already covers is rejected rather than kept as a branch that can never run. Order
-    // decides: `in_case<T &>` after `in_case<T const &>` is covered, while the same two
-    // the other way round each keep referents of their own.
+    // Order decides: `in_case<T &>` after `in_case<T const &>` is covered, not the other way.
     template <typename Case, typename... Branches>
     inline constexpr bool any_case_covered_v =
         (any_request_covers_v<any_case_request_t<typename Branches::case_type>, any_case_request_t<Case>> || ...);
@@ -89,14 +77,9 @@ namespace scl::detail
     inline constexpr bool any_case_shadowed_by_std_any_v = any_switch_has_std_any_case_v<Branches...> &&
         (!is_std_any_v<::std::remove_cvref_t<Case>>);
 
-    // Spelled as a function rather than a disjunction: the branches are ordered exactly as
-    // the chain runs them, so a handler is judged by the form that will actually be called.
-    // @p Handler is a reference type, so the same check answers for a `const` chain and for
-    // a chain holding a `mutable` handler.
-    // A branch produces the result, or the optional holding it. The second form is what
-    // lets one chain stand as a branch of another: a chain answers `optional<Result>`, and
-    // an empty answer means the branch ran and produced nothing, exactly as it reads.
-    // `Result` is tried first, so a chain over an optional `Result` keeps its meaning.
+    // A function, not a disjunction: branches are ordered as the chain runs them, so a handler
+    // is judged by the form that will be called. A branch may produce the result or the optional
+    // holding it, which is what lets one chain stand as a branch of another.
     template <typename Produced, typename Result>
     inline constexpr bool any_switch_produces_v = ::std::is_convertible_v<Produced, Result> ||
         ::std::is_convertible_v<Produced, ::std::optional<Result>>;
@@ -120,8 +103,7 @@ namespace scl::detail
             return any_switch_produces_v<Handler, Result>;
     }
 
-    // What a handler is offered follows from its case: the fallback sees the subject, an
-    // empty case has nothing to show, and every other case hands over what it reached.
+    // The fallback sees the subject, an empty case nothing, every other what it reached.
     template <typename Handler, typename Result, typename Case>
     consteval bool any_switch_branch_check() noexcept
     {
@@ -136,20 +118,17 @@ namespace scl::detail
     template <typename Handler, typename Result, typename Case>
     inline constexpr bool any_switch_branch_v = any_switch_branch_check<Handler, Result, Case>();
 
-    // A branch judged through the reference the chain will reach its handler by.
     template <typename Branch, typename Result, typename Handler = decltype(Branch::handler)>
     inline constexpr bool any_switch_branch_const_v =
         any_switch_branch_check<Handler const &, Result, typename Branch::case_type>();
 
-    // Selection itself never throws, so what apply may throw is what its branches may:
-    // the call, and storing what the call produced.
+    // Selection never throws, so apply throws only what a call and storing its result may.
     template <typename Handler, typename Result, typename... Argument>
     consteval bool any_switch_nothrow_check() noexcept
     {
         if constexpr (::std::is_same_v<::std::remove_cvref_t<Handler>, any_switch_no_handler>)
             return true;
-        // Spelled as a nested branch rather than a disjunction: `optional<void>` is
-        // ill-formed, so a `void` chain must not name it even in a condition it never takes.
+        // Nested, not a disjunction: `optional<void>` is ill-formed even in a condition never taken.
         else if constexpr (::std::is_void_v<Result>)
             if constexpr (::std::is_invocable_v<Handler, Argument...>)
                 return ::std::is_nothrow_invocable_v<Handler, Argument...>;
@@ -195,8 +174,7 @@ namespace scl
         using storage_type =
             ::std::conditional_t<::std::is_void_v<Result>, detail::any_switch_no_result, ::std::optional<Result>>;
 
-        // Handing the result back is part of what apply does, so a result whose move may
-        // throw makes apply throwing however quiet its branches are.
+        // Handing the result back is apply's, so a throwing move makes apply throwing.
         static constexpr bool nothrow_const_apply =
             (detail::any_switch_branch_nothrow_const_v<Branches, Result> && ...) &&
             ::std::is_nothrow_move_constructible_v<storage_type>;
@@ -205,8 +183,7 @@ namespace scl
             (detail::any_switch_branch_nothrow_mutable_v<Branches, Result> && ...) &&
             ::std::is_nothrow_move_constructible_v<storage_type>;
 
-        // A handler declared `mutable` is callable only through a non-`const` chain, so a
-        // chain holding one has no `const` apply rather than a broken one.
+        // A chain holding a `mutable` handler has no `const` apply rather than a broken one.
         static constexpr bool const_applicable = (detail::any_switch_branch_const_v<Branches, Result> && ...);
 
     public:
@@ -225,8 +202,7 @@ namespace scl
             return append<Case>(::std::forward<Handler>(handler));
         }
 
-        // A branch that matches and does nothing is a complete handler only where doing
-        // nothing produces the result, which is `Result = void`.
+        // Doing nothing is a complete handler only where it produces the result, so `Result = void`.
         template <typename Case>
         [[nodiscard]]
         constexpr auto in_case() const
@@ -268,9 +244,7 @@ namespace scl
                 return result;
         }
 
-        // Spelled out rather than left to a conversion: a chain is callable because that
-        // reads well where one is passed as a predicate or a transform, and it carries
-        // exactly what apply carries - the same overloads, the same noexcept.
+        // Spelled out, not left to a conversion: it carries exactly what apply carries.
         constexpr result_type operator()(any_arg subject) const noexcept(nothrow_const_apply)
             requires const_applicable
         {
@@ -302,8 +276,7 @@ namespace scl
                 ::std::tuple<branch>{branch{::std::forward<Handler>(handler)}})};
         }
 
-        // Branches is deduced as a `const` or non-`const` tuple, so the same walk serves
-        // both forms of apply and each reaches its handlers the way that form may.
+        // Deduced tuple constness lets one walk serve both forms of apply.
         template <typename BranchTuple, ::std::size_t... Index>
         static constexpr void select(/**/
             BranchTuple & branches,
@@ -322,8 +295,7 @@ namespace scl
             return (matches<Index>(subject) || ...);
         }
 
-        // Selection alone, with no handler in sight: this is what makes has_case answer
-        // without a side effect, and it is the same test apply performs.
+        // No handler in sight, which is what makes has_case answer without a side effect.
         template <::std::size_t Index>
         [[nodiscard]]
         constexpr bool matches(any_arg subject) const noexcept
@@ -347,8 +319,7 @@ namespace scl
 
             auto & handler = ::std::get<Index>(branches).handler;
 
-            // The fallback runs wherever the branches before it did not, and the subject is
-            // all it has to hand a handler.
+            // The fallback runs where the branches before it did not, and sees only the subject.
             if constexpr (::std::is_same_v<case_type, detail::any_switch_fallback>)
             {
                 dispatch(result, handler, subject);
@@ -373,9 +344,8 @@ namespace scl
             }
         }
 
-        // The argument-taking form is tried first: it is the more specific reading of a
-        // handler that accepts both, and the only one that can see the value at all. A
-        // handler that is not invocable at all is a value, which is the branch itself.
+        // The argument-taking form is tried first: it is the only one that sees the value. A handler
+        // invocable with nothing at all is a value, which is the branch itself.
         template <typename Handler, typename... Argument>
         static constexpr void
         dispatch(storage_type & result, Handler & handler, Argument &&... argument)

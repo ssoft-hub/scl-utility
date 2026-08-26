@@ -76,8 +76,7 @@ namespace scl
 
 namespace scl::detail
 {
-    // A handle bound to an anchor refers to what the anchor stands for, so the generic
-    // constructors exclude one.
+    // A handle bound to an anchor refers to what it stands for, so a constructor excludes one.
     template <typename Type>
     inline constexpr bool is_any_anchor_v = false;
 
@@ -95,8 +94,7 @@ namespace scl
         detail::any_anchored_descriptor<::std::remove_cv_t<Type>> m_anchor;
 
     public:
-        // The qualifiers dropped here are restored by any_cast, which hands out a pointer
-        // only once the descriptor has proved the request covers them.
+        // The qualifiers dropped here are restored by any_cast, once it proves them covered.
         constexpr explicit any_anchor(Type & object SCL_LIFETIMEBOUND) noexcept
             : m_anchor{detail::any_type_descriptor_of<Type &>,
                   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): see above
@@ -110,8 +108,7 @@ namespace scl
             return m_anchor.referent;
         }
 
-        // Run time takes the descriptor shared by every binding of this type, which is what
-        // keeps a handle comparable by address.
+        // Run time takes the shared descriptor, which keeps a handle comparable by address.
         [[nodiscard]]
         constexpr detail::any_type_descriptor const * bound_descriptor() const noexcept
         {

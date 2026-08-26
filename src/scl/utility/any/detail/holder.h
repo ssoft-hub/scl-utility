@@ -18,8 +18,7 @@
 
 namespace scl::detail
 {
-    // A buffer object is relocated by moving it, and a move that throws would leave the
-    // owner with neither the old object nor the new one - hence the demand for `move`.
+    // A buffer object is relocated by moving it, so a throwing move would leave neither object.
     [[nodiscard]]
     constexpr bool
     any_fits_in_buffer(any_type_descriptor const & descriptor, ::std::size_t capacity) noexcept
@@ -27,8 +26,7 @@ namespace scl::detail
         return descriptor.size <= capacity && descriptor.alignment <= alignof(void *) && descriptor.move != nullptr;
     }
 
-    // Typed rather than byte-sized: this is what aligns an over-aligned object and what
-    // makes the allocation a constant expression.
+    // Typed: this is what aligns an over-aligned object and folds the allocation.
     template <typename Type, typename Allocator>
     using any_holder_allocator = ::std::allocator_traits<Allocator>::template rebind_alloc<any_holder<Type>>;
 
@@ -67,7 +65,7 @@ namespace scl::detail
         traits::deallocate(holder_allocator, typed, 1);
     }
 
-    // Not constexpr, and cannot be: raw bytes hold no object during constant evaluation.
+    // Cannot be constexpr: raw bytes hold no object during constant evaluation.
     template <typename Type, typename... Arguments>
     [[nodiscard]]
     any_holder_base * any_make_holder_in_place(void * storage, Arguments &&... arguments)
@@ -76,10 +74,8 @@ namespace scl::detail
             ::std::forward<Arguments>(arguments)...);
     }
 
-    // Storage an owner hands to an operation that only knows the referent's size and
-    // alignment. A block type carries the alignment, since allocator_traits has no way to
-    // ask for one; the set is bounded, and an object aligned beyond it is refused rather
-    // than under-aligned.
+    // A block type carries the alignment, which allocator_traits cannot ask for; the set is
+    // bounded, and an object aligned beyond it is refused rather than under-aligned.
     template <::std::size_t Alignment>
     struct alignas(Alignment) any_block
     {
@@ -94,12 +90,11 @@ namespace scl::detail
 
     inline constexpr ::std::size_t any_widest_alignment = 64U;
 
-    // The bound the refusal enforces: an owner admits a type only while a block can carry
-    // its alignment.
+    // An owner admits a type only while a block can carry its alignment.
     template <typename Type>
     inline constexpr bool any_alignment_supported_v = alignof(any_holder<Type>) <= any_widest_alignment;
 
-    // Exact, not roomy: the extent is what releasing is told, so it must describe the taker.
+    // Exact, not roomy: the extent is what releasing is told.
     [[nodiscard]]
     constexpr bool any_same_block(any_extent left, any_extent right) noexcept
     {
@@ -224,11 +219,8 @@ namespace scl::detail
         }
     };
 
-    // Reached only during constant evaluation, where an object is allocated through the
-    // typed allocator rather than placed in raw bytes, and so has to be released the same
-    // way. At run time the storage-taking operations of the base descriptor do the work.
-    // Constrained as `place` is, so a type copyable at run time is copyable here too: an
-    // explicit copy constructor, or one beside a deleted move, satisfies one and not the other.
+    // Constant evaluation only, where an object comes from the typed allocator and goes back the
+    // same way. Constrained as `place` is, so a type copyable at run time stays so here.
     template <typename Type, typename Allocator>
     [[nodiscard]]
     constexpr any_holder_base *
@@ -258,8 +250,7 @@ namespace scl::detail
         any_duplicate_function<Allocator> duplicate;
     };
 
-    // The two cv-forms live in one object so that each can name the other: a handle
-    // narrowed to const still reaches the value form, and both carry what only an owner has.
+    // One object holds both cv-forms so each can name the other.
     template <typename Allocator>
     struct any_owned_forms
     {
@@ -278,8 +269,7 @@ namespace scl::detail
     constexpr any_type_descriptor
     any_owned_form(any_type_descriptor described, any_owned_links links) noexcept
     {
-        // What tells a cast that the handle remembers a holder; the shared forms describe
-        // a plain binding.
+        // What tells a cast the handle remembers a holder rather than a plain binding.
         described.binding = any_binding::holder;
         described.as_const = links.as_const;
         described.as_value = links.as_value;

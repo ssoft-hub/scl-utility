@@ -69,9 +69,8 @@ namespace scl::detail
         return static_cast<any_qualifier>(~static_cast<unsigned char>(value));
     }
 
-    // How a handle remembers its referent during constant evaluation: a shared descriptor
-    // stands for the object's address, an owner-made one for the holder, and an anchor for
-    // the typed pointer it carries itself.
+    // How a handle remembers its referent at compile time: a shared descriptor stands for the
+    // address, an owner-made one for the holder, an anchor for the typed pointer it carries.
     enum class any_binding : unsigned char
     {
         object = 0,
@@ -85,8 +84,7 @@ namespace scl::detail
     {
         using referent = ::std::remove_reference_t<Type>;
 
-        // Named rather than tested in place: a variable template in the condition of a
-        // conditional expression defeats static analysers that parse templates heuristically.
+        // Named: a variable template in a conditional defeats heuristic static analysers.
         constexpr bool has_const = ::std::is_const_v<referent>;
         constexpr bool has_volatile = ::std::is_volatile_v<referent>;
 
@@ -94,7 +92,7 @@ namespace scl::detail
             (has_volatile ? any_qualifier::volatile_qualified : any_qualifier::none);
     }
 
-    // Sound only after any_base::binding_accepts proved Target covers the referent's qualifiers.
+    // Sound only after binding_accepts proved Target covers the referent's qualifiers.
     template <typename Target>
     [[nodiscard]]
     constexpr Target * erased_cast(void const volatile * object) noexcept
@@ -103,14 +101,13 @@ namespace scl::detail
         return static_cast<Target *>(const_cast<void *>(object));
     }
 
-    // Empty on purpose: a vtable would cost the buffer a pointer, and the downcast below
-    // would stop being a constant expression.
+    // Empty on purpose: a vtable would cost a pointer and stop the downcast folding.
     struct any_holder_base
     {};
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #pragma warning(push)
-// A type a view may not destroy is described rather than refused, so its holder never is.
+// A type a view may not destroy is described rather than refused.
 #pragma warning(disable: 4624)
 #endif
 
@@ -144,12 +141,10 @@ namespace scl::detail
         return ::std::addressof(static_cast<any_holder<Type> const *>(held)->value);
     }
 
-    // Rebuilding in place costs a copy on the stack; past this width fresh storage is the
-    // cheaper answer.
+    // Rebuilding in place costs a stack copy; past this width fresh storage is cheaper.
     inline constexpr ::std::size_t any_widest_reuse_copy = 256U;
 
-    // Every operation below takes the storage it works in rather than acquiring it, so none
-    // of them needs an allocator - which is what lets a view carry them for its referent.
+    // Every operation takes the storage it works in, so a view can carry them for its referent.
     using any_place_function = any_holder_base * (*)(void * storage, void const * source);
     using any_erase_function = void (*)(any_holder_base * held) noexcept;
     struct any_rebuild_target
@@ -163,8 +158,7 @@ namespace scl::detail
     using any_reach_function = any_holder_base * (*)(void * storage) noexcept;
     using any_object_function = void const * (*)(any_holder_base const * held) noexcept;
 
-    // The referent decays on the way in, the way a value does when it reaches an any: an
-    // array is taken as the pointer it decays to, since an array cannot be copied at all.
+    // The referent decays on the way in: an array cannot be copied at all.
     template <typename Type>
     [[nodiscard]]
     any_holder_base * any_place_copy(void * storage, void const * source)
@@ -182,8 +176,7 @@ namespace scl::detail
         ::std::destroy_at(static_cast<any_holder<Type> *>(held));
     }
 
-    // The copy stands aside while the target ends, so the source may be what that object
-    // owns; the type is known here, which is what makes room for the copy on the stack.
+    // The copy stands aside while the target ends, so the source may be what it owns.
     template <typename Type>
     [[nodiscard]]
     any_holder_base * any_rebuild_from(any_rebuild_target target, void const * source)
@@ -219,9 +212,8 @@ namespace scl::detail
         return ::std::launder(static_cast<any_holder<Type> *>(storage));
     }
 
-    // Only the type says where inside the holder its object sits, so a view asks for it.
-    // Constexpr, unlike the storage-taking operations beside it: the address comes from a
-    // holder reached by a downcast, which a constant expression allows.
+    // Only the type says where inside the holder its object sits. Constexpr, unlike the
+    // storage-taking operations beside it: a downcast is what a constant expression allows.
     template <typename Type>
     [[nodiscard]]
     constexpr void const * any_object_at(any_holder_base const * held) noexcept
@@ -229,14 +221,12 @@ namespace scl::detail
         return static_cast<void const *>(any_holder_object<Type>(held));
     }
 
-    // A type that cannot be copied carries no copy operation at all, rather than one that
-    // reports failure: a reader answers whether a copy is possible by reading this.
+    // An uncopyable type carries no copy operation, so its absence is the answer.
     template <typename Type>
     [[nodiscard]]
     constexpr any_place_function any_place_operation_of() noexcept
     {
-        // A volatile referent is why the source form appears here rather than just the
-        // decayed one: a copy constructor that takes `const &` cannot read it.
+        // A volatile referent needs the source form: a `const &` copy constructor cannot read it.
         if constexpr (::std::constructible_from<::std::decay_t<Type>, ::std::remove_reference_t<Type> const &>)
             return &any_place_copy<Type>;
         else
@@ -253,8 +243,7 @@ namespace scl::detail
             return nullptr;
     }
 
-    // A view destroys nothing, so a referent whose destructor it may not call is described
-    // without the operation rather than refused.
+    // A view destroys nothing, so such a referent is described without the operation.
     template <typename Type>
     [[nodiscard]]
     constexpr any_erase_function any_erase_operation_of() noexcept
@@ -265,8 +254,7 @@ namespace scl::detail
             return nullptr;
     }
 
-    // Absent for a type the copy cannot stand aside for: a throwing move would end with
-    // neither object, and a wide one would spend the stack an owner cannot bound.
+    // Absent where the copy cannot stand aside: a throwing move would end with neither object.
     template <typename Type>
     [[nodiscard]]
     constexpr any_rebuild_function any_rebuild_operation_of() noexcept
@@ -286,17 +274,14 @@ namespace scl::detail
         // One key object per bare type, so identity is a pointer comparison within a module.
         ::scl::type_key const * type;
         any_qualifier qualifiers;
-        // Beside the qualifiers: the alignment after them already holds this byte, so the
-        // descriptor does not grow by carrying it.
+        // Beside the qualifiers, whose alignment already holds this byte.
         any_binding binding;
         // Already-const forms point at themselves, which terminates the chain.
         any_type_descriptor const * as_const;
-        // What `place` builds: the referent's decayed form, which is what an owner ends up
-        // describing. A plain type points at its own unqualified form.
+        // What `place` builds: the decayed form, which is what an owner ends up describing.
         any_type_descriptor const * as_value;
 
-        // What an owner needs to take the referent in, and nothing an owner supplies itself:
-        // the storage comes from the owner, so the allocator stays out of here.
+        // Nothing an owner supplies itself: the storage comes from it, so no allocator here.
         ::std::size_t size;
         ::std::size_t alignment;
         any_place_function place;
@@ -333,8 +318,7 @@ namespace scl::detail
     inline constexpr bool is_std_any_v = false;
 #endif
 
-    // A base, not a trait: no include order can leave one translation unit seeing the
-    // exclusion and another not.
+    // A base, not a trait: no include order can leave one translation unit disagreeing.
     struct any_owner_tag
     {};
 
@@ -344,8 +328,7 @@ namespace scl::detail
     template <typename Type>
     inline constexpr bool any_construction_tag_v<::std::in_place_type_t<Type>> = true;
 
-    // The one place an owner reads a handle. Both views befriend it rather than the owner,
-    // which is a template and would otherwise have to be befriended per instantiation.
+    // The one place an owner reads a handle, befriended instead of the owner template.
     struct any_handle_access
     {
         template <typename Handle>
@@ -355,8 +338,7 @@ namespace scl::detail
             return handle.descriptor();
         }
 
-        // A taker needs the holder rather than the address, since the copy it makes is
-        // typed and an address is not.
+        // A taker needs the holder: the copy it makes is typed and an address is not.
         template <typename Handle>
         [[nodiscard]]
         static constexpr any_holder_base const * held(Handle const & handle) noexcept
@@ -380,8 +362,7 @@ namespace scl::detail
         using name = any_name;
 
     private:
-        // Only constant evaluation activates the holder, and it never reaches run time: an
-        // owning any allocates there, and such an allocation dies inside the evaluation.
+        // Only constant evaluation activates the holder, and its allocation dies inside it.
         union
         {
             void const volatile * m_object = nullptr;
@@ -390,8 +371,7 @@ namespace scl::detail
         descriptor_type const * m_descriptor = nullptr;
 
     public:
-        // A lone `const volatile` accessor would count every read as a volatile access
-        // during constant evaluation, costing constexpr where the object is not volatile.
+        // A lone `const volatile` accessor would cost constexpr on a non-volatile object.
 #ifdef __cpp_explicit_this_parameter
         template <typename Self>
         [[nodiscard]]
@@ -460,8 +440,7 @@ namespace scl::detail
             , m_descriptor{descriptor}
         {}
 
-        // Both shapes arrive and the body picks the live one: a mem-initializer cannot
-        // choose a union member on a condition.
+        // The body picks the live shape: a mem-initializer cannot choose a union member.
         constexpr any_base(
             any_holder_base const * held, void const volatile * object, descriptor_type const * descriptor) noexcept
             : m_descriptor{descriptor}
@@ -474,16 +453,14 @@ namespace scl::detail
             // NOLINTEND(cppcoreguidelines-pro-type-union-access)
         }
 
-        // Hands the referent on as it is held: passing the address would fix one shape and
-        // lose the other.
+        // Hands the referent on as held: an address would fix one shape and lose the other.
         constexpr any_base(any_base const & bound, descriptor_type const * descriptor) noexcept
             : any_base{bound}
         {
             m_descriptor = descriptor;
         }
 
-        // Anywhere but constant evaluation over an owner this reads the union's other
-        // member, which constant evaluation diagnoses.
+        // Outside constant evaluation over an owner this reads the union's other member.
         [[nodiscard]]
         constexpr any_holder_base const * held() const noexcept
         {
@@ -491,8 +468,7 @@ namespace scl::detail
             return m_held;
         }
 
-        // Declared for a volatile handle, which compiles the constant-evaluation branch of
-        // a cast without ever reaching it: no volatile object exists in a constant expression.
+        // Declared for a volatile handle: it compiles the compile-time branch without reaching it.
         [[nodiscard]]
         any_holder_base const * held() const volatile noexcept
         {
@@ -564,8 +540,7 @@ namespace scl::detail
         }
 #endif
 
-        // A handle's own cv-qualification governs the handle and not what it refers to, so
-        // the rights come from the binding alone.
+        // A handle's own cv-qualification governs the handle, so rights come from the binding.
         [[nodiscard]]
         constexpr bool binding_accepts(any_qualifier requested) const noexcept
         {

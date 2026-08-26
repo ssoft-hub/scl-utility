@@ -58,8 +58,7 @@ namespace scl
         {}
 #endif
 
-        // Each excluded type is bound by a constructor of its own, over what it stands for
-        // rather than over itself.
+        // Each excluded type has a constructor of its own, over what it stands for.
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_mutable_view(Type & object SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
@@ -92,9 +91,7 @@ namespace scl
             requires(!::std::same_as<::std::remove_cvref_t<Type>, any_mutable_view>)
         = delete;
 
-        // Spelled for an rvalue reference as well, and not left to the overload above: an
-        // rvalue binds a const lvalue reference too, so an anchor temporary would reach the
-        // more specialized constructor taking one. Only the view's own copy escapes.
+        // Spelled for an rvalue too: otherwise an anchor temporary reaches the form above.
         template <typename Type>
         any_mutable_view(Type const &&)
             requires(!::std::same_as<::std::remove_cvref_t<Type>, any_mutable_view>)
@@ -118,16 +115,14 @@ namespace scl
         [[nodiscard]]
         any_view as_view() const volatile noexcept
         {
-            // No holder: one is reached during constant evaluation only, which no volatile
-            // object takes part in.
+            // No holder: only constant evaluation reaches one, and no volatile object is there.
             return any_view{nullptr, object(), const_descriptor()};
         }
 
         // Takes the referent with the binding untouched, which is what keeps the write.
         friend class ::scl::any_argument;
 
-        // An explicit object parameter in the base deduces this type, not the base, and
-        // private inheritance would otherwise refuse that conversion.
+        // An explicit object parameter deduces this type, which private inheritance refuses.
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
 

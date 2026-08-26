@@ -55,9 +55,7 @@ namespace scl
         any_view(::std::any const &&) = delete;
 #endif
 
-        // An owning any is excluded here and unwrapped below, or it would be viewed as the
-        // box it is; an anchor is excluded for the same reason, since a view of one is the
-        // referent it stands for rather than the anchor itself.
+        // Each excluded type has a constructor of its own, over what it stands for.
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(Type & object SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*): implicit view by design
@@ -68,8 +66,7 @@ namespace scl
             : base_type{::std::addressof(object), &detail::any_type_descriptor_of<Type &>}
         {}
 
-        // The anchor is what lets the cast answer during constant evaluation for an object
-        // no any owns.
+        // The anchor is what lets a cast answer at compile time for an object no any owns.
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(any_anchor<Type> const & bound SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
@@ -95,15 +92,12 @@ namespace scl
         using base_type::type_name;
 
     private:
-        // An argument reaches this to hand over a referent it already narrowed with
-        // any_base::const_descriptor. The referent travels as the base holds it, so a
-        // holder remembered during constant evaluation stays one.
+        // The referent travels as the base holds it, so a remembered holder stays one.
         constexpr explicit any_view(base_type const & bound, base_type::descriptor_type const * descriptor) noexcept
             : base_type{bound, descriptor}
         {}
 
-        // From the parts rather than from a handle: a volatile handle is not copyable as a
-        // base, and only run time reaches this, where the address is the shape the base keeps.
+        // From the parts: a volatile handle is not copyable as a base.
         any_view(detail::any_holder_base const * held,
             void const volatile * object,
             base_type::descriptor_type const * descriptor) noexcept
@@ -113,8 +107,7 @@ namespace scl
         friend class ::scl::any_argument;
         friend class ::scl::any_mutable_view;
 
-        // An explicit object parameter in the base deduces this type, not the base, and
-        // private inheritance would otherwise refuse that conversion.
+        // An explicit object parameter deduces this type, which private inheritance refuses.
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
 

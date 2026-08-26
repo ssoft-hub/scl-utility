@@ -52,12 +52,11 @@ namespace scl
         SCL_NO_UNIQUE_ADDRESS
         Allocator m_allocator;
 
-        // The union gives the buffer a pointer's worth of room whatever Capacity asks for,
-        // so fitting is decided against what is actually there.
+        // The union gives the buffer a pointer's worth of room whatever Capacity asks for.
         static constexpr ::std::size_t buffer_capacity = detail::any_storage<Capacity>::buffer_size;
 
     public:
-        // Not defaulted: a defaulted constructor is not user-provided, and `any const value;`
+        // Not defaulted: a defaulted constructor is not user-provided, so `any const value;`
         // would then need an initialiser.
         // NOLINTNEXTLINE(modernize-use-equals-default): see above
         constexpr basic_any() noexcept {}
@@ -89,8 +88,7 @@ namespace scl
         basic_any(basic_any const &) = delete;
         basic_any & operator=(basic_any const &) = delete;
 
-        // An allocator's move never throws ([allocator.requirements]) and only a nothrow
-        // movable object reaches the buffer.
+        // An allocator's move never throws ([allocator.requirements]).
         constexpr basic_any(basic_any && other) noexcept
             : m_allocator{::std::move(other.m_allocator)}
         {
@@ -161,8 +159,8 @@ namespace scl
 
         constexpr ~basic_any() { destroy_held(); }
 
-        // Built before anything is destroyed, so assigning the stored object to its own any
-        // reads a live object. `emplace` cannot do this: it is defined to reset first.
+        // Built before anything is destroyed, so a self-assignment reads a live object;
+        // `emplace` cannot, being defined to reset first.
         template <typename ValueType>
         constexpr basic_any & operator=(ValueType && value)
             requires(!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<ValueType>>) &&
@@ -216,8 +214,7 @@ namespace scl
 
         constexpr void reset() noexcept { destroy_held(); }
 
-        // Three moves, not an exchange of storage: a buffer object is reached through its
-        // own address.
+        // Three moves, not an exchange of storage: a buffer object is reached through its address.
         constexpr void swap(basic_any & other) noexcept
         {
             if (this == &other)
@@ -295,8 +292,7 @@ namespace scl
             return {.size = m_descriptor->size, .alignment = m_descriptor->alignment};
         }
 
-        // Fitting by size says nothing about the relocation the buffer demands, so a type
-        // that belongs there is excluded rather than left in a block. During constant
+        // Fitting by size says nothing about the relocation the buffer demands. During constant
         // evaluation an object lives in a typed allocation, not in a block of bytes.
         [[nodiscard]]
         constexpr bool reuses_block_for(detail::any_type_descriptor const & described) const noexcept
@@ -317,8 +313,7 @@ namespace scl
             return reuses_block_for(detail::any_type_descriptor_of<ValueType &>);
         }
 
-        // The operation stands in for the type: a referent it is absent for is one no copy
-        // can be held aside for while the object in the way is destroyed.
+        // The operation stands in for the type: absent, no copy can be held aside.
         [[nodiscard]]
         constexpr bool rebuilds_in_place(detail::any_type_descriptor const * described) const noexcept
         {
@@ -369,9 +364,8 @@ namespace scl
             m_descriptor = &detail::any_type_descriptor_of<ValueType &>;
         }
 
-        // The descriptor is set last, so a constructor that throws leaves the any empty.
-        // Constant evaluation takes the typed allocation, the only one it can run; run time
-        // takes the buffer or bytes, which is also what an adopted referent lands in.
+        // The descriptor is set last, so a constructor that throws leaves the any empty. Constant
+        // evaluation takes the typed allocation, run time the buffer or bytes.
         template <typename ValueType, typename... Arguments>
         constexpr void construct(Arguments &&... arguments)
         {
@@ -418,8 +412,7 @@ namespace scl
 #endif
         }
 
-        // A referent reached through a handle: its type is known only to the descriptor the
-        // handle carries, so the copy runs through that descriptor's operation.
+        // A referent's type is known only to the descriptor its handle carries.
         template <typename HandleType>
         constexpr void take_referent_from(HandleType const & handle)
         {
@@ -436,9 +429,8 @@ namespace scl
             take_referent(described, detail::any_handle_access::referent(handle));
         }
 
-        // Constant evaluation allocates through the typed allocator, and only an owner-made
-        // descriptor names one, so the referent has to arrive from a handle over an owning
-        // any whose allocator this any shares. Anything else stops on the cast below.
+        // Constant evaluation allocates through the typed allocator, which only an owner-made
+        // descriptor names, so anything else stops on the cast below.
         constexpr void
         take_held_referent(detail::any_type_descriptor const * described, detail::any_holder_base const * held)
         {
@@ -466,12 +458,10 @@ namespace scl
             if (described == nullptr || described->place == nullptr)
                 return;
 
-            // What lands here is the referent's decayed form, so the room and the operations
-            // that later end it are read from that form rather than from the referent's own.
+            // The decayed form is what lands here, so the room and the operations come from it.
             auto const * const stored = described->as_value;
 
-            // No block can carry a wider alignment, so such a referent is refused the way
-            // an uncopyable one is: the any stays empty.
+            // No block carries a wider alignment, so such a referent leaves the any empty.
             if (stored->alignment > detail::any_widest_alignment)
                 return;
 
@@ -501,8 +491,7 @@ namespace scl
             m_descriptor = stored;
         }
 
-        // An allocator need not be assignable - std::pmr::polymorphic_allocator deletes
-        // assignment - so the member is replaced through its lifetime instead.
+        // An allocator need not be assignable, so the member is replaced through its lifetime.
         constexpr void adopt_allocator(Allocator const & allocator) noexcept
         {
             if constexpr (::std::is_copy_assignable_v<Allocator>)
@@ -531,8 +520,7 @@ namespace scl
             other.m_descriptor = nullptr;
         }
 
-        // In constant evaluation the object came from the typed allocator, so it goes back
-        // the same way, and only an owner-made descriptor is ever seen there.
+        // What the typed allocator gave, it takes back; only an owner-made descriptor is seen there.
         constexpr void destroy_held() noexcept
         {
             if (m_descriptor == nullptr)
@@ -578,16 +566,14 @@ namespace scl
             return (m_descriptor != nullptr) ? m_storage.allocated() : nullptr;
         }
 
-        // A view refers to the content, so anything that relocates or ends it invalidates
-        // the view.
+        // A view refers to the content, so relocating or ending it invalidates the view.
         [[nodiscard]]
         constexpr void const * viewed_object() const noexcept
         {
             return (m_descriptor != nullptr) ? m_descriptor->object(held()) : nullptr;
         }
 
-        // At run time a handle keeps the object's address instead, which is what spares its
-        // cast an indirection.
+        // At run time a handle keeps the address instead, which spares its cast an indirection.
         [[nodiscard]]
         constexpr detail::any_holder_base const * viewed_held() const noexcept
         {
