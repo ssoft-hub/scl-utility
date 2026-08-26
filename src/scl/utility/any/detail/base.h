@@ -548,7 +548,7 @@ namespace scl::detail
         using bare = ::std::remove_cvref_t<Request>;
 
         auto const * const described = any_handle_access::descriptor(handle);
-        if (described == nullptr) [[unlikely]]
+        if (described == nullptr)
             return nullptr;
         if (!any_handle_access::binding_accepts(handle, any_qualifiers_of<Request &>()))
             return nullptr;
@@ -572,7 +572,7 @@ namespace scl::detail
             }
         }
 
-        [[likely]] return erased_cast<Request>(any_handle_access::object(handle));
+        return erased_cast<Request>(any_handle_access::object(handle));
     }
 
     // The owner's counterpart of any_handle_access: where its object stands is all it grants.

@@ -196,6 +196,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The `any` group carries no optimisation annotation any more. It had six - `SCL_HOT` on the
+  `any_cast` entry point, `[[unlikely]]` on the two null checks, `[[likely]]` on the
+  successful return, and `SCL_UNLIKELY_EXPR` on the two self-assignment guards - and none of
+  them survived measurement: each moved some cases down and others up by the same order, and no
+  compiler agreed with another. `SCL_HOT` was costing Clang 22.1.8 between 10 and 16 per cent on
+  the two miss paths while buying 13 on the empty one; the guards bought an ordinary assignment
+  8 per cent and cost assigning a view 9. `.text` on `arm-none-eabi-g++` is 252 bytes either
+  way. `doc/md/en/any/benchmark.md` records what each annotation did, and what the `std::any`
+  branch inside `any_cast` costs every cast that never sees one.
 - The range interface of `scl::hierarchy::node` and of `scl::hierarchy::tree`, and the members
   of the proxy a tree iterator hands out, carry `SCL_FORCE_INLINE`. A tree reaches the node
   through that proxy, and GCC 13.1.0 leaves the members a call there: annotating both sides of

@@ -7,7 +7,6 @@
  */
 
 #include <scl/utility/any/bad_any_cast.h>
-#include <scl/utility/attribute/hotcold.h>
 #include <scl/utility/attribute/lifetimebound.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/preprocessor/exceptions.h>
@@ -53,11 +52,11 @@ namespace scl
 {
     template <::scl::concepts::object_type Target, detail::any_accessible<Target> Source>
     [[nodiscard]]
-    SCL_HOT constexpr auto any_cast(Source * source)           /**/
+    constexpr auto any_cast(Source * source)                   /**/
         noexcept(noexcept(detail::any_access<Target>(source))) /**/
         -> decltype(detail::any_access<Target>(source))
     {
-        if (source == nullptr) [[unlikely]]
+        if (source == nullptr)
             return nullptr;
         return detail::any_access<Target>(source);
     }

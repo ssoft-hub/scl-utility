@@ -8,7 +8,6 @@
 
 #include <scl/utility/any/any_cast.h>
 #include <scl/utility/attribute/lifetimebound.h>
-#include <scl/utility/attribute/likely.h>
 #include <scl/utility/attribute/no_unique_address.h>
 #include <scl/utility/meta/type_key.h>
 #include <scl/utility/preprocessor/exceptions.h>
@@ -193,8 +192,8 @@ namespace scl
                 void const * const referent = detail::any_handle_access::referent(handle);
 
                 // The same type at the same address is the value already held.
-                if (m_descriptor != nullptr && described != nullptr && described->as_value == m_descriptor &&
-                    SCL_UNLIKELY_EXPR(overlaps_held_object(referent)))
+                if (m_descriptor != nullptr && described != nullptr &&
+                    described->as_value == m_descriptor && overlaps_held_object(referent))
                     return *this;
 
                 if (rebuilds_in_place(described))
@@ -232,7 +231,7 @@ namespace scl
             using bare = ::std::decay_t<ValueType>;
 
             // The same type at the same address is the value already held.
-            if (m_descriptor == stored_form_of<bare>() && SCL_UNLIKELY_EXPR(overlaps_held(value)))
+            if (m_descriptor == stored_form_of<bare>() && overlaps_held(value))
                 return *this;
 
             if constexpr (::std::is_nothrow_move_constructible_v<bare> && sizeof(bare) <= detail::any_widest_reuse_copy)

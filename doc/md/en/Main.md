@@ -61,6 +61,10 @@ Then include the umbrella header or individual component headers:
 | [any_cast](any/any_cast.md) | `<scl/utility/any/any_cast.h>` | The one cast of the group and the trait a type specialises to join it |
 | [std_any](any/std_any.md) | `<scl/utility/any/std_any.h>` | Reads the object a `std::any` holds; the one part of the interop that costs anything, and only a cast naming `std::any` pays |
 
+Measured numbers for this group - what each annotation it carried was doing, and what the
+`std::any` branch inside `any_cast` costs every cast that never sees one - are collected in
+[Any Benchmarks](any/benchmark.md).
+
 ### Attribute — portable compiler attribute macros
 
 | Component | Header | Description |
