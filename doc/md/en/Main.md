@@ -83,6 +83,10 @@ Measured numbers for this group - what each annotation it carried was doing, and
 | [SCL_HOT / SCL_COLD](attribute/hotcold.md) | `<scl/utility/attribute/hotcold.h>` | Function-frequency hints for hot/cold code paths |
 | [SCL_LIFETIMEBOUND](attribute/lifetimebound.md) | `<scl/utility/attribute/lifetimebound.h>` | Dangling-reference detection via lifetime-bound parameter annotation |
 
+What each optimisation attribute is worth, group by group and compiler by compiler, and what
+it costs in code size, is collected in
+[Attribute Measurements Across Groups](attribute/benchmark.md).
+
 ### Concepts — concept form of the standard type traits
 
 | Component | Header | Description |

@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `doc/md/en/attribute/benchmark.md` and `doc/md/ru/attribute/benchmark.md` answer, per
+  attribute and per compiler, whether it is worth applying at all - across all four measured
+  groups at once. Nothing generalises: `SCL_FORCE_INLINE` is worth 57 per cent of an iteration
+  in one group, 89 per cent of `.text` in another, and a 32 per cent regression in a third.
+  The page also states, once, what a control run is for and how large the layout effect on
+  these suites turns out to be.
 - `scl::hash::constant_bytes` (`#include <scl/utility/hash/constant_bytes.h>`) - the bytes of
   a range the translation already holds. `scl::hash::byte_view` answers one for a bounded
   array, and only for a bounded array, through a `consteval` overload: an array declared with

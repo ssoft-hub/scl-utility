@@ -84,6 +84,10 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [SCL_HOT / SCL_COLD](attribute/hotcold.md) | `<scl/utility/attribute/hotcold.h>` | Подсказки о частоте вызова функции |
 | [SCL_LIFETIMEBOUND](attribute/lifetimebound.md) | `<scl/utility/attribute/lifetimebound.h>` | Обнаружение висячих ссылок через аннотацию времени жизни параметра |
 
+Чего стоит каждый оптимизирующий атрибут - по группам и по компиляторам - и во что он
+обходится по размеру кода, собрано в
+[Замерах атрибутов по группам](attribute/benchmark.md).
+
 ### Concepts — концепты для стандартных свойств типов
 
 | Компонент | Заголовок | Описание |
