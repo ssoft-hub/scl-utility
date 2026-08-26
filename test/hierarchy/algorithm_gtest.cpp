@@ -65,7 +65,8 @@ TEST(HierarchyAlgorithmTest, ParentOfPreservesConst)
     mock_node parent;
     mock_node & child = parent.add_child();
     mock_node const & const_child = child;
-    static_assert(::std::is_same_v<decltype(scl::hierarchy::parent_of(const_child)), mock_node const &>);
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<decltype(scl::hierarchy::parent_of(const_child)), mock_node const &>));
     EXPECT_EQ(&scl::hierarchy::parent_of(const_child), &parent);
 }
 

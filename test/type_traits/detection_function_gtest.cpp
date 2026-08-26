@@ -27,7 +27,7 @@ TEST(FunctionDetectionTest, PositiveCases)
 
     // Type verification
     using RetType = multiply_function_t<int, int>;
-    static_assert(std::is_same_v<RetType, int>);
+    STATIC_EXPECT_TRUE((std::is_same_v<RetType, int>));
 }
 
 /**
