@@ -7,6 +7,7 @@
 #include <any>
 #endif
 #include <string>
+#include <tuple>
 #include <type_traits>
 
 namespace
@@ -220,7 +221,7 @@ TEST(AnyMutableViewTest, ReferenceFormsReachAVolatileReferent)
     int const read = ::scl::any_cast<int const volatile &>(view);
     EXPECT_EQ(read, 11);
 
-    EXPECT_THROW((void)::scl::any_cast<int &>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<int &>(view), ::scl::bad_any_cast);
 }
 
 TEST(AnyMutableViewTest, EmptyViewReachesNothing)
@@ -302,8 +303,8 @@ TEST(AnyMutableViewTest, MismatchThrows)
     int number = 7;
     ::scl::any_mutable_view const view{number};
 
-    EXPECT_THROW((void)::scl::any_cast<double>(view), ::scl::bad_any_cast);
-    EXPECT_THROW((void)::scl::any_cast<double &>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double &>(view), ::scl::bad_any_cast);
 }
 
 TEST(AnyMutableViewTest, ConstexprCastThroughAnAnchor)

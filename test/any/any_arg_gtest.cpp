@@ -7,6 +7,7 @@
 #include <any>
 #endif
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <typeinfo>
 
@@ -348,8 +349,8 @@ TEST(AnyArgTest, MismatchThrows)
     counted value{1};
     ::scl::any_arg arg{value};
 
-    EXPECT_THROW((void)::scl::any_cast<double>(arg), ::scl::bad_any_cast);
-    EXPECT_THROW((void)::scl::any_cast<double>(arg), ::std::bad_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double>(arg), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double>(arg), ::std::bad_cast);
 }
 
 TEST(AnyArgTest, ConstructsFromAnyView)
@@ -391,7 +392,7 @@ TEST(AnyArgTest, AdoptedFromEmptyAnyView)
 
     STATIC_EXPECT_TRUE(empty_view_adopts_empty(::scl::any_view{}));
     EXPECT_EQ(::scl::any_cast<int const>(&arg), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<int &>(arg), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<int &>(arg), ::scl::bad_any_cast);
 }
 
 #if SCL_HAS_RTTI
@@ -454,7 +455,7 @@ TEST(AnyArgTest, MutableAccessRefusedOnConstStdAny)
 
     EXPECT_EQ(::scl::any_cast<::std::string>(&arg), nullptr);
     EXPECT_EQ(*::scl::any_cast<::std::string const>(&arg), "frozen");
-    EXPECT_THROW((void)::scl::any_cast<::std::string &>(arg), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<::std::string &>(arg), ::scl::bad_any_cast);
 }
 
 TEST(AnyArgTest, MutableAccessRefusedOnStdAnyThroughAnyView)
@@ -528,7 +529,7 @@ TEST(AnyArgTest, MutableAccessRefusedOnQualifiedReferent)
 
     EXPECT_EQ(::scl::any_cast<counted>(&over_const), nullptr);
     EXPECT_EQ(::scl::any_cast<counted>(&over_volatile), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<counted &>(over_const), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<counted &>(over_const), ::scl::bad_any_cast);
 
     // A request that covers the referent's qualifiers still answers.
     ASSERT_NE(::scl::any_cast<counted const>(&over_const), nullptr);
@@ -542,7 +543,7 @@ TEST(AnyArgTest, MutableAccessRejectsTypeMismatch)
     ::scl::any_arg arg{value};
 
     EXPECT_EQ(::scl::any_cast<double>(&arg), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<double &>(arg), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double &>(arg), ::scl::bad_any_cast);
 }
 
 TEST(AnyArgTest, VolatileReferentWritableWhenRequestedAsVolatile)

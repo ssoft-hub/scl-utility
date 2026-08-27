@@ -7,6 +7,7 @@
 #include <any>
 #endif
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <typeinfo>
 
@@ -146,7 +147,7 @@ TEST(AnyViewTest, RequestMustCoverReferentQualifiers)
     ::scl::any_view const over_volatile{volatile_value};
 
     EXPECT_EQ(::scl::any_cast<counted>(&over_volatile), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<counted const &>(over_volatile), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<counted const &>(over_volatile), ::scl::bad_any_cast);
 
     auto const * reached = ::scl::any_cast<counted volatile>(&over_volatile);
     ASSERT_NE(reached, nullptr);
@@ -185,8 +186,8 @@ TEST(AnyViewTest, RawBackingMismatchThrows)
     counted value{1};
     ::scl::any_view view{value};
 
-    EXPECT_THROW((void)::scl::any_cast<double>(view), ::scl::bad_any_cast);
-    EXPECT_THROW((void)::scl::any_cast<double>(view), ::std::bad_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double>(view), ::std::bad_cast);
 }
 
 TEST(AnyViewTest, EmptyView)
@@ -197,7 +198,7 @@ TEST(AnyViewTest, EmptyView)
     EXPECT_TRUE(view.type_name().empty());
     EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
     EXPECT_EQ(::scl::any_cast<int>(static_cast<::scl::any_view const *>(nullptr)), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<int>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<int>(view), ::scl::bad_any_cast);
 }
 
 #if SCL_HAS_RTTI
@@ -218,7 +219,7 @@ TEST(AnyViewTest, StdAnyBackingCast)
     EXPECT_EQ(::scl::any_cast<::std::string const &>(view), "hello"); // reference through a named view
     EXPECT_EQ(::scl::any_cast<::std::string>(boxed), "hello"); // implicit std::any -> any_view
 
-    EXPECT_THROW((void)::scl::any_cast<int>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<int>(view), ::scl::bad_any_cast);
 }
 
 TEST(AnyViewTest, StdAnyBackingAnswersTheBoxItself)
@@ -237,7 +238,7 @@ TEST(AnyViewTest, RawBackingRefusesAStdAnyRequest)
     ::scl::any_view const view{text};
 
     EXPECT_EQ(::scl::any_cast<::std::any const>(&view), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<::std::any const &>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<::std::any const &>(view), ::scl::bad_any_cast);
 }
 
 TEST(AnyViewTest, StdAnyBackingDoesNotCopyInner)
@@ -248,7 +249,7 @@ TEST(AnyViewTest, StdAnyBackingDoesNotCopyInner)
     ::scl::any_view view{boxed};
     EXPECT_EQ(counted::copies, 0);
 
-    (void)::scl::any_cast<counted const &>(view);
+    ::std::ignore = ::scl::any_cast<counted const &>(view);
     EXPECT_EQ(counted::copies, 0);
     EXPECT_EQ(::scl::any_cast<counted const &>(view).id, 5);
 }
