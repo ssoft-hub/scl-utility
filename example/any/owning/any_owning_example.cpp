@@ -9,10 +9,10 @@
  *
  * A small, nothrow-movable object lives inside the any itself; anything else is
  * allocated through the allocator that scl::basic_any takes as a parameter. A
- * stored type has to be destructible without throwing, constructible from the
- * arguments given and aligned no more strictly than 64 bytes — an immovable or
- * non-copyable type is admitted. Copying is therefore not a constructor: the
- * type is move-only, and a copy is asked for through try_copy().
+ * stored type has to be destructible without throwing and constructible from
+ * the arguments given; an immovable or non-copyable type is admitted. Copying
+ * is therefore not a constructor: the type is move-only, and a copy is asked
+ * for through try_copy().
  */
 
 #include <scl/utility/any.h>

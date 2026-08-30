@@ -34,10 +34,9 @@ pointer, and moves without throwing. Every other object goes into memory obtaine
 allocator. The choice between the two is made per type at compile time and costs nothing:
 the in-place buffer occupies the same room as the pointer to an allocated object.
 
-The stored type has to satisfy three requirements: the object can be destroyed without
-throwing, the object
-can be constructed from the arguments given, and the alignment of the type is at most 64
-bytes. Nothing else is required.
+The stored type has to satisfy two requirements: the object can be destroyed without
+throwing, and the object can be constructed from the arguments given. Nothing else is
+required.
 
 An object that cannot be moved is stored as well: it goes into allocated memory, and moving
 the `scl::any` hands over the pointer while the object itself stays where it is. An object
@@ -186,9 +185,9 @@ object they addressed has been destroyed.
 
 ### Reusing the memory
 
-A replacement keeps the memory already allocated when the new object is allocated as well
-and matches the old one in size and alignment. The allocator is then called neither to
-release nor to allocate: the new object is built where the old one stood.
+A replacement keeps the memory already allocated when the new object is allocated as well and
+the block still holds it. The allocator is then called neither to release nor to allocate:
+the new object is built where the old one stood.
 
 ```cpp
 pmr_any value{std::allocator_arg, pmr_allocator{&resource}};
@@ -202,11 +201,11 @@ This matters most where releasing memory gives nothing back.
 `std::pmr::monotonic_buffer_resource` never hands out released memory again, so without this
 the loop would consume its arena on every round.
 
-Another type of the same size and alignment takes over that memory too. There is one
-exception: if the new type belongs in the in-place buffer, it goes there and the allocated
-memory returns to the allocator. Matching by size alone is not enough for the buffer - an
-object in the buffer is relocated by moving it, so a type whose move may throw is allocated
-even when it fits by size.
+Another type takes over that memory too, as long as the block holds it, so a narrower type
+reuses a block taken for a wider one. There is one exception: if the new type belongs in the
+in-place buffer, it goes there and the allocated memory returns to the allocator. Matching by
+size alone is not enough for the buffer - an object in the buffer is relocated by moving it,
+so a type whose move may throw is allocated even when it fits by size.
 
 Assigning a value and `emplace` reach this optimisation differently, and here is why.
 Building an object where the old one stands requires destroying the old one first. `emplace`
@@ -309,9 +308,9 @@ decided at compile time:
 | none of the above holds | in memory obtained from the allocator with the alignment of the type |
 | during constant evaluation | always in allocated memory |
 
-An over-aligned type never lands in the in-place buffer: it is stored in memory obtained
-with the alignment it asks for, up to 64 bytes. A type aligned more strictly than that is
-refused at compile time rather than stored under-aligned.
+An over-aligned type never lands in the in-place buffer: it is stored in memory obtained with
+the alignment it asks for, whatever that alignment is. The block carries the room to align
+the object inside itself, so no alignment is refused.
 
 The template deliberately has no alignment parameter, since one would cost every user size.
 An alignment of `alignof(std::max_align_t)` would grow `scl::any` to four pointers, and a
@@ -452,9 +451,8 @@ stores the view itself.
 
 The type of the object the handle refers to is not named here, so the copy is made through
 the type description the handle carries. A failure is therefore discovered at run time: if
-the object has no copy constructor, or its alignment is stricter than 64 bytes, the
-`scl::any` stays empty. During constant evaluation this copy is unavailable, because the
-object behind the handle cannot be reached there.
+the object has no copy constructor, the `scl::any` stays empty. During constant evaluation
+this copy is unavailable, because the object behind the handle cannot be reached there.
 
 Storing the handle itself remains possible, but has to be said explicitly:
 

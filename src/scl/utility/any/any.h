@@ -66,7 +66,6 @@ namespace scl
             requires(!::std::is_base_of_v<detail::any_owner, ::std::remove_cvref_t<ValueType>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<ValueType>>) &&
             (!detail::is_any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
-            detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
             (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
             (::std::is_constructible_v<::std::decay_t<ValueType>, ValueType>)
         {
@@ -103,8 +102,7 @@ namespace scl
 
         template <typename ValueType, typename... Arguments>
         constexpr explicit basic_any(::std::in_place_type_t<ValueType> /*type*/, Arguments &&... arguments)
-            requires detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
-            (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
+            requires(::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
             (::std::is_constructible_v<::std::decay_t<ValueType>, Arguments...>)
         {
             construct<::std::decay_t<ValueType>>(::std::forward<Arguments>(arguments)...);
@@ -162,7 +160,6 @@ namespace scl
             requires(!::std::is_base_of_v<detail::any_owner, ::std::remove_cvref_t<ValueType>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<ValueType>>) &&
             (!detail::is_any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
-            detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
             (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
             (::std::is_constructible_v<::std::decay_t<ValueType>, ValueType>)
         {
@@ -195,8 +192,7 @@ namespace scl
     public:
         template <typename ValueType, typename... Arguments>
         constexpr ::std::decay_t<ValueType> & emplace(Arguments &&... arguments)
-            requires detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
-            (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
+            requires(::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
             (::std::is_constructible_v<::std::decay_t<ValueType>, Arguments...>)
         {
             using bare = ::std::decay_t<ValueType>;
@@ -309,9 +305,9 @@ namespace scl
         }
 
         [[nodiscard]]
-        constexpr detail::any_extent extent() const noexcept
+        ::std::size_t allocated_capacity() const noexcept
         {
-            return {.size = m_descriptor->size, .alignment = m_descriptor->alignment};
+            return detail::any_block_header_of(m_storage.allocated()).capacity;
         }
 
         // Fitting by size says nothing about the relocation the buffer demands. During constant
@@ -325,7 +321,7 @@ namespace scl
             if (detail::any_fits_in_buffer(described, buffer_capacity))
                 return false;
 
-            return detail::any_same_block(extent(), {.size = described.size, .alignment = described.alignment});
+            return detail::any_block_fits(allocated_capacity(), described.size, described.alignment);
         }
 
         template <typename ValueType>
@@ -360,14 +356,17 @@ namespace scl
         template <typename ValueType, typename... Arguments>
         void rebuild(Arguments &&... arguments)
         {
-#if SCL_HAS_EXCEPTIONS
-            // Read before the descriptor goes, which is what a failed construction needs.
-            detail::any_extent const room = extent();
-#endif
-            void * const block = m_storage.allocated();
+            using holder = detail::any_holder<ValueType>;
+
+            // Read before the object goes, which is what placing the next one needs.
+            detail::any_block_header const held_in = detail::any_block_header_of(m_storage.allocated());
+            auto * const base = detail::any_block_base_of(m_storage.allocated(), held_in.offset);
 
             m_descriptor->erase(m_storage.allocated());
             m_descriptor = nullptr;
+
+            void * const block = detail::any_lay_out_block(base, held_in.capacity, sizeof(holder),
+                alignof(holder));
 #if SCL_HAS_EXCEPTIONS
             try
             {
@@ -376,7 +375,7 @@ namespace scl
             }
             catch (...)
             {
-                detail::any_release(m_allocator, block, room);
+                detail::any_release(m_allocator, block);
                 throw;
             }
 #else
@@ -416,8 +415,7 @@ namespace scl
             detail::any_type_descriptor const & described,
             Arguments &&... arguments)
         {
-            detail::any_extent const room{.size = described.size, .alignment = described.alignment};
-            void * const storage = detail::any_acquire(m_allocator, room);
+            void * const storage = detail::any_acquire(m_allocator, described.size, described.alignment);
 #if SCL_HAS_EXCEPTIONS
             try
             {
@@ -426,7 +424,7 @@ namespace scl
             }
             catch (...)
             {
-                detail::any_release(m_allocator, storage, room);
+                detail::any_release(m_allocator, storage);
                 throw;
             }
 #else
@@ -462,7 +460,7 @@ namespace scl
                 static_cast<detail::any_descriptor<Allocator> const *>(described->as_value);
 
             // Refused on the same terms as at run time.
-            if (stored->duplicate == nullptr || stored->alignment > detail::any_widest_alignment)
+            if (stored->duplicate == nullptr)
                 return;
 
             m_storage.adopt(stored->duplicate(held, m_allocator));
@@ -487,18 +485,13 @@ namespace scl
             // The decayed form is what lands here, so the room and the operations come from it.
             auto const * const stored = described->as_value;
 
-            // No block carries a wider alignment, so such a referent leaves the any empty.
-            if (stored->alignment > detail::any_widest_alignment)
-                return;
-
             if (detail::any_fits_in_buffer(*stored, buffer_capacity))
             {
                 static_cast<void>(described->place(m_storage.buffer(), referent));
             }
             else
             {
-                detail::any_extent const room{.size = stored->size, .alignment = stored->alignment};
-                void * const storage = detail::any_acquire(m_allocator, room);
+                void * const storage = detail::any_acquire(m_allocator, stored->size, stored->alignment);
 #if SCL_HAS_EXCEPTIONS
                 try
                 {
@@ -506,7 +499,7 @@ namespace scl
                 }
                 catch (...)
                 {
-                    detail::any_release(m_allocator, storage, room);
+                    detail::any_release(m_allocator, storage);
                     throw;
                 }
 #else
@@ -563,11 +556,10 @@ namespace scl
             }
             else
             {
-                detail::any_extent const room = extent();
                 detail::any_holder_base * const object = m_storage.allocated();
 
                 m_descriptor->erase(object);
-                detail::any_release(m_allocator, object, room);
+                detail::any_release(m_allocator, object);
             }
 
             m_descriptor = nullptr;
@@ -684,11 +676,11 @@ namespace scl
  * the buffer shares its storage with the pointer that would otherwise hold the
  * allocation.
  *
- * The requirements on a stored type are destructibility without throwing,
- * constructibility from the arguments given, and an alignment of at most 64 bytes - the widest storage
- * the allocator is asked for; a stricter alignment is refused at compile time
- * rather than served under-aligned. An immovable type is admitted, since it is
- * allocated and an any moves by handing over the pointer.
+ * The requirements on a stored type are destructibility without throwing and
+ * constructibility from the arguments given. Whatever alignment a type asks for
+ * is served: a block carries the room to align the object inside itself. An
+ * immovable type is admitted, since it is allocated and an any moves by handing
+ * over the pointer.
  *
  * @note Copying is not a constructor. `basic_any` is move-only as a type, and a
  *       copy is requested explicitly, which is what lets a non-copyable type be
@@ -798,10 +790,9 @@ namespace scl
  * @param  handle  The handle whose referent is copied.
  *
  * @note A referent that cannot be copied - a `std::unique_ptr`, or anything else
- *       without a copy constructor - leaves the any empty, as does one aligned
- *       more strictly than 64 bytes. Whether a handle's referent can be taken is
- *       not knowable at compile time, so this is a run-time outcome rather than
- *       a rejected call.
+ *       without a copy constructor - leaves the any empty. Whether a handle's
+ *       referent can be taken is not knowable at compile time, so this is a
+ *       run-time outcome rather than a rejected call.
  *
  * @note During constant evaluation a referent is reachable only where a handle
  *       carries an owner's own description of it and the allocator is the one that
@@ -821,15 +812,15 @@ namespace scl
  * @param  handle  The handle whose referent is copied.
  * @return This any.
  *
- * @note A referent that cannot be taken - no copy constructor, or an alignment
- *       past 64 bytes - still ends what the any held: assigning it leaves this
- *       any empty rather than keeping the old object.
+ * @note A referent that cannot be taken, having no copy constructor, still ends
+ *       what the any held: assigning it leaves this any empty rather than
+ *       keeping the old object.
  *
  * @note The copy is taken before what this any holds is destroyed, as in
  *       @ref scl::basic_any::operator=(ValueType &&), so a referent the stored
  *       object owns is still alive when it is read. An allocated object replaced
- *       by a referent of the same size and alignment, allocated as well, keeps
- *       the storage it already has on the same terms: the referent's type moves
+ *       by a referent the block still holds, allocated as well, keeps the
+ *       storage it already has on the same terms: the referent's type moves
  *       without throwing and is no wider than 256 bytes.
  *
  * @note A handle standing for the stored object itself asks for the value
@@ -894,11 +885,12 @@ namespace scl
  * alive. @ref scl::basic_any::emplace gives the weaker guarantee `std::any`
  * gives.
  *
- * An allocated object replaced by one of the same size and alignment, allocated
- * as well, keeps the storage it already has, so the allocator is not asked
- * again. That holds while the stored type moves without throwing and is no wider
- * than 256 bytes, which is what a value taken aside for the rebuild costs;
- * beyond it a fresh allocation is asked for.
+ * An allocated object replaced by one the block still holds, allocated as well,
+ * keeps the storage it already has, so the allocator is not asked again. The
+ * block admits a narrower type too, since it carries the room it was taken with.
+ * That holds while the stored type moves without throwing and is no wider than
+ * 256 bytes, which is what a value taken aside for the rebuild costs; beyond it
+ * a fresh allocation is asked for.
  *
  * @tparam ValueType  Deduced type of the stored object.
  * @param  value  The object to store.

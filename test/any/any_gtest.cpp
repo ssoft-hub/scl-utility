@@ -87,7 +87,7 @@ namespace
         int value = 0;
     };
 
-    // Beyond the widest storage the allocator path serves (64 bytes).
+    // Aligned far more strictly than the buffer, so only the allocator path can hold it.
     struct alignas(128) hyper_aligned
     {
         char letter = 0;
@@ -475,12 +475,18 @@ TEST(AnyTest, AnOverAlignedObjectLandsOnStorageThatSuitsIt)
     EXPECT_EQ(stored->value, 42);
 }
 
-TEST(AnyTest, AnAlignmentBeyondTheWidestStorageIsRefused)
+TEST(AnyTest, AnAlignmentStricterThanTheBufferIsServedByTheAllocator)
 {
-    STATIC_EXPECT_FALSE(any_converts_from<hyper_aligned>);
-    STATIC_EXPECT_FALSE(any_assigns_value<hyper_aligned>);
-    STATIC_EXPECT_FALSE(any_constructs_in_place<hyper_aligned>);
-    STATIC_EXPECT_FALSE(any_emplaces<hyper_aligned>);
+    STATIC_EXPECT_TRUE(any_converts_from<hyper_aligned>);
+    STATIC_EXPECT_TRUE(any_assigns_value<hyper_aligned>);
+    STATIC_EXPECT_TRUE(any_constructs_in_place<hyper_aligned>);
+    STATIC_EXPECT_TRUE(any_emplaces<hyper_aligned>);
+
+    ::scl::any value{hyper_aligned{}};
+    auto const * const stored = ::scl::any_cast<hyper_aligned>(&value);
+
+    ASSERT_NE(stored, nullptr);
+    EXPECT_EQ(reinterpret_cast<::std::uintptr_t>(stored) % alignof(hyper_aligned), 0U);
 }
 
 TEST(AnyTest, AnImmovableObjectIsHeldAndTravelsByItsPointer)

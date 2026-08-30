@@ -128,6 +128,74 @@ namespace scl::detail
         return ::std::addressof(static_cast<holder *>(held)->value);
     }
 
+    // Written just before the object, so releasing finds the block from the object alone.
+    struct any_block_header
+    {
+        ::std::size_t capacity;
+        ::std::size_t offset;
+    };
+
+    // Raised to the header's own alignment: the header is read through a pointer of its type.
+    [[nodiscard]]
+    constexpr ::std::size_t any_block_alignment(::std::size_t alignment) noexcept
+    {
+        return (alignment < alignof(any_block_header)) ? alignof(any_block_header) : alignment;
+    }
+
+    // Rebound to a byte, so the block carries the room to align the object inside itself.
+    [[nodiscard]]
+    constexpr ::std::size_t any_block_capacity(::std::size_t size, ::std::size_t alignment) noexcept
+    {
+        return sizeof(any_block_header) + any_block_alignment(alignment) - 1U + size;
+    }
+
+    [[nodiscard]]
+    constexpr bool
+    any_block_fits(::std::size_t capacity, ::std::size_t size, ::std::size_t alignment) noexcept
+    {
+        return any_block_capacity(size, alignment) <= capacity;
+    }
+
+    [[nodiscard]]
+    inline any_block_header any_block_header_of(void const * object) noexcept
+    {
+        // NOLINTNEXTLINE(*-pro-bounds-pointer-arithmetic): the header stands just before the object
+        auto const * const written = static_cast<::std::byte const *>(object) - sizeof(any_block_header);
+        // NOLINTNEXTLINE(*-pro-type-reinterpret-cast): those bytes were written as this header
+        return *::std::launder(reinterpret_cast<any_block_header const *>(written));
+    }
+
+    // A block is one array of bytes, and the object stands at the offset its header records.
+    [[nodiscard]]
+    inline ::std::byte * any_block_base_of(void * object, ::std::size_t offset) noexcept
+    {
+        // NOLINTNEXTLINE(*-pro-bounds-pointer-arithmetic): see above
+        return static_cast<::std::byte *>(object) - offset;
+    }
+
+    // Called again wherever a block is reused, since another type sits at another offset.
+    // NOLINTBEGIN(*-easily-swappable-parameters): three counts of bytes, told apart by name alone
+    [[nodiscard]]
+    inline void *
+    any_lay_out_block(void * block, ::std::size_t capacity, ::std::size_t size, ::std::size_t alignment) noexcept
+    {
+        auto * const base = static_cast<::std::byte *>(block);
+        // NOLINTNEXTLINE(*-pro-bounds-pointer-arithmetic): the header takes the front of the block
+        void * candidate = base + sizeof(any_block_header);
+        ::std::size_t room = capacity - sizeof(any_block_header);
+        auto * const object = static_cast<::std::byte *>(::std::align(any_block_alignment(alignment),
+            size, candidate, room));
+
+        // NOLINTNEXTLINE(*-pro-type-reinterpret-cast,*-pro-bounds-pointer-arithmetic): the header's own room
+        ::std::construct_at(reinterpret_cast<any_block_header *>(object - sizeof(any_block_header)),
+            any_block_header{.capacity = capacity, .offset = static_cast<::std::size_t>(object - base)});
+        return object;
+    }
+    // NOLINTEND(*-easily-swappable-parameters)
+
+    template <typename Allocator>
+    using any_byte_allocator = ::std::allocator_traits<Allocator>::template rebind_alloc<::std::byte>;
+
     // Rebuilding in place costs a stack copy; past this width fresh storage is cheaper.
     inline constexpr ::std::size_t any_widest_reuse_copy = 256U;
 
@@ -165,19 +233,23 @@ namespace scl::detail
     }
 
     // The copy stands aside while the target ends, so the source may be what it owns.
+    // Laid out again once the block is empty: another type sits at another offset inside it.
     template <typename Type>
     [[nodiscard]]
     any_holder_base * any_rebuild_from(any_rebuild_target target, void const * source)
-        requires ::std::constructible_from<::std::decay_t<Type>, ::std::remove_reference_t<Type> const &> &&
+        requires ::std::is_constructible_v<::std::decay_t<Type>, ::std::remove_reference_t<Type> const &> &&
+        ::std::is_nothrow_destructible_v<::std::decay_t<Type>> &&
         ::std::is_nothrow_move_constructible_v<::std::decay_t<Type>>
     {
         using referent = ::std::remove_reference_t<Type>;
         using holder = any_holder<::std::decay_t<Type>>;
 
-        void * const storage = target.held;
+        any_block_header const held_in = any_block_header_of(target.held);
+        auto * const base = any_block_base_of(target.held, held_in.offset);
         ::std::decay_t<Type> taken(*static_cast<referent const *>(source));
 
         target.end(target.held);
+        void * const storage = any_lay_out_block(base, held_in.capacity, sizeof(holder), alignof(holder));
         return ::std::construct_at(static_cast<holder *>(storage), ::std::move(taken));
     }
 
@@ -357,8 +429,7 @@ namespace scl::detail
         }
     };
 
-    // One place answers what a binding reaches. Request carries the qualifiers the caller must
-    // cover: a read spells `Type const`, a write spells `Type`.
+    // One place answers what a binding reaches: a read spells `Type const`, a write `Type`.
     template <typename Request, typename Handle>
     [[nodiscard]]
     constexpr Request * any_referent_of(Handle const & handle) noexcept
@@ -376,8 +447,7 @@ namespace scl::detail
 
         if (::std::is_constant_evaluated())
         {
-            // Recovering a typed pointer from `void const *` is no constant expression before
-            // P2738, while a downcast to what the object really is - an anchor, or a holder - is one.
+            // Before P2738 a downcast to the real object folds where `void const *` does not.
             if (described->binding == any_binding::anchor)
                 return static_cast<any_anchored_descriptor<bare> const *>(described)->referent;
 

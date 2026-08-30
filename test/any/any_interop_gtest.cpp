@@ -13,7 +13,7 @@
 
 namespace
 {
-    // Beyond the widest storage the allocator path serves (64 bytes).
+    // Aligned far more strictly than the buffer, so only the allocator path can hold it.
     struct alignas(128) hyper_aligned
     {
         char letter = 0;
@@ -344,14 +344,18 @@ TEST(AnyInteropTest, TakingAnUncopyableReferentAnswersAnEmptyAny)
     EXPECT_FALSE(value.has_value());
 }
 
-TEST(AnyInteropTest, TakingAReferentAlignedBeyondTheWidestStorageAnswersAnEmptyAny)
+TEST(AnyInteropTest, TakingAReferentAlignedStricterThanTheBufferAllocatesForIt)
 {
     hyper_aligned const object{.letter = 'x'};
     ::scl::any_view const view{object};
 
     ::scl::any const value = view;
 
-    EXPECT_FALSE(value.has_value());
+    ASSERT_TRUE(value.has_value());
+    auto const * const stored = ::scl::any_cast<hyper_aligned>(&value);
+    ASSERT_NE(stored, nullptr);
+    EXPECT_EQ(stored->letter, 'x');
+    EXPECT_EQ(reinterpret_cast<::std::uintptr_t>(stored) % alignof(hyper_aligned), 0U);
 }
 
 TEST(AnyInteropTest, AssigningAViewOfTheAnyItselfKeepsTheValue)

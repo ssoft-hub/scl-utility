@@ -134,6 +134,76 @@ namespace
         ~throwing_move() = default;
     };
 
+    // Blocks come back at a known alignment, so where an object sits follows from the layout.
+    class block_recording_resource : public ::std::pmr::memory_resource
+    {
+    public:
+        int allocations = 0;
+
+        [[nodiscard]]
+        bool holds(void const * object, ::std::size_t size, ::std::size_t alignment) const noexcept
+        {
+            auto const * const address = static_cast<::std::byte const *>(object);
+
+            return m_base != nullptr && address >= m_base && address + size <= m_base + m_bytes &&
+                reinterpret_cast<::std::uintptr_t>(address) % alignment == 0U;
+        }
+
+    private:
+        static constexpr ::std::size_t block_alignment = 256U;
+
+        ::std::byte * m_base = nullptr;
+        ::std::size_t m_bytes = 0U;
+
+        [[nodiscard]]
+        static ::std::size_t widened(::std::size_t alignment) noexcept
+        {
+            return (alignment < block_alignment) ? block_alignment : alignment;
+        }
+
+        void * do_allocate(::std::size_t bytes, ::std::size_t alignment) override
+        {
+            ++allocations;
+            void * const block = ::std::pmr::new_delete_resource()->allocate(bytes, widened(alignment));
+            m_base = static_cast<::std::byte *>(block);
+            m_bytes = bytes;
+            return block;
+        }
+
+        void do_deallocate(void * pointer, ::std::size_t bytes, ::std::size_t alignment) override
+        {
+            if (pointer == m_base)
+            {
+                m_base = nullptr;
+                m_bytes = 0U;
+            }
+            ::std::pmr::new_delete_resource()->deallocate(pointer, bytes, widened(alignment));
+        }
+
+        [[nodiscard]]
+        bool do_is_equal(memory_resource const & other) const noexcept override
+        {
+            return this == &other;
+        }
+    };
+
+    struct alignas(64) over_aligned_block
+    {
+        double values[8] = {};
+    };
+
+    // Fills the block an over_aligned_block was given, at another offset inside it.
+    struct fills_an_over_aligned_block
+    {
+        double values[15] = {};
+    };
+
+    // Wider than the object a reservation for an over_aligned_block asks for.
+    struct outgrows_a_reserved_block
+    {
+        double values[14] = {};
+    };
+
     struct alignas(4 * alignof(void *)) over_aligned_pair
     {
         double first = 0.0;
@@ -188,7 +258,6 @@ namespace
         throwing_three_doubles() { throw block_construction_failure{}; }
     };
 
-    // Fails where assignment builds, which a throwing default constructor never reaches.
     struct throwing_copy_three_doubles
     {
         double first = 0.0;
@@ -280,6 +349,51 @@ TEST(AnyAllocatorTest, ReplacingAnObjectWithAnotherOfTheSameShapeKeepsTheBlock)
     EXPECT_EQ(resource.allocations, 1);
     EXPECT_EQ(resource.deallocations, 0);
     EXPECT_EQ(::scl::any_cast<same_shape_as_three_doubles>(&value)->marker, 6.0);
+}
+
+TEST(AnyAllocatorTest, AnObjectTakenFromAViewIsAlignedForItsOwnType)
+{
+    block_recording_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<fills_an_over_aligned_block>();
+
+    over_aligned_block const source{};
+    value = ::scl::any_view{source};
+
+    auto const * const stored = ::scl::any_cast<over_aligned_block>(&value);
+
+    ASSERT_NE(stored, nullptr);
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_TRUE(resource.holds(stored, sizeof(over_aligned_block), alignof(over_aligned_block)));
+}
+
+TEST(AnyAllocatorTest, AnObjectTakenFromAViewStaysInsideTheBlockItReuses)
+{
+    block_recording_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<over_aligned_block>();
+
+    fills_an_over_aligned_block const source{};
+    value = ::scl::any_view{source};
+
+    auto const * const stored = ::scl::any_cast<fills_an_over_aligned_block>(&value);
+
+    ASSERT_NE(stored, nullptr);
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_TRUE(resource.holds(stored, sizeof(fills_an_over_aligned_block),
+        alignof(fills_an_over_aligned_block)));
+}
+
+TEST(AnyAllocatorTest, ReplacingAnObjectWithANarrowerOneKeepsTheBlock)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<wider_than_three_doubles>();
+
+    value.emplace<three_doubles>(1.0, 2.0, 3.0);
+
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_EQ(resource.deallocations, 0);
 }
 
 TEST(AnyAllocatorTest, ReplacingAnObjectWithAWiderOneTakesANewBlock)
@@ -609,7 +723,6 @@ TEST(AnyAllocatorTest, TryCopyRunsDuringConstantEvaluation)
 TEST(AnyAllocatorTest, TryCopyOfAnInPlaceObjectStaysInTheBuffer)
 {
     counting_resource resource;
-    pmr_any const source{::std::allocator_arg, pmr_allocator{&resource}};
     pmr_any const stored = [&resource] {
         pmr_any built{::std::allocator_arg, pmr_allocator{&resource}};
         built.emplace<int>(42);

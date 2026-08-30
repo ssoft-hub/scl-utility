@@ -25,7 +25,7 @@ namespace scl::detail
         return descriptor.size <= capacity && descriptor.alignment <= alignof(void *) && descriptor.move != nullptr;
     }
 
-    // Typed: this is what aligns an over-aligned object and folds the allocation.
+    // Typed: constant evaluation allocates a holder as an object, raw bytes holding none there.
     template <typename Type, typename Allocator>
     using any_holder_allocator = ::std::allocator_traits<Allocator>::template rebind_alloc<any_holder<Type>>;
 
@@ -73,106 +73,25 @@ namespace scl::detail
             ::std::forward<Arguments>(arguments)...);
     }
 
-    // A block type carries the alignment, which allocator_traits cannot ask for; the set is
-    // bounded, and an object aligned beyond it is refused rather than under-aligned.
-    template <::std::size_t Alignment>
-    struct alignas(Alignment) any_block
-    {
-        ::std::array<::std::byte, Alignment> data;
-    };
-
-    struct any_extent
-    {
-        ::std::size_t size;
-        ::std::size_t alignment;
-    };
-
-    inline constexpr ::std::size_t any_widest_alignment = 64U;
-
-    // An owner admits a type only while a block can carry its alignment.
-    template <typename Type>
-    inline constexpr bool any_alignment_supported_v = alignof(any_holder<Type>) <= any_widest_alignment;
-
-    // Exact, not roomy: the extent is what releasing is told.
+    template <typename Allocator>
     [[nodiscard]]
-    constexpr bool any_same_block(any_extent left, any_extent right) noexcept
+    void * any_acquire(Allocator & allocator, ::std::size_t size, ::std::size_t alignment)
     {
-        return left.alignment == right.alignment && left.size == right.size;
-    }
+        using traits = ::std::allocator_traits<any_byte_allocator<Allocator>>;
 
-    template <::std::size_t Alignment, typename Allocator>
-    [[nodiscard]]
-    void * any_acquire_block(Allocator & allocator, ::std::size_t size)
-    {
-        using block = any_block<Alignment>;
-        using traits = ::std::allocator_traits<
-            typename ::std::allocator_traits<Allocator>::template rebind_alloc<block>>;
-
-        typename traits::allocator_type block_allocator{allocator};
-        return traits::allocate(block_allocator, (size + Alignment - 1U) / Alignment);
-    }
-
-    template <::std::size_t Alignment, typename Allocator>
-    void any_release_block(Allocator & allocator, void * storage, ::std::size_t size) noexcept
-    {
-        using block = any_block<Alignment>;
-        using traits = ::std::allocator_traits<
-            typename ::std::allocator_traits<Allocator>::template rebind_alloc<block>>;
-
-        typename traits::allocator_type block_allocator{allocator};
-        traits::deallocate(block_allocator, static_cast<block *>(storage), (size + Alignment - 1U) / Alignment);
+        ::std::size_t const capacity = any_block_capacity(size, alignment);
+        any_byte_allocator<Allocator> block_allocator{allocator};
+        return any_lay_out_block(traits::allocate(block_allocator, capacity), capacity, size, alignment);
     }
 
     template <typename Allocator>
-    [[nodiscard]]
-    void * any_acquire(Allocator & allocator, any_extent extent)
+    void any_release(Allocator & allocator, void * object) noexcept
     {
-        switch (extent.alignment)
-        {
-        case 1U:
-            return any_acquire_block<1U>(allocator, extent.size);
-        case 2U:
-            return any_acquire_block<2U>(allocator, extent.size);
-        case 4U:
-            return any_acquire_block<4U>(allocator, extent.size);
-        case 8U:
-            return any_acquire_block<8U>(allocator, extent.size);
-        case 16U:
-            return any_acquire_block<16U>(allocator, extent.size);
-        case 32U:
-            return any_acquire_block<32U>(allocator, extent.size);
-        default:
-            return any_acquire_block<any_widest_alignment>(allocator, extent.size);
-        }
-    }
+        using traits = ::std::allocator_traits<any_byte_allocator<Allocator>>;
 
-    template <typename Allocator>
-    void any_release(Allocator & allocator, void * storage, any_extent extent) noexcept
-    {
-        switch (extent.alignment)
-        {
-        case 1U:
-            any_release_block<1U>(allocator, storage, extent.size);
-            return;
-        case 2U:
-            any_release_block<2U>(allocator, storage, extent.size);
-            return;
-        case 4U:
-            any_release_block<4U>(allocator, storage, extent.size);
-            return;
-        case 8U:
-            any_release_block<8U>(allocator, storage, extent.size);
-            return;
-        case 16U:
-            any_release_block<16U>(allocator, storage, extent.size);
-            return;
-        case 32U:
-            any_release_block<32U>(allocator, storage, extent.size);
-            return;
-        default:
-            any_release_block<any_widest_alignment>(allocator, storage, extent.size);
-            return;
-        }
+        any_block_header const header = any_block_header_of(object);
+        any_byte_allocator<Allocator> block_allocator{allocator};
+        traits::deallocate(block_allocator, any_block_base_of(object, header.offset), header.capacity);
     }
 
     // Buffer and pointer share storage, so holding a pointer-sized object in place is free.
