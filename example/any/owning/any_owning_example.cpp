@@ -48,7 +48,7 @@ static void show_storage()
 {
     ::std::cout
         << "  sizeof(scl::any) == " << sizeof(::scl::any)
-        << " bytes, capacity == " << ::scl::any::capacity << '\n';
+        << " bytes, buffer_capacity == " << ::scl::any::buffer_capacity << '\n';
 
     // An int fits the buffer and never reaches the allocator; a std::string does
     // not fit and is allocated. The choice is made per type at compile time.

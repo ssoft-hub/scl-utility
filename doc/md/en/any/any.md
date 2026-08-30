@@ -51,7 +51,7 @@ The allocator and the size of the in-place buffer are template parameters of
 
 ## Features
 
-- Stores an object of any destructible type and uses no RTTI.
+- Stores an object of any type destructible without throwing and uses no RTTI.
 - Costs two pointers - the size `std::any` has on libstdc++.
 - Runs the whole lifecycle of the object during constant evaluation, on the C++20 baseline.
 - Stores a small object in place, without calling the allocator.
@@ -135,6 +135,17 @@ Access rights follow the way the `scl::any` itself is reached. A const `scl::any
 pointer to const, a non-const one grants write access. This is what separates the owning
 type from [`any_view`](any_view.md), which never grants a write.
 
+A caller that already holds the `scl::any` may reach the object through it directly:
+
+```cpp
+value.access<int>();                              // int *, the same answer any_cast gives
+frozen.access<int>();                             // int const *
+value.access<double>();                           // nullptr: the type does not match
+```
+
+`access<T>()` is what `scl::any_cast` calls for an owner, so the two answer alike. It skips
+the null check a pointer needs, since the caller holds the any rather than a pointer to one.
+
 ### Replacing and clearing
 
 ```cpp
@@ -186,8 +197,9 @@ object they addressed has been destroyed.
 ### Reusing the memory
 
 A replacement keeps the memory already allocated when the new object is allocated as well and
-the block still holds it. The allocator is then called neither to release nor to allocate:
-the new object is built where the old one stood.
+the block still holds it. The allocator is then called neither to release nor to allocate: the
+new object is built in the same block, laid out for its own size and alignment, so its address
+need not be the one the old object had.
 
 ```cpp
 pmr_any value{std::allocator_arg, pmr_allocator{&resource}};
@@ -223,6 +235,36 @@ stands.
 A value arriving through [`any_view`](any_view.md) or [`any_arg`](any_arg.md) is taken on
 the same terms. The type of such a value is not named here, so the temporary copy is
 built by an operation the source carries in its type description.
+
+The block can also be asked for ahead of time and given back on demand:
+
+```cpp
+scl::any value;
+
+value.reserve_space_for<three_doubles>();      // one allocation, the any is still empty
+value.has_space_for<three_doubles>();          // true
+value.emplace<three_doubles>(1.0, 2.0, 3.0);   // no further allocation
+
+value.emplace<narrower>();                     // the block still holds it, no allocation
+value.shrink_to_fit();                         // gives back what the narrower object left
+```
+
+`reserve_space_for<T>()` and `shrink_to_fit()` are requests rather than guarantees. A type
+that fits the in-place buffer needs no block, an object already in the buffer keeps none,
+since its placement follows from its type, and an object whose move may throw cannot be
+relocated; in each of those cases the call does nothing. `has_space_for<T>()` answers whether
+the storage already held has the room for a `T`, and covers both cases, the buffer and the
+block.
+
+An object already held is moved into the block acquired, so that block takes the wider of the
+two shapes rather than the reserved one alone. `emplace` then asks the allocator for nothing.
+Assignment is narrower: a value reaches the block only on the terms assignment states, and a
+value through a handle only where the block already holds an object, so either may still
+allocate. All three calls are run-time ones:
+a block is raw bytes, which hold no object during constant evaluation.
+
+A block asked for and never filled is given back by `reset()`, by `shrink_to_fit()` and by
+the destructor, and travels to the target on move and on swap.
 
 ### Copying
 
@@ -304,9 +346,12 @@ decided at compile time:
 
 | Condition | Where the object is stored |
 |---|---|
-| `sizeof(T) <= max(Capacity, sizeof(void *))`, `alignof(T) <= alignof(void *)`, moving does not throw | inside the `scl::any` itself |
+| `sizeof(T) <= buffer_capacity`, `alignof(T) <= alignof(void *)`, moving does not throw | inside the `scl::any` itself |
 | none of the above holds | in memory obtained from the allocator with the alignment of the type |
 | during constant evaluation | always in allocated memory |
+
+`buffer_capacity` is the in-place capacity the type actually has: at least `sizeof(void *)`,
+so a smaller `Capacity` parameter is rounded up to it.
 
 An over-aligned type never lands in the in-place buffer: it is stored in memory obtained with
 the alignment it asks for, whatever that alignment is. The block carries the room to align
@@ -446,13 +491,18 @@ value = scl::any_arg{text};            // the same through an argument
 scl::any taken = scl::any_arg{"abc"};  // char const *: the array decays to a pointer
 ```
 
+A handle reads its referent as `const`, so an array of `const` elements decays to a pointer
+the stored type can be built from. An array of anything else leaves the any empty, as a
+referent that cannot be copied does.
+
 `std::any` cannot do the same: its own constructor accepts a view as an ordinary value and
 stores the view itself.
 
 The type of the object the handle refers to is not named here, so the copy is made through
 the type description the handle carries. A failure is therefore discovered at run time: if
-the object has no copy constructor, the `scl::any` stays empty. During constant evaluation
-this copy is unavailable, because the object behind the handle cannot be reached there.
+the object has no copy constructor, the `scl::any` stays empty. During constant evaluation the
+copy is available on the terms stated above: the handle refers to an `scl::any` with the same
+allocator, whose own description of the object the copy is made through.
 
 Storing the handle itself remains possible, but has to be said explicitly:
 

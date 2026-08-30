@@ -187,6 +187,17 @@ namespace
         }
     };
 
+    // Exactly the in-place capacity, and one byte past it.
+    struct fills_the_buffer
+    {
+        ::std::byte bytes[pmr_any::buffer_capacity]{};
+    };
+
+    struct outgrows_the_buffer
+    {
+        ::std::byte bytes[pmr_any::buffer_capacity + 1U]{};
+    };
+
     struct alignas(64) over_aligned_block
     {
         double values[8] = {};
@@ -256,6 +267,29 @@ namespace
         double third = 0.0;
 
         throwing_three_doubles() { throw block_construction_failure{}; }
+    };
+
+    // Fails where assignment builds, which a throwing default constructor never reaches.
+    // Fits the buffer and writes before it throws, so the bytes it leaves behind would read as
+    // a pointer to a block. The markers are non-zero for that reason: zeroed bytes read as a
+    // null pointer, which every path already treats as no block at all.
+    struct writes_then_throws
+    {
+        int first = 0x11111111;
+        int second = 0x22222222;
+
+        writes_then_throws() = default;
+
+        writes_then_throws(writes_then_throws const & other)
+            : first{other.first}
+        {
+            throw block_construction_failure{};
+        }
+
+        writes_then_throws(writes_then_throws &&) noexcept = default;
+        writes_then_throws & operator=(writes_then_throws const &) = default;
+        writes_then_throws & operator=(writes_then_throws &&) noexcept = default;
+        ~writes_then_throws() = default;
     };
 
     struct throwing_copy_three_doubles
@@ -349,6 +383,281 @@ TEST(AnyAllocatorTest, ReplacingAnObjectWithAnotherOfTheSameShapeKeepsTheBlock)
     EXPECT_EQ(resource.allocations, 1);
     EXPECT_EQ(resource.deallocations, 0);
     EXPECT_EQ(::scl::any_cast<same_shape_as_three_doubles>(&value)->marker, 6.0);
+}
+
+TEST(AnyAllocatorTest, ReservedSpaceKeepsTheNextObjectFromAskingTheAllocator)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+
+    value.reserve_space_for<three_doubles>();
+
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_FALSE(value.has_value());
+    EXPECT_TRUE(value.has_space_for<three_doubles>());
+
+    value.emplace<three_doubles>(1.0, 2.0, 3.0);
+
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_EQ(resource.deallocations, 0);
+}
+
+TEST(AnyAllocatorTest, ReservingSpaceForATypeThatFitsTheBufferAsksForNothing)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+
+    value.reserve_space_for<int>();
+
+    EXPECT_EQ(resource.allocations, 0);
+    EXPECT_TRUE(value.has_space_for<int>());
+}
+
+TEST(AnyAllocatorTest, TheBufferHoldsExactlyItsCapacityAndNoMore)
+{
+    counting_resource resource;
+
+    {
+        pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+        value.emplace<fills_the_buffer>();
+
+        EXPECT_EQ(resource.allocations, 0);
+        EXPECT_TRUE(value.has_space_for<fills_the_buffer>());
+    }
+
+    {
+        pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+        value.emplace<outgrows_the_buffer>();
+
+        EXPECT_EQ(resource.allocations, 1);
+    }
+}
+
+TEST(AnyAllocatorTest, AWiderReservationGivesTheNarrowerBlockBack)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+
+    value.reserve_space_for<three_doubles>();
+    value.reserve_space_for<too_wide_to_take_aside>();
+
+    EXPECT_EQ(resource.allocations, 2);
+    EXPECT_EQ(resource.deallocations, 1);
+    EXPECT_TRUE(value.has_space_for<too_wide_to_take_aside>());
+
+    value.emplace<too_wide_to_take_aside>();
+
+    EXPECT_EQ(resource.allocations, 2);
+}
+
+TEST(AnyAllocatorTest, AnObjectInTheBufferKeepsNoBlockToReserveOrShrink)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<int>(7);
+
+    value.reserve_space_for<three_doubles>();
+    value.shrink_to_fit();
+
+    EXPECT_EQ(resource.allocations, 0);
+    EXPECT_EQ(resource.deallocations, 0);
+    ASSERT_NE(::scl::any_cast<int>(&value), nullptr);
+    EXPECT_EQ(*::scl::any_cast<int>(&value), 7);
+}
+
+TEST(AnyAllocatorTest, AReservedBlockIsGivenBackOnDestruction)
+{
+    counting_resource resource;
+    {
+        pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+        value.reserve_space_for<three_doubles>();
+    }
+
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_EQ(resource.deallocations, 1);
+}
+
+TEST(AnyAllocatorTest, AReservedBlockTravelsWithTheAnyAndIsGivenBackOnce)
+{
+    counting_resource resource;
+    {
+        pmr_any source{::std::allocator_arg, pmr_allocator{&resource}};
+        source.reserve_space_for<three_doubles>();
+
+        pmr_any taken{::std::move(source)};
+
+        EXPECT_TRUE(taken.has_space_for<three_doubles>());
+        EXPECT_FALSE(source.has_space_for<three_doubles>());
+    }
+
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_EQ(resource.deallocations, 1);
+}
+
+TEST(AnyAllocatorTest, ReservingSpaceKeepsTheHeldObjectInsideTheNewBlock)
+{
+    block_recording_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<outgrows_a_reserved_block>();
+
+    value.reserve_space_for<over_aligned_block>();
+
+    auto const * const held = ::scl::any_cast<outgrows_a_reserved_block>(&value);
+
+    ASSERT_NE(held, nullptr);
+    EXPECT_TRUE(resource.holds(held, sizeof(outgrows_a_reserved_block), alignof(outgrows_a_reserved_block)));
+
+    value.emplace<over_aligned_block>();
+    auto const * const reserved = ::scl::any_cast<over_aligned_block>(&value);
+
+    ASSERT_NE(reserved, nullptr);
+    EXPECT_TRUE(resource.holds(reserved, sizeof(over_aligned_block), alignof(over_aligned_block)));
+}
+
+TEST(AnyAllocatorTest, TakingAValueFromAViewAfterReservingTakesABlockOfItsOwn)
+{
+    block_recording_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.reserve_space_for<fills_an_over_aligned_block>();
+
+    fills_an_over_aligned_block source{};
+    source.values[0] = 42.0;
+    value = ::scl::any_view{source};
+
+    auto const * const stored = ::scl::any_cast<fills_an_over_aligned_block>(&value);
+
+    ASSERT_NE(stored, nullptr);
+    EXPECT_EQ(stored->values[0], 42.0);
+    EXPECT_TRUE(resource.holds(stored, sizeof(fills_an_over_aligned_block),
+        alignof(fills_an_over_aligned_block)));
+
+    // A handle assignment rebuilds in a block that holds an object, and a reserved one holds
+    // none, so it asks for a block of its own and gives the reserved one back.
+    EXPECT_EQ(resource.allocations, 2);
+}
+
+TEST(AnyAllocatorTest, ResettingGivesBackAReservedBlock)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+
+    value.reserve_space_for<three_doubles>();
+    value.reset();
+
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_EQ(resource.deallocations, 1);
+    EXPECT_FALSE(value.has_space_for<three_doubles>());
+}
+
+TEST(AnyAllocatorTest, AnObjectThatCannotBeRelocatedKeepsTheBlockItHas)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<throwing_move>(7U);
+
+    value.reserve_space_for<too_wide_to_take_aside>();
+    value.shrink_to_fit();
+
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_EQ(resource.deallocations, 0);
+    ASSERT_NE(::scl::any_cast<throwing_move>(&value), nullptr);
+    EXPECT_EQ(::scl::any_cast<throwing_move>(&value)->tag, 7U);
+}
+
+TEST(AnyAllocatorTest, RoomForATypeAssignmentCannotTakeAsideIsStillRoom)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+
+    value.reserve_space_for<too_wide_to_take_aside>();
+
+    EXPECT_TRUE(value.has_space_for<too_wide_to_take_aside>());
+    EXPECT_EQ(resource.allocations, 1);
+
+    // The type is too wide to take aside, so assigning a value asks for a block of its own.
+    value = too_wide_to_take_aside{};
+
+    EXPECT_EQ(resource.allocations, 2);
+    EXPECT_EQ(resource.deallocations, 1);
+}
+
+TEST(AnyAllocatorTest, ShrinkingGivesBackTheRoomANarrowerObjectLeftUnused)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<wider_than_three_doubles>();
+    value.emplace<three_doubles>(1.0, 2.0, 3.0);
+
+    EXPECT_TRUE(value.has_space_for<wider_than_three_doubles>());
+
+    value.shrink_to_fit();
+
+    EXPECT_EQ(resource.allocations, 2);
+    EXPECT_EQ(resource.deallocations, 1);
+    EXPECT_FALSE(value.has_space_for<wider_than_three_doubles>());
+    EXPECT_TRUE(value.has_space_for<three_doubles>());
+    EXPECT_EQ(::scl::any_cast<three_doubles>(&value)->first, 1.0);
+}
+
+TEST(AnyAllocatorTest, ShrinkingAnAnyWhoseBlockAlreadyFitsAsksForNothing)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<three_doubles>(1.0, 2.0, 3.0);
+
+    value.shrink_to_fit();
+
+    EXPECT_EQ(resource.allocations, 1);
+    EXPECT_EQ(resource.deallocations, 0);
+}
+
+#if SCL_HAS_EXCEPTIONS
+TEST(AnyAllocatorTest, AFailedConstructionInTheBufferReleasesNothing)
+{
+    counting_resource resource;
+    writes_then_throws const source;
+
+    {
+        pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+
+        EXPECT_THROW(value = source, block_construction_failure);
+        EXPECT_FALSE(value.has_value());
+
+        EXPECT_THROW(value.emplace<writes_then_throws>(source), block_construction_failure);
+        EXPECT_FALSE(value.has_value());
+
+        EXPECT_THROW(value = ::scl::any_view{source}, block_construction_failure);
+        EXPECT_FALSE(value.has_value());
+
+        value.reset();
+    }
+
+    EXPECT_EQ(resource.allocations, 0);
+    EXPECT_EQ(resource.deallocations, 0);
+}
+
+TEST(AnyAllocatorTest, AFailedCopyOfABufferObjectKeepsTheSource)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.emplace<writes_then_throws>();
+
+    EXPECT_THROW(static_cast<void>(value.try_copy()), block_construction_failure);
+    EXPECT_TRUE(value.has_value());
+    EXPECT_EQ(resource.allocations, 0);
+}
+#endif
+
+TEST(AnyAllocatorTest, ShrinkingReleasesSpaceReservedAndNeverUsed)
+{
+    counting_resource resource;
+    pmr_any value{::std::allocator_arg, pmr_allocator{&resource}};
+    value.reserve_space_for<three_doubles>();
+
+    value.shrink_to_fit();
+
+    EXPECT_EQ(resource.deallocations, 1);
+    EXPECT_FALSE(value.has_space_for<three_doubles>());
 }
 
 TEST(AnyAllocatorTest, AnObjectTakenFromAViewIsAlignedForItsOwnType)

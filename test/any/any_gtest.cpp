@@ -327,6 +327,13 @@ TEST(AnyTest, AccessAnswersNullForAnEmptyAny)
     EXPECT_EQ(value.access<int>(), nullptr);
 }
 
+TEST(AnyTest, TheBufferCapacityIsAtLeastAPointerWide)
+{
+    STATIC_EXPECT_EQ(::scl::any::buffer_capacity, sizeof(void *));
+    STATIC_EXPECT_EQ((::scl::basic_any<::std::allocator<::std::byte>, 1>::buffer_capacity), sizeof(void *));
+    STATIC_EXPECT_EQ((::scl::basic_any<::std::allocator<::std::byte>, 48>::buffer_capacity), 48U);
+}
+
 TEST(AnyTest, AccessIsOfferedForAnObjectTypeAndFoldsAtCompileTime)
 {
     STATIC_EXPECT_TRUE(any_accesses<int>);

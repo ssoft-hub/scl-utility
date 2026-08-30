@@ -38,7 +38,8 @@ namespace scl
         using storage = detail::any_storage<Capacity>;
 
     public:
-        static constexpr ::std::size_t capacity = Capacity;
+        // The union gives the buffer a pointer's worth of room whatever Capacity asks for.
+        static constexpr ::std::size_t buffer_capacity = storage::buffer_size;
 
     private:
         descriptor const * m_descriptor = nullptr;
@@ -46,12 +47,8 @@ namespace scl
         SCL_NO_UNIQUE_ADDRESS
         Allocator m_allocator;
 
-        // The union gives the buffer a pointer's worth of room whatever Capacity asks for.
-        static constexpr ::std::size_t buffer_capacity = detail::any_storage<Capacity>::buffer_size;
-
     public:
-        // Not defaulted: a defaulted constructor is not user-provided, so `any const value;`
-        // would then need an initialiser.
+        // GCC does not take the union initialiser inside the storage template.
         // NOLINTNEXTLINE(modernize-use-equals-default): see above
         constexpr basic_any() noexcept {}
 
@@ -208,6 +205,48 @@ namespace scl
             return *detail::any_holder_object<bare>(held());
         }
 
+        template <typename ValueType>
+        void reserve_space_for()
+        {
+            using bare = ::std::decay_t<ValueType>;
+
+            if (has_space_for<bare>())
+                return;
+
+            if (m_descriptor != nullptr && (is_stored_in_buffer() || m_descriptor->move == nullptr))
+                return;
+
+            auto const & described = detail::any_type_descriptor_of<bare &>;
+            ::std::size_t size = described.size;
+            ::std::size_t alignment = described.alignment;
+
+            // Adopting a block moves the object already held into it, so it takes both shapes.
+            if (m_descriptor != nullptr)
+            {
+                size = (m_descriptor->size > size) ? m_descriptor->size : size;
+                alignment = (m_descriptor->alignment > alignment) ? m_descriptor->alignment : alignment;
+            }
+
+            adopt_block(detail::any_acquire(m_allocator, size, alignment));
+        }
+
+        void shrink_to_fit()
+        {
+            if (m_descriptor == nullptr)
+            {
+                release_block();
+                return;
+            }
+
+            if (is_stored_in_buffer() || m_descriptor->move == nullptr)
+                return;
+
+            if (allocated_capacity() <= detail::any_block_capacity(m_descriptor->size, m_descriptor->alignment))
+                return;
+
+            adopt_block(detail::any_acquire(m_allocator, m_descriptor->size, m_descriptor->alignment));
+        }
+
         constexpr void reset() noexcept { destroy_held(); }
 
         // Three moves, not an exchange of storage: a buffer object is reached through its address.
@@ -226,6 +265,19 @@ namespace scl
         constexpr bool has_value() const noexcept
         {
             return m_descriptor != nullptr;
+        }
+
+        template <typename ValueType>
+        [[nodiscard]]
+        bool has_space_for() const noexcept
+        {
+            auto const & described = detail::any_type_descriptor_of<::std::decay_t<ValueType> &>;
+
+            if (detail::any_fits_in_buffer(described, buffer_capacity))
+                return true;
+
+            return has_block() &&
+                detail::any_block_fits(allocated_capacity(), described.size, described.alignment);
         }
 
         [[nodiscard]]
@@ -310,12 +362,41 @@ namespace scl
             return detail::any_block_header_of(m_storage.allocated()).capacity;
         }
 
+        [[nodiscard]]
+        bool has_block() const noexcept
+        {
+            return !is_stored_in_buffer() && m_storage.allocated() != nullptr;
+        }
+
+        void release_block() noexcept
+        {
+            if (has_block())
+                detail::any_release(m_allocator, m_storage.allocated());
+            m_storage.adopt(nullptr);
+        }
+
+        void adopt_block(void * block) noexcept
+        {
+            if (m_descriptor == nullptr)
+            {
+                release_block();
+                m_storage.adopt(static_cast<detail::any_holder_base *>(block));
+                return;
+            }
+
+            detail::any_holder_base * const source = m_storage.allocated();
+            detail::any_holder_base * const moved = m_descriptor->move(block, source);
+
+            detail::any_release(m_allocator, source);
+            m_storage.adopt(moved);
+        }
+
         // Fitting by size says nothing about the relocation the buffer demands. During constant
         // evaluation an object lives in a typed allocation, not in a block of bytes.
         [[nodiscard]]
         constexpr bool reuses_block_for(detail::any_type_descriptor const & described) const noexcept
         {
-            if (::std::is_constant_evaluated() || m_descriptor == nullptr || is_stored_in_buffer())
+            if (::std::is_constant_evaluated() || !has_block())
                 return false;
 
             if (detail::any_fits_in_buffer(described, buffer_capacity))
@@ -331,12 +412,12 @@ namespace scl
             return reuses_block_for(detail::any_type_descriptor_of<ValueType &>);
         }
 
-        // The operation stands in for the type: absent, no copy can be held aside.
+        // A reserved block holds no object to rebuild from, and no operation means no copy.
         [[nodiscard]]
         constexpr bool rebuilds_in_place(detail::any_type_descriptor const * described) const noexcept
         {
-            return described != nullptr && described->rebuild != nullptr &&
-                reuses_block_for(*described->as_value);
+            return m_descriptor != nullptr && described != nullptr &&
+                described->rebuild != nullptr && reuses_block_for(*described->as_value);
         }
 
         // Asked only of equal sizes, where an object inside the stored one starts where it does.
@@ -362,7 +443,8 @@ namespace scl
             detail::any_block_header const held_in = detail::any_block_header_of(m_storage.allocated());
             auto * const base = detail::any_block_base_of(m_storage.allocated(), held_in.offset);
 
-            m_descriptor->erase(m_storage.allocated());
+            if (m_descriptor != nullptr)
+                m_descriptor->erase(m_storage.allocated());
             m_descriptor = nullptr;
 
             void * const block = detail::any_lay_out_block(base, held_in.capacity, sizeof(holder),
@@ -376,6 +458,9 @@ namespace scl
             catch (...)
             {
                 detail::any_release(m_allocator, block);
+
+                // The pointer would otherwise read as a block still held.
+                m_storage.adopt(nullptr);
                 throw;
             }
 #else
@@ -400,13 +485,33 @@ namespace scl
 
             auto const & described = detail::any_type_descriptor_of<ValueType &>;
             if (detail::any_fits_in_buffer(described, buffer_capacity))
-                static_cast<void>(detail::any_make_holder_in_place<ValueType>(m_storage.buffer(),
-                    ::std::forward<Arguments>(arguments)...));
+                place_in_buffer<ValueType>(::std::forward<Arguments>(arguments)...);
             else
                 m_storage.adopt(place_allocated<ValueType>(described,
                     ::std::forward<Arguments>(arguments)...));
 
             m_descriptor = &described;
+        }
+
+        // The bytes of an object that never finished would read as a block still held.
+        template <typename ValueType, typename... Arguments>
+        void place_in_buffer(Arguments &&... arguments)
+        {
+#if SCL_HAS_EXCEPTIONS
+            try
+            {
+                static_cast<void>(detail::any_make_holder_in_place<ValueType>(m_storage.buffer(),
+                    ::std::forward<Arguments>(arguments)...));
+            }
+            catch (...)
+            {
+                m_storage.adopt(nullptr);
+                throw;
+            }
+#else
+            static_cast<void>(detail::any_make_holder_in_place<ValueType>(m_storage.buffer(),
+                ::std::forward<Arguments>(arguments)...));
+#endif
         }
 
         template <typename ValueType, typename... Arguments>
@@ -487,7 +592,20 @@ namespace scl
 
             if (detail::any_fits_in_buffer(*stored, buffer_capacity))
             {
+#if SCL_HAS_EXCEPTIONS
+                try
+                {
+                    static_cast<void>(described->place(m_storage.buffer(), referent));
+                }
+                catch (...)
+                {
+                    // The bytes written would otherwise read as a block still held.
+                    m_storage.adopt(nullptr);
+                    throw;
+                }
+#else
                 static_cast<void>(described->place(m_storage.buffer(), referent));
+#endif
             }
             else
             {
@@ -528,22 +646,25 @@ namespace scl
         constexpr void take_from_any(basic_any & other) noexcept
         {
             m_descriptor = other.m_descriptor;
-            if (m_descriptor == nullptr)
-                return;
 
-            if (is_stored_in_buffer())
+            if (m_descriptor != nullptr && is_stored_in_buffer())
                 static_cast<void>(m_descriptor->move(m_storage.buffer(), other.held()));
             else
                 m_storage.adopt(other.m_storage.allocated());
 
             other.m_descriptor = nullptr;
+            other.m_storage.adopt(nullptr);
         }
 
         // What the typed allocator gave, it takes back; only an owner-made descriptor is seen there.
         constexpr void destroy_held() noexcept
         {
             if (m_descriptor == nullptr)
+            {
+                if (!::std::is_constant_evaluated())
+                    release_block();
                 return;
+            }
 
             if (::std::is_constant_evaluated())
             {
@@ -563,6 +684,9 @@ namespace scl
             }
 
             m_descriptor = nullptr;
+
+            // Tells a reserved block from bytes the object left behind.
+            m_storage.adopt(nullptr);
         }
 
         [[nodiscard]]
@@ -731,8 +855,60 @@ namespace scl
  */
 
 /**
- * @var scl::basic_any::capacity
- * @brief Bytes of in-place storage, as requested by the @p Capacity parameter.
+ * @var scl::basic_any::buffer_capacity
+ * @brief Bytes of in-place storage. At least `sizeof(void *)`, so a smaller @p Capacity
+ *        is rounded up to it.
+ */
+
+/**
+ * @fn scl::basic_any::reserve_space_for()
+ * @brief Acquires storage able to hold a @p ValueType, so storing one asks the
+ *        allocator for nothing.
+ * @tparam ValueType  The type the storage is meant for; decayed.
+ *
+ * @note A request, not a guarantee. A type that fits the in-place buffer needs no
+ *       storage at all, an object already in the buffer keeps none, since its
+ *       placement follows from its type, and an object whose move may throw cannot
+ *       be relocated into wider storage. In each of those cases the call does
+ *       nothing.
+ *
+ * @note An object already held is moved into the storage acquired, which therefore
+ *       takes the wider of the two shapes. @ref scl::basic_any::emplace then asks the
+ *       allocator for nothing. Assigning a value reaches the reserved block only on the
+ *       terms @ref scl::basic_any::operator=(ValueType &&) states, and a handle
+ *       assignment only where the block already holds an object, so either may still
+ *       allocate.
+ *
+ * @note Run time only: the storage is raw bytes, which hold no object during constant
+ *       evaluation. The same holds for @ref scl::basic_any::shrink_to_fit and
+ *       @ref scl::basic_any::has_space_for.
+ *
+ * @note Storage acquired and never filled is given back by
+ *       @ref scl::basic_any::reset, @ref scl::basic_any::shrink_to_fit and the
+ *       destructor, and travels to the target on move and on swap.
+ *
+ * @throws Whatever the allocator throws.
+ */
+
+/**
+ * @fn scl::basic_any::shrink_to_fit()
+ * @brief Gives back storage wider than the object in it needs.
+ *
+ * @note A request, not a guarantee, on the terms
+ *       @ref scl::basic_any::reserve_space_for states: an object in the buffer holds
+ *       no block, and one whose move may throw cannot be relocated.
+ *
+ * @throws Whatever the allocator throws.
+ */
+
+/**
+ * @fn scl::basic_any::has_space_for()
+ * @brief Answers whether the storage already held has the room for a @p ValueType.
+ * @tparam ValueType  The type asked about; decayed.
+ * @return `true` where the type fits the in-place buffer, or the block already held
+ *         has the space for it. Whether an operation then takes that room is the
+ *         operation's own rule: @ref scl::basic_any::emplace always does, assigning
+ *         a value does on the terms its own reference states.
  */
 
 /**
@@ -913,10 +1089,11 @@ namespace scl
  * was held is destroyed first. @ref scl::basic_any::operator=(ValueType &&) gives
  * the stronger guarantee.
  *
- * An allocated object whose replacement is allocated as well, with the same size
- * and alignment, keeps the storage it already has, so neither the allocator nor
- * the address changes. Destroying first is what lets that happen for any type,
- * where assigning a value reaches it only for a type it can take aside.
+ * An allocated object whose replacement the block still holds keeps the storage it
+ * already has, so the allocator is not asked again. The block is laid out for the
+ * type going into it, so the object's address may move inside it. Destroying first
+ * is what lets that happen for any type, where assigning a value reaches it only
+ * for a type it can take aside.
  *
  * @warning An argument that refers into the stored object - the object itself, a
  *          member of it, or anything it owns - is read after that object is

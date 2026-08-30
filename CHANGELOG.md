@@ -85,6 +85,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   stored type is never called, as with `std::any`. Assigning the stored object to its own any,
   as a value or through a handle, does nothing at all, which is what keeps a value whose type
   cannot be copied, where a replacement would leave the any empty.
+  `reserve_space_for<T>()` acquires a block ahead of the object that will fill it,
+  `shrink_to_fit()` gives back what a narrower object left unused, and `has_space_for<T>()`
+  answers whether the storage already held has the room for a `T`; the first two are requests
+  rather than guarantees, on the terms the reference states. The in-place capacity is
+  `buffer_capacity`, at least `sizeof(void *)`.
 
 - `scl::flags` subtracts one set from another: `a - b` and `a -= b` keep the flags set in
   `a` and absent from `b`, in the flags-flags and the flags-`Enum` form alike. The
