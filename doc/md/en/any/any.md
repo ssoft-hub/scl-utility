@@ -402,11 +402,11 @@ constexpr int taken()
 static_assert(taken() == 42);
 ```
 
-Taking a value during constant evaluation is available to `scl::any`, that is, to the
-specialization with the default allocator. For an `scl::basic_any` with another allocator,
-reading through a handle works as before while copying the value stays a run-time operation:
-the type description a handle carries is one per type and cannot name the rebound form of an
-allocator it knows nothing about.
+Taking a value during constant evaluation asks that both sides hold the same allocator, and
+that the allocator itself work during constant evaluation. The copy is made through the
+owner's own description of the object, which names the allocator it was created for; a
+description made for another allocator names another one, and the two do not meet. Reading
+through a handle works either way.
 
 ### Reading through the views
 

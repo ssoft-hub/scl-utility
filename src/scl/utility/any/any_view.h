@@ -222,8 +222,10 @@ namespace scl
  * To also accept rvalue arguments "in place" — valid only for the duration of a
  * call — use the parameter-only companion @ref scl::any_arg.
  *
- * @note @ref scl::any_cast is a runtime operation on the C++20 baseline, as with
- *       `std::any_cast`; the identity queries above remain `constexpr`. The limit
+ * @note @ref scl::any_cast over a plain lvalue is a runtime operation on the C++20
+ *       baseline; over an @ref scl::basic_any it folds, the owner's own holder being
+ *       what the view carries, and the identity queries fold whatever it refers to. The
+ *       limit
  *       is one of binding rather than of erasure: the view refers to an lvalue of
  *       any type, so the only thing it can erase that lvalue's address to is
  *       `void const *`, and recovering a typed pointer from `void` is

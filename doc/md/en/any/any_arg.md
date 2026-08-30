@@ -232,8 +232,9 @@ The limits follow from that.
 - An argument over an [`scl::any`](any.md) reads during constant evaluation in any position
   and with no anchor: the owner keeps the object inside a holder of its own, and the cast
   comes back down to it.
-- A `std::any` carries no anchor, so its casts run at run time. An object taken over from a
-  view reads during constant evaluation exactly when the view itself can.
+- A `std::any` cannot be built during constant evaluation at all, so its casts run at run
+  time. An object taken over from a view reads during constant evaluation exactly when the
+  view itself can.
 - None of this concerns run time. There every position works and every request answers, the
   width is the same two pointers, and the cost equals that of a view.
 

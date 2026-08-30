@@ -478,9 +478,10 @@ namespace scl
  *                  cv-ref qualification.
  * @param  owner  The any whose content is bound.
  *
- * @note @ref scl::any_cast through this binding is a run-time operation: the
- *       content is reached as `void *`, which no anchor can make
- *       constant-evaluable, exactly as for the `std::any` backing.
+ * @note A binding made from an owner carries that owner's own holder, which a cast
+ *       reaches by a downcast, so it folds during constant evaluation without an
+ *       anchor. A binding over a plain lvalue reaches its object as `void *`, which
+ *       needs the anchor and P2738 (C++26).
  */
 
 /**

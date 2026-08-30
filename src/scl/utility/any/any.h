@@ -798,8 +798,10 @@ namespace scl
  * referent's type is not named here, so the copy is made through the handle
  * rather than by naming one.
  *
- * The referent decays on the way in, as a value does when it reaches an any
- * directly: an array is taken as the pointer it decays to.
+ * The referent decays on the way in: an array is taken as the pointer it decays to.
+ * A handle reads its referent as `const`, so only an array of `const` elements
+ * yields a pointer the stored type can be built from; any other leaves the any
+ * empty, as a referent that cannot be copied does.
  *
  * @tparam HandleType  Deduced @ref scl::any_view or @ref scl::any_argument.
  * @param  handle  The handle whose referent is copied.
@@ -810,9 +812,11 @@ namespace scl
  *       not knowable at compile time, so this is a run-time outcome rather than
  *       a rejected call.
  *
- * @note Taking a referent is a run-time operation: a handle's referent is
- *       unreachable during constant evaluation, so this constructor is no
- *       constant expression there.
+ * @note During constant evaluation a referent is reachable only where a handle
+ *       carries an owner's own description of it and the allocator is the one that
+ *       owner holds. A handle over a plain lvalue or an anchor is not reachable
+ *       there, and neither is an owner with another allocator, so the constructor
+ *       is no constant expression in those cases.
  *
  * @note Storing the handle itself stays available, and is now the explicit
  *       spelling: `any{std::in_place_type<any_view>, view}`.
@@ -841,6 +845,9 @@ namespace scl
  *       already held, so `value = scl::any_view{value}` does nothing - which is
  *       what keeps a value whose type has no copy constructor at all. A handle
  *       on a member of the stored object names another type and replaces it.
+ *
+ * @note During constant evaluation a referent is reachable on the terms
+ *       @ref scl::basic_any::basic_any(HandleType const &) states.
  */
 
 /**
