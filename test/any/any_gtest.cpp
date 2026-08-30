@@ -121,6 +121,27 @@ namespace
     template <typename Type>
     concept any_emplaces = requires(::scl::any & target) { target.emplace<Type>(); };
 
+    template <typename Type>
+    concept any_assigns_lvalue = requires(::scl::any & target, Type value) { target = value; };
+
+    template <typename Type>
+    concept any_constructs_in_place_from_an_int =
+        requires { ::scl::any{::std::in_place_type<Type>, 0}; };
+
+    template <typename Type>
+    concept any_emplaces_from_an_int = requires(::scl::any & target) { target.emplace<Type>(0); };
+
+    // The descriptor carries no way to end such an object, so an owner must not take one.
+    struct destructor_may_throw
+    {
+        destructor_may_throw() = default;
+        destructor_may_throw(destructor_may_throw const &) = default;
+        destructor_may_throw(destructor_may_throw &&) = default;
+        destructor_may_throw & operator=(destructor_may_throw const &) = default;
+        destructor_may_throw & operator=(destructor_may_throw &&) = default;
+        ~destructor_may_throw() noexcept(false) {}
+    };
+
     struct trace
     {
         int copies = 0;
@@ -242,6 +263,29 @@ TEST(AnyTest, DefaultConstructedAnyHoldsNothing)
     EXPECT_FALSE(value.has_value());
     EXPECT_TRUE(value.type_key() == ::scl::type_key{});
     EXPECT_TRUE(value.type_name().empty());
+}
+
+TEST(AnyTest, ATypeWhoseDestructorMayThrowIsRefused)
+{
+    STATIC_EXPECT_FALSE(any_converts_from<destructor_may_throw>);
+    STATIC_EXPECT_FALSE(any_assigns_value<destructor_may_throw>);
+    STATIC_EXPECT_FALSE(any_constructs_in_place<destructor_may_throw>);
+    STATIC_EXPECT_FALSE(any_emplaces<destructor_may_throw>);
+}
+
+TEST(AnyTest, ATypeTheArgumentsCannotBuildIsRefused)
+{
+    // An lvalue of a move-only type: the trait must answer before the call, not after a hard
+    // error inside the library.
+    STATIC_EXPECT_FALSE(any_converts_from<::std::unique_ptr<int> &>);
+    STATIC_EXPECT_TRUE(any_converts_from<::std::unique_ptr<int>>);
+    STATIC_EXPECT_FALSE(any_assigns_lvalue<::std::unique_ptr<int>>);
+    STATIC_EXPECT_TRUE(any_assigns_value<::std::unique_ptr<int>>);
+
+    STATIC_EXPECT_FALSE(any_constructs_in_place_from_an_int<::std::unique_ptr<int>>);
+    STATIC_EXPECT_FALSE(any_emplaces_from_an_int<::std::unique_ptr<int>>);
+    STATIC_EXPECT_TRUE(any_constructs_in_place_from_an_int<int>);
+    STATIC_EXPECT_TRUE(any_emplaces_from_an_int<int>);
 }
 
 TEST(AnyTest, AnyCostsNoMoreThanTwoPointers)

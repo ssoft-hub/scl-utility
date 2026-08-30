@@ -187,6 +187,18 @@ namespace
         return view.has_value() && view.type_key() == ::scl::type_key_of<int>() &&
             view.type_name() == ::scl::type_name<int>();
     }
+    // An owner has no way to end such an object, so taking one through a handle leaves it
+    // empty rather than storing what it cannot destroy.
+    struct destructor_may_throw
+    {
+        destructor_may_throw() = default;
+        destructor_may_throw(destructor_may_throw const &) = default;
+        destructor_may_throw(destructor_may_throw &&) = default;
+        destructor_may_throw & operator=(destructor_may_throw const &) = default;
+        destructor_may_throw & operator=(destructor_may_throw &&) = default;
+        ~destructor_may_throw() noexcept(false) {}
+    };
+
 } // namespace
 
 TEST(AnyInteropTest, ViewOverAnAnyReadsItsContent)
@@ -403,6 +415,15 @@ TEST(AnyInteropTest, AViewReadsATypeItMayNotDestroy)
 
     EXPECT_EQ(view.type_name(), ::scl::type_name<privately_destructible>());
     EXPECT_EQ(::scl::any_cast<privately_destructible>(&view)->value, 42);
+}
+
+TEST(AnyInteropTest, TakingAReferentWhoseDestructorMayThrowAnswersAnEmptyAny)
+{
+    destructor_may_throw object;
+
+    ::scl::any const taken{::scl::any_view{object}};
+
+    EXPECT_FALSE(taken.has_value());
 }
 
 TEST(AnyInteropTest, TakingAReferentTheAnyCouldNotDestroyAnswersAnEmptyAny)

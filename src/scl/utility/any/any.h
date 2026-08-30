@@ -72,7 +72,9 @@ namespace scl
             requires(!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<ValueType>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<ValueType>>) &&
             (!detail::any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
-            detail::any_alignment_supported_v<::std::decay_t<ValueType>>
+            detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
+            (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
+            (::std::is_constructible_v<::std::decay_t<ValueType>, ValueType>)
         {
             construct<::std::decay_t<ValueType>>(::std::forward<ValueType>(value));
         }
@@ -108,7 +110,9 @@ namespace scl
 
         template <typename ValueType, typename... Arguments>
         constexpr explicit basic_any(::std::in_place_type_t<ValueType> /*type*/, Arguments &&... arguments)
-            requires detail::any_alignment_supported_v<::std::decay_t<ValueType>>
+            requires detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
+            (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
+            (::std::is_constructible_v<::std::decay_t<ValueType>, Arguments...>)
         {
             construct<::std::decay_t<ValueType>>(::std::forward<Arguments>(arguments)...);
         }
@@ -166,7 +170,9 @@ namespace scl
             requires(!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<ValueType>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<ValueType>>) &&
             (!detail::any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
-            detail::any_alignment_supported_v<::std::decay_t<ValueType>>
+            detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
+            (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
+            (::std::is_constructible_v<::std::decay_t<ValueType>, ValueType>)
         {
             using bare = ::std::decay_t<ValueType>;
 
@@ -197,7 +203,9 @@ namespace scl
     public:
         template <typename ValueType, typename... Arguments>
         constexpr ::std::decay_t<ValueType> & emplace(Arguments &&... arguments)
-            requires detail::any_alignment_supported_v<::std::decay_t<ValueType>>
+            requires detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
+            (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
+            (::std::is_constructible_v<::std::decay_t<ValueType>, Arguments...>)
         {
             using bare = ::std::decay_t<ValueType>;
 
@@ -685,8 +693,8 @@ namespace scl
  * the buffer shares its storage with the pointer that would otherwise hold the
  * allocation.
  *
- * The requirements on a stored type are `destructible`, constructibility from
- * the arguments given, and an alignment of at most 64 bytes - the widest storage
+ * The requirements on a stored type are destructibility without throwing,
+ * constructibility from the arguments given, and an alignment of at most 64 bytes - the widest storage
  * the allocator is asked for; a stricter alignment is refused at compile time
  * rather than served under-aligned. An immovable type is admitted, since it is
  * allocated and an any moves by handing over the pointer.

@@ -34,7 +34,8 @@ pointer, and moves without throwing. Every other object goes into memory obtaine
 allocator. The choice between the two is made per type at compile time and costs nothing:
 the in-place buffer occupies the same room as the pointer to an allocated object.
 
-The stored type has to satisfy three requirements: the object can be destroyed, the object
+The stored type has to satisfy three requirements: the object can be destroyed without
+throwing, the object
 can be constructed from the arguments given, and the alignment of the type is at most 64
 bytes. Nothing else is required.
 

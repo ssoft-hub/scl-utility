@@ -53,8 +53,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   bytes that is nothrow-movable and no more aligned than a pointer is stored inside the any;
   anything else is allocated
   through the allocator, which `scl::basic_any<Allocator, Capacity>` takes as a parameter
-  along with a wider in-place capacity. A stored type has to be destructible,
-  constructible from the arguments given and aligned no more strictly than 64 bytes — the
+  along with a wider in-place capacity. A stored type has to be destructible without
+  throwing, constructible from the arguments given and aligned no more strictly than 64 bytes — the
   widest storage the allocator path serves; an immovable type is admitted because it is
   allocated and the any moves by handing over the pointer. Copying is not a
   constructor — the type is move-only, which is what lets a non-copyable object be stored
