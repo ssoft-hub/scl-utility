@@ -10,7 +10,6 @@
 #include <scl/utility/meta/type_key.h>
 #include <scl/utility/preprocessor/rtti.h>
 
-#include <concepts>
 #include <cstddef>
 #include <memory>
 #include <new>
@@ -162,7 +161,8 @@ namespace scl::detail
     template <typename Type>
     [[nodiscard]]
     any_holder_base * any_place_copy(void * storage, void const * source)
-        requires ::std::constructible_from<::std::decay_t<Type>, ::std::remove_reference_t<Type> const &>
+        requires ::std::is_constructible_v<::std::decay_t<Type>, ::std::remove_reference_t<Type> const &> &&
+        ::std::is_nothrow_destructible_v<::std::decay_t<Type>>
     {
         using referent = ::std::remove_reference_t<Type>;
         using holder = any_holder<::std::decay_t<Type>>;
@@ -227,7 +227,8 @@ namespace scl::detail
     constexpr any_place_function any_place_operation_of() noexcept
     {
         // A volatile referent needs the source form: a `const &` copy constructor cannot read it.
-        if constexpr (::std::constructible_from<::std::decay_t<Type>, ::std::remove_reference_t<Type> const &>)
+        if constexpr (::std::is_constructible_v<::std::decay_t<Type>, ::std::remove_reference_t<Type> const &> &&
+            ::std::is_nothrow_destructible_v<::std::decay_t<Type>>)
             return &any_place_copy<Type>;
         else
             return nullptr;
@@ -248,7 +249,7 @@ namespace scl::detail
     [[nodiscard]]
     constexpr any_erase_function any_erase_operation_of() noexcept
     {
-        if constexpr (::std::destructible<Type>)
+        if constexpr (::std::is_nothrow_destructible_v<Type>)
             return &any_erase_at<Type>;
         else
             return nullptr;
@@ -323,10 +324,10 @@ namespace scl::detail
     {};
 
     template <typename Type>
-    inline constexpr bool any_construction_tag_v = ::std::same_as<Type, ::std::allocator_arg_t>;
+    inline constexpr bool is_any_construction_tag_v = ::std::is_same_v<Type, ::std::allocator_arg_t>;
 
     template <typename Type>
-    inline constexpr bool any_construction_tag_v<::std::in_place_type_t<Type>> = true;
+    inline constexpr bool is_any_construction_tag_v<::std::in_place_type_t<Type>> = true;
 
     // The one place an owner reads a handle, befriended instead of the owner template.
     struct any_handle_access

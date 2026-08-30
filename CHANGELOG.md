@@ -59,7 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   allocated and the any moves by handing over the pointer. Copying is not a
   constructor — the type is move-only, which is what lets a non-copyable object be stored
   at all. A copy is asked for through `try_copy()`, which answers an empty any when the
-  stored type has no copy constructor; `copyable()` reports that ahead of the attempt. An
+  stored type has no copy constructor; `is_copyable()` reports that ahead of the attempt. An
   allocator with state is supported, `std::pmr::polymorphic_allocator` included, and it
   travels with the object on move and on swap: storage acquired by one allocator can only
   be released by that same one. `scl::any_view`, `scl::any_arg` and `scl::any_switch`

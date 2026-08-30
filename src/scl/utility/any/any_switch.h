@@ -62,7 +62,7 @@ namespace scl::detail
 
     // Order decides: `in_case<T &>` after `in_case<T const &>` is covered, not the other way.
     template <typename Case, typename... Branches>
-    inline constexpr bool any_case_covered_v =
+    inline constexpr bool is_any_case_covered_v =
         (any_request_covers_v<any_case_request_t<typename Branches::case_type>, any_case_request_t<Case>> || ...);
 
     template <typename... Branches>
@@ -116,10 +116,10 @@ namespace scl::detail
     }
 
     template <typename Handler, typename Result, typename Case>
-    inline constexpr bool any_switch_branch_v = any_switch_branch_check<Handler, Result, Case>();
+    inline constexpr bool is_any_switch_branch_v = any_switch_branch_check<Handler, Result, Case>();
 
     template <typename Branch, typename Result, typename Handler = decltype(Branch::handler)>
-    inline constexpr bool any_switch_branch_const_v =
+    inline constexpr bool is_any_switch_branch_const_v =
         any_switch_branch_check<Handler const &, Result, typename Branch::case_type>();
 
     // Selection never throws, so apply throws only what a call and storing its result may.
@@ -156,11 +156,11 @@ namespace scl::detail
     }
 
     template <typename Branch, typename Result, typename Handler = decltype(Branch::handler)>
-    inline constexpr bool any_switch_branch_nothrow_const_v =
+    inline constexpr bool is_any_switch_branch_nothrow_const_v =
         any_switch_branch_nothrow_check<Handler const &, Result, typename Branch::case_type>();
 
     template <typename Branch, typename Result, typename Handler = decltype(Branch::handler)>
-    inline constexpr bool any_switch_branch_nothrow_mutable_v =
+    inline constexpr bool is_any_switch_branch_nothrow_mutable_v =
         any_switch_branch_nothrow_check<Handler &, Result, typename Branch::case_type>();
 } // namespace scl::detail
 
@@ -175,16 +175,17 @@ namespace scl
             ::std::conditional_t<::std::is_void_v<Result>, detail::any_switch_no_result, ::std::optional<Result>>;
 
         // Handing the result back is apply's, so a throwing move makes apply throwing.
-        static constexpr bool nothrow_const_apply =
-            (detail::any_switch_branch_nothrow_const_v<Branches, Result> && ...) &&
+        static constexpr bool is_const_apply_nothrow =
+            (detail::is_any_switch_branch_nothrow_const_v<Branches, Result> && ...) &&
             ::std::is_nothrow_move_constructible_v<storage_type>;
 
-        static constexpr bool nothrow_mutable_apply =
-            (detail::any_switch_branch_nothrow_mutable_v<Branches, Result> && ...) &&
+        static constexpr bool is_mutable_apply_nothrow =
+            (detail::is_any_switch_branch_nothrow_mutable_v<Branches, Result> && ...) &&
             ::std::is_nothrow_move_constructible_v<storage_type>;
 
         // A chain holding a `mutable` handler has no `const` apply rather than a broken one.
-        static constexpr bool const_applicable = (detail::any_switch_branch_const_v<Branches, Result> && ...);
+        static constexpr bool is_const_applicable =
+            (detail::is_any_switch_branch_const_v<Branches, Result> && ...);
 
     public:
         using result_type = ::std::conditional_t<::std::is_void_v<Result>, void, ::std::optional<Result>>;
@@ -195,9 +196,9 @@ namespace scl
         [[nodiscard]]
         constexpr auto in_case(Handler && handler) const
             requires detail::any_switch_case<Case> && (!detail::any_switch_has_fallback_v<Branches...>) &&
-            (!detail::any_case_covered_v<Case, Branches...>) &&
+            (!detail::is_any_case_covered_v<Case, Branches...>) &&
             (!detail::any_case_shadowed_by_std_any_v<Case, Branches...>) &&
-            detail::any_switch_branch_v<::std::decay_t<Handler> &, Result, Case>
+            detail::is_any_switch_branch_v<::std::decay_t<Handler> &, Result, Case>
         {
             return append<Case>(::std::forward<Handler>(handler));
         }
@@ -208,7 +209,7 @@ namespace scl
         constexpr auto in_case() const
             requires ::std::is_void_v<Result> && detail::any_switch_case<Case> &&
             (!detail::any_switch_has_fallback_v<Branches...>) &&
-            (!detail::any_case_covered_v<Case, Branches...>) &&
+            (!detail::is_any_case_covered_v<Case, Branches...>) &&
             (!detail::any_case_shadowed_by_std_any_v<Case, Branches...>)
         {
             return append<Case>(detail::any_switch_no_handler{});
@@ -218,14 +219,14 @@ namespace scl
         [[nodiscard]]
         constexpr auto or_else(Handler && handler) const
             requires(!detail::any_switch_has_fallback_v<Branches...>) &&
-            detail::any_switch_branch_v<::std::decay_t<Handler> &, Result, detail::any_switch_fallback>
+            detail::is_any_switch_branch_v<::std::decay_t<Handler> &, Result, detail::any_switch_fallback>
         {
             return append<detail::any_switch_fallback>(::std::forward<Handler>(handler));
         }
 
         constexpr result_type apply(any_arg subject) const /**/
-            noexcept(nothrow_const_apply)
-            requires const_applicable
+            noexcept(is_const_apply_nothrow)
+            requires is_const_applicable
         {
             storage_type result{};
             select(m_branches, subject, result, ::std::index_sequence_for<Branches...>{});
@@ -235,7 +236,7 @@ namespace scl
         }
 
         constexpr result_type apply(any_arg subject) /**/
-            noexcept(nothrow_mutable_apply)
+            noexcept(is_mutable_apply_nothrow)
         {
             storage_type result{};
             select(m_branches, subject, result, ::std::index_sequence_for<Branches...>{});
@@ -245,13 +246,13 @@ namespace scl
         }
 
         // Spelled out, not left to a conversion: it carries exactly what apply carries.
-        constexpr result_type operator()(any_arg subject) const noexcept(nothrow_const_apply)
-            requires const_applicable
+        constexpr result_type operator()(any_arg subject) const noexcept(is_const_apply_nothrow)
+            requires is_const_applicable
         {
             return apply(subject);
         }
 
-        constexpr result_type operator()(any_arg subject) noexcept(nothrow_mutable_apply)
+        constexpr result_type operator()(any_arg subject) noexcept(is_mutable_apply_nothrow)
         {
             return apply(subject);
         }
@@ -259,7 +260,7 @@ namespace scl
         [[nodiscard]]
         constexpr bool has_case(any_arg subject) const noexcept
         {
-            return covered(subject, ::std::index_sequence_for<Branches...>{});
+            return is_covered(subject, ::std::index_sequence_for<Branches...>{});
         }
 
     private:
@@ -290,7 +291,8 @@ namespace scl
 
         template <::std::size_t... Index>
         [[nodiscard]]
-        constexpr bool covered(any_arg subject, ::std::index_sequence<Index...> /*indices*/) const noexcept
+        constexpr bool
+        is_covered(any_arg subject, ::std::index_sequence<Index...> /*indices*/) const noexcept
         {
             return (matches<Index>(subject) || ...);
         }

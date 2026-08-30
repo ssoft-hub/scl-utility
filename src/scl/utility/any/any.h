@@ -71,7 +71,7 @@ namespace scl
         constexpr basic_any(ValueType && value) // NOLINT(*-explicit-*): implicit by design
             requires(!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<ValueType>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<ValueType>>) &&
-            (!detail::any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
+            (!detail::is_any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
             detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
             (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
             (::std::is_constructible_v<::std::decay_t<ValueType>, ValueType>)
@@ -84,17 +84,16 @@ namespace scl
         constexpr basic_any(HandleType const & handle) // NOLINT(*-explicit-*): takes the value
             requires(::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<HandleType>>)
         {
-            take_referent_from(handle);
+            copy_from_handle(handle);
         }
 
         basic_any(basic_any const &) = delete;
         basic_any & operator=(basic_any const &) = delete;
 
-        // An allocator's move never throws ([allocator.requirements]).
         constexpr basic_any(basic_any && other) noexcept
             : m_allocator{::std::move(other.m_allocator)}
         {
-            take(other);
+            take_from_any(other);
         }
 
         constexpr basic_any & operator=(basic_any && other) noexcept
@@ -104,7 +103,7 @@ namespace scl
 
             destroy_held();
             adopt_allocator(other.m_allocator);
-            take(other);
+            take_from_any(other);
             return *this;
         }
 
@@ -129,10 +128,10 @@ namespace scl
                     return *this;
 
                 basic_any replacement{::std::allocator_arg, m_allocator};
-                replacement.take_referent_from(handle);
+                replacement.copy_from_handle(handle);
 
                 destroy_held();
-                take(replacement);
+                take_from_any(replacement);
                 return *this;
             }
 
@@ -154,10 +153,10 @@ namespace scl
             }
 
             basic_any replacement{::std::allocator_arg, m_allocator};
-            replacement.take_referent(described, referent);
+            replacement.copy_from_referent(described, referent);
 
             destroy_held();
-            take(replacement);
+            take_from_any(replacement);
             return *this;
         }
 
@@ -169,7 +168,7 @@ namespace scl
         constexpr basic_any & operator=(ValueType && value)
             requires(!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<ValueType>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<ValueType>>) &&
-            (!detail::any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
+            (!detail::is_any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
             detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
             (::std::is_nothrow_destructible_v<::std::decay_t<ValueType>>) &&
             (::std::is_constructible_v<::std::decay_t<ValueType>, ValueType>)
@@ -196,7 +195,7 @@ namespace scl
             replacement.construct<bare>(::std::forward<ValueType>(value));
 
             destroy_held();
-            take(replacement);
+            take_from_any(replacement);
             return *this;
         }
 
@@ -259,7 +258,7 @@ namespace scl
         }
 
         [[nodiscard]]
-        constexpr bool copyable() const noexcept
+        constexpr bool is_copyable() const noexcept
         {
             return m_descriptor != nullptr && m_descriptor->place != nullptr;
         }
@@ -270,7 +269,7 @@ namespace scl
             using traits = ::std::allocator_traits<Allocator>;
 
             basic_any copy{::std::allocator_arg, traits::select_on_container_copy_construction(m_allocator)};
-            if (!copyable())
+            if (!is_copyable())
                 return copy;
 
             if (::std::is_constant_evaluated())
@@ -281,14 +280,14 @@ namespace scl
             }
             else
             {
-                copy.take_referent(m_descriptor, m_descriptor->object(held()));
+                copy.copy_from_referent(m_descriptor, m_descriptor->object(held()));
             }
             return copy;
         }
 
     private:
         [[nodiscard]]
-        constexpr bool stored_in_buffer() const noexcept
+        constexpr bool is_stored_in_buffer() const noexcept
         {
             return m_descriptor != nullptr && !::std::is_constant_evaluated() &&
                 detail::any_fits_in_buffer(*m_descriptor, buffer_capacity);
@@ -305,7 +304,7 @@ namespace scl
         [[nodiscard]]
         constexpr bool reuses_block_for(detail::any_type_descriptor const & described) const noexcept
         {
-            if (::std::is_constant_evaluated() || m_descriptor == nullptr || stored_in_buffer())
+            if (::std::is_constant_evaluated() || m_descriptor == nullptr || is_stored_in_buffer())
                 return false;
 
             if (detail::any_fits_in_buffer(described, buffer_capacity))
@@ -398,8 +397,9 @@ namespace scl
 
         template <typename ValueType, typename... Arguments>
         [[nodiscard]]
-        detail::any_holder_base *
-        place_allocated(detail::any_type_descriptor const & described, Arguments &&... arguments)
+        detail::any_holder_base * place_allocated(/**/
+            detail::any_type_descriptor const & described,
+            Arguments &&... arguments)
         {
             detail::any_extent const room{.size = described.size, .alignment = described.alignment};
             void * const storage = detail::any_acquire(m_allocator, room);
@@ -422,7 +422,7 @@ namespace scl
 
         // A referent's type is known only to the descriptor its handle carries.
         template <typename HandleType>
-        constexpr void take_referent_from(HandleType const & handle)
+        constexpr void copy_from_handle(HandleType const & handle)
         {
             auto const * const described = detail::any_handle_access::descriptor(handle);
             if (described == nullptr)
@@ -430,17 +430,18 @@ namespace scl
 
             if (::std::is_constant_evaluated())
             {
-                take_held_referent(described, detail::any_handle_access::held(handle));
+                copy_from_holder(described, detail::any_handle_access::held(handle));
                 return;
             }
 
-            take_referent(described, detail::any_handle_access::referent(handle));
+            copy_from_referent(described, detail::any_handle_access::referent(handle));
         }
 
         // Constant evaluation allocates through the typed allocator, which only an owner-made
         // descriptor names, so anything else stops on the cast below.
-        constexpr void
-        take_held_referent(detail::any_type_descriptor const * described, detail::any_holder_base const * held)
+        constexpr void copy_from_holder(/**/
+            detail::any_type_descriptor const * described,
+            detail::any_holder_base const * held)
         {
             auto const * const stored =
                 static_cast<detail::any_descriptor<Allocator> const *>(described->as_value);
@@ -455,13 +456,15 @@ namespace scl
 
         // What `overlaps_held_object` answers about an address at run time.
         [[nodiscard]]
-        constexpr bool holds(detail::any_holder_base const * candidate) const noexcept
+        constexpr bool holds(/**/
+            detail::any_holder_base const * candidate) const noexcept
         {
             return m_descriptor != nullptr && candidate != nullptr && candidate == held();
         }
 
-        constexpr void
-        take_referent(detail::any_type_descriptor const * described, void const * referent)
+        constexpr void copy_from_referent(/**/
+            detail::any_type_descriptor const * described,
+            void const * referent)
         {
             if (described == nullptr || described->place == nullptr)
                 return;
@@ -514,13 +517,13 @@ namespace scl
         }
 
         // The buffer path keeps no pointer: the object's address is the buffer's.
-        constexpr void take(basic_any & other) noexcept
+        constexpr void take_from_any(basic_any & other) noexcept
         {
             m_descriptor = other.m_descriptor;
             if (m_descriptor == nullptr)
                 return;
 
-            if (stored_in_buffer())
+            if (is_stored_in_buffer())
                 static_cast<void>(m_descriptor->move(m_storage.buffer(), other.held()));
             else
                 m_storage.adopt(other.m_storage.allocated());
@@ -539,7 +542,7 @@ namespace scl
                 static_cast<detail::any_descriptor<Allocator> const *>(m_descriptor)
                     ->release(m_storage.allocated(), m_allocator);
             }
-            else if (stored_in_buffer())
+            else if (is_stored_in_buffer())
             {
                 m_descriptor->erase(held());
             }
@@ -558,7 +561,7 @@ namespace scl
         [[nodiscard]]
         constexpr detail::any_holder_base * held() noexcept
         {
-            if (stored_in_buffer())
+            if (is_stored_in_buffer())
                 return m_descriptor->reach(m_storage.buffer());
             return (m_descriptor != nullptr) ? m_storage.allocated() : nullptr;
         }
@@ -566,11 +569,9 @@ namespace scl
         [[nodiscard]]
         constexpr detail::any_holder_base const * held() const noexcept
         {
-            if (stored_in_buffer())
-            {
+            if (is_stored_in_buffer())
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): reach only locates the holder
                 return m_descriptor->reach(const_cast<void *>(m_storage.buffer()));
-            }
             return (m_descriptor != nullptr) ? m_storage.allocated() : nullptr;
         }
 
@@ -650,8 +651,9 @@ namespace scl
 #endif
 
     template <typename Allocator, ::std::size_t Capacity>
-    constexpr void
-    swap(basic_any<Allocator, Capacity> & left, basic_any<Allocator, Capacity> & right) noexcept
+    constexpr void swap(/**/
+        basic_any<Allocator, Capacity> & left,
+        basic_any<Allocator, Capacity> & right) noexcept
     {
         left.swap(right);
     }
@@ -858,7 +860,7 @@ namespace scl
  * A constructor has no way to report that the stored type has no copy constructor, and
  * refusing the whole any for such a type would cost more than it buys. Copying therefore
  * goes through @ref scl::basic_any::try_copy, which answers an empty any instead, with
- * @ref scl::basic_any::copyable telling the two outcomes apart beforehand.
+ * @ref scl::basic_any::is_copyable telling the two outcomes apart beforehand.
  */
 
 /**
@@ -987,7 +989,7 @@ namespace scl
  */
 
 /**
- * @fn scl::basic_any::copyable() const
+ * @fn scl::basic_any::is_copyable() const
  * @brief Reports whether the stored type can be copied.
  *
  * A question about the type, not about the value, so an empty any answers
@@ -1008,7 +1010,7 @@ namespace scl
  * is a fresh object rather than the same one changing hands.
  *
  * @return An any holding the copy; an empty any when
- *         @ref scl::basic_any::copyable is `false`.
+ *         @ref scl::basic_any::is_copyable is `false`.
  * @throws Whatever the copy constructor of the stored type or the allocator
  *         throws.
  */

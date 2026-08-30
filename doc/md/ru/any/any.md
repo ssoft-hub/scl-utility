@@ -62,7 +62,7 @@ libc++ он занимает вдвое больше, а в реализации
 - Принимает аллокатор параметром шаблона, в том числе аллокатор с состоянием, например
   `std::pmr::polymorphic_allocator`.
 - Перемещается, но не копируется; копию хранимого объекта выдаёт `try_copy()`, а
-  `copyable()` заранее сообщает, возможна ли она.
+  `is_copyable()` заранее сообщает, возможна ли она.
 - Объявляет перемещение, `swap()` и `reset()` как `noexcept`.
 - Отдаёт указатель на хранимый объект через `any_cast<T>(any *)`; при несовпадении типа
   возвращается `nullptr`, исключение не выбрасывается. Через неконстантный `scl::any`
@@ -245,7 +245,7 @@ static void show_copying()
 {
     ::scl::any const text{::std::string{"copy me"}};
 
-    // copyable() asks about the stored type, so an empty result of try_copy() is
+    // is_copyable() asks about the stored type, so an empty result of try_copy() is
     // never ambiguous.
     ::scl::any const copy = text.try_copy();
 
@@ -253,13 +253,16 @@ static void show_copying()
     ::scl::any const owned{::std::make_unique<int>(42)};
     ::scl::any const refused = owned.try_copy();
 
-    ::std::cout << "  copyable=" << text.copyable() << " copy=\"" << *::scl::any_cast<::std::string>(&copy) << "\"\n";
     ::std::cout
-        << "  unique_ptr copyable=" << owned.copyable() << " copy has_value=" << refused.has_value() << '\n'; // 0 0
+        << "  is_copyable=" << text.is_copyable() << " copy=\""
+        << *::scl::any_cast<::std::string>(&copy) << "\"\n";
+    ::std::cout
+        << "  unique_ptr is_copyable=" << owned.is_copyable()
+        << " copy has_value=" << refused.has_value() << '\n'; // 0 0
 }
 ```
 
-`copyable()` отвечает о хранимом **типе**, поэтому пустой результат `try_copy()`
+`is_copyable()` отвечает о хранимом **типе**, поэтому пустой результат `try_copy()`
 понимается однозначно. Пустым он бывает в двух случаях: копируемого объекта не было
 вовсе или его тип не поддерживает копирование. Исключение, выброшенное копирующим
 конструктором или аллокатором, `try_copy()` не перехватывает и передаёт вызывающей

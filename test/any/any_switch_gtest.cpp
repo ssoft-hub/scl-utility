@@ -125,7 +125,7 @@ namespace
         };
 
     template <typename Chain>
-    concept const_applicable = requires(Chain const chain, int value) { chain.apply(value); };
+    concept is_const_applicable = requires(Chain const chain, int value) { chain.apply(value); };
 
     template <typename Target>
     concept chain_convertible_to =
@@ -194,8 +194,8 @@ TEST(AnySwitchTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(void_handler<void (*)(::std::string)>);
 
     // A `const` chain applies exactly as far as its handlers are callable on one.
-    STATIC_EXPECT_TRUE(const_applicable<decltype(::scl::any_switch<>().in_case<int>([](int) {}))>);
-    STATIC_EXPECT_FALSE(const_applicable<decltype(::scl::any_switch<>().in_case<int>([count = 0](int) mutable {
+    STATIC_EXPECT_TRUE(is_const_applicable<decltype(::scl::any_switch<>().in_case<int>([](int) {}))>);
+    STATIC_EXPECT_FALSE(is_const_applicable<decltype(::scl::any_switch<>().in_case<int>([count = 0](int) mutable {
         ++count;
     }))>);
 

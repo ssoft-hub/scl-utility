@@ -9,7 +9,6 @@
 #include <scl/utility/preprocessor/exceptions.h>
 
 #include <array>
-#include <concepts>
 #include <cstddef>
 #include <memory>
 #include <utility>
@@ -225,7 +224,7 @@ namespace scl::detail
     [[nodiscard]]
     constexpr any_holder_base *
     any_duplicate_holder(any_holder_base const * held, Allocator & allocator)
-        requires ::std::constructible_from<Type, Type const &>
+        requires ::std::is_constructible_v<Type, Type const &> && ::std::is_nothrow_destructible_v<Type>
     {
         return any_make_holder<Type>(allocator, *any_holder_object<Type>(held));
     }
@@ -237,7 +236,7 @@ namespace scl::detail
     [[nodiscard]]
     constexpr any_duplicate_function<Allocator> any_duplicate_operation_of() noexcept
     {
-        if constexpr (::std::constructible_from<Type, Type const &>)
+        if constexpr (::std::is_constructible_v<Type, Type const &> && ::std::is_nothrow_destructible_v<Type>)
             return &any_duplicate_holder<Type, Allocator>;
         else
             return nullptr;

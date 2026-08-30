@@ -549,7 +549,7 @@ TEST(AnyAllocatorTest, TryCopyReproducesACopyableObject)
 
     ::scl::any const copy = source.try_copy();
 
-    EXPECT_TRUE(source.copyable());
+    EXPECT_TRUE(source.is_copyable());
     EXPECT_EQ(*::scl::any_cast<::std::string>(&copy), "Hello Any!");
 }
 
@@ -559,7 +559,7 @@ TEST(AnyAllocatorTest, TryCopyOfAMoveOnlyObjectAnswersAnEmptyAny)
 
     ::scl::any const copy = source.try_copy();
 
-    EXPECT_FALSE(source.copyable());
+    EXPECT_FALSE(source.is_copyable());
     EXPECT_FALSE(copy.has_value());
 }
 
@@ -569,7 +569,7 @@ TEST(AnyAllocatorTest, AnEmptyAnyIsNotCopyableAndCopiesToAnEmptyAny)
 
     ::scl::any const copy = source.try_copy();
 
-    EXPECT_FALSE(source.copyable());
+    EXPECT_FALSE(source.is_copyable());
     EXPECT_FALSE(copy.has_value());
 }
 

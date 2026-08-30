@@ -59,7 +59,7 @@ The allocator and the size of the in-place buffer are template parameters of
 - Takes the allocator as a template parameter, including a stateful one such as
   `std::pmr::polymorphic_allocator`.
 - Moves but does not copy; `try_copy()` produces a copy of the stored object and
-  `copyable()` reports in advance whether one is possible.
+  `is_copyable()` reports in advance whether one is possible.
 - Declares moving, `swap()` and `reset()` as `noexcept`.
 - Hands out a pointer to the stored object through `any_cast<T>(any *)`; a type mismatch
   answers `nullptr` and throws nothing. Through a non-const `scl::any` that pointer grants
@@ -239,7 +239,7 @@ static void show_copying()
 {
     ::scl::any const text{::std::string{"copy me"}};
 
-    // copyable() asks about the stored type, so an empty result of try_copy() is
+    // is_copyable() asks about the stored type, so an empty result of try_copy() is
     // never ambiguous.
     ::scl::any const copy = text.try_copy();
 
@@ -247,13 +247,16 @@ static void show_copying()
     ::scl::any const owned{::std::make_unique<int>(42)};
     ::scl::any const refused = owned.try_copy();
 
-    ::std::cout << "  copyable=" << text.copyable() << " copy=\"" << *::scl::any_cast<::std::string>(&copy) << "\"\n";
     ::std::cout
-        << "  unique_ptr copyable=" << owned.copyable() << " copy has_value=" << refused.has_value() << '\n'; // 0 0
+        << "  is_copyable=" << text.is_copyable() << " copy=\""
+        << *::scl::any_cast<::std::string>(&copy) << "\"\n";
+    ::std::cout
+        << "  unique_ptr is_copyable=" << owned.is_copyable()
+        << " copy has_value=" << refused.has_value() << '\n'; // 0 0
 }
 ```
 
-`copyable()` answers about the stored **type**, so an empty result from `try_copy()` is
+`is_copyable()` answers about the stored **type**, so an empty result from `try_copy()` is
 unambiguous. It is empty in two cases: there was no object to copy at all, or its type does
 not support copying. An exception thrown by the copy constructor or by the allocator is not
 caught by `try_copy()` and reaches the caller.

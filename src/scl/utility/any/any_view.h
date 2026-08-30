@@ -83,7 +83,7 @@ namespace scl
         // Only the view's own copy escapes the refusal.
         template <typename Type>
         any_view(Type const &&)
-            requires(!::std::same_as<::std::remove_cvref_t<Type>, any_view>)
+            requires(!::std::is_same_v<::std::remove_cvref_t<Type>, any_view>)
         = delete;
 
     public:
@@ -113,7 +113,7 @@ namespace scl
 
         template <::scl::concepts::object_type Type, typename View>
         friend constexpr Type const * any_cast(View * view) noexcept
-            requires(::std::same_as<::std::remove_cv_t<View>, any_view>);
+            requires(::std::is_same_v<::std::remove_cv_t<View>, any_view>);
     };
 
     // View is deduced so that a cv-qualified handle binds at all; its qualification governs
@@ -121,7 +121,7 @@ namespace scl
     template <::scl::concepts::object_type Type, typename View>
     [[nodiscard]]
     SCL_HOT constexpr Type const * any_cast(View * view) noexcept
-        requires(::std::same_as<::std::remove_cv_t<View>, any_view>)
+        requires(::std::is_same_v<::std::remove_cv_t<View>, any_view>)
     {
         using bare = ::std::remove_cvref_t<Type>;
 

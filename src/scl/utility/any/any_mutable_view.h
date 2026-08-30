@@ -33,7 +33,7 @@ namespace scl
     template <::scl::concepts::object_type Type, typename MutableView>
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(MutableView * view) noexcept
-        requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>);
+        requires(::std::is_same_v<::std::remove_cv_t<MutableView>, any_mutable_view>);
 
     class any_mutable_view : detail::any_base
     {
@@ -88,13 +88,13 @@ namespace scl
         // A `const` object grants no write.
         template <typename Type>
         any_mutable_view(Type const &)
-            requires(!::std::same_as<::std::remove_cvref_t<Type>, any_mutable_view>)
+            requires(!::std::is_same_v<::std::remove_cvref_t<Type>, any_mutable_view>)
         = delete;
 
         // Spelled for an rvalue too: otherwise an anchor temporary reaches the form above.
         template <typename Type>
         any_mutable_view(Type const &&)
-            requires(!::std::same_as<::std::remove_cvref_t<Type>, any_mutable_view>)
+            requires(!::std::is_same_v<::std::remove_cvref_t<Type>, any_mutable_view>)
         = delete;
 
     public:
@@ -128,7 +128,7 @@ namespace scl
 
         template <::scl::concepts::object_type Type, typename MutableView>
         friend constexpr Type * scl::any_cast(MutableView * view) noexcept
-            requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>);
+            requires(::std::is_same_v<::std::remove_cv_t<MutableView>, any_mutable_view>);
     };
 
     // The view type is deduced so that a cv-qualified handle binds at all; its qualification governs
@@ -136,7 +136,7 @@ namespace scl
     template <::scl::concepts::object_type Type, typename MutableView>
     [[nodiscard]]
     SCL_HOT constexpr Type * any_cast(MutableView * view) noexcept
-        requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>)
+        requires(::std::is_same_v<::std::remove_cv_t<MutableView>, any_mutable_view>)
     {
         if (view == nullptr) [[unlikely]]
             return nullptr;
@@ -161,7 +161,7 @@ namespace scl
     template <::scl::concepts::lvalue_reference Type, typename WriteView>
     [[nodiscard]]
     constexpr Type any_cast(WriteView & view)
-        requires(::std::same_as<::std::remove_cv_t<WriteView>, any_mutable_view>) &&
+        requires(::std::is_same_v<::std::remove_cv_t<WriteView>, any_mutable_view>) &&
         (!::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         auto * const reached = any_cast<::std::remove_reference_t<Type>>(&view);
@@ -174,7 +174,7 @@ namespace scl
     template <::scl::concepts::object_type Type, typename ValueView>
     [[nodiscard]]
     constexpr Type any_cast(ValueView & view)
-        requires(::std::same_as<::std::remove_cv_t<ValueView>, any_mutable_view>)
+        requires(::std::is_same_v<::std::remove_cv_t<ValueView>, any_mutable_view>)
     {
         auto const * const reached = any_cast<Type const>(&view);
         if (reached == nullptr)
@@ -185,7 +185,7 @@ namespace scl
     template <::scl::concepts::lvalue_reference Type, typename ReadView>
     [[nodiscard]]
     constexpr Type any_cast(ReadView & view)
-        requires(::std::same_as<::std::remove_cv_t<ReadView>, any_mutable_view>) &&
+        requires(::std::is_same_v<::std::remove_cv_t<ReadView>, any_mutable_view>) &&
         (::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         // remove_reference_t keeps the request's cv: T const volatile & must reach a volatile referent.

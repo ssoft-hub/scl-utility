@@ -185,7 +185,7 @@ namespace scl
     template <::scl::concepts::lvalue_reference Type, typename WriteArgument>
     [[nodiscard]]
     constexpr Type any_cast(WriteArgument & arg SCL_LIFETIMEBOUND)
-        requires(::std::same_as<::std::remove_cv_t<WriteArgument>, any_argument>) &&
+        requires(::std::is_same_v<::std::remove_cv_t<WriteArgument>, any_argument>) &&
         (!::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         auto * pointer = any_cast<::std::remove_reference_t<Type>>(&arg);
@@ -198,7 +198,7 @@ namespace scl
     template <::scl::concepts::object_type Type, typename ValueArgument>
     [[nodiscard]]
     constexpr Type any_cast(ValueArgument & arg)
-        requires(::std::same_as<::std::remove_cv_t<ValueArgument>, any_argument>)
+        requires(::std::is_same_v<::std::remove_cv_t<ValueArgument>, any_argument>)
     {
         auto const * pointer = any_cast<Type const>(&arg);
         if (pointer == nullptr)
@@ -209,7 +209,7 @@ namespace scl
     template <::scl::concepts::lvalue_reference Type, typename ReadArgument>
     [[nodiscard]]
     constexpr Type any_cast(ReadArgument & arg SCL_LIFETIMEBOUND)
-        requires(::std::same_as<::std::remove_cv_t<ReadArgument>, any_argument>) &&
+        requires(::std::is_same_v<::std::remove_cv_t<ReadArgument>, any_argument>) &&
         (::std::is_const_v<::std::remove_reference_t<Type>>)
     {
         // remove_reference_t keeps the request's cv, so `T const volatile &` reaches a volatile one.

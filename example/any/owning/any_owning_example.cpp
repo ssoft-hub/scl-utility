@@ -94,7 +94,7 @@ static void show_copying()
 {
     ::scl::any const text{::std::string{"copy me"}};
 
-    // copyable() asks about the stored type, so an empty result of try_copy() is
+    // is_copyable() asks about the stored type, so an empty result of try_copy() is
     // never ambiguous.
     ::scl::any const copy = text.try_copy();
 
@@ -102,9 +102,12 @@ static void show_copying()
     ::scl::any const owned{::std::make_unique<int>(42)};
     ::scl::any const refused = owned.try_copy();
 
-    ::std::cout << "  copyable=" << text.copyable() << " copy=\"" << *::scl::any_cast<::std::string>(&copy) << "\"\n";
     ::std::cout
-        << "  unique_ptr copyable=" << owned.copyable() << " copy has_value=" << refused.has_value() << '\n'; // 0 0
+        << "  is_copyable=" << text.is_copyable() << " copy=\""
+        << *::scl::any_cast<::std::string>(&copy) << "\"\n";
+    ::std::cout
+        << "  unique_ptr is_copyable=" << owned.is_copyable()
+        << " copy has_value=" << refused.has_value() << '\n'; // 0 0
 }
 //! [copying]
 
