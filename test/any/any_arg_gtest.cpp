@@ -50,6 +50,16 @@ namespace
     template <typename Type>
     concept arg_from_rvalue = requires { ::scl::any_arg{Type{}}; };
 
+    struct reading_view_subclass : ::scl::any_view
+    {
+        using ::scl::any_view::any_view;
+    };
+
+    struct writing_view_subclass : ::scl::any_mutable_view
+    {
+        using ::scl::any_mutable_view::any_mutable_view;
+    };
+
     // Reaching a mutable reference through a read-only view, which the implicit
     // any_view -> any_arg conversion would otherwise allow.
     template <typename Type>
@@ -218,13 +228,10 @@ TEST(AnyArgTest, CompileTimeGuards)
     STATIC_EXPECT_TRUE(arg_from_rvalue<::scl::any_view>);
 
 #if SCL_HAS_RTTI
+    // std::any is an ordinary type to an argument, `volatile` included.
     STATIC_EXPECT_TRUE(arg_from_lvalue<::std::any>);
     STATIC_EXPECT_TRUE(arg_from_rvalue<::std::any>);
-
-    // std::any has no volatile-qualified members, so a volatile std::any cannot
-    // be bound at all — not even as an lvalue. Without RTTI the library cannot
-    // name std::any to exclude it (see the @warning on the std::any constructor).
-    STATIC_EXPECT_FALSE(arg_from_lvalue<::std::any volatile>);
+    STATIC_EXPECT_TRUE(arg_from_lvalue<::std::any volatile>);
 #endif
 
     // A reference to a class nothing can copy: a container, a data member and `auto`
@@ -259,9 +266,19 @@ TEST(AnyArgTest, CompileTimeGuards)
 
     // The other direction stays: a view hands its referent to an argument.
     STATIC_EXPECT_TRUE((::std::is_convertible_v<::scl::any_view &, ::scl::any_arg>));
+
+    // A subclass of either view adopts through its own base's conversion.
+    STATIC_EXPECT_TRUE((::std::is_convertible_v<reading_view_subclass &, ::scl::any_arg>));
+    STATIC_EXPECT_TRUE((::std::is_convertible_v<writing_view_subclass &, ::scl::any_arg>));
+
+    // A `volatile` view is refused at the call: its binding is unreadable through `const`.
+    STATIC_EXPECT_FALSE(arg_from_lvalue<::scl::any_view volatile>);
+    STATIC_EXPECT_FALSE(arg_from_lvalue<::scl::any_view const volatile>);
+    STATIC_EXPECT_FALSE(arg_from_lvalue<::scl::any_mutable_view volatile>);
+    STATIC_EXPECT_TRUE(arg_from_lvalue<::scl::any_view const>);
 }
 
-TEST(AnyArgTest, ConstexprIdentityOnRawBacking)
+TEST(AnyArgTest, ConstexprIdentityOverATypedLvalue)
 {
     STATIC_EXPECT_TRUE(identity_holds(42));
 
@@ -374,6 +391,18 @@ TEST(AnyArgTest, AdoptedAnyViewStaysReadOnly)
     EXPECT_FALSE(writes(view)); // the same object through a view does not
 }
 
+TEST(AnyArgTest, AViewSubclassAdoptsThroughItsOwnBase)
+{
+    counted value{1};
+    reading_view_subclass const reading{value};
+    writing_view_subclass const writing{value};
+
+    auto writes = [](::scl::any_arg arg) { return ::scl::any_cast<counted>(&arg) != nullptr; };
+
+    EXPECT_FALSE(writes(reading)); // the reading base narrows, as it does for the view itself
+    EXPECT_TRUE(writes(writing));  // the writing base adopts the binding as it stands
+}
+
 TEST(AnyArgTest, AdoptedFromTemporaryViewOutlivesIt)
 {
     counted value{3};
@@ -397,21 +426,20 @@ TEST(AnyArgTest, AdoptedFromEmptyAnyView)
 
 #if SCL_HAS_RTTI
 
-TEST(AnyArgTest, StdAnyBackingCast)
+TEST(AnyArgTest, StdAnyIsCastAsTheBoxItself)
 {
     ::std::any const boxed{::std::string{"hello"}};
     ::scl::any_arg arg{boxed};
 
     EXPECT_TRUE(arg.has_value());
-    EXPECT_EQ(arg.type_name(), ::scl::type_name<::std::any>()); // names the backing, not the boxed type
+    EXPECT_EQ(arg.type_name(), ::scl::type_name<::std::any>()); // names the box, not what it holds
 
-    ASSERT_NE(::scl::any_cast<::std::string const>(&arg), nullptr);
-    EXPECT_EQ(*::scl::any_cast<::std::string const>(&arg), "hello");
+    EXPECT_EQ(::scl::any_cast<::std::string const>(&arg), nullptr);
     EXPECT_EQ(::scl::any_cast<int const>(&arg), nullptr);
-    EXPECT_EQ(::scl::any_cast<::std::string const &>(arg), "hello");
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<::std::string const &>(arg), ::scl::bad_any_cast);
 }
 
-TEST(AnyArgTest, StdAnyBackingHandsOutTheBoxForWriting)
+TEST(AnyArgTest, StdAnyHandsOutTheBoxForWriting)
 {
     ::std::any boxed{1};
     ::scl::any_arg arg{boxed};
@@ -437,15 +465,12 @@ TEST(AnyArgTest, MutableAccessThroughNonConstStdAny)
     ::std::any boxed{::std::string{"hello"}};
     ::scl::any_arg arg{boxed};
 
-    auto * text = ::scl::any_cast<::std::string>(&arg);
-    ASSERT_NE(text, nullptr);
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(text), ::std::string *>));
+    // The handle hands out the box; the box is what grants access to the object inside.
+    auto * box = ::scl::any_cast<::std::any>(&arg);
+    ASSERT_NE(box, nullptr);
+    ::std::any_cast<::std::string &>(*box) += ", world";
 
-    *text += ", world";
     EXPECT_EQ(::std::any_cast<::std::string const &>(boxed), "hello, world");
-
-    ::scl::any_cast<::std::string &>(arg) += "!"; // reference form writes too
-    EXPECT_EQ(::std::any_cast<::std::string const &>(boxed), "hello, world!");
 }
 
 TEST(AnyArgTest, MutableAccessRefusedOnConstStdAny)
@@ -453,9 +478,9 @@ TEST(AnyArgTest, MutableAccessRefusedOnConstStdAny)
     ::std::any const boxed{::std::string{"frozen"}};
     ::scl::any_arg arg{boxed};
 
+    EXPECT_EQ(::scl::any_cast<::std::any>(&arg), nullptr);
     EXPECT_EQ(::scl::any_cast<::std::string>(&arg), nullptr);
-    EXPECT_EQ(*::scl::any_cast<::std::string const>(&arg), "frozen");
-    EXPECT_THROW(::std::ignore = ::scl::any_cast<::std::string &>(arg), ::scl::bad_any_cast);
+    EXPECT_EQ(::scl::any_cast<::std::string const>(&arg), nullptr);
 }
 
 TEST(AnyArgTest, MutableAccessRefusedOnStdAnyThroughAnyView)
@@ -464,15 +489,15 @@ TEST(AnyArgTest, MutableAccessRefusedOnStdAnyThroughAnyView)
     ::scl::any_view const view{boxed};
     ::scl::any_arg arg{view};
 
-    EXPECT_EQ(::scl::any_cast<::std::string>(&arg), nullptr);
-    EXPECT_EQ(*::scl::any_cast<::std::string const>(&arg), "frozen");
+    EXPECT_EQ(::scl::any_cast<::std::any>(&arg), nullptr);
+    EXPECT_EQ(::scl::any_cast<::std::any const>(&arg), &boxed);
 }
 
 TEST(AnyArgTest, MutableAccessThroughTemporaryStdAny)
 {
     auto const doubled = [](::scl::any_arg value) {
-        auto * number = ::scl::any_cast<int>(&value);
-        return (number != nullptr) ? (*number *= 2) : 0;
+        auto * box = ::scl::any_cast<::std::any>(&value);
+        return (box != nullptr) ? (::std::any_cast<int &>(*box) *= 2) : 0;
     }(::std::any{21});
 
     EXPECT_EQ(doubled, 42);
@@ -481,8 +506,8 @@ TEST(AnyArgTest, MutableAccessThroughTemporaryStdAny)
 TEST(AnyArgTest, TemporaryStdAnyReadWithinCall)
 {
     auto const text = [](::scl::any_arg value) {
-        return ::scl::any_cast<::std::string>(value); // copy out survives the call
-    }(::std::any{::std::string{"boxed"}});
+        return ::scl::any_cast<::std::string>(::scl::any_cast<::std::any const &>(value));
+    }(::std::any{::std::string{"boxed"}}); // copy out survives the call
 
     EXPECT_EQ(text, "boxed");
 }

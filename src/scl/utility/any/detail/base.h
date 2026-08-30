@@ -8,7 +8,7 @@
 
 #include <scl/utility/concepts/reference.h>
 #include <scl/utility/meta/type_key.h>
-#include <scl/utility/preprocessor/rtti.h>
+#include <scl/utility/type_traits/forward_like.h>
 
 #include <cstddef>
 #include <memory>
@@ -16,10 +16,6 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-
-#if SCL_HAS_RTTI
-#include <any>
-#endif
 
 /**
  * @internal
@@ -83,7 +79,6 @@ namespace scl::detail
     {
         using referent = ::std::remove_reference_t<Type>;
 
-        // Named: a variable template in a conditional defeats heuristic static analysers.
         constexpr bool has_const = ::std::is_const_v<referent>;
         constexpr bool has_volatile = ::std::is_volatile_v<referent>;
 
@@ -91,7 +86,6 @@ namespace scl::detail
             (has_volatile ? any_qualifier::volatile_qualified : any_qualifier::none);
     }
 
-    // Sound only after binding_accepts proved Target covers the referent's qualifiers.
     template <typename Target>
     [[nodiscard]]
     constexpr Target * erased_cast(void const volatile * object) noexcept
@@ -115,7 +109,6 @@ namespace scl::detail
     {
         Type value;
 
-        // Parenthesised: braces would read (3U, 'x') as a narrowing list, not a constructor call.
         template <typename... Arguments>
         constexpr explicit any_holder(Arguments &&... arguments)
             : value(::std::forward<Arguments>(arguments)...)
@@ -126,18 +119,13 @@ namespace scl::detail
 #pragma warning(pop)
 #endif
 
-    template <typename Type>
+    template <typename Type, typename Held>
     [[nodiscard]]
-    constexpr Type * any_holder_object(any_holder_base * held) noexcept
+    constexpr auto * any_holder_object(Held * held) noexcept
     {
-        return ::std::addressof(static_cast<any_holder<Type> *>(held)->value);
-    }
+        using holder = ::std::remove_reference_t<::scl::forward_like_t<Held, any_holder<Type>>>;
 
-    template <typename Type>
-    [[nodiscard]]
-    constexpr Type const * any_holder_object(any_holder_base const * held) noexcept
-    {
-        return ::std::addressof(static_cast<any_holder<Type> const *>(held)->value);
+        return ::std::addressof(static_cast<holder *>(held)->value);
     }
 
     // Rebuilding in place costs a stack copy; past this width fresh storage is cheaper.
@@ -212,8 +200,6 @@ namespace scl::detail
         return ::std::launder(static_cast<any_holder<Type> *>(storage));
     }
 
-    // Only the type says where inside the holder its object sits. Constexpr, unlike the
-    // storage-taking operations beside it: a downcast is what a constant expression allows.
     template <typename Type>
     [[nodiscard]]
     constexpr void const * any_object_at(any_holder_base const * held) noexcept
@@ -221,12 +207,10 @@ namespace scl::detail
         return static_cast<void const *>(any_holder_object<Type>(held));
     }
 
-    // An uncopyable type carries no copy operation, so its absence is the answer.
     template <typename Type>
     [[nodiscard]]
     constexpr any_place_function any_place_operation_of() noexcept
     {
-        // A volatile referent needs the source form: a `const &` copy constructor cannot read it.
         if constexpr (::std::is_constructible_v<::std::decay_t<Type>, ::std::remove_reference_t<Type> const &> &&
             ::std::is_nothrow_destructible_v<::std::decay_t<Type>>)
             return &any_place_copy<Type>;
@@ -244,7 +228,6 @@ namespace scl::detail
             return nullptr;
     }
 
-    // A view destroys nothing, so such a referent is described without the operation.
     template <typename Type>
     [[nodiscard]]
     constexpr any_erase_function any_erase_operation_of() noexcept
@@ -255,14 +238,14 @@ namespace scl::detail
             return nullptr;
     }
 
-    // Absent where the copy cannot stand aside: a throwing move would end with neither object.
     template <typename Type>
     [[nodiscard]]
     constexpr any_rebuild_function any_rebuild_operation_of() noexcept
     {
         using bare = ::std::decay_t<Type>;
 
-        if constexpr (::std::constructible_from<bare, ::std::remove_reference_t<Type> const &> &&
+        if constexpr (::std::is_constructible_v<bare, ::std::remove_reference_t<Type> const &> &&
+            ::std::is_nothrow_destructible_v<bare> &&
             ::std::is_nothrow_move_constructible_v<bare> && sizeof(bare) <= any_widest_reuse_copy)
             return &any_rebuild_from<Type>;
         else
@@ -272,14 +255,10 @@ namespace scl::detail
     // Per cv-ref form of a referent; how a value was bound never changes its type.
     struct any_type_descriptor
     {
-        // One key object per bare type, so identity is a pointer comparison within a module.
         ::scl::type_key const * type;
         any_qualifier qualifiers;
-        // Beside the qualifiers, whose alignment already holds this byte.
         any_binding binding;
-        // Already-const forms point at themselves, which terminates the chain.
         any_type_descriptor const * as_const;
-        // What `place` builds: the decayed form, which is what an owner ends up describing.
         any_type_descriptor const * as_value;
 
         // Nothing an owner supplies itself: the storage comes from it, so no allocator here.
@@ -309,18 +288,8 @@ namespace scl::detail
         .reach = &any_reach_at<::std::remove_cvref_t<Type>>,
         .object = &any_object_at<::std::remove_cvref_t<Type>>};
 
-#if SCL_HAS_RTTI
-    template <typename Type>
-    inline constexpr bool is_std_any_v = ::std::same_as<Type, ::std::any>;
-#else
-    // Without RTTI this header cannot name std::any, so on a toolchain that still declares
-    // it a caller passing one binds the raw constructor instead of being unwrapped.
-    template <typename Type>
-    inline constexpr bool is_std_any_v = false;
-#endif
-
     // A base, not a trait: no include order can leave one translation unit disagreeing.
-    struct any_owner_tag
+    struct any_owner
     {};
 
     template <typename Type>
@@ -328,6 +297,25 @@ namespace scl::detail
 
     template <typename Type>
     inline constexpr bool is_any_construction_tag_v<::std::in_place_type_t<Type>> = true;
+
+    [[nodiscard]]
+    constexpr any_type_descriptor any_anchored_form(any_type_descriptor described) noexcept
+    {
+        described.binding = any_binding::anchor;
+        return described;
+    }
+
+    template <typename Type>
+    struct any_anchored_descriptor : any_type_descriptor
+    {
+        constexpr explicit any_anchored_descriptor(any_type_descriptor const & descriptor,
+            Type * referent = nullptr) noexcept
+            : any_type_descriptor{any_anchored_form(descriptor)}
+            , referent{referent}
+        {}
+
+        Type * referent;
+    };
 
     // The one place an owner reads a handle, befriended instead of the owner template.
     struct any_handle_access
@@ -339,7 +327,6 @@ namespace scl::detail
             return handle.descriptor();
         }
 
-        // A taker needs the holder: the copy it makes is typed and an address is not.
         template <typename Handle>
         [[nodiscard]]
         static constexpr any_holder_base const * held(Handle const & handle) noexcept
@@ -354,7 +341,54 @@ namespace scl::detail
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): read through a const handle
             return const_cast<void const *>(handle.object());
         }
+
+        template <typename Handle>
+        [[nodiscard]]
+        static constexpr void const volatile * object(Handle const & handle) noexcept
+        {
+            return handle.object();
+        }
+
+        template <typename Handle>
+        [[nodiscard]]
+        static constexpr bool binding_accepts(Handle const & handle, any_qualifier requested) noexcept
+        {
+            return handle.binding_accepts(requested);
+        }
     };
+
+    // One place answers what a binding reaches. Request carries the qualifiers the caller must
+    // cover: a read spells `Type const`, a write spells `Type`.
+    template <typename Request, typename Handle>
+    [[nodiscard]]
+    constexpr Request * any_referent_of(Handle const & handle) noexcept
+    {
+        using bare = ::std::remove_cvref_t<Request>;
+
+        auto const * const described = any_handle_access::descriptor(handle);
+        if (described == nullptr) [[unlikely]]
+            return nullptr;
+        if (!any_handle_access::binding_accepts(handle, any_qualifiers_of<Request &>()))
+            return nullptr;
+        // A handle names the type it is bound to and nothing that type may itself contain.
+        if (*described->type != ::scl::type_key_of<bare>())
+            return nullptr;
+
+        if (::std::is_constant_evaluated())
+        {
+            // Recovering a typed pointer from `void const *` is no constant expression before
+            // P2738, while a downcast to what the object really is - an anchor, or a holder - is one.
+            if (described->binding == any_binding::anchor)
+                return static_cast<any_anchored_descriptor<bare> const *>(described)->referent;
+
+            // Only this branch may read the holder: elsewhere it is the union's inactive member.
+            if (described->binding == any_binding::holder)
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): covered above
+                return const_cast<bare *>(any_holder_object<bare>(any_handle_access::held(handle)));
+        }
+
+        [[likely]] return erased_cast<Request>(any_handle_access::object(handle));
+    }
 
     class any_base
     {
@@ -553,47 +587,5 @@ namespace scl::detail
         {
             return m_descriptor != nullptr && (m_descriptor->qualifiers & ~requested) == any_qualifier::none;
         }
-
-#if SCL_HAS_RTTI
-        // std::any is an external type, so its key compares equal across module boundaries.
-#ifdef __cpp_explicit_this_parameter
-        template <typename Self>
-        [[nodiscard]]
-        constexpr ::std::any const * std_any(this Self && self) noexcept
-        {
-            if (self.m_descriptor == nullptr)
-                return nullptr;
-            if (*self.m_descriptor->type != ::scl::type_key_of<::std::any>())
-                return nullptr;
-            // No constructor binds a volatile std::any, so dropping the qualifier is safe.
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): see above
-            return static_cast<::std::any const *>(const_cast<void const *>(self.m_object));
-        }
-#else
-        [[nodiscard]]
-        constexpr ::std::any const * std_any() const noexcept
-        {
-            if (m_descriptor == nullptr)
-                return nullptr;
-            if (*m_descriptor->type != ::scl::type_key_of<::std::any>())
-                return nullptr;
-            // No constructor binds a volatile std::any, so dropping the qualifier is safe.
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-type-union-access)
-            return static_cast<::std::any const *>(const_cast<void const *>(m_object));
-        }
-
-        [[nodiscard]]
-        ::std::any const * std_any() const volatile noexcept
-        {
-            if (m_descriptor == nullptr)
-                return nullptr;
-            if (*m_descriptor->type != ::scl::type_key_of<::std::any>())
-                return nullptr;
-            // No constructor binds a volatile std::any, so dropping the qualifier is safe.
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-type-union-access)
-            return static_cast<::std::any const *>(const_cast<void const *>(m_object));
-        }
-#endif
-#endif
     };
 } // namespace scl::detail

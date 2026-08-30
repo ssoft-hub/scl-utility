@@ -6,12 +6,12 @@
  * @ingroup scl_utility_any
  */
 
-#include <scl/utility/any/bad_any_cast.h>
+#include <scl/utility/any/any_cast.h>
 #include <scl/utility/attribute/likely.h>
 #include <scl/utility/attribute/no_unique_address.h>
+#include <scl/utility/concepts/type_category.h>
 #include <scl/utility/meta/type_key.h>
 #include <scl/utility/preprocessor/exceptions.h>
-#include <scl/utility/type_traits/forward_like.h>
 
 #include <cstddef>
 #include <memory>
@@ -26,29 +26,23 @@ namespace scl
     class any_mutable_view;
     class any_view;
 
-    template <typename ValueType, typename AnyType>
-    [[nodiscard]]
-    constexpr auto any_cast(AnyType * any) noexcept
-        -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
-        requires(::std::is_object_v<ValueType>) &&
-        (::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>);
-
     template <typename Allocator = ::std::allocator<::std::byte>, ::std::size_t Capacity = sizeof(void *)>
-    class basic_any : detail::any_owner_tag
+    class basic_any : detail::any_owner
     {
     public:
         using allocator_type = Allocator;
         using name = detail::any_name;
 
     private:
-        using descriptor_type = detail::any_type_descriptor;
+        using descriptor = detail::any_type_descriptor;
+        using storage = detail::any_storage<Capacity>;
 
     public:
         static constexpr ::std::size_t capacity = Capacity;
 
     private:
-        descriptor_type const * m_descriptor = nullptr;
-        detail::any_storage<Capacity> m_storage;
+        descriptor const * m_descriptor = nullptr;
+        storage m_storage;
         SCL_NO_UNIQUE_ADDRESS
         Allocator m_allocator;
 
@@ -69,7 +63,7 @@ namespace scl
         // cppcheck-suppress noExplicitConstructor
         // NOLINTNEXTLINE(bugprone-forwarding-reference-overload): the constraint excludes an any
         constexpr basic_any(ValueType && value) // NOLINT(*-explicit-*): implicit by design
-            requires(!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<ValueType>>) &&
+            requires(!::std::is_base_of_v<detail::any_owner, ::std::remove_cvref_t<ValueType>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<ValueType>>) &&
             (!detail::is_any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
             detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
@@ -122,8 +116,7 @@ namespace scl
         {
             if (::std::is_constant_evaluated())
             {
-                // The paths below read an address and reuse storage, and neither is
-                // available here.
+                // The paths below read an address and reuse storage, and neither is available here.
                 if (holds(detail::any_handle_access::held(handle)))
                     return *this;
 
@@ -166,7 +159,7 @@ namespace scl
         // `emplace` cannot, being defined to reset first.
         template <typename ValueType>
         constexpr basic_any & operator=(ValueType && value)
-            requires(!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<ValueType>>) &&
+            requires(!::std::is_base_of_v<detail::any_owner, ::std::remove_cvref_t<ValueType>>) &&
             (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<ValueType>>) &&
             (!detail::is_any_construction_tag_v<::std::remove_cvref_t<ValueType>>) &&
             detail::any_alignment_supported_v<::std::decay_t<ValueType>> &&
@@ -249,6 +242,28 @@ namespace scl
         constexpr name type_name() const noexcept
         {
             return (m_descriptor != nullptr) ? m_descriptor->type->name() : name{};
+        }
+
+        template <::scl::concepts::object_type ValueType>
+        [[nodiscard]]
+        constexpr ValueType * access() noexcept
+        {
+            using bare = ::std::remove_cv_t<ValueType>;
+
+            if (type_key() != ::scl::type_key_of<bare>())
+                return nullptr;
+            return detail::any_holder_object<bare>(held());
+        }
+
+        template <::scl::concepts::object_type ValueType>
+        [[nodiscard]]
+        constexpr ValueType const * access() const noexcept
+        {
+            using bare = ::std::remove_cv_t<ValueType>;
+
+            if (type_key() != ::scl::type_key_of<bare>())
+                return nullptr;
+            return detail::any_holder_object<bare>(held());
         }
 
         [[nodiscard]]
@@ -604,50 +619,24 @@ namespace scl
         friend class ::scl::any_argument;
         friend class ::scl::any_mutable_view;
         friend class ::scl::any_view;
-
-        template <typename ValueType, typename AnyType>
-        friend constexpr auto ::scl::any_cast(AnyType * any) noexcept
-            -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
-            requires(::std::is_object_v<ValueType>) &&
-            (::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>);
     };
 
     using any = basic_any<>;
 
-    template <typename ValueType, typename AnyType>
-    [[nodiscard]]
-    constexpr auto any_cast(AnyType * any) noexcept
-        -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
-        requires(::std::is_object_v<ValueType>) &&
-        (::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>)
+#ifndef DOXYGEN
+    template <typename Allocator, ::std::size_t Capacity>
+    struct any_cast_traits<basic_any<Allocator, Capacity>>
     {
-        using bare = ::std::remove_cv_t<ValueType>;
+        struct movable_tag;
 
-        if (any == nullptr)
-            return nullptr;
-
-        if (any->type_key() != ::scl::type_key_of<bare>())
-            return nullptr;
-
-        return detail::any_holder_object<bare>(any->held());
-    }
-
-#if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
-    // Not deduced: this form must admit an implicit conversion, which deduction ignores.
-    template <typename ValueType, typename AnyType>
-    [[nodiscard]]
-    // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward): the referent is forwarded, not the handle
-    constexpr ValueType any_cast(AnyType && held)
-        requires(::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<AnyType>>)
-    {
-        using bare = ::std::remove_cvref_t<ValueType>;
-
-        auto * const pointer = ::scl::any_cast<bare>(::std::addressof(held));
-        if (pointer == nullptr)
-            throw bad_any_cast{};
-
-        return static_cast<ValueType>(::scl::forward_like<AnyType>(*pointer));
-    }
+        template <typename Target, typename Source>
+        [[nodiscard]]
+        static constexpr auto access(Source * owner) noexcept /**/
+            -> decltype(owner->template access<::std::remove_cv_t<Target>>())
+        {
+            return owner->template access<::std::remove_cv_t<Target>>();
+        }
+    };
 #endif
 
     template <typename Allocator, ::std::size_t Capacity>
@@ -962,8 +951,8 @@ namespace scl
 /**
  * @fn scl::basic_any::has_value() const
  * @brief Reports whether this any holds an object.
- * @return `true` while an object is held, a `std::any` included regardless of what it
- *         holds; `false` for an empty any.
+ * @return `true` while an object is held, even one that is itself empty; `false`
+ *         for an empty any.
  */
 
 /**
@@ -980,6 +969,29 @@ namespace scl
  * stores no type and answers an empty key, `scl::type_key{}`.
  *
  * @return The key of the stored type; `scl::type_key{}` for an empty any.
+ */
+
+/**
+ * @fn scl::basic_any::access()
+ * @brief Returns a pointer to the stored object when its type matches, else null.
+ *
+ * The one operation an owner performs that a handle cannot: it owns the object, so it
+ * locates it in its own storage. @ref scl::any_cast over an owner answers through this,
+ * and a caller who already holds the owner may call it instead.
+ *
+ * @tparam ValueType  The type the stored object is asked to be.
+ * @return Address of the stored object, or `nullptr` where it is not a @p ValueType.
+ */
+
+/**
+ * @fn scl::basic_any::access() const
+ * @brief Returns a `const` pointer to the stored object when its type matches, else null.
+ *
+ * The owner's own constness reaches the stored object, so a `const` owner hands out no
+ * write. This is why @ref scl::any_cast answers `T const *` for such an owner.
+ *
+ * @tparam ValueType  The type the stored object is asked to be.
+ * @return Address of the stored object, or `nullptr` where it is not a @p ValueType.
  */
 
 /**
@@ -1013,47 +1025,6 @@ namespace scl
  *         @ref scl::basic_any::is_copyable is `false`.
  * @throws Whatever the copy constructor of the stored type or the allocator
  *         throws.
- */
-
-/**
- * @fn scl::any_cast(AnyType * any)
- * @ingroup scl_utility_any
- * @brief Returns a pointer to the stored object when its type matches, else null.
- *
- * Access follows the handle: a `const` any answers a pointer to `const`, a
- * non-`const` one grants write access, which is what separates an owner from a
- * view.
- *
- * @tparam ValueType  The expected object type; a reference type is rejected.
- * @tparam AnyType    Deduced any, possibly `const`-qualified.
- * @param  any  The any to read (may be null).
- * @return Pointer to the stored object on a type match; `nullptr` on mismatch or
- *         for a null pointer or an empty any. Never throws.
- *
- * @warning A match compares @ref scl::type_key values, which stays exact across
- *          module boundaries and tells same-named anonymous-namespace types from
- *          different translation units apart. Two limits of the key carry over: a
- *          type declared at block scope is outside its contract, and a key must
- *          not outlive the module that produced it.
- */
-
-/**
- * @fn scl::any_cast(AnyType && held)
- * @ingroup scl_utility_any
- * @brief Returns the stored object by value or by reference when its type
- *        matches, otherwise throws.
- *
- * The value form takes the object from an rvalue any by move rather than by copy.
- *
- * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`. A translation unit
- *       compiled without exceptions keeps the pointer form, which answers a
- *       failed request with `nullptr`.
- *
- * @tparam ValueType  The requested result type (`T`, `T &` or `T const &`).
- * @tparam AnyType    Deduced any, with its own cv-ref qualification.
- * @param  held  The any to read.
- * @return The stored object as @p ValueType.
- * @throws scl::bad_any_cast  If the stored type does not match @p ValueType.
  */
 
 /**

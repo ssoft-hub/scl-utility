@@ -72,13 +72,12 @@ TEST(AnyViewTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(view_from_rvalue<counted volatile>);
 
 #if SCL_HAS_RTTI
+    // std::any is an ordinary type to a view, bound and refused as any other object is.
     STATIC_EXPECT_FALSE(view_from_rvalue<::std::any>);
     STATIC_EXPECT_FALSE(view_from_rvalue<::std::any const>);
-
-    // std::any has no volatile-qualified members, so a volatile std::any cannot
-    // be viewed at all — not even as an lvalue. Without RTTI the library cannot
-    // name std::any to exclude it (see the @warning on the std::any constructor).
-    STATIC_EXPECT_FALSE(view_from_lvalue<::std::any volatile>);
+    STATIC_EXPECT_TRUE(view_from_lvalue<::std::any>);
+    STATIC_EXPECT_TRUE(view_from_lvalue<::std::any const>);
+    STATIC_EXPECT_TRUE(view_from_lvalue<::std::any volatile>);
 #endif
 
     // Copying a view — even a const temporary one — is not affected by the guard.
@@ -93,7 +92,7 @@ TEST(AnyViewTest, CompileTimeGuards)
     STATIC_EXPECT_TRUE(::std::is_trivially_copyable_v<::scl::any_view>);
 }
 
-TEST(AnyViewTest, ConstexprIdentityOnRawBacking)
+TEST(AnyViewTest, ConstexprIdentityOverATypedLvalue)
 {
     static constexpr int probe = 42;
     constexpr ::scl::any_view view{probe};
@@ -161,7 +160,7 @@ TEST(AnyViewTest, RequestMustCoverReferentQualifiers)
     EXPECT_NE(::scl::any_cast<counted volatile>(&over_plain), nullptr);
 }
 
-TEST(AnyViewTest, RawBackingCast)
+TEST(AnyViewTest, CastOverATypedLvalue)
 {
     counted::copies = 0;
     counted value{7};
@@ -181,7 +180,7 @@ TEST(AnyViewTest, RawBackingCast)
     EXPECT_EQ(counted::copies, 1);
 }
 
-TEST(AnyViewTest, RawBackingMismatchThrows)
+TEST(AnyViewTest, AMismatchOverATypedLvalueThrows)
 {
     counted value{1};
     ::scl::any_view view{value};
@@ -203,55 +202,42 @@ TEST(AnyViewTest, EmptyView)
 
 #if SCL_HAS_RTTI
 
-TEST(AnyViewTest, StdAnyBackingCast)
+TEST(AnyViewTest, StdAnyIsNamedRatherThanWhatItHolds)
 {
     ::std::string text{"hello"};
     ::std::any boxed{text};
     ::scl::any_view view{boxed};
 
     EXPECT_TRUE(view.has_value());
-    EXPECT_EQ(view.type_name(), ::scl::type_name<::std::any>()); // names the backing, not the boxed type
-
-    ASSERT_NE(::scl::any_cast<::std::string>(&view), nullptr);
-    EXPECT_EQ(*::scl::any_cast<::std::string>(&view), "hello");
-    EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
-
-    EXPECT_EQ(::scl::any_cast<::std::string const &>(view), "hello"); // reference through a named view
-    EXPECT_EQ(::scl::any_cast<::std::string>(boxed), "hello"); // implicit std::any -> any_view
-
-    EXPECT_THROW(::std::ignore = ::scl::any_cast<int>(view), ::scl::bad_any_cast);
+    EXPECT_EQ(view.type_name(), ::scl::type_name<::std::any>()); // names the box, not what it holds
 }
 
-TEST(AnyViewTest, StdAnyBackingAnswersTheBoxItself)
+TEST(AnyViewTest, StdAnyIsAnsweredAsTheBoxItself)
 {
     ::std::any boxed{42};
     ::scl::any_view const view{boxed};
 
     EXPECT_EQ(::scl::any_cast<::std::any const>(&view), &boxed);
     EXPECT_EQ(&::scl::any_cast<::std::any const &>(view), &boxed);
-    EXPECT_EQ(::scl::any_cast<int const>(&view), ::std::any_cast<int>(&boxed)); // and still what it holds
+    EXPECT_EQ(::scl::any_cast<int const>(&view), nullptr); // and never what it holds
 }
 
-TEST(AnyViewTest, RawBackingRefusesAStdAnyRequest)
+TEST(AnyViewTest, StdAnyDoesNotReachTheBoxedObject)
+{
+    ::std::any boxed{::std::string{"hello"}};
+    ::scl::any_view const view{boxed};
+
+    EXPECT_EQ(::scl::any_cast<::std::string>(&view), nullptr);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<::std::string const &>(view), ::scl::bad_any_cast);
+}
+
+TEST(AnyViewTest, ATypedLvalueRefusesAStdAnyRequest)
 {
     ::std::string text{"hello"};
     ::scl::any_view const view{text};
 
     EXPECT_EQ(::scl::any_cast<::std::any const>(&view), nullptr);
     EXPECT_THROW(::std::ignore = ::scl::any_cast<::std::any const &>(view), ::scl::bad_any_cast);
-}
-
-TEST(AnyViewTest, StdAnyBackingDoesNotCopyInner)
-{
-    ::std::any boxed{counted{5}};
-    counted::copies = 0; // ignore copies incurred while boxing
-
-    ::scl::any_view view{boxed};
-    EXPECT_EQ(counted::copies, 0);
-
-    ::std::ignore = ::scl::any_cast<counted const &>(view);
-    EXPECT_EQ(counted::copies, 0);
-    EXPECT_EQ(::scl::any_cast<counted const &>(view).id, 5);
 }
 
 TEST(AnyViewTest, ViewOverEmptyStdAny)
@@ -289,16 +275,14 @@ TEST(AnyViewTest, IdentityDistinguishesEveryState)
     EXPECT_EQ(over_any.type_key().name(), over_any.type_name());
 }
 
-// The std::any backing delegates to std::any_cast, but it reaches that delegation through
-// the same handle the raw backing does, so the handle's own qualifiers govern it identically.
+// A std::any referent is an ordinary object here, so the handle's own qualifiers govern it.
 TEST(AnyViewTest, VolatileHandleLeavesTheRequestAloneOverStdAny)
 {
     ::std::any boxed{7};
     ::scl::any_view volatile view{boxed};
 
-    auto const * reached = ::scl::any_cast<int>(&view);
-    ASSERT_NE(reached, nullptr);
-    EXPECT_EQ(*reached, 7);
+    EXPECT_EQ(::scl::any_cast<::std::any const>(&view), &boxed);
+    EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
 }
 
 #endif // SCL_HAS_RTTI

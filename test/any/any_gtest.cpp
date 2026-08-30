@@ -122,6 +122,17 @@ namespace
     concept any_emplaces = requires(::scl::any & target) { target.emplace<Type>(); };
 
     template <typename Type>
+    concept any_accesses = requires(::scl::any & target) { target.access<Type>(); };
+
+    [[nodiscard]]
+    constexpr int accessed_during_constant_evaluation()
+    {
+        ::scl::any const value{42};
+
+        return *value.access<int>();
+    }
+
+    template <typename Type>
     concept any_assigns_lvalue = requires(::scl::any & target, Type value) { target = value; };
 
     template <typename Type>
@@ -286,6 +297,42 @@ TEST(AnyTest, ATypeTheArgumentsCannotBuildIsRefused)
     STATIC_EXPECT_FALSE(any_emplaces_from_an_int<::std::unique_ptr<int>>);
     STATIC_EXPECT_TRUE(any_constructs_in_place_from_an_int<int>);
     STATIC_EXPECT_TRUE(any_emplaces_from_an_int<int>);
+}
+
+TEST(AnyTest, AccessReachesTheStoredObjectWithTheOwnersOwnConstness)
+{
+    ::scl::any value{42};
+    ::scl::any const frozen{42};
+
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(value.access<int>()), int *>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(frozen.access<int>()), int const *>));
+
+    ASSERT_NE(value.access<int>(), nullptr);
+    EXPECT_EQ(*value.access<int>(), 42);
+    ASSERT_NE(frozen.access<int>(), nullptr);
+    EXPECT_EQ(*frozen.access<int>(), 42);
+}
+
+TEST(AnyTest, AccessAnswersNullForAnotherType)
+{
+    ::scl::any const value{42};
+
+    EXPECT_EQ(value.access<::std::string>(), nullptr);
+}
+
+TEST(AnyTest, AccessAnswersNullForAnEmptyAny)
+{
+    ::scl::any const value;
+
+    EXPECT_EQ(value.access<int>(), nullptr);
+}
+
+TEST(AnyTest, AccessIsOfferedForAnObjectTypeAndFoldsAtCompileTime)
+{
+    STATIC_EXPECT_TRUE(any_accesses<int>);
+    STATIC_EXPECT_FALSE(any_accesses<int &>);
+    STATIC_EXPECT_FALSE(any_accesses<void>);
+    STATIC_EXPECT_EQ(accessed_during_constant_evaluation(), 42);
 }
 
 TEST(AnyTest, AnyCostsNoMoreThanTwoPointers)
@@ -565,7 +612,7 @@ TEST(AnyTest, FreeSwapExchangesWhatTwoAnysHold)
 }
 
 #if SCL_HAS_EXCEPTIONS
-TEST(AnyTest, CastFromAnRvalueMovesTheStoredObject)
+TEST(AnyTest, CastFromAMovedAnyMovesTheStoredObject)
 {
     trace log;
     ::scl::any value{traced{log}};

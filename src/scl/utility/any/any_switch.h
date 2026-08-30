@@ -65,18 +65,6 @@ namespace scl::detail
     inline constexpr bool is_any_case_covered_v =
         (any_request_covers_v<any_case_request_t<typename Branches::case_type>, any_case_request_t<Case>> || ...);
 
-    template <typename... Branches>
-    inline constexpr bool any_switch_has_std_any_case_v =
-        (is_std_any_v<::std::remove_cvref_t<typename Branches::case_type>> || ...);
-
-    // A chain is built before any subject exists, so it cannot tell a subject held in a
-    // std::any from one bound directly - and a case naming std::any takes every subject of
-    // the first kind. A case after it would therefore keep some of what it names and lose
-    // the rest without saying which, so only a wider std::any case and the fallback follow.
-    template <typename Case, typename... Branches>
-    inline constexpr bool any_case_shadowed_by_std_any_v = any_switch_has_std_any_case_v<Branches...> &&
-        (!is_std_any_v<::std::remove_cvref_t<Case>>);
-
     // A function, not a disjunction: branches are ordered as the chain runs them, so a handler
     // is judged by the form that will be called. A branch may produce the result or the optional
     // holding it, which is what lets one chain stand as a branch of another.
@@ -197,7 +185,6 @@ namespace scl
         constexpr auto in_case(Handler && handler) const
             requires detail::any_switch_case<Case> && (!detail::any_switch_has_fallback_v<Branches...>) &&
             (!detail::is_any_case_covered_v<Case, Branches...>) &&
-            (!detail::any_case_shadowed_by_std_any_v<Case, Branches...>) &&
             detail::is_any_switch_branch_v<::std::decay_t<Handler> &, Result, Case>
         {
             return append<Case>(::std::forward<Handler>(handler));
@@ -209,8 +196,7 @@ namespace scl
         constexpr auto in_case() const
             requires ::std::is_void_v<Result> && detail::any_switch_case<Case> &&
             (!detail::any_switch_has_fallback_v<Branches...>) &&
-            (!detail::is_any_case_covered_v<Case, Branches...>) &&
-            (!detail::any_case_shadowed_by_std_any_v<Case, Branches...>)
+            (!detail::is_any_case_covered_v<Case, Branches...>)
         {
             return append<Case>(detail::any_switch_no_handler{});
         }
@@ -391,9 +377,8 @@ namespace scl
  * one call per candidate type, each with its own `if`, and a fallback spelled
  * separately. `any_switch` collapses that into one expression — every branch
  * names its type once, the first match runs, and the fallback belongs to the
- * same chain. It is the visitor `std::any` never had, and it reads every subject
- * @ref scl::any_arg accepts: a typed lvalue or rvalue, an @ref scl::any_view, or
- * a `std::any` on an RTTI build.
+ * same chain. It reads every subject @ref scl::any_arg accepts: a typed lvalue or
+ * rvalue of any type, or an @ref scl::any_view.
  *
  * The chain holds no subject. `in_case` and `or_else` describe the branches;
  * @ref scl::any_switch::apply runs them over the subject it is given, and
@@ -405,12 +390,10 @@ namespace scl
  * A case selects by the qualifier-coverage rule of @ref scl::any_cast, mirrored
  * in full: `in_case<T>` and `in_case<T const &>` match a `T` or a `T const`
  * referent, `in_case<T &>` an unqualified one, and `volatile` participates the
- * same way. `in_case<void>` matches an empty value. `in_case<std::any>` matches a
- * `std::any` subject whole, exactly as `any_cast<std::any>` answers the box. It takes
- * every such subject, and a chain is built before any subject exists, so it cannot
- * tell one held in a `std::any` from one bound directly: only a wider `std::any` case
- * and the fallback may follow. Left out, a subject is unwrapped and the branches see
- * the boxed type.
+ * same way. `in_case<void>` matches an empty value. A case naming a container
+ * matches a subject bound to one, and no branch reads what that container holds.
+ * Read it with @ref scl::any_cast over the box itself, declared in
+ * `<scl/utility/any/std_any.h>`.
  *
  * What `in_case` takes after its case is an invocable, or — for a named `Result`,
  * there being nothing for a `void` chain to convert it into — a ready value. An

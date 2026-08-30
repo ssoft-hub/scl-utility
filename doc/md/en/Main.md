@@ -58,6 +58,8 @@ Then include the umbrella header or individual component headers:
 | [any_arg](any/any_arg.md) | `<scl/utility/any/any_arg.h>` | Parameter-only view that also binds rvalues; valid for the duration of the call |
 | [any_anchor](any/any_anchor.md) | `<scl/utility/any/any_anchor.h>` | An anchor: declared beside a value, it lets a handle read that value during constant evaluation |
 | [any_switch](any/any_switch.md) | `<scl/utility/any/any_switch.h>` | Branch chain running one branch, chosen by the type an erased value holds; holds no subject |
+| [any_cast](any/any_cast.md) | `<scl/utility/any/any_cast.h>` | The one cast of the group and the trait a type specialises to join it |
+| [std_any](any/std_any.md) | `<scl/utility/any/std_any.h>` | Reads the object a `std::any` holds; the one part of the interop that costs anything, and only a cast naming `std::any` pays |
 
 ### Attribute — portable compiler attribute macros
 

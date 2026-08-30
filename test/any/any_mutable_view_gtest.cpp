@@ -233,7 +233,7 @@ TEST(AnyMutableViewTest, EmptyViewReachesNothing)
     EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
 }
 
-TEST(AnyMutableViewTest, OwningAnyBackingWritesIntoTheHeldObject)
+TEST(AnyMutableViewTest, AnOwningAnyIsWrittenThrough)
 {
     ::scl::any owner{7};
     ::scl::any_mutable_view const view{owner};
@@ -250,18 +250,22 @@ TEST(AnyMutableViewTest, RefusesAConstOwningAny)
 }
 
 #if SCL_HAS_RTTI
-TEST(AnyMutableViewTest, StdAnyBackingWritesIntoTheBoxedObject)
+TEST(AnyMutableViewTest, StdAnyWritesIntoTheBoxedObject)
 {
     ::std::any boxed{7};
     ::scl::any_mutable_view const view{boxed};
 
-    ASSERT_NE(::scl::any_cast<int>(&view), nullptr);
-    *::scl::any_cast<int>(&view) = 11;
+    EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
+
+    // The handle hands out the box; the box is what grants access to the object inside.
+    auto * box = ::scl::any_cast<::std::any>(&view);
+    ASSERT_NE(box, nullptr);
+    ::std::any_cast<int &>(*box) = 11;
 
     EXPECT_EQ(::std::any_cast<int>(boxed), 11);
 }
 
-TEST(AnyMutableViewTest, StdAnyBackingHandsOutTheBoxForWriting)
+TEST(AnyMutableViewTest, StdAnyHandsOutTheBoxForWriting)
 {
     ::std::any boxed{1};
     ::scl::any_mutable_view const view{boxed};

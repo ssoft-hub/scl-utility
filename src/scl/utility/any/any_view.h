@@ -2,25 +2,16 @@
 
 /**
  * @file any_view.h
- * @brief Non-owning, read-only view over a `std::any` or a typed lvalue.
+ * @brief Non-owning, read-only view over a typed lvalue.
  * @ingroup scl_utility_any
  */
 
 #include <scl/utility/any/any_anchor.h>
-#include <scl/utility/any/bad_any_cast.h>
-#include <scl/utility/attribute/hotcold.h>
+#include <scl/utility/any/any_cast.h>
 #include <scl/utility/attribute/lifetimebound.h>
-#include <scl/utility/concepts/type_category.h>
-#include <scl/utility/preprocessor/exceptions.h>
-#include <scl/utility/preprocessor/rtti.h>
 
 #include <memory>
 #include <type_traits>
-
-#if SCL_HAS_RTTI || defined(DOXYGEN)
-#include <any>
-#endif
-#include <typeinfo>
 
 #include "detail/base.h"
 
@@ -46,22 +37,12 @@ namespace scl
         constexpr any_view & operator=(any_view &&) = default;
         constexpr ~any_view() = default;
 
-#if SCL_HAS_RTTI || defined(DOXYGEN)
-        // cppcheck-suppress noExplicitConstructor
-        constexpr any_view(::std::any const & value SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
-            : base_type{::std::addressof(value), &detail::any_type_descriptor_of<::std::any const &>}
-        {}
-
-        any_view(::std::any const &&) = delete;
-#endif
-
         // Each excluded type has a constructor of its own, over what it stands for.
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(Type & object SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*): implicit view by design
-            requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>) &&
-            (!::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cvref_t<Type>>) &&
+            requires(!::std::is_base_of_v<detail::any_base, ::std::remove_cvref_t<Type>>) &&
+            (!::std::is_base_of_v<detail::any_owner, ::std::remove_cvref_t<Type>>) &&
             (!detail::is_any_anchor_v<::std::remove_cvref_t<Type>>)
             : base_type{::std::addressof(object), &detail::any_type_descriptor_of<Type &>}
         {}
@@ -76,7 +57,7 @@ namespace scl
         template <typename AnyType>
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(AnyType const & owner SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
-            requires(::std::is_base_of_v<detail::any_owner_tag, AnyType>)
+            requires(::std::is_base_of_v<detail::any_owner, AnyType>)
             : base_type{owner.viewed_held(), owner.viewed_object(), owner.viewed_const_descriptor()}
         {}
 
@@ -110,69 +91,21 @@ namespace scl
         // An explicit object parameter deduces this type, which private inheritance refuses.
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
-
-        template <::scl::concepts::object_type Type, typename View>
-        friend constexpr Type const * any_cast(View * view) noexcept
-            requires(::std::is_same_v<::std::remove_cv_t<View>, any_view>);
     };
 
-    // View is deduced so that a cv-qualified handle binds at all; its qualification governs
-    // the handle, not the referent, so it takes no part in the request.
-    template <::scl::concepts::object_type Type, typename View>
-    [[nodiscard]]
-    SCL_HOT constexpr Type const * any_cast(View * view) noexcept
-        requires(::std::is_same_v<::std::remove_cv_t<View>, any_view>)
+    // A view reads, so its request carries `const`; the view's own qualification takes no part.
+    // Guarded: every specialisation implements the contract the primary template documents.
+#ifndef DOXYGEN
+    template <>
+    struct any_cast_traits<any_view>
     {
-        using bare = ::std::remove_cvref_t<Type>;
-
-        auto const * descriptor = (view != nullptr) ? view->descriptor() : nullptr;
-        if (descriptor == nullptr) [[unlikely]]
-            return nullptr;
-        // Ahead of the std::any branch, which delegates to std::any_cast and so knows
-        // nothing of this view's qualifiers.
-        if (!view->binding_accepts(detail::any_qualifiers_of<Type const &>()))
-            return nullptr;
-        // The referred-to type answers first, so a request for std::any stops at the box
-        // rather than asking whether another one is nested inside it.
-        if (*descriptor->type == ::scl::type_key_of<bare>())
+        template <typename Target, typename Source>
+        [[nodiscard]]
+        static constexpr Target const * access(Source * view) noexcept
         {
-            if (::std::is_constant_evaluated())
-            {
-                // Recovering a typed pointer from `void const *` is not a constant
-                // expression before P2738, while a downcast to a class the object really is
-                // - an anchor, or the holder an owner keeps - is one. A plain binding falls
-                // through to that recovery, which folds from C++26 on.
-                if (descriptor->binding == detail::any_binding::anchor)
-                    return static_cast<detail::any_anchored_descriptor<bare> const *>(descriptor)->referent;
-
-                if (descriptor->binding == detail::any_binding::holder)
-                    return detail::any_holder_object<bare>(view->held());
-            }
-
-            [[likely]] return detail::erased_cast<Type const>(view->object());
+            return detail::any_referent_of<Target const>(*view);
         }
-#if SCL_HAS_RTTI
-        if (auto const * boxed = view->std_any())
-            return ::std::any_cast<bare>(boxed);
-#endif
-        return nullptr;
-    }
-
-#if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
-    // Not deduced: this form must keep admitting an implicit conversion, which template
-    // deduction does not consider. A volatile handle cannot bind here — use the pointer form.
-    template <typename Type>
-    [[nodiscard]]
-    constexpr Type any_cast(any_view const & view)
-        requires(::std::is_object_v<Type> ||
-            (::std::is_lvalue_reference_v<Type> && ::std::is_const_v<::std::remove_reference_t<Type>>))
-    {
-        // remove_reference_t keeps the request's cv: T const volatile & must reach a volatile referent.
-        auto const * pointer = any_cast<::std::remove_reference_t<Type>>(&view);
-        if (pointer == nullptr)
-            throw bad_any_cast{};
-        return static_cast<Type>(*pointer);
-    }
+    };
 #endif
 } // namespace scl
 
@@ -200,20 +133,18 @@ namespace scl
 /**
  * @class scl::any_view
  * @ingroup scl_utility_any
- * @brief Non-owning, read-only view over an object held in a `std::any` or a
- *        typed lvalue
+ * @brief Non-owning, read-only view over a typed lvalue
  *
- * `any_view` is to `std::any` what `std::string_view` is to `std::string`: it
- * refers to an existing value without copying it, so a function can accept a
- * heterogeneous argument for read access at no allocation cost. It is two
+ * A view is to a value what `std::string_view` is to a string: it refers to an
+ * existing one without copying it, so a function can accept a heterogeneous
+ * argument for read access at no allocation cost. It is two
  * pointers wide and trivially copyable.
  *
- * A view is built either from a typed lvalue directly (the *raw* backing) or from
- * a `std::any` (the *std::any* backing). The raw backing never depends on RTTI and
- * carries its type identity as a @ref scl::type_key, so `type_name()`,
- * `type_key()` and `has_value()` are usable in constant evaluation.
- * The `std::any` backing exists only when RTTI is enabled (`std::any` is itself
- * RTTI-coupled) and delegates casts to `std::any_cast`.
+ * A view is built from a typed lvalue, whatever that type is. It carries the
+ * identity as a @ref scl::type_key rather than a `type_info`, so `type_name()`,
+ * `type_key()` and `has_value()` are usable in constant evaluation and no build
+ * setting takes the constructor away. A type that itself holds something is bound
+ * as the container it is: the view refers to it, not to what it contains.
  *
  * Access is read-only: @ref scl::any_cast yields a value copy or a `const`
  * lvalue reference (`any_cast<T const &>` binds with no copy); a non-`const` or
@@ -225,8 +156,7 @@ namespace scl
  * @note @ref scl::any_cast over a plain lvalue is a runtime operation on the C++20
  *       baseline; over an @ref scl::basic_any it folds, the owner's own holder being
  *       what the view carries, and the identity queries fold whatever it refers to. The
- *       limit
- *       is one of binding rather than of erasure: the view refers to an lvalue of
+ *       limit is one of binding rather than of erasure: the view refers to an lvalue of
  *       any type, so the only thing it can erase that lvalue's address to is
  *       `void const *`, and recovering a typed pointer from `void` is
  *       constant-evaluable only on compilers implementing P2738 (C++26). Erasing to
@@ -250,9 +180,9 @@ namespace scl
  * }
  *
  * std::string text{"Hello Any!"};
- * bar(text);                               // raw backing, no copy
- * std::any boxed{text};
- * bar(boxed);                              // std::any backing (RTTI builds)
+ * bar(text);                               // views the string, no copy
+ * int number = 42;
+ * bar(number);                             // a type mismatch, answered with nullptr
  * @endcode
  *
  * @see scl::any_mutable_view — the same view, granting write access
@@ -298,29 +228,9 @@ namespace scl
  */
 
 /**
- * @fn scl::any_view::any_view(::std::any const & value)
- * @brief Constructs a view over the object held in @p value without copying it.
- * @param value  The `std::any` to view; its contained object is referenced in
- *               place. Only available when RTTI is enabled.
- *
- * @warning On a build where RTTI is disabled but the standard library still declares
- *          `std::any` (this varies by toolchain — some make `<any>` itself unavailable
- *          without RTTI, others do not), passing a `std::any` binds the raw-lvalue
- *          constructor below instead of this one: the view reports `type_name() ==
- *          "std::any"` either way, but `any_cast` never unwraps the boxed object.
- *          There is no portable way to detect this case from inside the library.
- */
-
-/**
- * @fn scl::any_view::any_view(::std::any const &&)
- * @brief Deleted: a view outlives the call it is made in, so binding it to a
- *        `std::any` temporary would leave it dangling.
- */
-
-/**
  * @fn scl::any_view::any_view(Type const &&)
- * @brief Deleted: same as for a `std::any` temporary — an rvalue of any
- *        constness would dangle the moment the full expression ends.
+ * @brief Deleted: an rvalue of any constness would dangle the moment the full
+ *        expression ends.
  */
 
 /**
@@ -328,9 +238,9 @@ namespace scl
  * @brief Constructs a view over a typed lvalue without copying it.
  *
  * Participates only for lvalues — an rvalue of any constness is rejected, since
- * the view would dangle — and excludes `std::any` and the ScL Any views
- * themselves. The object is referenced in place; its type is captured for later
- * @ref scl::any_cast.
+ * the view would dangle — and excludes the ScL Any handles and owners themselves,
+ * each of which has a constructor of its own over what it stands for. The object is
+ * referenced in place; its type is captured for later @ref scl::any_cast.
  *
  * @tparam Type  Deduced reference type of the viewed lvalue.
  * @param  object  The lvalue to view.
@@ -354,10 +264,9 @@ namespace scl
  * @brief Constructs a view over the object an owning any holds, rather than over
  *        the any itself.
  *
- * Unlike the `std::any` backing, which names the box and leaves unwrapping to
- * @ref scl::any_cast, this view refers straight to the content: `type_name()`
- * answers the stored type and a cast costs the same one key comparison it costs
- * over a plain lvalue.
+ * An owning any is the one referent a view sees through rather than binds:
+ * `type_name()` answers the stored type, and a cast costs the same one key
+ * comparison it costs over a plain lvalue.
  *
  * @tparam AnyType  Deduced @ref scl::basic_any specialization.
  * @param  owner  The any whose content is viewed.
@@ -370,16 +279,15 @@ namespace scl
 /**
  * @fn scl::any_view::has_value() const
  * @brief Reports whether the view refers to anything at all.
- * @return `false` for an empty view; `true` otherwise, a view over a `std::any`
- *         included regardless of what that `std::any` holds.
+ * @return `false` for an empty view; `true` otherwise, even where the object it
+ *         refers to is itself empty.
  */
 
 /**
  * @fn scl::any_view::type_name() const
  * @brief Returns the compile-time name of the viewed type.
- * @return `type_name<T>()` for the raw backing; `type_name<std::any>()` for the
- *         std::any backing, which names the backing itself rather than the type
- *         boxed inside it; an empty string for an empty view.
+ * @return `type_name<T>()` for the viewed type, which for a container is the
+ *         container and not what it holds; an empty string for an empty view.
  */
 
 /**
@@ -392,74 +300,5 @@ namespace scl
  * holds throughout.
  *
  * @return The key of the viewed type; `scl::type_key{}` for an empty view. As
- *         with `type_name()`, the std::any backing identifies itself and not the
- *         boxed type; probe that with @ref scl::any_cast.
- */
-
-/**
- * @fn scl::any_cast(View * view)
- * @ingroup scl_utility_any
- * @brief Returns a pointer to the viewed object when its type matches, else null.
- *
- * A match needs more than the type: @p Type must also carry every cv-qualifier the
- * referent was bound with, so reaching it adds qualification rather than discarding
- * it. Reading supplies `const` on its own, so only `volatile` has to be asked for —
- * a view over a `volatile` object answers `any_cast<T volatile>` and refuses
- * `any_cast<T>`. The reverse always works: the request may add qualifiers the
- * referent lacks.
- *
- * `view` itself may be `volatile`-qualified, and that qualifier takes no part in the
- * request: it governs the view, not the object the view refers to, exactly as it
- * does for a pointer. A `volatile any_view` over an unqualified object therefore
- * answers `any_cast<T>`.
- *
- * A request naming `std::any` is answered by the box itself — the object the view
- * refers to, and the type @ref scl::any_view::type_name and
- * @ref scl::any_view::type_key already report for the std::any backing. That is how
- * a `std::any` is taken out of a view when what it holds does not matter; a
- * `std::any` nested inside another one is reached with `std::any_cast` on the box
- * this call answers. A view over anything else refuses the request, as it refuses
- * any other type it does not refer to.
- *
- * @tparam Type     The expected object type; a reference type is rejected.
- * @tparam View     Deduced `any_view`, possibly `volatile`-qualified; that
- *                  qualification governs the view alone.
- * @param  view  The view to read (may be null).
- * @return `const Type *` to the viewed object on a type match; `nullptr` on
- *         mismatch, a qualifier the request does not cover, a null pointer, or an
- *         empty view. Never throws.
- *
- * @warning A raw-backed match compares @ref scl::type_key values, which stays exact
- *          across module boundaries and tells same-named anonymous-namespace types
- *          from different translation units apart. Two limits of the key carry over
- *          unchanged: a type declared at block scope (a local class or a closure
- *          type) is outside its contract and may falsely match a same-named
- *          namespace-scope type, and a key must not outlive the module that produced
- *          it — drop views built inside a shared library before unloading it.
- */
-
-/**
- * @fn scl::any_cast(any_view const & view)
- * @ingroup scl_utility_any
- * @brief Returns the viewed object by value or by `const` reference when its type
- *        matches, otherwise throws.
- *
- * `Type` may be an object type (returns a copy) or a `const` lvalue reference
- * (binds to the viewed object with no copy). A non-`const` or rvalue reference is
- * rejected: the view never hands out a reference that suggests its referent may
- * be moved from. A `std::any` argument converts implicitly to a view, so the
- * same call serves both backings.
- *
- * The qualifier rule of the pointer form applies here too: a `volatile` referent is
- * read as `any_cast<T const volatile &>`.
- *
- * @note Declared only where @ref SCL_HAS_EXCEPTIONS is `1`. A translation unit compiled
- *       without exceptions keeps the pointer form, which answers a failed request with
- *       `nullptr`.
- *
- * @tparam Type  The requested result type (`T` or `T const &`).
- * @param  view  The view to read.
- * @return The viewed object as @p Type.
- * @throws scl::bad_any_cast  If the viewed type does not match @p Type, or @p Type
- *                            drops a cv-qualifier the referent carries.
+ *         with `type_name()`, a view over a container identifies the container.
  */

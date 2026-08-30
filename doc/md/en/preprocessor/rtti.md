@@ -27,9 +27,11 @@ Expands to `1` when the translation unit is compiled with RTTI, `0` otherwise.
 - **A report, not a switch:** defining it by hand does not turn RTTI on or off. It states
   what the compiler was told on the command line.
 - **What it gates in ScL:** [`scl::type_name`](../runtime/type_name.md) and the rest of
-  `<scl/utility/runtime/type.h>`, and the `std::any` backing of
-  [`any_view`](../any/any_view.md) and [`any_arg`](../any/any_arg.md). The raw backing —
-  a view over a typed lvalue — needs no `typeid` and stays.
+  `<scl/utility/runtime/type.h>`, and the whole of
+  [`<scl/utility/any/std_any.h>`](../any/std_any.md), which is what reads the object inside
+  a `std::any`. Binding a handle to a `std::any` needs no `typeid` and stays, because a
+  handle names the type it is bound to and a `std::any` binds through the constructor that
+  accepts any type.
 - **The RTTI-free identity key:** [`scl::type_key`](../meta/type_key.md) answers the
   question `typeid` would in both configurations, so code that only has to compare types
   need not branch at all.

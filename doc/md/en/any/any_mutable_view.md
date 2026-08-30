@@ -35,9 +35,9 @@ bind: it grants no write. A temporary does not bind whatever its constness: the 
 storable and would outlive it. A `volatile` object binds, and a cast to it obeys the
 qualifier rule below.
 
-Everything else matches [`scl::any_view`](any_view.md): the same two backings - a typed
-object directly, or a `std::any` in a build with RTTI - the same identity queries, and the
-same limits on constant evaluation.
+Everything else matches [`scl::any_view`](any_view.md): the same bindings - a typed
+object of any type, `std::any` included and named as the box it is - the same identity
+queries, and the same limits on constant evaluation.
 
 ## Features
 
@@ -46,8 +46,8 @@ same limits on constant evaluation.
 - Costs two pointers and is trivially copyable.
 - Refuses a `const` object and a temporary of any constness.
 - Refers to a typed object of any type and uses no RTTI.
-- Refers to a `std::any` and writes into the object stored inside it; that constructor
-  exists only in builds with RTTI.
+- Refers to a `std::any` and writes the box itself, through the same constructor every other
+  type takes.
 - Refers to the content of an [`scl::any`](any.md) rather than to the any itself.
 - Answers `type_name()`, `type_key()` and `has_value()` during constant evaluation as well,
   on the C++20 baseline.
@@ -80,16 +80,21 @@ A `const` object is turned away by the type rather than by the cast, so the refu
 compile error at the point of binding, not a null pointer later. A caller who only reads
 takes [`scl::any_view`](any_view.md), which binds both.
 
-In a build with RTTI a non-`const` `std::any` converts to a view implicitly:
+A non-`const` `std::any` converts to a view implicitly, as any other non-`const` lvalue does:
 
 ```cpp
 std::any boxed{text};
-scl::any_mutable_view over_any{boxed};   // can write the std::any and the object inside it
+scl::any_mutable_view over_any{boxed};   // can write the std::any itself
 ```
 
-Such a view grants access to two different objects. `any_cast<std::any>` answers the box
-itself, and a write through it replaces everything the box holds. `any_cast<T>` with the
-stored type reaches that value and changes it in place.
+Such a view grants access to the box and to nothing else. `any_cast<std::any>` answers the
+box, and a write through it replaces everything the box holds; `any_cast<T>` with the stored
+type answers `nullptr`. To change the stored object in place, take the box and hand it to
+`std::any_cast`:
+
+```cpp
+std::any_cast<std::string &>(*scl::any_cast<std::any>(&over_any)) += "!";
+```
 
 An [`scl::any`](any.md) is unwrapped to its content, exactly as it is for a reading view:
 
@@ -103,7 +108,7 @@ over_owner.type_name();   // "int"
 ### Observation
 
 `has_value()`, `type_name()` and `type_key()` answer exactly what they answer for
-[`scl::any_view`](any_view.md), including the way a `std::any` backing identifies the box
+[`scl::any_view`](any_view.md), including the way a `std::any` binding identifies the box
 rather than the type stored inside it.
 
 ### Casting
@@ -269,4 +274,6 @@ standard: `std::any` itself has no constant-evaluable operations.
 - [any_switch](any_switch.md) - a chain of branches that reads a value without a run of casts
 - [any](any.md) - the owning type these views read and write
 - [type_key](../meta/type_key.md) - the identity key `type_key()` answers with
+- [std_any](std_any.md) - reading the object a `std::any` holds
+- [any_cast](any_cast.md) - the cast itself and the trait behind it
 - [Russian documentation](../../ru/any/any_mutable_view.md)

@@ -14,18 +14,18 @@ not force the caller to build an owning object. Nothing is copied and nothing is
 
 The view costs two pointers and is trivially copyable.
 
-It refers to an object in one of two ways. In the first, the view refers to a typed object
-directly: the type is known at compile time and identified by
+It refers to a typed object directly: the type is known at compile time and identified by
 [`scl::type_key`](../meta/type_key.md), so no RTTI is involved, and `type_name()`,
 `type_key()`, `has_value()` and building the view itself all run during constant evaluation.
-In the second, the view refers to a `std::any`, and every cast is delegated to the standard
-`std::any_cast`. Since `std::any` requires RTTI, that constructor disappears from the
-library when the build sets `-fno-rtti`.
-
-There is a subtlety here. Some standard libraries declare `std::any` even with RTTI turned
-off. Such an object then binds to the ordinary constructor of the view, that is, it is read
-as a plain typed object. `type_name()` still answers `"std::any"`, but `any_cast` can no
-longer reach the object stored inside it.
+One constructor accepts any type at all, and the group's own owners, anchors and handles have
+constructors of their own, each binding what that type refers to rather than the object
+itself.
+A view names the type it is bound to and nothing else, and `std::any` is such a type like any
+other. A view over one therefore refers to the box: `type_name()` answers `"std::any"` and
+`any_cast<std::any>` answers the box itself, while a cast to any other type answers nothing.
+Reading the object stored inside the box is what
+[`<scl/utility/any/std_any.h>`](std_any.md) is for, and only a cast naming `std::any` pays for
+it. Nothing in this header is conditional on a build setting.
 
 A view reads and never writes. `scl::any_cast` answers either a copy of the value or a const
 reference to it. Asking for a non-const reference, or for an rvalue reference, does not
@@ -39,16 +39,15 @@ it refers to - the same caveat `std::string_view` carries.
 - Refers to an object without copying it, and grants no write access.
 - Costs two pointers and is trivially copyable.
 - Refers to a typed object of any type and uses no RTTI.
-- Refers to a `std::any` and delegates the cast to the standard `std::any_cast`; that
-  constructor exists only in builds with RTTI.
+- Refers to a `std::any` as the box it is, through the same constructor every other type takes.
 - Answers `type_name()`, `type_key()` and `has_value()` during constant evaluation as well,
   on the C++20 baseline.
 - Hands out a pointer through `any_cast<T>(view *)`; a type mismatch answers `nullptr` and
   throws nothing.
 - Hands out a value or a const reference through `any_cast<T>(view &)`; a type mismatch
   throws `scl::bad_any_cast`.
-- Converts from `std::any` implicitly, so one `scl::any_cast` reads both a view and a
-  `std::any`.
+- Converts from `std::any` implicitly, and reads what the box holds through
+  [`<scl/utility/any/std_any.h>`](std_any.md).
 
 ## API reference
 
@@ -65,11 +64,11 @@ scl::any_view alias = raw;  // trivially copyable
 The view accepts an lvalue only, that is, a named object. Binding to a temporary is rejected
 by the compiler: such a view would become invalid as soon as the expression ends.
 
-In a build with RTTI a `std::any` converts to a view implicitly:
+A `std::any` converts to a view implicitly, as any other lvalue does:
 
 ```cpp
 std::any boxed{text};
-scl::any_view over_any{boxed};   // refers to the std::any
+scl::any_view over_any{boxed};   // refers to the std::any, not to the string inside it
 ```
 
 A temporary `std::any` is refused as well, so the view never outlives the object it refers
@@ -104,11 +103,9 @@ raw.type_key() == scl::type_key_of<std::string>();      // true
 scl::any_view{}.type_key() == scl::type_key{};          // true
 ```
 
-To learn the type stored inside a `std::any`, call `any_cast<T>` with that very type `T`.
 A call to `any_cast<std::any>` answers the box itself - the object the view refers to, and
-the type `type_name()` and `type_key()` already report for this backing. That is the way to
-take a `std::any` out of a view when what it holds does not matter. A `std::any` nested
-inside another one is reached with `std::any_cast` on the box that was answered.
+the type `type_name()` and `type_key()` already report for such a binding. The object stored
+inside is read through [`<scl/utility/any/std_any.h>`](std_any.md), given that box.
 
 ### Casting
 
@@ -146,12 +143,17 @@ The reference form is declared only where
 [`SCL_HAS_EXCEPTIONS`](../preprocessor/exceptions.md) is `1`. With exceptions turned off the
 pointer form remains, and it already reports a mismatch.
 
-An argument of type `std::any` converts to a view implicitly, so the same `scl::any_cast`
-call reads both a view and a `std::any` directly:
+The same `scl::any_cast` call reads a `std::any` directly once
+[`<scl/utility/any/std_any.h>`](std_any.md) is included:
 
 ```cpp
 std::any boxed{text};
-scl::any_cast<std::string>(boxed);   // through the implicit conversion to any_view
+scl::any_cast<std::string>(boxed);        // the string inside the box
+scl::any_cast<std::string>(&boxed);       // the same, by pointer
+
+scl::any_view over_any{boxed};
+scl::any_cast<std::string>(&over_any);    // nullptr: a view names the box, not its content
+scl::any_cast<std::any const>(&over_any); // the box itself
 ```
 
 `scl::bad_any_cast` derives from `std::bad_cast` in every configuration and never from
@@ -260,4 +262,6 @@ The two limits of the key apply here as well:
 - [any_switch](any_switch.md) - a chain of branches that reads a value without a run of casts
 - [any](any.md) - the owning type these views read
 - [type_key](../meta/type_key.md) - the identity key `type_key()` answers with
+- [std_any](std_any.md) - reading the object a `std::any` holds
+- [any_cast](any_cast.md) - the cast itself and the trait behind it
 - [Russian documentation](../../ru/any/any_view.md)

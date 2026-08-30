@@ -423,8 +423,10 @@ void report(scl::any_view view);   // view.type_name() answers "int", not "scl::
 void bump(scl::any_arg arg);       // any_cast<int>(&arg) writes into the stored object
 ```
 
-A `std::any` behind a view behaves differently: `type_name()` answers `"std::any"`, and only
-`any_cast` reaches the type stored inside.
+A `std::any` behind a view behaves differently: it is not unwrapped. `type_name()` answers
+`"std::any"`, a cast answers the box, and the object stored inside is reached through
+[`<scl/utility/any/std_any.h>`](std_any.md). That is the one place the two owners part
+company - an `scl::any` is a handle's referent, a `std::any` is a value like any other.
 
 A view refers to the object inside the `scl::any`. Clearing, reassigning or moving the
 `scl::any` therefore invalidates the view, the same way a `std::string_view` is invalidated
@@ -476,4 +478,5 @@ itself must not outlive the module that created it.
 - [any_arg](any_arg.md) - a view for a method parameter that also grants write access
 - [any_switch](any_switch.md) - a chain of branches that selects one by the type of a value
 - [type_key](../meta/type_key.md) - the identity key `type_key()` answers with
+- [any_cast](any_cast.md) - the cast itself and the trait behind it
 - [Russian documentation](../../ru/any/any.md)

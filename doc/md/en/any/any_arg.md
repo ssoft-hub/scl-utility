@@ -49,9 +49,9 @@ scope where the object it refers to lives. Only the constructor taking a view ca
 none: the argument adopts that view's referent and a static descriptor, so the view may
 die first and a temporary view is a valid source. To keep the value, copy it out.
 
-`any_arg` refers to the same things a view does: to a typed object directly, without RTTI,
-or to a `std::any` - the latter in builds with RTTI only. A view passed to it hands over its
-object, so the argument refers to that object rather than to the view. Identity queries
+`any_arg` refers to the same things a view does: to a typed object of any type, `std::any`
+included and bound as the box rather than as what it holds. A view passed to it hands over
+its object, so the argument refers to that object rather than to the view. Identity queries
 behave identically on both types.
 
 The access rights of an argument are wider. A view only reads. An argument always reads, and
@@ -87,7 +87,7 @@ void foo(scl::any_arg value);
 std::string text{"Hello Any!"};
 foo(text);                        // named object, referred to directly
 foo(std::string{"temporary"});    // the temporary outlives the call, which is allowed
-foo(std::any{text});              // a temporary std::any, builds with RTTI only
+foo(std::any{text});              // a temporary box, bound as itself
 
 scl::any_view view{text};
 foo(view);                        // takes the object of the view, not the view itself
@@ -172,10 +172,13 @@ reference form throws `scl::bad_any_cast`.
 One rule holds for the whole group: a cast has to request every qualifier of the object. A
 write requests none of them, which is why only an object without qualifiers grants one.
 
-The same rule governs a reference to a `std::any`: the write reaches the object inside when
-the `std::any` itself is non-const. A `volatile std::any` is not supported, because
-`std::any` has no `volatile`-qualified members and `std::any_cast` does not accept a
-pointer to `volatile`.
+The same rule governs an argument bound to a `std::any`, and it governs the box rather than
+what the box holds: `any_cast<std::any>` writes the box when the `std::any` itself is
+non-const, and no cast through the argument reaches the object inside. That object is read
+through [`<scl/utility/any/std_any.h>`](std_any.md), and written through `std::any_cast` on
+the box the argument hands out. A `volatile std::any` binds as any other `volatile` object
+does and answers a request that covers the qualifier; reaching the object inside one is
+refused at the call, `std::any_cast` taking no pointer to a `volatile` box.
 
 Coverage looks at the binding alone. An argument's own representation takes no part in it:
 an argument always arrives through a const reference, and were that constness added to the
@@ -232,8 +235,8 @@ The limits follow from that.
 - An argument over an [`scl::any`](any.md) reads during constant evaluation in any position
   and with no anchor: the owner keeps the object inside a holder of its own, and the cast
   comes back down to it.
-- A `std::any` cannot be built during constant evaluation at all, so its casts run at run
-  time. An object taken over from a view reads during constant evaluation exactly when the
+- A `std::any` cannot be built during constant evaluation at all, so a cast to the box runs at
+  run time. An object taken over from a view reads during constant evaluation exactly when the
   view itself can.
 - None of this concerns run time. There every position works and every request answers, the
   width is the same two pointers, and the cost equals that of a view.
@@ -312,4 +315,6 @@ A function that only reads a value for the duration of a call therefore declares
 - [any_anchor](any_anchor.md) - the anchor that frees an argument from the parameter position
 - [any_switch](any_switch.md) - a chain of branches over the same value, one branch per type
 - [any](any.md) - the owning type both handles read
+- [std_any](std_any.md) - reading the object a `std::any` holds
+- [any_cast](any_cast.md) - the cast itself and the trait behind it
 - [Russian documentation](../../ru/any/any_arg.md)

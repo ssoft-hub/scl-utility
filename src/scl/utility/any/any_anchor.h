@@ -13,57 +13,6 @@
 
 #include "detail/base.h"
 
-namespace scl::detail
-{
-    // A cast reads this to tell an anchor from the form an owner's holder carries.
-    [[nodiscard]]
-    constexpr any_type_descriptor any_anchored_form(any_type_descriptor described) noexcept
-    {
-        described.binding = any_binding::anchor;
-        return described;
-    }
-
-    // A descriptor that also carries the typed pointer, so a handle stays two pointers
-    // wide: the one it already spends on a descriptor does for both.
-    template <typename Type>
-    struct any_anchored_descriptor : any_type_descriptor
-    {
-        // Spelled out rather than left to aggregate initialisation, which would also admit
-        // a default-constructed one - describing no type at all.
-        constexpr explicit any_anchored_descriptor(any_type_descriptor const & descriptor,
-            Type * referent = nullptr) noexcept
-            : any_type_descriptor{any_anchored_form(descriptor)}
-            , referent{referent}
-        {}
-
-        // Not mutable: reading a mutable member of a constexpr object is not a constant
-        // expression, and an anchor a caller declares is exactly such an object.
-        Type * referent;
-    };
-
-    // Sound only once the caller has proved the request covers the referent's qualifiers.
-    template <typename Type, typename Handle>
-    [[nodiscard]]
-    constexpr Type * any_constant_referent(Handle const & handle) noexcept
-    {
-        using bare = ::std::remove_cv_t<Type>;
-
-        auto const * const described = any_handle_access::descriptor(handle);
-        if (*described->type != ::scl::type_key_of<bare>())
-            return nullptr;
-
-        if (described->binding == any_binding::anchor)
-            return static_cast<any_anchored_descriptor<bare> const *>(described)->referent;
-
-        // Only this branch may read the holder: elsewhere it is the union's inactive member.
-        if (described->binding == any_binding::holder)
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): the caller covered it
-            return const_cast<bare *>(any_holder_object<bare>(any_handle_access::held(handle)));
-
-        return nullptr;
-    }
-} // namespace scl::detail
-
 namespace scl
 {
     class any_argument;

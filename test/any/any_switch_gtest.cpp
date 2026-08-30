@@ -78,8 +78,7 @@ namespace
     concept void_handler = requires(Handler handler) { ::scl::any_switch<>().in_case<int>(handler); };
 
 #if SCL_HAS_RTTI
-    // A case naming std::any takes every subject the box itself is, so a case naming a type
-    // may not follow one.
+    // A case naming std::any takes a subject bound to one and changes nothing else.
     template <typename Case>
     concept case_after_std_any =
         requires {
@@ -125,7 +124,7 @@ namespace
         };
 
     template <typename Chain>
-    concept is_const_applicable = requires(Chain const chain, int value) { chain.apply(value); };
+    concept const_applicable = requires(Chain const chain, int value) { chain.apply(value); };
 
     template <typename Target>
     concept chain_convertible_to =
@@ -159,13 +158,12 @@ TEST(AnySwitchTest, CompileTimeGuards)
     STATIC_EXPECT_TRUE(case_after_volatile_int<int>);
 
 #if SCL_HAS_RTTI
-    // A std::any case takes every boxed subject, and a chain cannot tell one from a
-    // subject bound directly, so only a wider std::any case or the fallback may follow.
-    STATIC_EXPECT_FALSE(case_after_std_any<int>);
-    STATIC_EXPECT_FALSE(case_after_std_any<double>);
+    // std::any is a case type like any other, so a case after one is judged by coverage.
+    STATIC_EXPECT_TRUE(case_after_std_any<int>);
+    STATIC_EXPECT_TRUE(case_after_std_any<double>);
     STATIC_EXPECT_TRUE(case_after_std_any<::std::any const &>);
     STATIC_EXPECT_FALSE(case_after_const_std_any<::std::any>);
-    STATIC_EXPECT_FALSE(empty_case_after_std_any<void>);
+    STATIC_EXPECT_TRUE(empty_case_after_std_any<void>);
     STATIC_EXPECT_TRUE(fallback_after_std_any<void>);
 #endif
 
@@ -194,8 +192,8 @@ TEST(AnySwitchTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(void_handler<void (*)(::std::string)>);
 
     // A `const` chain applies exactly as far as its handlers are callable on one.
-    STATIC_EXPECT_TRUE(is_const_applicable<decltype(::scl::any_switch<>().in_case<int>([](int) {}))>);
-    STATIC_EXPECT_FALSE(is_const_applicable<decltype(::scl::any_switch<>().in_case<int>([count = 0](int) mutable {
+    STATIC_EXPECT_TRUE(const_applicable<decltype(::scl::any_switch<>().in_case<int>([](int) {}))>);
+    STATIC_EXPECT_FALSE(const_applicable<decltype(::scl::any_switch<>().in_case<int>([count = 0](int) mutable {
         ++count;
     }))>);
 
@@ -803,17 +801,22 @@ TEST(AnySwitchTest, ViewSubjectRefusesAMutableReferenceCase)
 }
 
 #if SCL_HAS_RTTI
-TEST(AnySwitchTest, StdAnySubjectIsUnwrapped)
+TEST(AnySwitchTest, StdAnySubjectIsTheBoxAndNotWhatItHolds)
 {
     ::std::any boxed{::std::string{"hello"}};
     ::std::string seen;
+    bool fell_through = false;
 
     ::scl::any_switch<>()
         .in_case<::std::string const &>([&seen](::std::string const & value) {
         seen = value;
+    }).or_else([&fell_through]() {
+        fell_through = true;
     }).apply(boxed);
 
-    EXPECT_EQ(seen, "hello");
+    EXPECT_TRUE(fell_through);
+    EXPECT_EQ(seen, "");
+    EXPECT_EQ(::scl::any_cast<::std::string const &>(boxed), "hello"); // read the box itself
 }
 
 TEST(AnySwitchTest, StdAnySubjectMatchesTheStdAnyCase)
@@ -831,6 +834,21 @@ TEST(AnySwitchTest, StdAnySubjectMatchesTheStdAnyCase)
     EXPECT_TRUE(matched);
 }
 
+TEST(AnySwitchTest, AStdAnyCaseSitsBesideAnyOtherCase)
+{
+    ::std::any boxed{::std::string{"hello"}};
+    int chosen = 0;
+
+    ::scl::any_switch<>()
+        .in_case<::std::string const &>([&chosen](::std::string const &) {
+        chosen = 1;
+    }).in_case<::std::any const &>([&chosen](::std::any const &) {
+        chosen = 2;
+    }).apply(boxed);
+
+    EXPECT_EQ(chosen, 2);
+}
+
 TEST(AnySwitchTest, EmptyStdAnyDoesNotMatchTheVoidCase)
 {
     ::std::any const empty;
@@ -845,5 +863,33 @@ TEST(AnySwitchTest, EmptyStdAnyDoesNotMatchTheVoidCase)
 
     EXPECT_FALSE(matched_void);
     EXPECT_TRUE(matched_any);
+}
+
+TEST(AnySwitchTest, ACaseAfterAStdAnyCaseReachesAPlainSubject)
+{
+    ::std::string subject{"hello"};
+    int chosen = 0;
+
+    ::scl::any_switch<>().in_case<::std::any const &>([&chosen](::std::any const &) {
+        chosen = 1;
+    }).in_case<::std::string const &>([&chosen](::std::string const &) {
+        chosen = 2;
+    }).apply(subject);
+
+    EXPECT_EQ(chosen, 2);
+}
+
+TEST(AnySwitchTest, AVoidCaseAfterAStdAnyCaseReachesAnEmptySubject)
+{
+    ::scl::any_view const empty;
+    int chosen = 0;
+
+    ::scl::any_switch<>().in_case<::std::any const &>([&chosen](::std::any const &) {
+        chosen = 1;
+    }).in_case<void>([&chosen]() {
+        chosen = 2;
+    }).apply(empty);
+
+    EXPECT_EQ(chosen, 2);
 }
 #endif

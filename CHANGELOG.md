@@ -48,7 +48,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   type, doing what `std::any` does in the two configurations `std::any` cannot serve. It
   names types through `scl::type_key` instead of `typeid`, so it compiles with RTTI
   disabled, and its whole lifecycle — construction, `emplace`, `any_cast`, destruction —
-  runs during constant evaluation. `sizeof(scl::any)` is two pointers, the size `std::any`
+  runs during constant evaluation. `access<T>()` answers a pointer to the stored object where
+  its type matches, which is how `scl::any_cast` serves an owner and what a caller already
+  holding the owner may call instead. `sizeof(scl::any)` is two pointers, the size `std::any`
   has on libstdc++ and less than it has elsewhere. An object of at most `sizeof(void *)`
   bytes that is nothrow-movable and no more aligned than a pointer is stored inside the any;
   anything else is allocated
@@ -123,12 +125,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Doxygen main page show the code of those programs rather than a snippet written
   beside them.
 
+- `<scl/utility/any/any_cast.h>` - the shared `scl::any_cast` of the group, and
+  `scl::any_cast_traits`, which a type specialises to be served by it. A specialisation
+  states what its type reaches through one name, `access`, which answers a pointer to the
+  object or `nullptr`; its result type is the result type of the cast, and the access rule is
+  stated by it, while what the answer points at is compared with the spelling up to
+  cv-qualification. A specialisation forwards the work to the source itself and holds no
+  algorithm of its own, so it needs no access the source does not already grant. Three shared
+  functions serve every source: one takes a pointer and answers `nullptr`, one binds a
+  reference to the object and throws, one produces an object of its own and throws. The object
+  spelling is offered for a type that can be copied from a `const` object, or where the source
+  hands the object over instead - which it does where the source has no name at the call site
+  and its trait declares `movable_tag`, the only way a type that moves and does not copy is
+  read at all. A type outside the library joins the cast by writing one specialisation in
+  namespace `scl` rather than adding an overload to it.
+  Each function is offered exactly where the call it forwards compiles and answers such a
+  pointer, so a source that cannot answer is turned away at the call rather than inside the
+  library, and the exception specification of the pointer form follows from the trait. A
+  source is never null inside `access`, which the cast checks once for every specialisation.
+  Whether a cast is offered is a constraint, and a compiler remembers the answer per source,
+  so the header defining a source belongs before the first question about it. Each header of
+  the group now names only what it needs, so a subject spelled as one of the handles needs
+  that handle's own header alongside `<scl/utility/any/any_switch.h>`; `<scl/utility/any.h>`
+  still pulls in the whole group.
+  See [`doc/md/en/any/any_cast.md`](doc/md/en/any/any_cast.md).
+
+- `<scl/utility/any/std_any.h>` - what lets `scl::any_cast` read a `std::any` directly,
+  as the `scl::any_cast_traits` specialisation for it. A cast over a box answers `nullptr`
+  for a null pointer, an empty box and a box holding another type alike; the box owns what it
+  holds, so its own constness reaches the boxed object exactly as it does for `scl::any`. The
+  reference forms over a box named as an lvalue hand over a
+  copy or bind the stored object without one, throwing `scl::bad_any_cast` on a mismatch, and
+  a `volatile` box is refused at the call. The header is where the
+  `std::any` interop now lives in full, and it is the only header of the group that names
+  `std::any` at all: a cast that never names a `std::any` never instantiates the
+  specialisation, so no cast pays for the ability, though `<scl/utility/any.h>` pulls the
+  header in along with the rest of the group. Empty without RTTI, and the reference forms are
+  declared only where exceptions are available. See
+  [`doc/md/en/any/std_any.md`](doc/md/en/any/std_any.md).
+
 ### Changed
 
 - Where a template parameter is classified by one of the `scl::concepts` concepts, the
   classification appears in the template parameter list rather than in a trailing
-  `requires` clause: every `any_cast` overload over an `any_view`, an `any_mutable_view` or
-  an `any_argument` takes a `concepts::object_type` or a `concepts::lvalue_reference`, and
+  `requires` clause: every `scl::any_cast` form declared in
+  `<scl/utility/any/any_cast.h>` takes a `concepts::object_type` or a
+  `concepts::lvalue_reference`, and
   `detail::any_qualifiers_of` takes a `concepts::reference`. The constraint is visible in the
   declaration and a failure names the concept instead of the underlying trait. Which
   specialisations are viable is unchanged.
@@ -173,7 +215,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   does not before P2738 (C++26). The run-time path is untouched: a handle stays two
   pointers wide and its cast costs what it did. The limits that remain are stated in
   [`doc/md/en/any/any_view.md`](doc/md/en/any/any_view.md) — a plain lvalue needs an
-  `scl::any_anchor`, a `std::any` backing has no constant-evaluation form at all, and an
+  `scl::any_anchor`, a `std::any` binding has no constant-evaluation form at all, and an
   `scl::basic_any` with an allocator of its own reads but is not taken from.
 
 - **Breaking.** `scl::type_key` is a value rather than an identity reached through a
@@ -207,9 +249,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   than eight — iterating a wide, sparse mask is the operation that gains. The order, the
   end position and every result are unchanged, in constant evaluation as well.
 
-- The four `scl::any_cast` overloads that answer a failed request by throwing — the value
-  and reference forms over an `any_view` and over an `any_arg` — are declared only where
-  `SCL_HAS_EXCEPTIONS` is `1`, as the `typeid` surface is declared only under
+- Every `scl::any_cast` form that answers a failed request by throwing — the one that produces
+  an object, copying it out or moving it out of a source that owns it, and the one that binds
+  without a copy — is declared only where `SCL_HAS_EXCEPTIONS` is `1`, as the `typeid` surface
+  is declared only under
   `SCL_HAS_RTTI`. A translation unit compiled with `-fno-exceptions` keeps the
   pointer-returning forms, which report failure with `nullptr` and never threw. Nothing
   changes for a build with exceptions enabled.
@@ -453,12 +496,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **Any** — non-owning views over a `std::any` or a typed value
+- **Any** — non-owning views over a typed value
   (`#include <scl/utility/any.h>`):
   - `scl::any_view` — two pointers wide and trivially copyable; constructs from a
-    typed lvalue (the RTTI-free *raw* backing, whose `type_name`/`type_key`/
-    `has_value` are usable in constant evaluation) or, in RTTI builds, from a
-    `std::any` (the *std::any* backing, which delegates casts to `std::any_cast`).
+    typed lvalue of any type, whose `type_name`/`type_key`/`has_value` are usable in
+    constant evaluation. A `std::any` is such a type like any other and is named as
+    the box it is, so nothing about the view is conditional on a build setting.
     Rvalues are rejected so a view never outlives its source. `type_key()` hands
     out the `scl::type_key` of the viewed type by pointer (`nullptr` for an empty
     view), so identity is exact even across a module boundary and same-named
@@ -471,9 +514,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     passing an argument on binds another reference. No default state, no
     assignment and no conversion to `any_view`, since a view may be stored and an
     argument may not; a callee that only reads for the duration of a call takes an
-    `any_arg` of its own. Same backings and identity queries. Unlike the view it also grants write access —
+    `any_arg` of its own. Binds the same types and answers the same identity queries. Unlike the view it also grants write access —
     `any_cast<T>(arg*)` or `any_cast<T &>` on a referent bound without
-    cv-qualifiers, the boxed object of a non-`const` `std::any` included — and
+    cv-qualifiers, a non-`const` `std::any` itself included — and
     only it does: a referent taken from an `any_view` is narrowed to the read
     access the view promises. Its casts are also constant-evaluable on the C++20
     baseline, where a view's need P2738 (C++26): an argument reaches its referent
@@ -484,20 +527,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     reports P2738, the anchor is not compiled at all and both bounds lift: a cast
     folds for an `any_arg` in any position and over a referent adopted from an
     `any_view`, with no change at the call site and none to the layout.
-  - `scl::any_cast<T>` — pointer form (`noexcept`, `nullptr` on mismatch) and a
-    throwing value/reference form where `T const &` binds with no copy. A cast
-    must carry every cv-qualifier the referent was bound with, so a `volatile`
-    object is read as `T volatile`, and a write — which carries none — reaches
-    only an unqualified referent. A handle's own cv-qualification governs the
-    handle and not what it refers to, so it takes no part in the request: a
-    `volatile` view over an unqualified object answers `any_cast<T>`, and the
-    rights come from the binding alone. A request naming `std::any` is answered
-    by the box itself — the type the identity queries already report for that
-    backing — so a `std::any` is taken out of a handle without naming what it
-    holds, and a non-`const` binding hands it out for writing. A `std::any`
-    argument converts implicitly, so one `any_cast` serves both backings.
-    Recovering the object is a runtime step on C++20 (constant-evaluable under
-    P2738/C++26), as with `std::any_cast`.
+  - `scl::any_cast<T>` — one cast for every source, declared in
+    `<scl/utility/any/any_cast.h>`: a pointer form (`noexcept`, `nullptr` on
+    mismatch) and two throwing forms, one binding `T &`/`T const &` without a copy
+    and one copying out. The spelling asked for and the source's access rule decide
+    the result type; the binding decides whether it is answered. A cast must carry
+    every cv-qualifier the referent was bound with, so a `volatile` object is read
+    as `T volatile`, and a write — which carries none — reaches only an unqualified
+    referent. A handle's own cv-qualification governs the handle and not what it
+    refers to, so it takes no part in the request: a `volatile` view over an
+    unqualified object answers `any_cast<T>`, and the rights come from the binding
+    alone. An owner is the exception, since it keeps the object as a subobject of
+    its own: a `const` owner answers `T const *`, and a `volatile` one is refused by
+    every form the trait governs rather than failing inside the library. A handle
+    names the type it is bound to and nothing else, so a request naming `std::any` is
+    answered by the box itself — the type the identity queries already report for
+    such a binding — and a request
+    naming any other type answers `nullptr` or throws: reading the object a box
+    holds is what `<scl/utility/any/std_any.h>` is for. A non-`const` binding hands
+    the box out for writing. Recovering the object is a runtime step on C++20
+    (constant-evaluable under P2738/C++26), as with `std::any_cast`.
   - `scl::bad_any_cast` — thrown on mismatch; derives from `std::bad_cast` in
     every configuration, never `std::bad_any_cast`, so the type stays
     RTTI-independent and safe to link across mixed RTTI/-fno-rtti builds.
@@ -505,11 +554,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     `any_cast` probes: every branch names its type once, the first match runs, and
     the fallback belongs to the same chain. `in_case<T>` selects by the
     qualifier-coverage rule of `any_cast` (`volatile` included), `in_case<void>`
-    matches an empty value, and `in_case<std::any>` matches a `std::any` subject
-    whole — taking every one of them, and a chain cannot tell a subject held in a
-    `std::any` from one bound directly, so only a wider `std::any` case and the
-    fallback may follow it. Leave that branch out and the subject is unwrapped so
-    the branches see the boxed type. A branch takes an invocable of no arguments or of the matched
+    matches an empty value, and `std::any` is a case type like any other:
+    `in_case<std::any>` matches a subject bound to one, no branch reads what that
+    box holds, and a branch may stand on either side of it.
+    A branch takes an invocable of no arguments or of the matched
     value, and — for a named `Result`, a `void` chain having nothing to convert one
     into — a ready value; `in_case<T>()` with neither is a branch that matches and
     does nothing. Either form may produce a `Result` or the `std::optional<Result>`
