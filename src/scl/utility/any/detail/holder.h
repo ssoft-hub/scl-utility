@@ -3,7 +3,6 @@
 /**
  * @file holder.h
  * @brief Storage an owning ScL Any acquires for the object it holds.
- * @ingroup scl_utility_any
  */
 
 #include <scl/utility/preprocessor/exceptions.h>

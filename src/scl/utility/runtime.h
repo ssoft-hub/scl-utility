@@ -1,12 +1,6 @@
 #pragma once
 
 /**
- * @file
- * @brief ScL runtime type utilities.
- * @details This header aggregates all ScL runtime type utilities.
- */
-
-/**
  * @defgroup scl_utility_runtime ScL Runtime Utilities
  * @brief Runtime type identification utilities via RTTI.
  * @details

@@ -1,12 +1,6 @@
 #pragma once
 
 /**
- * @file
- * @brief ScL type-classifying concepts.
- * @details This header aggregates all ScL type-classifying concept utilities.
- */
-
-/**
  * @defgroup scl_utility_concepts ScL Type-Classifying Concepts
  * @brief Concept wrappers for std type traits that have no std concept equivalent.
  * @details

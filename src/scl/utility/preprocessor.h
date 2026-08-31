@@ -1,12 +1,6 @@
 #pragma once
 
 /**
- * @file
- * @brief ScL preprocessor utilities for C++.
- * @details This header aggregates all ScL preprocessor utilities.
- */
-
-/**
  * @defgroup scl_utility_preprocessor ScL Preprocessor Utilities (C++)
  * @brief Helper macros for the C/C++ preprocessor.
  * @details

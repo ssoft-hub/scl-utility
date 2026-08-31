@@ -166,6 +166,14 @@ Every public header, class, struct, function, and type alias must have a Doxygen
 - Use `@tparam` for every template parameter
 - Every entity must declare `@ingroup <group>` matching its thematic group
 - Groups are defined with `@defgroup` in the top-level module header or dedicated group header
+- The reference lists the public headers of a group and nothing else. A `detail/` subtree is
+  outside it: `EXCLUDE_PATTERNS` in the Doxyfile keeps those files out of the input, and a
+  header there declares no `@ingroup`, so a change to the setting cannot put it back inside a
+  public group. A top-level module header declares its group with `@defgroup` and carries no
+  `@file` block of its own, so the group reaches the reader while the aggregating header does
+  not appear beside the headers it aggregates. A top-level header that is the group's own
+  public surface rather than an aggregation - `flags.h`, with no `flags/` subtree beside it -
+  is documented like any other public header
 
 Example:
 ```cpp

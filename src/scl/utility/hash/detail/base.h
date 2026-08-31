@@ -3,7 +3,6 @@
 /**
  * @file base.h
  * @brief Shared input preparation for the ScL hash functions.
- * @ingroup scl_utility_hash
  */
 
 #include <scl/utility/attribute/inline.h>

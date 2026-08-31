@@ -1,12 +1,6 @@
 #pragma once
 
 /**
- * @file hash.h
- * @brief ScL non-cryptographic hash utilities.
- * @details This header aggregates all ScL hash utilities.
- */
-
-/**
  * @defgroup scl_utility_hash ScL Hash Utilities
  * @brief Non-cryptographic compile-time hash functions and hash-value types.
  * @{

@@ -1,12 +1,6 @@
 #pragma once
 
 /**
- * @file
- * @brief ScL type traits for C++.
- * @details This header aggregates all ScL type trait utilities.
- */
-
-/**
  * @defgroup scl_utility_type_traits ScL Type Traits
  * @brief Type-level utilities for C++ metaprogramming.
  * @details

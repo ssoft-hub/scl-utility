@@ -1,12 +1,6 @@
 #pragma once
 
 /**
- * @file hierarchy.h
- * @brief ScL parent-child tree hierarchy utilities.
- * @details Aggregates all ScL hierarchy headers.
- */
-
-/**
  * @defgroup scl_utility_hierarchy ScL Hierarchy
  * @brief Parent-child tree nodes with observer-aware tree wrapper.
  * @{
