@@ -158,6 +158,9 @@ first benchmark.
 - A `= delete` or `= default` member must carry a block written by hand: no gate reports one,
   and Doxygen leaves an undescribed member of that shape off its class page rather than
   listing it there.
+- A header that only aggregates other headers declares its group with `@defgroup` and must
+  not carry `@ingroup`: the tag lists it among the files of the group, where it offers a
+  reader a page carrying a brief and no symbol.
 - Markdown documentation is maintained per language under `doc/md/<language>/`:
   - English: `doc/md/en/`
   - Russian: `doc/md/ru/`
