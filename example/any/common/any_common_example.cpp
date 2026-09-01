@@ -5,10 +5,11 @@
  * scl::any_view is to std::any what std::string_view is to std::string: it
  * refers to an existing value without copying it, so one function can accept a
  * heterogeneous read-only argument at no allocation cost. It is two pointers
- * wide and trivially copyable. A typed lvalue forms the "raw" backing (no RTTI,
- * carries a compile-time type name); a std::any forms the "std::any" backing
- * (RTTI builds only). scl::any_cast recovers the value by pointer (nullptr on
- * mismatch, never throws), by copy, or by const reference (zero-copy).
+ * wide and trivially copyable. Every typed lvalue binds through one constructor
+ * and carries a compile-time type name, so a handle over a std::any names the
+ * box rather than what it holds — <scl/utility/any/std_any.h> is what reaches
+ * inside. scl::any_cast recovers the value by pointer (nullptr on mismatch,
+ * never throws), by copy, or by const reference (zero-copy).
  *
  * scl::any_arg is the parameter-position companion: it also binds rvalues, is
  * valid only for the duration of the call, and — unlike the view — grants write
@@ -25,7 +26,7 @@
 #include <string>
 
 // ============================================================================
-// Pattern 1 — one function reads either backing without copying the payload
+// Pattern 1 — one function reads an object of any type without copying the payload
 // ============================================================================
 
 static void bar(::scl::any_view value)
@@ -60,20 +61,20 @@ static void show_reference_cast()
 //! [reference_cast]
 
 // ============================================================================
-// Pattern 3 — identity queries across both backings and the empty view
+// Pattern 3 — identity queries over a plain object, over a box, and over nothing
 // ============================================================================
 
 static void show_identity()
 {
     ::std::string const text{"payload"};
 
-    ::scl::any_view const raw{text}; // raw backing — carries a compile-time type name
+    ::scl::any_view const raw{text}; // a plain object — carries a compile-time type name
     ::scl::any_view const empty{};   // views nothing
 
     ::std::cout << "raw   has_value=" << raw.has_value() << " type_name=\"" << raw.type_name() << "\"\n";
 #if SCL_HAS_RTTI
     ::std::any const boxed{text};
-    ::scl::any_view const anyv{boxed}; // std::any backing — names the backing, not the boxed type
+    ::scl::any_view const anyv{boxed}; // a box — names the box, not the type inside it
     ::std::cout << "any   has_value=" << anyv.has_value() << " type_name=\"" << anyv.type_name() << "\"\n";
 #endif
     ::std::cout << "empty has_value=" << empty.has_value() << '\n'; // 0
@@ -183,16 +184,17 @@ static void show_switch()
 
 int main(int, char **)
 {
-    ::std::cout << "=== One function, two backings ===\n";
+    ::std::cout << "=== One function, any type ===\n";
 
     ::std::string greeting{"Hello Any!"};
     ::std::cout << "raw std::string lvalue:\n";
-    bar(greeting); // raw backing, no copy
+    bar(greeting); // a plain object, no copy
 
 #if SCL_HAS_RTTI
     ::std::any boxed{greeting};
     ::std::cout << "std::any:\n";
-    bar(boxed); // std::any backing, no copy
+    bar(boxed); // a box: the handle names it, not what it holds
+    ::std::cout << "  inside the box: \"" << ::scl::any_cast<::std::string const &>(boxed) << "\"\n";
 #endif
 
     int number = 42;
@@ -210,7 +212,7 @@ int main(int, char **)
     describe(::std::string{"temporary"}); // rvalue — outlives the call
     describe(42);
 #if SCL_HAS_RTTI
-    describe(::std::any{greeting}); // temporary std::any
+    describe(::std::any{greeting}); // temporary std::any: named as the box it is
 #endif
 
     ::std::cout << "\n=== Delegation onward ===\n";

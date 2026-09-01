@@ -250,14 +250,35 @@ TEST(AnyHolderTest, AcquiredStorageMatchesTheAlignmentAsked)
 {
     allocation_counter counter;
     counting_allocator<::std::byte> allocator{counter};
-    ::scl::detail::any_extent const room{.size = sizeof(over_aligned), .alignment = alignof(over_aligned)};
 
-    void * const storage = ::scl::detail::any_acquire(allocator, room);
+    void * const storage = ::scl::detail::any_acquire(allocator, sizeof(over_aligned), alignof(over_aligned));
 
     EXPECT_EQ(reinterpret_cast<::std::uintptr_t>(storage) % alignof(over_aligned), 0U);
     EXPECT_EQ(counter.allocations, 1);
-    ::scl::detail::any_release(allocator, storage, room);
+    ::scl::detail::any_release(allocator, storage);
     EXPECT_EQ(counter.deallocations, 1);
+}
+
+TEST(AnyHolderTest, AcquiredStorageServesAnAlignmentNoBlockTypeCouldName)
+{
+    allocation_counter counter;
+    counting_allocator<::std::byte> allocator{counter};
+
+    void * const storage = ::scl::detail::any_acquire(allocator, 1U, 256U);
+
+    EXPECT_EQ(reinterpret_cast<::std::uintptr_t>(storage) % 256U, 0U);
+    ::scl::detail::any_release(allocator, storage);
+    EXPECT_EQ(counter.deallocations, 1);
+}
+
+TEST(AnyHolderTest, ABlockAdmitsANarrowerTypeThanItWasTakenFor)
+{
+    constexpr ::std::size_t roomy = ::scl::detail::any_block_capacity(sizeof(over_aligned),
+        alignof(over_aligned));
+    constexpr ::std::size_t tight = ::scl::detail::any_block_capacity(sizeof(int), alignof(int));
+
+    STATIC_EXPECT_TRUE(::scl::detail::any_block_fits(roomy, sizeof(int), alignof(int)));
+    STATIC_EXPECT_FALSE(::scl::detail::any_block_fits(tight, sizeof(over_aligned), alignof(over_aligned)));
 }
 
 TEST(AnyHolderTest, AllocatedLifecycleRunsDuringConstantEvaluation)

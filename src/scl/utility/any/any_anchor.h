@@ -13,57 +13,6 @@
 
 #include "detail/base.h"
 
-namespace scl::detail
-{
-    // A cast reads this to tell an anchor from the form an owner's holder carries.
-    [[nodiscard]]
-    constexpr any_type_descriptor any_anchored_form(any_type_descriptor described) noexcept
-    {
-        described.binding = any_binding::anchor;
-        return described;
-    }
-
-    // A descriptor that also carries the typed pointer, so a handle stays two pointers
-    // wide: the one it already spends on a descriptor does for both.
-    template <typename Type>
-    struct any_anchored_descriptor : any_type_descriptor
-    {
-        // Spelled out rather than left to aggregate initialisation, which would also admit
-        // a default-constructed one - describing no type at all.
-        constexpr explicit any_anchored_descriptor(any_type_descriptor const & descriptor,
-            Type * referent = nullptr) noexcept
-            : any_type_descriptor{any_anchored_form(descriptor)}
-            , referent{referent}
-        {}
-
-        // Not mutable: reading a mutable member of a constexpr object is not a constant
-        // expression, and an anchor a caller declares is exactly such an object.
-        Type * referent;
-    };
-
-    // Sound only once the caller has proved the request covers the referent's qualifiers.
-    template <typename Type, typename Handle>
-    [[nodiscard]]
-    constexpr Type * any_constant_referent(Handle const & handle) noexcept
-    {
-        using bare = ::std::remove_cv_t<Type>;
-
-        auto const * const described = any_handle_access::descriptor(handle);
-        if (*described->type != ::scl::type_key_of<bare>())
-            return nullptr;
-
-        if (described->binding == any_binding::anchor)
-            return static_cast<any_anchored_descriptor<bare> const *>(described)->referent;
-
-        // Only this branch may read the holder: elsewhere it is the union's inactive member.
-        if (described->binding == any_binding::holder)
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): the caller covered it
-            return const_cast<bare *>(any_holder_object<bare>(any_handle_access::held(handle)));
-
-        return nullptr;
-    }
-} // namespace scl::detail
-
 namespace scl
 {
     class any_argument;
@@ -76,8 +25,7 @@ namespace scl
 
 namespace scl::detail
 {
-    // A handle bound to an anchor refers to what the anchor stands for, so the generic
-    // constructors exclude one.
+    // A handle bound to an anchor refers to what it stands for, so a constructor excludes one.
     template <typename Type>
     inline constexpr bool is_any_anchor_v = false;
 
@@ -95,9 +43,9 @@ namespace scl
         detail::any_anchored_descriptor<::std::remove_cv_t<Type>> m_anchor;
 
     public:
-        // The qualifiers dropped here are restored by any_cast, which hands out a pointer
-        // only once the descriptor has proved the request covers them.
+        // The qualifiers dropped here are restored by any_cast, once it proves them covered.
         constexpr explicit any_anchor(Type & object SCL_LIFETIMEBOUND) noexcept
+            requires(::std::is_object_v<Type>)
             : m_anchor{detail::any_type_descriptor_of<Type &>,
                   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast): see above
                   const_cast<::std::remove_cv_t<Type> *>(::std::addressof(object))}
@@ -110,8 +58,7 @@ namespace scl
             return m_anchor.referent;
         }
 
-        // Run time takes the descriptor shared by every binding of this type, which is what
-        // keeps a handle comparable by address.
+        // Run time takes the shared descriptor, which keeps a handle comparable by address.
         [[nodiscard]]
         constexpr detail::any_type_descriptor const * bound_descriptor() const noexcept
         {
@@ -167,7 +114,7 @@ namespace scl
  * the cast comes back down to, so a handle over an owning any answers during
  * constant evaluation on its own.
  *
- * The type is trivial. Copying, moving and destroying an anchor are the
+ * The type is trivially copyable. Copying, moving and destroying an anchor are the
  * compiler's own definitions, and each of them — the copy and move constructors,
  * both assignments and the destructor — is `constexpr`, so an anchor is as
  * usable during constant evaluation as the handles built through it.
@@ -175,9 +122,11 @@ namespace scl
  * @note On C++26 no anchor is needed at all — a handle bound to a plain lvalue
  *       answers during constant evaluation by itself. The class stays part of
  *       the interface so that code written against the C++20 baseline keeps
- *       compiling, and it costs a run-time binding nothing: a handle built from
- *       an anchor keeps the descriptor shared by every binding of that type, and
- *       only constant evaluation reads the anchor.
+ *       compiling, and it costs a run-time binding nothing: a handle bound at run
+ *       time keeps the descriptor shared by every binding of that type, and reads
+ *       no anchor. A handle whose own construction is constant-evaluated keeps the
+ *       anchor's address for its whole life, which is what the warning below is
+ *       about.
  *
  * @warning The anchor neither owns the referent nor extends its lifetime, and a
  *          handle built from it refers to the anchor in turn. Both the referent

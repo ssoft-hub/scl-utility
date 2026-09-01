@@ -3,6 +3,7 @@
 #include <scl/utility/any.h>
 
 #include <array>
+#include <type_traits>
 
 namespace
 {
@@ -28,6 +29,27 @@ namespace
 
         return probe;
     }
+
+    // A writing handle hands its own description on, so the anchor reaches both the reading
+    // view it narrows into and the argument that adopts it. An argument adopting a reading view
+    // takes the shared const description instead, which stands beside no object.
+    constexpr bool anchor_survives_narrowing()
+    {
+        int value = 42;
+        ::scl::any_anchor const anchored{value};
+        ::scl::any_mutable_view const writing{anchored};
+
+        ::scl::any_view const narrowed = writing;
+        ::scl::any_argument const adopted{writing};
+
+        return ::scl::any_cast<int>(&narrowed) != nullptr &&
+            ::scl::any_cast<int>(&adopted) != nullptr && *::scl::any_cast<int>(&narrowed) == 42;
+    }
+
+    void bound_to_nothing();
+
+    template <typename Type>
+    concept anchor_over = requires(Type & object) { ::scl::any_anchor{object}; };
 
     constexpr int one = 1;
     constexpr int two = 2;
@@ -106,4 +128,35 @@ TEST(AnyAnchorTest, AnAnchorOverAConstReferentGrantsNoWriteAccess)
 
     EXPECT_EQ(::scl::any_cast<int>(&subject), nullptr); // the request drops const
     EXPECT_EQ(*::scl::any_cast<int const>(&subject), 42);
+}
+
+TEST(AnyAnchorTest, NarrowingAHandleKeepsTheAnchorItWasBoundThrough)
+{
+    STATIC_EXPECT_TRUE(anchor_survives_narrowing());
+}
+
+TEST(AnyAnchorTest, AnAnchorStandsForAnObjectAndForNothingElse)
+{
+    // A function is no object, and neither the anchor nor a handle built through one admits
+    // a function lvalue: the refusal is a constraint rather than an error inside the group.
+    STATIC_EXPECT_FALSE(anchor_over<decltype(bound_to_nothing)>);
+    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::any_anchor<int()>, int (&)()>));
+    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::any_view, ::scl::any_anchor<int()> const &>));
+    STATIC_EXPECT_FALSE(
+        (::std::is_constructible_v<::scl::any_mutable_view, ::scl::any_anchor<int()> const &>));
+    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::any_argument, ::scl::any_anchor<int()> const &>));
+
+    STATIC_EXPECT_TRUE(anchor_over<int>);
+    STATIC_EXPECT_TRUE(anchor_over<int const>);
+}
+
+TEST(AnyAnchorTest, AnAnchorIsCopiedAndDestroyedByTheCompilersOwnDefinitions)
+{
+    // What lets an anchor stand beside the handles built through it and be used during
+    // constant evaluation as freely as they are.
+    STATIC_EXPECT_TRUE(::std::is_trivially_copyable_v<::scl::any_anchor<int>>);
+    STATIC_EXPECT_TRUE(::std::is_trivially_copy_constructible_v<::scl::any_anchor<int>>);
+    STATIC_EXPECT_TRUE(::std::is_trivially_move_constructible_v<::scl::any_anchor<int>>);
+    STATIC_EXPECT_TRUE(::std::is_trivially_destructible_v<::scl::any_anchor<int>>);
+    STATIC_EXPECT_FALSE(::std::is_default_constructible_v<::scl::any_anchor<int>>);
 }

@@ -1,14 +1,18 @@
 #include <gtest_utils.h>
 
 #include <scl/utility/any.h>
+#include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/rtti.h>
 
 #if SCL_HAS_RTTI
 #include <any>
 #endif
+#include <memory>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 namespace
 {
@@ -39,10 +43,70 @@ namespace
     // than only type-checked.
     int doubled(int value) { return value * 2; }
 
+    // Neither conjunct holds for it: the optional takes no nothrow assignment of one, and
+    // moving that optional out runs the throwing move.
+    struct moves_by_throwing
+    {
+        moves_by_throwing() = default;
+        moves_by_throwing(moves_by_throwing const &) = default;
+        // NOLINTNEXTLINE(performance-noexcept-move-constructor): the throwing move is the subject
+        moves_by_throwing(moves_by_throwing &&) noexcept(false) {}
+        moves_by_throwing & operator=(moves_by_throwing const &) = default;
+        // NOLINTNEXTLINE(performance-noexcept-move-constructor): the throwing move is the subject
+        moves_by_throwing & operator=(moves_by_throwing &&) noexcept(false) { return *this; }
+        ~moves_by_throwing() = default;
+    };
+
+    // Built from an `int` without throwing, so the optional takes the assignment nothrow;
+    // moving that optional out runs the throwing move. Only the storage conjunct decides.
+    struct built_from_int
+    {
+        built_from_int() = default;
+        built_from_int(built_from_int const &) = default;
+        // NOLINTNEXTLINE(performance-noexcept-move-constructor): the throwing move is the subject
+        built_from_int(built_from_int &&) noexcept(false) {}
+        built_from_int & operator=(built_from_int const &) = default;
+        built_from_int & operator=(built_from_int &&) noexcept { return *this; }
+        ~built_from_int() = default;
+
+        // NOLINTNEXTLINE(*-explicit-*): the implicit conversion is what the branch produces
+        built_from_int(int /*number*/) noexcept {}
+    };
+
+    struct throwing_move
+    {
+        throwing_move() = default;
+        throwing_move(throwing_move const &) = default;
+        // NOLINTNEXTLINE(performance-noexcept-move-constructor): the throwing move is the subject
+        throwing_move(throwing_move &&) noexcept(false) {}
+        throwing_move & operator=(throwing_move const &) = default;
+        // NOLINTNEXTLINE(performance-noexcept-move-constructor): the throwing move is the subject
+        throwing_move & operator=(throwing_move &&) noexcept(false) { return *this; }
+        ~throwing_move() = default;
+
+        void operator()(int) const {}
+    };
+
     // A chain holds no subject, so it is an ordinary constant: built once here, applied to
     // as many subjects as the tests need, at compile time and at run time alike.
     constexpr auto doubling_matcher =
         ::scl::any_switch<int>().in_case<int>([](int number) { return number * 2; }).or_else(0);
+
+    // Neither copied nor moved, so no chain can keep one.
+    struct pinned
+    {
+        ::std::mutex held;
+
+        void operator()(int) const {}
+    };
+
+    template <typename Handler>
+    concept case_takes_handler = requires(
+        Handler && handler) { ::scl::any_switch<>().in_case<int>(::std::forward<Handler>(handler)); };
+
+    template <typename Case>
+    concept case_after_void =
+        requires { ::scl::any_switch<>().in_case<void>([] {}).template in_case<Case>([] {}); };
 
     template <typename Case>
     concept case_after_int =
@@ -77,9 +141,22 @@ namespace
     template <typename Handler>
     concept void_handler = requires(Handler handler) { ::scl::any_switch<>().in_case<int>(handler); };
 
+    // Convertible from a branch, and no optional of it takes an assignment.
+    struct fixed_result
+    {
+        int const id;
+    };
+
+    template <typename Result, typename Handler>
+    concept result_from_handler =
+        requires(Handler handler) { ::scl::any_switch<Result>().template in_case<int>(handler); };
+
+    template <typename Result, typename Value>
+    concept result_from_fallback =
+        requires(Value value) { ::scl::any_switch<Result>().or_else(value); };
+
 #if SCL_HAS_RTTI
-    // A case naming std::any takes every subject the box itself is, so a case naming a type
-    // may not follow one.
+    // A case naming std::any takes a subject bound to one and changes nothing else.
     template <typename Case>
     concept case_after_std_any =
         requires {
@@ -159,13 +236,12 @@ TEST(AnySwitchTest, CompileTimeGuards)
     STATIC_EXPECT_TRUE(case_after_volatile_int<int>);
 
 #if SCL_HAS_RTTI
-    // A std::any case takes every boxed subject, and a chain cannot tell one from a
-    // subject bound directly, so only a wider std::any case or the fallback may follow.
-    STATIC_EXPECT_FALSE(case_after_std_any<int>);
-    STATIC_EXPECT_FALSE(case_after_std_any<double>);
+    // std::any is a case type like any other, so a case after one is judged by coverage.
+    STATIC_EXPECT_TRUE(case_after_std_any<int>);
+    STATIC_EXPECT_TRUE(case_after_std_any<double>);
     STATIC_EXPECT_TRUE(case_after_std_any<::std::any const &>);
     STATIC_EXPECT_FALSE(case_after_const_std_any<::std::any>);
-    STATIC_EXPECT_FALSE(empty_case_after_std_any<void>);
+    STATIC_EXPECT_TRUE(empty_case_after_std_any<void>);
     STATIC_EXPECT_TRUE(fallback_after_std_any<void>);
 #endif
 
@@ -388,6 +464,7 @@ TEST(AnySwitchTest, FallbackCatchesUnmatchedSubject)
     EXPECT_TRUE(seen);
 }
 
+#if SCL_HAS_EXCEPTIONS
 TEST(AnySwitchTest, FallbackReceivesTheSubject)
 {
     double value = 1.5;
@@ -400,6 +477,7 @@ TEST(AnySwitchTest, FallbackReceivesTheSubject)
 
     EXPECT_EQ(seen, 1.5);
 }
+#endif
 
 TEST(AnySwitchTest, FallbackCatchesEmptySubjectWithoutVoidCase)
 {
@@ -623,6 +701,17 @@ TEST(AnySwitchTest, CallOperatorCarriesTheNoexceptOfApply)
     STATIC_EXPECT_FALSE(noexcept(throwing_matcher(value)));
 }
 
+TEST(AnySwitchTest, AResultTheChainCannotKeepIsRefusedAtTheBranch)
+{
+    // The chain keeps its result in an optional and assigns what a branch produced to it, so a
+    // result an optional takes no assignment of is turned away where the branch is written.
+    STATIC_EXPECT_FALSE((result_from_handler<fixed_result, fixed_result (*)(int)>));
+    STATIC_EXPECT_FALSE((result_from_fallback<fixed_result, fixed_result>));
+
+    STATIC_EXPECT_TRUE((result_from_handler<::std::string, ::std::string (*)(int)>));
+    STATIC_EXPECT_TRUE((result_from_fallback<::std::string, ::std::string>));
+}
+
 TEST(AnySwitchTest, NoexceptFollowsTheBranches)
 {
     int value = 7;
@@ -634,6 +723,44 @@ TEST(AnySwitchTest, NoexceptFollowsTheBranches)
     STATIC_EXPECT_TRUE(noexcept(throwing_matcher.has_case(value)));
     STATIC_EXPECT_TRUE(noexcept(nothrow_matcher.apply(value)));
     STATIC_EXPECT_FALSE(noexcept(throwing_matcher.apply(value)));
+}
+
+TEST(AnySwitchTest, NoexceptFollowsWhatKeepingTheResultCosts)
+{
+    int value = 7;
+
+    // A chain keeps what a branch produced in an optional and hands that optional back, so
+    // both the assignment into it and the move out of it answer for the whole call.
+    auto const kept = ::scl::any_switch<int>().in_case<int>([](int number) noexcept {
+        return number;
+    });
+    // The branch produces what the optional then has to build a string out of, and that is
+    // the step that allocates.
+    auto const converting = ::scl::any_switch<::std::string>().in_case<int>([](int) noexcept {
+        return "x";
+    });
+    auto const throwing_move = ::scl::any_switch<moves_by_throwing>().in_case<int>([](int) noexcept {
+        return moves_by_throwing{};
+    });
+
+    STATIC_EXPECT_TRUE(noexcept(kept.apply(value)));
+    STATIC_EXPECT_FALSE(noexcept(converting.apply(value)));
+    STATIC_EXPECT_FALSE(noexcept(throwing_move.apply(value)));
+}
+
+TEST(AnySwitchTest, HandingTheResultBackIsPartOfWhatApplyPromises)
+{
+    int value = 7;
+
+    // The optional takes the assignment without throwing and the branch never throws, so
+    // moving the result out is the only step left that may.
+    auto const built = ::scl::any_switch<built_from_int>().in_case<int>([](int number) noexcept {
+        return number;
+    });
+
+    STATIC_EXPECT_TRUE((::std::is_nothrow_assignable_v<::std::optional<built_from_int> &, int>));
+    STATIC_EXPECT_FALSE(::std::is_nothrow_move_constructible_v<::std::optional<built_from_int>>);
+    STATIC_EXPECT_FALSE(noexcept(built.apply(value)));
 }
 
 TEST(AnySwitchTest, MutableHandlerRunsOnANonConstChain)
@@ -753,6 +880,7 @@ TEST(AnySwitchTest, ApplyRunsTheHandlerOncePerCall)
     EXPECT_EQ(runs, 2);
 }
 
+#if SCL_HAS_EXCEPTIONS
 TEST(AnySwitchTest, HandlerExceptionEscapesApply)
 {
     int value = 7;
@@ -763,6 +891,7 @@ TEST(AnySwitchTest, HandlerExceptionEscapesApply)
 
     EXPECT_THROW(matcher.apply(value), ::std::runtime_error);
 }
+#endif
 
 TEST(AnySwitchTest, SubjectMayBeATemporary)
 {
@@ -803,18 +932,25 @@ TEST(AnySwitchTest, ViewSubjectRefusesAMutableReferenceCase)
 }
 
 #if SCL_HAS_RTTI
-TEST(AnySwitchTest, StdAnySubjectIsUnwrapped)
+#if SCL_HAS_EXCEPTIONS
+TEST(AnySwitchTest, StdAnySubjectIsTheBoxAndNotWhatItHolds)
 {
     ::std::any boxed{::std::string{"hello"}};
     ::std::string seen;
+    bool fell_through = false;
 
     ::scl::any_switch<>()
         .in_case<::std::string const &>([&seen](::std::string const & value) {
         seen = value;
+    }).or_else([&fell_through]() {
+        fell_through = true;
     }).apply(boxed);
 
-    EXPECT_EQ(seen, "hello");
+    EXPECT_TRUE(fell_through);
+    EXPECT_EQ(seen, "");
+    EXPECT_EQ(::scl::any_cast<::std::string const &>(boxed), "hello"); // read the box itself
 }
+#endif
 
 TEST(AnySwitchTest, StdAnySubjectMatchesTheStdAnyCase)
 {
@@ -829,6 +965,21 @@ TEST(AnySwitchTest, StdAnySubjectMatchesTheStdAnyCase)
     }).apply(boxed);
 
     EXPECT_TRUE(matched);
+}
+
+TEST(AnySwitchTest, AStdAnyCaseSitsBesideAnyOtherCase)
+{
+    ::std::any boxed{::std::string{"hello"}};
+    int chosen = 0;
+
+    ::scl::any_switch<>()
+        .in_case<::std::string const &>([&chosen](::std::string const &) {
+        chosen = 1;
+    }).in_case<::std::any const &>([&chosen](::std::any const &) {
+        chosen = 2;
+    }).apply(boxed);
+
+    EXPECT_EQ(chosen, 2);
 }
 
 TEST(AnySwitchTest, EmptyStdAnyDoesNotMatchTheVoidCase)
@@ -846,4 +997,94 @@ TEST(AnySwitchTest, EmptyStdAnyDoesNotMatchTheVoidCase)
     EXPECT_FALSE(matched_void);
     EXPECT_TRUE(matched_any);
 }
+
+TEST(AnySwitchTest, ACaseAfterAStdAnyCaseReachesAPlainSubject)
+{
+    ::std::string subject{"hello"};
+    int chosen = 0;
+
+    ::scl::any_switch<>().in_case<::std::any const &>([&chosen](::std::any const &) {
+        chosen = 1;
+    }).in_case<::std::string const &>([&chosen](::std::string const &) {
+        chosen = 2;
+    }).apply(subject);
+
+    EXPECT_EQ(chosen, 2);
+}
+
+TEST(AnySwitchTest, AVoidCaseAfterAStdAnyCaseReachesAnEmptySubject)
+{
+    ::scl::any_view const empty;
+    int chosen = 0;
+
+    ::scl::any_switch<>().in_case<::std::any const &>([&chosen](::std::any const &) {
+        chosen = 1;
+    }).in_case<void>([&chosen]() {
+        chosen = 2;
+    }).apply(empty);
+
+    EXPECT_EQ(chosen, 2);
+}
 #endif
+
+TEST(AnySwitchTest, ACaseWithNoHandlerLeavesTheChainApplicableAsAConstant)
+{
+    // Doing nothing is a complete handler for a `void` chain, so a case carrying none takes
+    // no more away from the chain than a case carrying one.
+    auto const chain = ::scl::any_switch<>().in_case<char>().or_else([] {});
+    int number = 7;
+    char letter = 'x';
+
+    chain.apply(number);
+    chain.apply(letter);
+    STATIC_EXPECT_TRUE(const_applicable<decltype(chain)>);
+}
+
+TEST(AnySwitchTest, AChainBuiltInOneExpressionTakesAHandlerThatCannotBeCopied)
+{
+    auto owned = ::std::make_unique<int>(7);
+    auto chain =
+        ::scl::any_switch<int>()
+            .in_case<int>([held = ::std::move(owned)](int number) {
+        return number + *held;
+    }).or_else(0);
+    int number = 5;
+
+    EXPECT_EQ(*chain.apply(number), 12);
+
+    // A chain that outlives the call has to copy its handlers, which this one cannot.
+    STATIC_EXPECT_FALSE(::std::is_copy_constructible_v<decltype(chain)>);
+}
+
+TEST(AnySwitchTest, TheChainMovesNoexceptExactlyWhereItsHandlersDo)
+{
+    auto plain = ::scl::any_switch<>().in_case<int>([](int) {});
+    auto throwing = ::scl::any_switch<>().in_case<int>(throwing_move{});
+
+    STATIC_EXPECT_TRUE(::std::is_nothrow_move_constructible_v<decltype(plain)>);
+    STATIC_EXPECT_FALSE(::std::is_nothrow_move_constructible_v<decltype(throwing)>);
+    static_cast<void>(plain);
+    static_cast<void>(throwing);
+}
+
+TEST(AnySwitchTest, AnEmptyCaseIsOneCaseHoweverItsQualifiersAreSpelled)
+{
+    // A `void` case names no object, so a qualifier on it describes nothing: repeating the
+    // case in another spelling is the compile error a repeated case always is.
+    STATIC_EXPECT_FALSE(case_after_void<void>);
+    STATIC_EXPECT_FALSE(case_after_void<void const>);
+    STATIC_EXPECT_FALSE(case_after_void<void volatile>);
+    STATIC_EXPECT_FALSE(case_after_void<void const volatile>);
+
+    STATIC_EXPECT_TRUE(case_after_void<int>);
+}
+
+TEST(AnySwitchTest, AHandlerTheChainCannotKeepIsRefusedAtTheBranch)
+{
+    // A chain stores its handlers by value, so one that is neither copyable nor movable is
+    // turned away where the branch is written rather than inside the tuple it would go in.
+    STATIC_EXPECT_FALSE(case_takes_handler<pinned>);
+    STATIC_EXPECT_FALSE(case_takes_handler<pinned &>);
+
+    STATIC_EXPECT_TRUE(case_takes_handler<void (*)(int)>);
+}

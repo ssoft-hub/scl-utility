@@ -9,10 +9,10 @@
  *
  * A small, nothrow-movable object lives inside the any itself; anything else is
  * allocated through the allocator that scl::basic_any takes as a parameter. A
- * stored type has to be destructible, constructible from the arguments given
- * and aligned no more strictly than 64 bytes — an immovable or non-copyable
- * type is admitted. Copying is therefore not a constructor: the type is
- * move-only, and a copy is asked for through try_copy().
+ * stored type has to be destructible without throwing and constructible from
+ * the arguments given; an immovable or non-copyable type is admitted. Copying
+ * is therefore not a constructor: the type is move-only, and a copy is asked
+ * for through try_copy().
  */
 
 #include <scl/utility/any.h>
@@ -48,7 +48,7 @@ static void show_storage()
 {
     ::std::cout
         << "  sizeof(scl::any) == " << sizeof(::scl::any)
-        << " bytes, capacity == " << ::scl::any::capacity << '\n';
+        << " bytes, buffer_capacity == " << ::scl::any::buffer_capacity << '\n';
 
     // An int fits the buffer and never reaches the allocator; a std::string does
     // not fit and is allocated. The choice is made per type at compile time.
@@ -94,17 +94,20 @@ static void show_copying()
 {
     ::scl::any const text{::std::string{"copy me"}};
 
-    // copyable() asks about the stored type, so an empty result of try_copy() is
+    // is_copyable() asks about the stored type, so an empty result of the copy is
     // never ambiguous.
-    ::scl::any const copy = text.try_copy();
+    ::scl::any const copy = ::scl::any::try_copy(text);
 
     // A move-only type is storable precisely because copying is not a constructor.
     ::scl::any const owned{::std::make_unique<int>(42)};
-    ::scl::any const refused = owned.try_copy();
+    ::scl::any const refused = ::scl::any::try_copy(owned);
 
-    ::std::cout << "  copyable=" << text.copyable() << " copy=\"" << *::scl::any_cast<::std::string>(&copy) << "\"\n";
     ::std::cout
-        << "  unique_ptr copyable=" << owned.copyable() << " copy has_value=" << refused.has_value() << '\n'; // 0 0
+        << "  is_copyable=" << text.is_copyable() << " copy=\""
+        << *::scl::any_cast<::std::string>(&copy) << "\"\n";
+    ::std::cout
+        << "  unique_ptr is_copyable=" << owned.is_copyable()
+        << " copy has_value=" << refused.has_value() << '\n'; // 0 0
 }
 //! [copying]
 
@@ -181,9 +184,9 @@ static void show_views()
 
     ::std::cout << "  " << *describe.apply(value) << '\n';
 
-    // The direction reverses as well: an any built from a handle takes a copy of
-    // the referent, never the handle itself.
-    ::scl::any const taken = ::scl::any_view{value};
+    // The direction reverses as well: an any takes a copy of what a handle refers to,
+    // never the handle itself, and the copy is asked for by name.
+    ::scl::any const taken = ::scl::any::try_copy(::scl::any_view{value});
     ::std::cout << "  an any built from a view holds type_name=\"" << taken.type_name() << "\"\n"; // int
 }
 

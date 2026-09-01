@@ -1,14 +1,19 @@
 #include <gtest_utils.h>
 
 #include <scl/utility/any.h>
+#include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/rtti.h>
 
 #if SCL_HAS_RTTI
 #include <any>
 #endif
+#include <concepts>
+#include <memory>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <typeinfo>
+#include <vector>
 
 namespace
 {
@@ -48,12 +53,48 @@ namespace
 
     template <typename Type>
     concept view_from_rvalue = requires { ::scl::any_view{Type{}}; };
+
+    void bound_to_nothing();
+
+    struct printable
+    {
+        virtual int printed() const = 0;
+
+        printable() = default;
+        printable(printable const &) = default;
+        printable(printable &&) = default;
+        printable & operator=(printable const &) = default;
+        printable & operator=(printable &&) = default;
+        virtual ~printable() = default;
+    };
+
+    struct printer : printable
+    {
+        int printed() const override { return 42; }
+    };
+
+    template <typename Type>
+    concept view_over = requires(Type & object) { ::scl::any_view{object}; };
+
+    template <typename Type>
+    concept writing_view_binds = requires(Type & object) { ::scl::any_mutable_view{object}; };
+
+    template <typename Type>
+    concept argument_over = requires(Type & object) { ::scl::any_arg{object}; };
+
+    [[nodiscard]]
+    ::scl::any_mutable_view writing_view_over(int & value)
+    {
+        return ::scl::any_mutable_view{value};
+    }
 } // namespace
 
 TEST(AnyViewTest, CompileTimeGuards)
 {
+#if SCL_HAS_EXCEPTIONS
     STATIC_EXPECT_FALSE(mutable_ref_castable<int>);
     STATIC_EXPECT_TRUE(mutable_ref_castable<int const>);
+#endif
 
     // A view never hands out an rvalue reference: nothing may look movable-from.
     STATIC_EXPECT_FALSE(view_castable<int &&>);
@@ -71,13 +112,12 @@ TEST(AnyViewTest, CompileTimeGuards)
     STATIC_EXPECT_FALSE(view_from_rvalue<counted volatile>);
 
 #if SCL_HAS_RTTI
+    // std::any is an ordinary type to a view, bound and refused as any other object is.
     STATIC_EXPECT_FALSE(view_from_rvalue<::std::any>);
     STATIC_EXPECT_FALSE(view_from_rvalue<::std::any const>);
-
-    // std::any has no volatile-qualified members, so a volatile std::any cannot
-    // be viewed at all — not even as an lvalue. Without RTTI the library cannot
-    // name std::any to exclude it (see the @warning on the std::any constructor).
-    STATIC_EXPECT_FALSE(view_from_lvalue<::std::any volatile>);
+    STATIC_EXPECT_TRUE(view_from_lvalue<::std::any>);
+    STATIC_EXPECT_TRUE(view_from_lvalue<::std::any const>);
+    STATIC_EXPECT_TRUE(view_from_lvalue<::std::any volatile>);
 #endif
 
     // Copying a view — even a const temporary one — is not affected by the guard.
@@ -92,7 +132,7 @@ TEST(AnyViewTest, CompileTimeGuards)
     STATIC_EXPECT_TRUE(::std::is_trivially_copyable_v<::scl::any_view>);
 }
 
-TEST(AnyViewTest, ConstexprIdentityOnRawBacking)
+TEST(AnyViewTest, ConstexprIdentityOverATypedLvalue)
 {
     static constexpr int probe = 42;
     constexpr ::scl::any_view view{probe};
@@ -140,13 +180,14 @@ TEST(AnyViewTest, PointerCastAlwaysYieldsConst)
     EXPECT_NE(::scl::any_cast<counted const>(&view), nullptr);
 }
 
+#if SCL_HAS_EXCEPTIONS
 TEST(AnyViewTest, RequestMustCoverReferentQualifiers)
 {
     counted volatile volatile_value{5};
     ::scl::any_view const over_volatile{volatile_value};
 
     EXPECT_EQ(::scl::any_cast<counted>(&over_volatile), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<counted const &>(over_volatile), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<counted const &>(over_volatile), ::scl::bad_any_cast);
 
     auto const * reached = ::scl::any_cast<counted volatile>(&over_volatile);
     ASSERT_NE(reached, nullptr);
@@ -160,7 +201,7 @@ TEST(AnyViewTest, RequestMustCoverReferentQualifiers)
     EXPECT_NE(::scl::any_cast<counted volatile>(&over_plain), nullptr);
 }
 
-TEST(AnyViewTest, RawBackingCast)
+TEST(AnyViewTest, CastOverATypedLvalue)
 {
     counted::copies = 0;
     counted value{7};
@@ -180,15 +221,75 @@ TEST(AnyViewTest, RawBackingCast)
     EXPECT_EQ(counted::copies, 1);
 }
 
-TEST(AnyViewTest, RawBackingMismatchThrows)
+TEST(AnyViewTest, AMismatchOverATypedLvalueThrows)
 {
     counted value{1};
     ::scl::any_view view{value};
 
-    EXPECT_THROW((void)::scl::any_cast<double>(view), ::scl::bad_any_cast);
-    EXPECT_THROW((void)::scl::any_cast<double>(view), ::std::bad_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double>(view), ::std::bad_cast);
 }
 
+TEST(AnyViewTest, AnAbstractReferentIsBoundAndReachedByReference)
+{
+    // No holder can declare an abstract class as a member, and a handle needs none: it stands
+    // for the object where it is, so the reference forms reach it and only a copy is refused.
+    printer object;
+    printable & referent = object;
+    ::scl::any_view const view{referent};
+
+    EXPECT_TRUE(view.has_value());
+    EXPECT_EQ(view.type_key(), ::scl::type_key_of<printable>());
+    EXPECT_EQ(::scl::any_cast<printable>(&view), &object);
+    EXPECT_EQ(::scl::any_cast<printable const &>(view).printed(), 42);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<int const &>(view), ::scl::bad_any_cast);
+}
+#endif
+
+TEST(AnyViewTest, AHandleStandsForAnObjectAndForNothingElse)
+{
+    // A holder over a function declares a member function rather than a member, so a function
+    // lvalue is turned away where the handle is written instead of inside the group.
+    STATIC_EXPECT_FALSE(view_over<decltype(bound_to_nothing)>);
+    STATIC_EXPECT_FALSE(writing_view_binds<decltype(bound_to_nothing)>);
+    STATIC_EXPECT_FALSE(argument_over<decltype(bound_to_nothing)>);
+
+    // A `volatile` container answers none of the members a handle reads.
+    STATIC_EXPECT_FALSE(view_over<::scl::any volatile>);
+    STATIC_EXPECT_FALSE(argument_over<::scl::any volatile>);
+    STATIC_EXPECT_FALSE(writing_view_binds<::scl::any volatile>);
+
+    STATIC_EXPECT_TRUE(view_over<int>);
+    STATIC_EXPECT_TRUE(view_over<int const>);
+    STATIC_EXPECT_TRUE(writing_view_binds<int>);
+    STATIC_EXPECT_TRUE(argument_over<int>);
+    STATIC_EXPECT_TRUE(view_over<::scl::any>);
+    STATIC_EXPECT_TRUE(view_over<::scl::any const>);
+}
+
+TEST(AnyViewTest, AWritingViewNarrowsHoweverItIsSpelled)
+{
+    int value = 42;
+    ::scl::any_mutable_view writing{value};
+
+    // A temporary object is refused because the view would outlive it. A handle is not such
+    // an object, so narrowing one to a reading view stands whichever initialisation is written.
+    STATIC_EXPECT_TRUE((::std::is_constructible_v<::scl::any_view, ::scl::any_mutable_view>));
+    STATIC_EXPECT_TRUE((::std::convertible_to<::scl::any_mutable_view, ::scl::any_view>));
+    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::any_view, ::std::string>));
+
+    ::scl::any_view const copied = writing;
+    ::scl::any_view const direct{writing_view_over(value)};
+    ::std::vector<::scl::any_view> kept;
+    kept.emplace_back(writing_view_over(value));
+
+    ASSERT_TRUE(direct.has_value());
+    EXPECT_EQ(::scl::any_cast<int>(&copied), ::std::addressof(value));
+    EXPECT_EQ(::scl::any_cast<int>(&direct), ::std::addressof(value));
+    EXPECT_EQ(::scl::any_cast<int>(&kept.front()), ::std::addressof(value));
+}
+
+#if SCL_HAS_EXCEPTIONS
 TEST(AnyViewTest, EmptyView)
 {
     ::scl::any_view view{};
@@ -197,61 +298,51 @@ TEST(AnyViewTest, EmptyView)
     EXPECT_TRUE(view.type_name().empty());
     EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
     EXPECT_EQ(::scl::any_cast<int>(static_cast<::scl::any_view const *>(nullptr)), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<int>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<int>(view), ::scl::bad_any_cast);
 }
+#endif
 
 #if SCL_HAS_RTTI
 
-TEST(AnyViewTest, StdAnyBackingCast)
+TEST(AnyViewTest, StdAnyIsNamedRatherThanWhatItHolds)
 {
     ::std::string text{"hello"};
     ::std::any boxed{text};
     ::scl::any_view view{boxed};
 
     EXPECT_TRUE(view.has_value());
-    EXPECT_EQ(view.type_name(), ::scl::type_name<::std::any>()); // names the backing, not the boxed type
-
-    ASSERT_NE(::scl::any_cast<::std::string>(&view), nullptr);
-    EXPECT_EQ(*::scl::any_cast<::std::string>(&view), "hello");
-    EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
-
-    EXPECT_EQ(::scl::any_cast<::std::string const &>(view), "hello"); // reference through a named view
-    EXPECT_EQ(::scl::any_cast<::std::string>(boxed), "hello"); // implicit std::any -> any_view
-
-    EXPECT_THROW((void)::scl::any_cast<int>(view), ::scl::bad_any_cast);
+    EXPECT_EQ(view.type_name(), ::scl::type_name<::std::any>()); // names the box, not what it holds
 }
 
-TEST(AnyViewTest, StdAnyBackingAnswersTheBoxItself)
+#if SCL_HAS_EXCEPTIONS
+TEST(AnyViewTest, StdAnyIsAnsweredAsTheBoxItself)
 {
     ::std::any boxed{42};
     ::scl::any_view const view{boxed};
 
     EXPECT_EQ(::scl::any_cast<::std::any const>(&view), &boxed);
     EXPECT_EQ(&::scl::any_cast<::std::any const &>(view), &boxed);
-    EXPECT_EQ(::scl::any_cast<int const>(&view), ::std::any_cast<int>(&boxed)); // and still what it holds
+    EXPECT_EQ(::scl::any_cast<int const>(&view), nullptr); // and never what it holds
 }
 
-TEST(AnyViewTest, RawBackingRefusesAStdAnyRequest)
+TEST(AnyViewTest, StdAnyDoesNotReachTheBoxedObject)
+{
+    ::std::any boxed{::std::string{"hello"}};
+    ::scl::any_view const view{boxed};
+
+    EXPECT_EQ(::scl::any_cast<::std::string>(&view), nullptr);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<::std::string const &>(view), ::scl::bad_any_cast);
+}
+
+TEST(AnyViewTest, ATypedLvalueRefusesAStdAnyRequest)
 {
     ::std::string text{"hello"};
     ::scl::any_view const view{text};
 
     EXPECT_EQ(::scl::any_cast<::std::any const>(&view), nullptr);
-    EXPECT_THROW((void)::scl::any_cast<::std::any const &>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<::std::any const &>(view), ::scl::bad_any_cast);
 }
-
-TEST(AnyViewTest, StdAnyBackingDoesNotCopyInner)
-{
-    ::std::any boxed{counted{5}};
-    counted::copies = 0; // ignore copies incurred while boxing
-
-    ::scl::any_view view{boxed};
-    EXPECT_EQ(counted::copies, 0);
-
-    (void)::scl::any_cast<counted const &>(view);
-    EXPECT_EQ(counted::copies, 0);
-    EXPECT_EQ(::scl::any_cast<counted const &>(view).id, 5);
-}
+#endif
 
 TEST(AnyViewTest, ViewOverEmptyStdAny)
 {
@@ -288,16 +379,14 @@ TEST(AnyViewTest, IdentityDistinguishesEveryState)
     EXPECT_EQ(over_any.type_key().name(), over_any.type_name());
 }
 
-// The std::any backing delegates to std::any_cast, but it reaches that delegation through
-// the same handle the raw backing does, so the handle's own qualifiers govern it identically.
+// A std::any referent is an ordinary object here, so the handle's own qualifiers govern it.
 TEST(AnyViewTest, VolatileHandleLeavesTheRequestAloneOverStdAny)
 {
     ::std::any boxed{7};
     ::scl::any_view volatile view{boxed};
 
-    auto const * reached = ::scl::any_cast<int>(&view);
-    ASSERT_NE(reached, nullptr);
-    EXPECT_EQ(*reached, 7);
+    EXPECT_EQ(::scl::any_cast<::std::any const>(&view), &boxed);
+    EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
 }
 
 #endif // SCL_HAS_RTTI
@@ -319,4 +408,9 @@ TEST(AnyViewTest, VolatileHandleLeavesTheRequestAlone)
 
     EXPECT_EQ(::scl::any_cast<int>(&over_sensor), nullptr);
     ASSERT_NE(::scl::any_cast<int volatile>(&over_sensor), nullptr);
+
+    // A volatile handle answers the identity queries as any other does.
+    EXPECT_TRUE(view.has_value());
+    EXPECT_TRUE(view.type_key() == ::scl::type_key_of<int>());
+    EXPECT_EQ(view.type_name(), ::scl::type_name<int>());
 }

@@ -1,12 +1,14 @@
 #include <gtest_utils.h>
 
 #include <scl/utility/any.h>
+#include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/rtti.h>
 
 #if SCL_HAS_RTTI
 #include <any>
 #endif
 #include <string>
+#include <tuple>
 #include <type_traits>
 
 namespace
@@ -43,6 +45,7 @@ namespace
         return value;
     }
 
+#if SCL_HAS_EXCEPTIONS
     constexpr int incremented_through_anchor_by_reference()
     {
         int value = 41;
@@ -52,6 +55,7 @@ namespace
         ++::scl::any_cast<int &>(view);
         return value;
     }
+#endif
 
     constexpr int incremented_in_owner()
     {
@@ -64,6 +68,7 @@ namespace
     }
 
     // No anchor: before P2738 the recovery from `void const *` is not a constant expression.
+#if SCL_DETAIL_ANY_HAS_CONSTEXPR_VOID_CAST
     constexpr int incremented_through_plain_binding() noexcept
     {
         int value = 41;
@@ -73,6 +78,7 @@ namespace
             ++*reached;
         return value;
     }
+#endif
 
     constexpr bool anchored_view_refuses_a_mismatch() noexcept
     {
@@ -82,10 +88,36 @@ namespace
 
         return ::scl::any_cast<double>(&view) == nullptr;
     }
+    // A handle a caller extends, which the group's documentation admits as a source.
+    struct tagged_writing_view : ::scl::any_mutable_view
+    {
+        using ::scl::any_mutable_view::any_mutable_view;
+    };
+
+    struct tagged_reading_view : ::scl::any_view
+    {
+        using ::scl::any_view::any_view;
+    };
 } // namespace
+
+TEST(AnyMutableViewTest, AClassDerivedFromTheViewNarrowsToItRatherThanBeingRefused)
+{
+    // The deleted `Type const &` is an exact match for a derived class, so it would beat the
+    // copy constructor the narrowing needs unless it excludes the whole hierarchy.
+    STATIC_EXPECT_TRUE((::std::is_constructible_v<::scl::any_mutable_view, tagged_writing_view const &>));
+    STATIC_EXPECT_TRUE((::std::is_constructible_v<::scl::any_view, tagged_reading_view const &>));
+
+    int number = 41;
+    tagged_writing_view const tagged{number};
+    ::scl::any_mutable_view const narrowed{tagged};
+
+    ASSERT_NE(::scl::any_cast<int>(&narrowed), nullptr);
+    EXPECT_EQ(*::scl::any_cast<int>(&narrowed), 41);
+}
 
 TEST(AnyMutableViewTest, LayoutMatchesAReadOnlyView)
 {
+    STATIC_EXPECT_TRUE(sizeof(::scl::any_mutable_view) == sizeof(::scl::any_view));
     STATIC_EXPECT_TRUE(sizeof(::scl::any_mutable_view) == 2 * sizeof(void *));
     STATIC_EXPECT_TRUE(::std::is_trivially_copyable_v<::scl::any_mutable_view>);
 }
@@ -209,6 +241,7 @@ TEST(AnyMutableViewTest, VolatileReferentRequiresAVolatileRequest)
     EXPECT_EQ(number, 11);
 }
 
+#if SCL_HAS_EXCEPTIONS
 TEST(AnyMutableViewTest, ReferenceFormsReachAVolatileReferent)
 {
     int volatile number = 7;
@@ -220,8 +253,9 @@ TEST(AnyMutableViewTest, ReferenceFormsReachAVolatileReferent)
     int const read = ::scl::any_cast<int const volatile &>(view);
     EXPECT_EQ(read, 11);
 
-    EXPECT_THROW((void)::scl::any_cast<int &>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<int &>(view), ::scl::bad_any_cast);
 }
+#endif
 
 TEST(AnyMutableViewTest, EmptyViewReachesNothing)
 {
@@ -232,7 +266,7 @@ TEST(AnyMutableViewTest, EmptyViewReachesNothing)
     EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
 }
 
-TEST(AnyMutableViewTest, OwningAnyBackingWritesIntoTheHeldObject)
+TEST(AnyMutableViewTest, AnOwningAnyIsWrittenThrough)
 {
     ::scl::any owner{7};
     ::scl::any_mutable_view const view{owner};
@@ -249,18 +283,22 @@ TEST(AnyMutableViewTest, RefusesAConstOwningAny)
 }
 
 #if SCL_HAS_RTTI
-TEST(AnyMutableViewTest, StdAnyBackingWritesIntoTheBoxedObject)
+TEST(AnyMutableViewTest, StdAnyWritesIntoTheBoxedObject)
 {
     ::std::any boxed{7};
     ::scl::any_mutable_view const view{boxed};
 
-    ASSERT_NE(::scl::any_cast<int>(&view), nullptr);
-    *::scl::any_cast<int>(&view) = 11;
+    EXPECT_EQ(::scl::any_cast<int>(&view), nullptr);
+
+    // The handle hands out the box; the box is what grants access to the object inside.
+    auto * box = ::scl::any_cast<::std::any>(&view);
+    ASSERT_NE(box, nullptr);
+    ::std::any_cast<int &>(*box) = 11;
 
     EXPECT_EQ(::std::any_cast<int>(boxed), 11);
 }
 
-TEST(AnyMutableViewTest, StdAnyBackingHandsOutTheBoxForWriting)
+TEST(AnyMutableViewTest, StdAnyHandsOutTheBoxForWriting)
 {
     ::std::any boxed{1};
     ::scl::any_mutable_view const view{boxed};
@@ -278,6 +316,7 @@ TEST(AnyMutableViewTest, RefusesAConstStdAny)
 }
 #endif
 
+#if SCL_HAS_EXCEPTIONS
 TEST(AnyMutableViewTest, ReferenceFormWritesThrough)
 {
     int number = 7;
@@ -302,8 +341,8 @@ TEST(AnyMutableViewTest, MismatchThrows)
     int number = 7;
     ::scl::any_mutable_view const view{number};
 
-    EXPECT_THROW((void)::scl::any_cast<double>(view), ::scl::bad_any_cast);
-    EXPECT_THROW((void)::scl::any_cast<double &>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double>(view), ::scl::bad_any_cast);
+    EXPECT_THROW(::std::ignore = ::scl::any_cast<double &>(view), ::scl::bad_any_cast);
 }
 
 TEST(AnyMutableViewTest, ConstexprCastThroughAnAnchor)
@@ -312,6 +351,7 @@ TEST(AnyMutableViewTest, ConstexprCastThroughAnAnchor)
     STATIC_EXPECT_TRUE(incremented_through_anchor_by_reference() == 42);
     STATIC_EXPECT_TRUE(anchored_view_refuses_a_mismatch());
 }
+#endif
 
 TEST(AnyMutableViewTest, ConstexprCastOverAnOwningAny)
 {

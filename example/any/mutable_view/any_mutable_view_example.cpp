@@ -175,7 +175,8 @@ int main()
     ::std::cout << "\n=== Writing into a boxed object ===\n";
     ::std::any boxed{7};
     ::scl::any_mutable_view const over_any{boxed};
-    *::scl::any_cast<int>(&over_any) = 11;
+    // A cast through the handle stops at the box; the box grants access to what is inside.
+    ::std::any_cast<int &>(*::scl::any_cast<::std::any>(&over_any)) = 11;
     ::std::cout << "  boxed == " << ::std::any_cast<int>(boxed) << '\n'; // 11
 #endif
 
