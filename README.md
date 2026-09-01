@@ -16,7 +16,7 @@ extraction, preprocessor utilities and extended type traits. Licensed under
 The module is built and tested from the toolkit super-project
 [scl-kit](https://gitlab.com/ssoft-scl/scl-kit). The checks above run for a merge request on
 GitLab and for `dev` and `main` on GitHub; the GitLab pipeline on `dev` publishes the
-documentation and refreshes the mirror.
+documentation.
 
 ## Features
 
