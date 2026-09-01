@@ -117,9 +117,9 @@ two objects to watch instead of one.
 Without an anchor, a cast to a plain object stops during constant evaluation with a compiler
 diagnostic rather than answering wrongly.
 
-An anchor lifts no other limit: a `std::any` backing cannot be built during constant
-evaluation at all, and there is no `constexpr` variable of type `scl::any`, since a constant
-allocation has to be released inside the same evaluation.
+An anchor lifts no other limit: a `std::any` binding cannot be built during constant
+evaluation at all, and a `constexpr` variable of type `scl::any` can hold nothing, since a
+constant allocation has to be released inside the same evaluation.
 
 ### C++26
 
@@ -134,4 +134,5 @@ so that code written against the C++20 baseline keeps compiling unchanged.
   constant evaluation
 - [any_arg](any_arg.md) - the argument; in a parameter position it gets an anchor by default
 - [any](any.md) - the owner whose value needs no anchor
+- [any_cast](any_cast.md) - the cast itself and the trait behind it
 - [Russian documentation](../../ru/any/any_anchor.md)

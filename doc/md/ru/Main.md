@@ -59,6 +59,8 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [any_arg](any/any_arg.md) | `<scl/utility/any/any_arg.h>` | Представление для позиции параметра, принимает и rvalue; действительно в пределах вызова |
 | [any_anchor](any/any_anchor.md) | `<scl/utility/any/any_anchor.h>` | Якорь: объявляется рядом со значением и позволяет прочитать его через представление на этапе компиляции |
 | [any_switch](any/any_switch.md) | `<scl/utility/any/any_switch.h>` | Цепочка ветвей: выполняет одну ветвь, выбранную по фактическому типу значения; само значение не хранит |
+| [any_cast](any/any_cast.md) | `<scl/utility/any/any_cast.h>` | Единственное приведение группы и трейт, который специализирует тип, чтобы к нему присоединиться |
+| [std_any](any/std_any.md) | `<scl/utility/any/std_any.h>` | Читает объект внутри `std::any`; единственная часть взаимодействия, которая чего-то стоит, и платит за неё только приведение, называющее `std::any` |
 
 ### Attribute — портабельные макросы атрибутов компилятора
 

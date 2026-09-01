@@ -5,9 +5,15 @@ one that matches the actual type of the value it is given.
 
 - Header: `#include <scl/utility/any/any_switch.h>`
 
+The header brings in [`scl::any_arg`](any_arg.md), [`scl::any_anchor`](any_anchor.md) and the
+cast, so a plain object and an argument need nothing else. A subject spelled as
+[`scl::any_view`](any_view.md), [`scl::any_mutable_view`](any_mutable_view.md) or
+[`scl::any`](any.md) needs that type's own header, and reading the object inside a `std::any`
+needs [`<scl/utility/any/std_any.h>`](std_any.md).
+
 ## Overview
 
-Reading a value whose type is erased used to mean a run of [`scl::any_cast`](any_view.md)
+Reading a value whose type is erased used to mean a run of [`scl::any_cast`](any_cast.md)
 attempts: one call per candidate type, an `if` around each, and the "none of them matched"
 case written out separately. The type appears twice in every branch - in the cast and in
 the variable the cast fills - and nothing stops two branches from covering each other or
@@ -16,8 +22,7 @@ from never running at all.
 `scl::any_switch` reduces that to one expression. A branch names its type once, the first
 matching branch runs, and the fallback stands in the same chain. The chain reads whatever
 [`scl::any_arg`](any_arg.md) accepts: a named or temporary object of a known type, an
-[`scl::any_view`](any_view.md), an [`scl::any`](any.md), and in a build with RTTI a
-`std::any` as well.
+[`scl::any_view`](any_view.md), an [`scl::any`](any.md), and a `std::any` as well.
 
 The chain does not store the value. `in_case` and `or_else` only describe branches. `apply`
 runs them over the value it is handed, and `has_case` answers whether there is anything to
@@ -42,8 +47,8 @@ static auto const describe_switch =
 
 - Serves any number of values and is tied by lifetime to none of them.
 - Selects a branch by the same qualifier coverage rule `any_cast` uses, `volatile` included.
-- Accepts an `in_case<void>` branch for an empty value and unwraps a `std::any`
-  automatically.
+- Accepts an `in_case<void>` branch for an empty value, and takes `std::any` as a case type
+  like any other.
 - Lets a branch be a callable - taking no argument or taking the value found - and, when the
   result type is named, a ready value as well.
 - Accepts an optional `or_else` fallback, which receives the value as an `any_arg`.
@@ -145,12 +150,12 @@ The qualifier coverage rule comes from `any_cast` and is reproduced in full:
 | `in_case<T volatile &>` | an object without qualifiers or with `volatile`; that qualifier covers the way `const` does |
 | `in_case<void>` | an empty value |
 
-An `in_case<std::any>` branch matches a `std::any` subject as a whole, exactly as
-`any_cast<std::any>` answers the box. It takes every such subject, and a chain is built
-before any subject exists, so it cannot tell a subject held in a `std::any` from one bound
-directly. A branch after it would therefore keep some of what it names and lose the rest,
-which is why only a wider `std::any` case and the fallback compile there. Leave the branch
-out to have the object inside unwrapped and the branches see its type.
+`std::any` is a case type like any other. An `in_case<std::any>` branch matches a subject
+bound to a `std::any`, exactly as `any_cast<std::any>` answers the box, and no branch of any
+chain reads what that box holds. A branch may stand before or after one naming `std::any`
+and is judged by coverage like any other. A chain does not branch on the type inside a
+`std::any` at all: the type to reach for where that is wanted is [`scl::any`](any.md), which a
+chain does read through.
 
 A branch fully covered by an earlier one does not compile. The chain therefore does not let a
 branch be written that would never run. Coverage is counted by which objects a branch catches,
@@ -251,9 +256,16 @@ constexpr auto doubling = scl::any_switch<int>()
     .in_case<int>([](int number) { return number * 2; })
     .or_else(0);
 
-static_assert(doubling.apply(21).value() == 42);
-static_assert(doubling.has_case(21));
+void check()
+{
+    static_assert(doubling.apply(21).value() == 42);
+    static_assert(doubling.has_case(21));
+}
 ```
+
+Both checks sit in a function body. The subject reaches `apply` as an
+[`any_arg`](any_arg.md#constant-evaluation), and GCC 13.1 refuses a cast of one at namespace
+scope for the reason that page gives; Clang and MSVC accept either placement.
 
 ## Exceptions
 
@@ -270,4 +282,6 @@ does.
 - [any_view](any_view.md) - the view the chain also accepts as a value
 - [any_mutable_view](any_mutable_view.md) - the view granting write access, accepted as a value
 - [any](any.md) - the owning type whose value the chain reads
+- [std_any](std_any.md) - reading the object a `std::any` holds
+- [any_cast](any_cast.md) - the cast itself and the trait behind it
 - [Russian documentation](../../ru/any/any_switch.md)
