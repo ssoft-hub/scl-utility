@@ -3,26 +3,24 @@ name: Lint
 on:
   push:
     branches: [main, dev]
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: ['*']
 
 jobs:
   clang-tidy:
     runs-on: ubuntu-latest
-    container: silkeh/clang:21
+    container: silkeh/clang:22
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Run clang-tidy
         run: bash script/lint/clang_tidy.sh
 
   clang-format:
     runs-on: ubuntu-latest
-    # Not 21: it reads `is_same_v<X &&, ...>` as a comparison and spaces it out.
+    # 22 for both clang jobs: 21 reads `is_same_v<X &&, ...>` as a comparison and
+    # spaces it out.
     container: silkeh/clang:22
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Check formatting
         run: bash script/lint/clang_format.sh
@@ -34,7 +32,7 @@ jobs:
       - name: Install git
         run: pacman -Sy --noconfirm git ca-certificates
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install doxygen
         run: |
@@ -47,7 +45,7 @@ jobs:
   doc-snippets:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Check documentation snippets
         run: bash script/lint/doc_snippets.sh
@@ -55,7 +53,7 @@ jobs:
   cppcheck:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install cppcheck
         run: |

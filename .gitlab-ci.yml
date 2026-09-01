@@ -1,54 +1,52 @@
+# A pipeline runs for a merge request, for dev, and for a version tag. A plain branch
+# push starts nothing, and the checks answer for what a merge request proposes: the same
+# commits reach dev through one, and GitHub lints dev and main for nothing on top.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]/
+
 stages: [lint, publish]
 
 variables:
   SCL_SRC_DIR: src
 
-clang-tidy:
-  stage: lint
-  image: silkeh/clang:21
+# The policy of the workflow block above, as the lint stage states it: a check answers for
+# what a merge request proposes. A job extends this instead of repeating the condition, so
+# the stage cannot come to hold two policies.
+.lint_rules:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
-  script:
-    - bash script/lint/clang_tidy.sh
 
-clang-format:
+clang:
   stage: lint
-  # Not 21: it reads `is_same_v<X &&, ...>` as a comparison and spaces it out.
+  # 22 for both tools: 21 reads `is_same_v<X &&, ...>` as a comparison and spaces it out.
   image: silkeh/clang:22
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
+  extends: .lint_rules
   script:
-    - bash script/lint/clang_format.sh
+    - status=0
+    - bash script/lint/clang_tidy.sh || status=1
+    - bash script/lint/clang_format.sh || status=1
+    - exit $status
 
 doxygen:
   stage: lint
   image: archlinux:latest
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
+  extends: .lint_rules
   before_script:
     - pacman -Sy --noconfirm doxygen
     - doxygen --version
   script:
-    - bash script/lint/doxygen.sh
-
-doc-snippets:
-  stage: lint
-  image: ubuntu:24.04
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
-  script:
-    - bash script/lint/doc_snippets.sh
+    - status=0
+    - bash script/lint/doxygen.sh || status=1
+    - bash script/lint/doc_snippets.sh || status=1
+    - exit $status
 
 cppcheck:
   stage: lint
   image: ubuntu:24.04
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH =~ /^(main|dev)$/
+  extends: .lint_rules
   before_script:
     - apt-get update && apt-get install -y cppcheck
     - cppcheck --version
@@ -74,24 +72,3 @@ pages:
   artifacts:
     paths:
       - public
-
-# ---------------------
-# Mirror to GitHub
-# ---------------------
-mirror:github:
-  stage: publish
-  image:
-      name: alpine/git
-      entrypoint: [""]
-  rules:
-    - if: $CI_COMMIT_BRANCH
-    - if: $CI_COMMIT_TAG
-  variables:
-    GIT_STRATEGY: clone
-    GIT_DEPTH: 0
-    # Set in GitLab CI/CD group variables (ssoft-scl):
-    #   GITHUB_TOKEN       - GitHub PAT with Contents: Write (masked)
-    # Set in GitLab CI/CD project variables:
-    #   GITHUB_MIRROR_URL  - https://github.com/ssoft-hub/scl-utility.git
-  script:
-    - sh script/ci/mirror_github.sh

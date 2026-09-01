@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Doxygen lint — single source of truth for CI and local (IDE) runs.
-# Mirrors the doxygen job in .gitlab-ci.yml / .github/workflows/lint.yml.
+# Run by the doxygen job in .gitlab-ci.yml and in .github/workflows/lint.yml.
 #
 # Fails on every Doxygen diagnostic. A block that reaches no entity, a @param
 # naming a parameter that was renamed, a @ref to a symbol that moved: each one

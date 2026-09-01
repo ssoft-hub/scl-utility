@@ -1,6 +1,6 @@
 # ScL Utility
 
-[![GitLab Lint](https://img.shields.io/gitlab/pipeline-status/ssoft-scl%2Fscl-utility?branch=dev&label=GitLab%20Lint)](https://gitlab.com/ssoft-scl/scl-utility/-/pipelines)
+[![GitLab Pipeline](https://img.shields.io/gitlab/pipeline-status/ssoft-scl%2Fscl-utility?branch=dev&label=GitLab%20Pipeline)](https://gitlab.com/ssoft-scl/scl-utility/-/pipelines)
 [![GitHub Lint](https://img.shields.io/github/actions/workflow/status/ssoft-hub/scl-utility/lint.yml?branch=dev&label=GitHub%20Lint)](https://github.com/ssoft-hub/scl-utility/actions/workflows/lint.yml)
 [![GitLab Pages](https://img.shields.io/badge/pages-gitlab-orange)](https://ssoft-scl.gitlab.io/scl-utility/)
 [![GitHub Pages](https://img.shields.io/badge/pages-github-blue)](https://ssoft-hub.github.io/scl-utility/)
@@ -14,8 +14,9 @@ extraction, preprocessor utilities and extended type traits. Licensed under
 [The Unlicense](LICENSE.md).
 
 The module is built and tested from the toolkit super-project
-[scl-kit](https://gitlab.com/ssoft-scl/scl-kit); the pipelines above are its own lint and
-documentation runs.
+[scl-kit](https://gitlab.com/ssoft-scl/scl-kit). The checks above run for a merge request on
+GitLab and for `dev` and `main` on GitHub; the GitLab pipeline on `dev` publishes the
+documentation.
 
 ## Features
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # cppcheck lint — single source of truth for CI and local (IDE) runs.
-# Mirrors the cppcheck job in .gitlab-ci.yml / .github/workflows/lint.yml.
+# Run by the cppcheck job in .gitlab-ci.yml and in .github/workflows/lint.yml.
 # Uses the project .cppcheck suppressions list.
 #
 # Env overrides:
