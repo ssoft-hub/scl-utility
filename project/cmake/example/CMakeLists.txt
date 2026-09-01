@@ -82,5 +82,11 @@ if (EXISTS "${SCL_UTILITY_EXAMPLE_DIR}")
         target_include_directories(${tgt} PRIVATE "${root_dir}")
         target_link_libraries(${tgt} PRIVATE scl::utility)
         target_compile_features(${tgt} PRIVATE cxx_std_20)
+
+        # An example is a program that must reach its end: running it catches a crash and a
+        # failed runtime invariant, which building it alone does not.
+        if (NOT CMAKE_CROSSCOMPILING)
+            add_test(NAME ${tgt} COMMAND ${tgt})
+        endif()
     endforeach()
 endif()
