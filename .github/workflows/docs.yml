@@ -13,13 +13,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: archlinux:latest
+    container: registry.gitlab.com/ssoft-docker/ci-images/doxygen:1.18.0-2@sha256:156901db0bf2d3c4c690c1f1f17341d1969f7d6dd08e3c0f4b23d65eec2ee839
     env:
       GIT_DISCOVERY_ACROSS_FILESYSTEM: 1
     steps:
-      - name: Install git
-        run: pacman -Sy --noconfirm git ca-certificates
-
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -30,8 +27,8 @@ jobs:
       - name: Fetch tags
         run: git fetch --prune --tags
 
-      - name: Install dependencies
-        run: pacman -S --noconfirm doxygen graphviz python
+      - name: Print the Doxygen version
+        run: doxygen --version
 
       - name: Build versioned docs
         run: sh script/ci/deploy_versioned_docs.sh public
