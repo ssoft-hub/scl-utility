@@ -66,7 +66,6 @@ namespace scl::hierarchy
     {
     public:
         using payload = Payload;
-        using payload_reference = payload &;
         using const_payload_reference = payload const &;
 
         using observer = Observer<tree>;
@@ -115,7 +114,7 @@ namespace scl::hierarchy
 
             using value_type = tree::reference;
             using difference_type = tree::difference_type;
-            using pointer = void;
+            using pointer = arrow_wrapper<tree::reference>;
             using reference = tree::reference;
             using const_reference = tree::const_reference;
 
@@ -172,10 +171,10 @@ namespace scl::hierarchy
             using iterator_concept = ::std::bidirectional_iterator_tag;
             using iterator_category = ::std::bidirectional_iterator_tag;
 
-            using value_type = tree::reference;
+            using value_type = tree::const_reference;
             using difference_type = tree::difference_type;
-            using pointer = void;
-            using reference = tree::reference;
+            using pointer = arrow_wrapper<tree::const_reference>;
+            using reference = tree::const_reference;
             using const_reference = tree::const_reference;
 
         private:
@@ -254,12 +253,11 @@ namespace scl::hierarchy
             using node_reference = node &;
             using const_node_reference = node const &;
 
-            using payload_reference = payload &;
             using const_payload_reference = payload const &;
 
             using iterator = tree::iterator;
             using const_iterator = tree::const_iterator;
-            using reverse_iterator = tree::const_reverse_iterator;
+            using reverse_iterator = tree::reverse_iterator;
             using const_reverse_iterator = tree::const_reverse_iterator;
 
             using size_type = node::size_type;
@@ -1233,11 +1231,6 @@ namespace scl::hierarchy
  */
 
 /**
- * @typedef scl::hierarchy::tree::payload_reference
- * @brief Mutable reference to a stored payload (`payload &`).
- */
-
-/**
  * @typedef scl::hierarchy::tree::const_payload_reference
  * @brief Immutable reference to a stored payload (`payload const &`).
  */
@@ -1603,9 +1596,9 @@ namespace scl::hierarchy
 
 /**
  * @typedef scl::hierarchy::tree::iterator::pointer
- * @brief `void`: `operator*` returns a transient proxy by value, so there is no
- *        pointer into the sequence to name. `operator->` returns a wrapper that
- *        keeps the proxy alive for the duration of the access.
+ * @brief What `operator->` hands back: a wrapper holding the proxy for the
+ *        duration of the access, there being no pointer into the sequence to
+ *        name. Naming it here is what lets a reverse iterator offer `->` too.
  */
 
 /**
@@ -1704,14 +1697,14 @@ namespace scl::hierarchy
 
 /**
  * @typedef scl::hierarchy::tree::const_iterator::pointer
- * @brief `void`, for the same reason as
- *        @ref scl::hierarchy::tree::iterator::pointer.
+ * @brief The wrapper `operator->` hands back, as
+ *        @ref scl::hierarchy::tree::iterator::pointer describes.
  */
 
 /**
  * @typedef scl::hierarchy::tree::const_iterator::reference
- * @brief The mutable proxy type of the owning tree, kept for symmetry with
- *        `iterator`; `operator*` yields `const_reference`.
+ * @brief The immutable proxy `operator*` yields, the same type as
+ *        `const_reference`.
  */
 
 /**
@@ -1874,11 +1867,6 @@ namespace scl::hierarchy
 /**
  * @typedef scl::hierarchy::tree::reference::const_node_reference
  * @brief Immutable reference to the underlying `node` (`node const &`).
- */
-
-/**
- * @typedef scl::hierarchy::tree::reference::payload_reference
- * @brief Mutable reference to the node's payload (`payload &`).
  */
 
 /**
