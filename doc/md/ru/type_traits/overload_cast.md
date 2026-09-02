@@ -14,7 +14,7 @@
 Выбирает конкретную перегрузку указателя на функцию или функцию-член на основе типов аргументов.
 
 - Заголовок: `#include <scl/utility/type_traits/overload_cast.h>`
-- Объявление: `template <class... Args> inline constexpr detail::overload_cast<Args...> overload_cast{};`
+- Объявление: `template <typename... Args> inline constexpr detail::overload_cast<Args...> overload_cast{};`
 
 ### Семантика
 

@@ -25,159 +25,159 @@
 
 namespace scl::detail
 {
-    template <class... Args>
+    template <typename... Args>
     struct overload_cast
     {
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...)) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) & noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) &&) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) && noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) const) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) const &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const & noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) const &&) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const && noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) volatile) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) volatile noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) volatile &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) volatile & noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto operator()(R (Class::*ptr)(Args...) volatile &&) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) volatile && noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const volatile) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const volatile noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const volatile &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const volatile & noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const volatile &&) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class Class, class R>
+        template <typename Class, typename R>
         constexpr auto
         operator()(R (Class::*ptr)(Args...) const volatile && noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
-        template <class R>
+        template <typename R>
         constexpr auto operator()(R (*ptr)(Args...)) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
-        template <class R>
+        template <typename R>
         constexpr auto operator()(R (*ptr)(Args...) noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
@@ -213,7 +213,7 @@ namespace scl
      * auto f2  = overload_cast<double>(&bar);        // selects void bar(double) noexcept
      * @endcode
      */
-    template <class... Args>
+    template <typename... Args>
     inline constexpr detail::overload_cast<Args...> overload_cast{};
 
 } // namespace scl
