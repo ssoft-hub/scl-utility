@@ -325,6 +325,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `readability-redundant-typename` is on for `src/`: it was switched off under the C++17
   reading of the Detection Idiom aliases, and P0634R3 made `typename` optional in a
   defining-type-id, so a redundant keyword is now reported.
+- The documentation check holds description coverage rather than attachment alone:
+  `WARN_NO_PARAMDOC` is on, so a documented function leaving a parameter or its return value
+  undescribed fails it, and the 136 omissions it reported are described rather than
+  silenced.
+- `scl::basic_any`'s two deleted copy members and its destructor reach the reference with a
+  description, and `scl::overload_cast` is declared there without naming a type in
+  `scl::detail`. A `= delete` member draws no warning and was left off its class page.
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart

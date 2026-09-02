@@ -3,7 +3,6 @@
 /**
  * @file any.h
  * @brief Aggregates the ScL Any utilities.
- * @ingroup scl_utility_any
  */
 
 /**

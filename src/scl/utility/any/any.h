@@ -850,6 +850,24 @@ namespace scl
  */
 
 /**
+ * @fn scl::basic_any::basic_any(basic_any const &)
+ * @brief Deleted: an any holds objects that need not be copyable.
+ *
+ * Copying is asked for rather than performed implicitly: a constructor has no way to report
+ * that the stored type has no copy constructor, and refusing the whole any for such a type
+ * would cost more than it buys. A copy goes through @ref scl::basic_any::try_copy, which
+ * answers an empty any instead, with @ref scl::basic_any::copyable telling the two outcomes
+ * apart beforehand.
+ */
+
+/**
+ * @fn scl::basic_any::operator=(basic_any const &)
+ * @brief Deleted for the same reason as the copy constructor.
+ *
+ * A copy is asked for through @ref scl::basic_any::try_copy and assigned from there.
+ */
+
+/**
  * @fn scl::basic_any::basic_any(basic_any && other)
  * @brief Takes over what @p other holds, leaving it empty.
  *
@@ -864,6 +882,14 @@ namespace scl
  * @brief Destroys what this any holds and takes over what @p other holds.
  * @param  other  The any to take from.
  * @return This any.
+ */
+
+/**
+ * @fn scl::basic_any::~basic_any()
+ * @brief Destroys the stored object and releases the storage it was given.
+ *
+ * An in-place object is destroyed where it sits; an allocated one is destroyed and its
+ * block returned to the allocator this any holds. An empty any has nothing to do.
  */
 
 /**
