@@ -9,8 +9,8 @@ Warn-on-discard annotation macros.
 
 ## SCL_NODISCARD
 
-Instructs the compiler to warn when the return value of a decorated function
-(or an object of a decorated type) is discarded by the caller. Applies to
+Instructs the compiler to warn when the return value of an annotated function
+(or an object of an annotated type) is discarded by the caller. Applies to
 function declarations and class/struct/enum declarations.
 
 ### Detection
@@ -19,7 +19,7 @@ function declarations and class/struct/enum declarations.
 |-----------|-----------|
 | `__has_cpp_attribute(nodiscard)` ≥ 201907L (C++20) | `[[nodiscard]]` |
 | `__has_cpp_attribute(nodiscard)` (C++17) | `[[nodiscard]]` |
-| `__has_attribute(warn_unused_result)` (GCC, Clang) | `__attribute__((warn_unused_result))` |
+| `__has_attribute(warn_unused_result)` (older GCC and Clang) | `__attribute__((warn_unused_result))` |
 | None of the above | *(empty — no warning emitted)* |
 
 ### Usage
@@ -29,7 +29,7 @@ function declarations and class/struct/enum declarations.
 
 SCL_NODISCARD bool try_lock();
 
-SCL_NODISCARD struct ErrorCode { int value; };
+struct SCL_NODISCARD ErrorCode { int value; };
 ```
 
 ---
@@ -37,7 +37,8 @@ SCL_NODISCARD struct ErrorCode { int value; };
 ## SCL_NODISCARD_MSG(msg)
 
 Like `SCL_NODISCARD` but attaches a string literal `msg` to the diagnostic,
-explaining what discarding the value implies. Available with C++20 `[[nodiscard]]`.
+explaining what discarding the value implies. Available as `[[nodiscard(msg)]]`
+since C++20.
 On compilers where the message form is unavailable the macro falls back to
 `SCL_NODISCARD` (the warning is still emitted, but without the message).
 

@@ -18,7 +18,7 @@
  * Detection order:
  *  1. @c __has_cpp_attribute(fallthrough) (C++17):
  *       @c [[fallthrough]]
- *  2. @c __has_attribute(fallthrough) (GCC ≥ 7, Clang pre-C++17):
+ *  2. @c __has_attribute(fallthrough) (older GCC and Clang):
  *       @c __attribute__((fallthrough))
  *  3. Fallback: @c ((void)0) — silent no-op
  *
@@ -35,11 +35,21 @@
  */
 
 #ifndef SCL_FALLTHROUGH
+#ifdef __has_cpp_attribute
 #if __has_cpp_attribute(fallthrough)
 #define SCL_FALLTHROUGH [[fallthrough]]
-#elif defined(__has_attribute) && __has_attribute(fallthrough)
-#define SCL_FALLTHROUGH __attribute__((fallthrough))
-#else
-#define SCL_FALLTHROUGH ((void)0)
 #endif
+#endif
+#endif
+
+#ifndef SCL_FALLTHROUGH
+#ifdef __has_attribute
+#if __has_attribute(fallthrough)
+#define SCL_FALLTHROUGH __attribute__((fallthrough))
+#endif
+#endif
+#endif
+
+#ifndef SCL_FALLTHROUGH
+#define SCL_FALLTHROUGH ((void)0)
 #endif

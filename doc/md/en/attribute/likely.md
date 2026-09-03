@@ -73,16 +73,17 @@ if (error) SCL_UNLIKELY {
 ## SCL_LIKELY_EXPR(expr)
 
 Expression-level branch hint using `__builtin_expect`. Wraps a boolean or
-integer expression and returns its value unchanged. Use inside `if`, `while`,
-or ternary conditions where a statement attribute cannot be placed.
+integer expression and yields its truth value, `0` or `1`. Use inside `if`,
+`while`, or ternary conditions where a statement attribute cannot be placed.
 
-On MSVC (which uses profile-guided optimisation) the expression passes through
-unmodified.
+On MSVC, which relies on profile-guided optimisation instead, the wrapper
+carries no hint and only the truth test remains.
 
 ### Detection
 
 | Condition | Expansion |
 |-----------|-----------|
+| MSVC other than clang-cl | `(!!(expr))` |
 | `__has_builtin(__builtin_expect)` (GCC, Clang) | `__builtin_expect(!!(expr), 1)` |
 | None of the above | `(!!(expr))` |
 
@@ -108,6 +109,7 @@ Like `SCL_LIKELY_EXPR` but biases the branch predictor toward the false outcome.
 
 | Condition | Expansion |
 |-----------|-----------|
+| MSVC other than clang-cl | `(!!(expr))` |
 | `__has_builtin(__builtin_expect)` (GCC, Clang) | `__builtin_expect(!!(expr), 0)` |
 | None of the above | `(!!(expr))` |
 
@@ -127,8 +129,8 @@ if (SCL_UNLIKELY_EXPR(error_code != 0)) {
   a branch, not an expression. They cannot appear inside a condition.
 - `SCL_LIKELY_EXPR` / `SCL_UNLIKELY_EXPR` are **expression wrappers** — they
   can appear anywhere an integer expression is expected.
-- Both forms always preserve the exact runtime value; only the optimizer's
-  branch-layout decisions are affected.
+- `SCL_LIKELY` and `SCL_UNLIKELY` compute nothing and change no value; the `_EXPR`
+  wrappers yield `0` or `1`.
 - Do not use hints speculatively — incorrect hints can degrade performance.
 - Each macro can be overridden before inclusion via `#define SCL_LIKELY`,
   `#define SCL_UNLIKELY`, `#define SCL_LIKELY_EXPR(expr)`, or

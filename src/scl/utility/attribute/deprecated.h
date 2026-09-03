@@ -11,13 +11,14 @@
  * @brief Marks a declaration as deprecated.
  * @ingroup scl_utility_attribute
  * @details
- * Causes the compiler to emit a warning whenever the decorated entity is used.
- * Apply before the entity: function, class, variable, enum, typedef, etc.
+ * Causes the compiler to emit a warning whenever the annotated entity is used.
+ * Apply before a function, a variable or a typedef, and after the @c class,
+ * @c struct or @c enum keyword: @c struct @c SCL_DEPRECATED @c Name.
  *
  * Detection order:
  *  1. @c __has_cpp_attribute(deprecated) (C++14):
  *       @c [[deprecated]]
- *  2. MSVC native (not Clang-cl):
+ *  2. MSVC other than clang-cl:
  *       @c __declspec(deprecated)
  *  3. @c __has_attribute(deprecated) (GCC, Clang):
  *       @c __attribute__((deprecated))
@@ -26,7 +27,7 @@
  * @code{.cpp}
  * SCL_DEPRECATED void old_api();
  *
- * SCL_DEPRECATED struct LegacyHandle { int fd; };
+ * struct SCL_DEPRECATED LegacyHandle { int fd; };
  * @endcode
  */
 
@@ -43,7 +44,7 @@
  * Detection order:
  *  1. @c __has_cpp_attribute(deprecated) (C++14):
  *       @c [[deprecated(msg)]]
- *  2. MSVC native (not Clang-cl):
+ *  2. MSVC other than clang-cl:
  *       @c __declspec(deprecated(msg))
  *  3. @c __has_attribute(deprecated) (GCC, Clang):
  *       @c __attribute__((deprecated(msg)))
@@ -57,19 +58,38 @@
  */
 
 #ifndef SCL_DEPRECATED
+#ifdef __has_cpp_attribute
 #if __has_cpp_attribute(deprecated)
 #define SCL_DEPRECATED [[deprecated]]
+#ifndef SCL_DEPRECATED_MSG
 #define SCL_DEPRECATED_MSG(msg) [[deprecated(msg)]]
-#elif defined(_MSC_VER) && !defined(__clang__)
-#define SCL_DEPRECATED __declspec(deprecated)
-#define SCL_DEPRECATED_MSG(msg) __declspec(deprecated(msg))
-#elif defined(__has_attribute) && __has_attribute(deprecated)
-#define SCL_DEPRECATED __attribute__((deprecated))
-#define SCL_DEPRECATED_MSG(msg) __attribute__((deprecated(msg)))
-#else
-#define SCL_DEPRECATED
-#define SCL_DEPRECATED_MSG(msg)
 #endif
+#endif
+#endif
+#endif
+
+#ifndef SCL_DEPRECATED
+#if defined(_MSC_VER) && !defined(__clang__)
+#define SCL_DEPRECATED __declspec(deprecated)
+#ifndef SCL_DEPRECATED_MSG
+#define SCL_DEPRECATED_MSG(msg) __declspec(deprecated(msg))
+#endif
+#endif
+#endif
+
+#ifndef SCL_DEPRECATED
+#ifdef __has_attribute
+#if __has_attribute(deprecated)
+#define SCL_DEPRECATED __attribute__((deprecated))
+#ifndef SCL_DEPRECATED_MSG
+#define SCL_DEPRECATED_MSG(msg) __attribute__((deprecated(msg)))
+#endif
+#endif
+#endif
+#endif
+
+#ifndef SCL_DEPRECATED
+#define SCL_DEPRECATED
 #endif
 
 #ifndef SCL_DEPRECATED_MSG

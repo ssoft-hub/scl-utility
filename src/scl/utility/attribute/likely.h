@@ -56,15 +56,16 @@
  * @brief Expression wrapper that hints the optimizer @p expr is usually true.
  * @ingroup scl_utility_attribute
  * @details
- * Wraps a boolean or integer expression and returns its value unchanged.
- * On GCC and Clang the hint is communicated via @c __builtin_expect.
- * On MSVC (which uses profile-guided optimisation) the expression passes
- * through unmodified.
+ * Wraps a boolean or integer expression and yields its truth value, @c 0 or
+ * @c 1. On GCC and Clang the hint is communicated via @c __builtin_expect.
+ * On MSVC, which relies on profile-guided optimisation instead, the wrapper
+ * carries no hint and only the truth test remains.
  *
  * Detection order:
- *  1. @c __has_builtin(__builtin_expect) (GCC, Clang):
+ *  1. MSVC other than clang-cl: @c (!!(expr))
+ *  2. @c __has_builtin(__builtin_expect) (GCC, Clang):
  *       @c __builtin_expect(!!(expr), 1)
- *  2. Fallback: @c (!!(expr))
+ *  3. Fallback: @c (!!(expr))
  *
  * @param expr An expression convertible to @c bool (or @c int).
  *
@@ -84,9 +85,10 @@
  * false (zero) outcome.
  *
  * Detection order:
- *  1. @c __has_builtin(__builtin_expect) (GCC, Clang):
+ *  1. MSVC other than clang-cl: @c (!!(expr))
+ *  2. @c __has_builtin(__builtin_expect) (GCC, Clang):
  *       @c __builtin_expect(!!(expr), 0)
- *  2. Fallback: @c (!!(expr))
+ *  3. Fallback: @c (!!(expr))
  *
  * @param expr An expression convertible to @c bool (or @c int).
  *
@@ -98,31 +100,58 @@
  */
 
 #ifndef SCL_LIKELY
+#ifdef __has_cpp_attribute
 #if __has_cpp_attribute(likely)
 #define SCL_LIKELY [[likely]]
-#else
+#endif
+#endif
+#endif
+
+#ifndef SCL_LIKELY
 #define SCL_LIKELY
+#endif
+
+#ifndef SCL_UNLIKELY
+#ifdef __has_cpp_attribute
+#if __has_cpp_attribute(unlikely)
+#define SCL_UNLIKELY [[unlikely]]
+#endif
 #endif
 #endif
 
 #ifndef SCL_UNLIKELY
-#if __has_cpp_attribute(unlikely)
-#define SCL_UNLIKELY [[unlikely]]
-#else
 #define SCL_UNLIKELY
-#endif
 #endif
 
 #ifndef SCL_LIKELY_EXPR
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_LIKELY_EXPR(expr) (!!(expr))
-#define SCL_UNLIKELY_EXPR(expr) (!!(expr))
-#elif defined(__has_builtin) && __has_builtin(__builtin_expect)
+#endif
+#endif
+
+#ifndef SCL_LIKELY_EXPR
+#ifdef __has_builtin
+#if __has_builtin(__builtin_expect)
 #define SCL_LIKELY_EXPR(expr) __builtin_expect(!!(expr), 1)
-#define SCL_UNLIKELY_EXPR(expr) __builtin_expect(!!(expr), 0)
-#else
+#endif
+#endif
+#endif
+
+#ifndef SCL_LIKELY_EXPR
 #define SCL_LIKELY_EXPR(expr) (!!(expr))
+#endif
+
+#ifndef SCL_UNLIKELY_EXPR
+#if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_UNLIKELY_EXPR(expr) (!!(expr))
+#endif
+#endif
+
+#ifndef SCL_UNLIKELY_EXPR
+#ifdef __has_builtin
+#if __has_builtin(__builtin_expect)
+#define SCL_UNLIKELY_EXPR(expr) __builtin_expect(!!(expr), 0)
+#endif
 #endif
 #endif
 

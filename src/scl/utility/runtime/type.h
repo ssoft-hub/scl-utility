@@ -27,10 +27,12 @@
 
 #include <scl/utility/meta/type.h>
 
-#if defined(__has_include) && __has_include(<cxxabi.h>)
+#ifdef __has_include
+#if __has_include(<cxxabi.h>)
 #include <cstdlib>
 #include <cxxabi.h>
 #define SCL_DETAIL_HAS_CXXABI 1
+#endif
 #endif
 
 namespace scl::detail

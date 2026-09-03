@@ -20,8 +20,8 @@ Place as the last statement inside the `case` body, terminated by a semicolon.
 | Condition | Expansion |
 |-----------|-----------|
 | `__has_cpp_attribute(fallthrough)` (C++17) | `[[fallthrough]]` |
-| `__has_attribute(fallthrough)` (GCC ≥ 7, Clang) | `__attribute__((fallthrough))` |
-| None of the above | `((void)0)` — silent no-op |
+| `__has_attribute(fallthrough)` (older GCC and Clang) | `__attribute__((fallthrough))` |
+| None of the above | `((void)0)` — does nothing |
 
 ### Usage
 
@@ -54,6 +54,6 @@ void handle(int code) {
 
 - `SCL_FALLTHROUGH` only suppresses the implicit-fallthrough warning. It has
   no effect on runtime control flow.
-- The fallback `((void)0)` is a valid statement expression on all targeted
+- The fallback `((void)0)` is a valid expression statement on all targeted
   compilers; it compiles without side effects.
 - The macro can be overridden before inclusion via `#define SCL_FALLTHROUGH`.

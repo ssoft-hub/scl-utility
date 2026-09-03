@@ -18,8 +18,8 @@
 | Условие | Раскрытие |
 |---------|-----------|
 | `__has_cpp_attribute(deprecated)` (C++14) | `[[deprecated]]` |
-| MSVC native (не Clang-cl) | `__declspec(deprecated)` |
-| `__has_attribute(deprecated)` (GCC, Clang) | `__attribute__((deprecated))` |
+| MSVC, кроме clang-cl | `__declspec(deprecated)` |
+| `__has_attribute(deprecated)` (более старые GCC и Clang) | `__attribute__((deprecated))` |
 | Ни одно не выполнено | *(пусто — предупреждение не выдаётся)* |
 
 ### Использование
@@ -29,7 +29,7 @@
 
 SCL_DEPRECATED void old_connect(const char* host, int port);
 
-SCL_DEPRECATED struct LegacyHandle { int fd; };
+struct SCL_DEPRECATED LegacyHandle { int fd; };
 ```
 
 ---
@@ -38,7 +38,7 @@ SCL_DEPRECATED struct LegacyHandle { int fd; };
 
 Аналогично `SCL_DEPRECATED`, но включает строковый литерал `msg` в текст
 диагностического сообщения, объясняя причину устаревания и указывая замену.
-На компиляторах, не поддерживающих форму с сообщением, макрос разворачивается
+На компиляторах, не поддерживающих форму с сообщением, макрос раскрывается
 в `SCL_DEPRECATED` (предупреждение выдаётся без текста).
 
 ### Определение наличия
@@ -46,8 +46,8 @@ SCL_DEPRECATED struct LegacyHandle { int fd; };
 | Условие | Раскрытие |
 |---------|-----------|
 | `__has_cpp_attribute(deprecated)` (C++14) | `[[deprecated(msg)]]` |
-| MSVC native (не Clang-cl) | `__declspec(deprecated(msg))` |
-| `__has_attribute(deprecated)` (GCC, Clang) | `__attribute__((deprecated(msg)))` |
+| MSVC, кроме clang-cl | `__declspec(deprecated(msg))` |
+| `__has_attribute(deprecated)` (более старые GCC и Clang) | `__attribute__((deprecated(msg)))` |
 | Ни одно не выполнено | *(пусто)* |
 
 ### Использование
@@ -58,8 +58,7 @@ SCL_DEPRECATED struct LegacyHandle { int fd; };
 SCL_DEPRECATED_MSG("используйте connect(Endpoint) вместо этого")
 void old_connect(const char* host, int port);
 
-SCL_DEPRECATED_MSG("заменено на ResourceHandle в v2")
-struct LegacyHandle { int fd; };
+struct SCL_DEPRECATED_MSG("заменено на ResourceHandle в v2") LegacyHandle { int fd; };
 ```
 
 ---
@@ -68,7 +67,7 @@ struct LegacyHandle { int fd; };
 
 - Оба макроса не подавляют существующие предупреждения, а лишь добавляют
   новые в местах использования.
-- Чтобы заглушить предупреждение о устаревании внутри собственной реализации
+- Чтобы подавить предупреждение об устаревании внутри собственной реализации
   (например, в обёртке, вызывающей устаревшую функцию), используйте прагму
   подавления диагностики в этом месте.
 - Каждый макрос можно переопределить до включения заголовка через

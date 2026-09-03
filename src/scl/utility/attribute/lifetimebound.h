@@ -29,14 +29,15 @@
  * @endcode
  *
  * Detection order:
- *  1. @c __has_cpp_attribute(clang::lifetimebound) (Clang):
+ *  1. MSVC other than clang-cl: empty (no equivalent)
+ *  2. @c __has_cpp_attribute(clang::lifetimebound) (Clang):
  *       @c [[clang::lifetimebound]]
- *  2. @c __has_attribute(lifetimebound) (Clang older):
+ *  3. @c __has_attribute(lifetimebound) (older Clang):
  *       @c __attribute__((lifetimebound))
- *  3. Fallback: empty (no lifetime analysis; no warning)
+ *  4. Fallback: empty (no lifetime analysis; no warning)
  *
- * @note GCC and MSVC do not currently support this attribute.
- *       The fallback is always empty on those compilers.
+ * @note GCC and MSVC do not currently support this attribute; there the macro
+ *       expands to nothing.
  *
  * @code{.cpp}
  * const int& clamp(const int& v SCL_LIFETIMEBOUND,
@@ -51,11 +52,25 @@
 #ifndef SCL_LIFETIMEBOUND
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_LIFETIMEBOUND
-#elif __has_cpp_attribute(clang::lifetimebound)
-#define SCL_LIFETIMEBOUND [[clang::lifetimebound]]
-#elif defined(__has_attribute) && __has_attribute(lifetimebound)
-#define SCL_LIFETIMEBOUND __attribute__((lifetimebound))
-#else
-#define SCL_LIFETIMEBOUND
 #endif
+#endif
+
+#ifndef SCL_LIFETIMEBOUND
+#ifdef __has_cpp_attribute
+#if __has_cpp_attribute(clang::lifetimebound)
+#define SCL_LIFETIMEBOUND [[clang::lifetimebound]]
+#endif
+#endif
+#endif
+
+#ifndef SCL_LIFETIMEBOUND
+#ifdef __has_attribute
+#if __has_attribute(lifetimebound)
+#define SCL_LIFETIMEBOUND __attribute__((lifetimebound))
+#endif
+#endif
+#endif
+
+#ifndef SCL_LIFETIMEBOUND
+#define SCL_LIFETIMEBOUND
 #endif

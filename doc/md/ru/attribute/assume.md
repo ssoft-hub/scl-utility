@@ -9,24 +9,24 @@
 
 ## SCL_ASSUME(expr)
 
-Сообщает оптимизатору, что `expr` всегда истинно в данной точке. Компилятор
+Сообщает оптимизатору, что `expr` всегда истинно в этой точке. Компилятор
 может использовать это для устранения лишних ветвлений, исключения проверок на
-null или уточнения границ циклов.
+`nullptr` или уточнения границ циклов.
 
 ### Определение наличия
 
 | Условие | Раскрытие |
 |---------|-----------|
 | `__has_cpp_attribute(assume)` (C++23) | `[[assume(expr)]]` |
-| MSVC native (не Clang-cl) | `__assume(expr)` |
+| MSVC, кроме clang-cl | `__assume(expr)` |
 | `__has_builtin(__builtin_assume)` (Clang) | `__builtin_assume(expr)` |
-| `__has_attribute(assume)` (GCC ≥ 13) | `__attribute__((assume(expr)))` |
-| `__has_builtin(__builtin_unreachable)` (GCC < 13) | `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())` |
+| `__has_attribute(assume)` | `__attribute__((assume(expr)))` |
+| `__has_builtin(__builtin_unreachable)` | `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())` |
 | Ни одно не выполнено | `((void)(expr))` |
 
 > **Важно:** В первых четырёх ветках `expr` **не вычисляется** во время
-> выполнения. В запасной форме для GCC < 13 — вычисляется. Никогда не
-> передавайте выражения с побочными эффектами.
+> выполнения. В двух последних оно вычисляется. Никогда не передавайте выражения
+> с побочными эффектами.
 
 ### Использование
 
@@ -57,7 +57,7 @@ void scale(float* data, int n) {
 
 | Условие | Раскрытие |
 |---------|-----------|
-| MSVC native (не Clang-cl) | `__assume(false)` |
+| MSVC, кроме clang-cl | `__assume(false)` |
 | `__has_builtin(__builtin_unreachable)` (GCC, Clang) | `__builtin_unreachable()` |
 | Ни одно не выполнено | `((void)0)` |
 
@@ -81,8 +81,10 @@ int priority(Severity s) {
 
 ## Примечания
 
-- Оба макроса работают на уровне инструкций — завершайте точкой с запятой.
-- `SCL_ASSUME(false)` эквивалентен `SCL_UNREACHABLE()` на всех компиляторах.
-  Для ясности кода предпочитайте `SCL_UNREACHABLE()`.
+- Оба макроса работают на уровне инструкций — завершайте их точкой с запятой.
+- `SCL_ASSUME(false)` утверждает то же, что и `SCL_UNREACHABLE()`, и на GCC и MSVC
+  раскрывается в тот же текст. Clang недостижимым его не считает: он по-прежнему
+  выдаёт `-Wreturn-type` там, где функция доходит до конца без `return`.
+  Предпочитайте `SCL_UNREACHABLE()`.
 - Каждый макрос можно переопределить до включения заголовка через
   `#define SCL_ASSUME(expr)` или `#define SCL_UNREACHABLE()`.

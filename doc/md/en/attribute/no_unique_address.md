@@ -12,9 +12,10 @@ sub-object zero storage by sharing its address with another member. Without it,
 every member occupies at least one byte even if its type is empty, which breaks
 the zero-overhead abstraction principle for policy- and executor-based designs.
 
-MSVC before version 19.30 (VS 2019 ≤ 16.9) does not accept the standard
-spelling and requires `[[msvc::no_unique_address]]` instead.
-`SCL_NO_UNIQUE_ADDRESS` selects the correct form automatically.
+The target ABI decides which spelling is available, not the compiler brand. Targeting
+the MSVC ABI, only `[[msvc::no_unique_address]]` changes the layout; targeting the
+Itanium ABI, only the standard spelling does. `SCL_NO_UNIQUE_ADDRESS` selects the form
+the target accepts.
 
 ## Detection
 
@@ -24,11 +25,11 @@ The macro is selected via `__has_cpp_attribute`:
 |-----------|-----------|
 | `__has_cpp_attribute(no_unique_address)` | `[[no_unique_address]]` |
 | `__has_cpp_attribute(msvc::no_unique_address)` | `[[msvc::no_unique_address]]` |
-| Neither | *(empty — no layout optimization)* |
+| Neither | *(empty; the empty member is not collapsed)* |
 
-On MSVC < 19.30 the standard attribute is not recognized, so the first check
-returns 0 and the vendor form is picked up by the second check. On MSVC ≥ 19.30,
-GCC, Clang, and Clang-cl the standard form is available and the first check wins.
+Targeting the MSVC ABI, on MSVC, on clang-cl and on Clang alike, the first check
+returns 0 and the vendor form is picked up by the second. Targeting the Itanium ABI,
+GCC and Clang answer the first check and the vendor form is never reached.
 
 ## Usage
 

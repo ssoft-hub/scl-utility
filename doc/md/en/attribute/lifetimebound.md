@@ -15,19 +15,19 @@ if the returned reference, pointer, or view outlives the argument — catching
 dangling-reference bugs at compile time.
 
 **Placement** — after the parameter declaration, or after the cv-qualifier
-of a member function (same position as `[[nodiscard]]` on a return type, but
-applied to a parameter instead).
+of a member function.
 
-> **Note:** Currently supported by Clang. GCC and MSVC do not implement this
-> attribute; the fallback is empty — no warning is emitted on those compilers,
-> but the annotated code compiles correctly.
+> **Note:** Supported by Clang only. GCC and MSVC do not implement this attribute,
+> and there the macro expands to nothing: those compilers emit no warning, and the
+> annotated code compiles correctly.
 
 ### Detection
 
 | Condition | Expansion |
 |-----------|-----------|
+| MSVC other than clang-cl | *(empty, no equivalent)* |
 | `__has_cpp_attribute(clang::lifetimebound)` (Clang) | `[[clang::lifetimebound]]` |
-| `__has_attribute(lifetimebound)` (Clang older) | `__attribute__((lifetimebound))` |
+| `__has_attribute(lifetimebound)` (older Clang) | `__attribute__((lifetimebound))` |
 | None of the above | *(empty — no lifetime analysis)* |
 
 ### Usage
@@ -56,7 +56,8 @@ public:
 ```cpp
 std::string_view sv = first_word(std::string{"hello world"});
 //                                            ^~~~~~~~~~~~~ temporary destroyed here
-// warning: address of stack memory associated with temporary ...
+// warning: temporary whose address is used as value of local variable 'sv'
+//          will be destroyed at the end of the full-expression [-Wdangling]
 ```
 
 ---

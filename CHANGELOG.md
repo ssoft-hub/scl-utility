@@ -252,6 +252,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Every header under `src/scl/utility/attribute/`, and `runtime/type.h`, preprocesses
+  where `__has_cpp_attribute`, `__has_attribute`, `__has_builtin` and `__has_include`
+  are absent. A preprocessor missing one read the probe for it as a syntax error
+  rather than as zero.
+
+- A macro pre-defined without its partner, such as `SCL_NODISCARD_MSG` without
+  `SCL_NODISCARD`, survives inclusion. Whichever branch the header's chain took,
+  that branch defined the partner too, overwriting the caller's definition.
+
+- `SCL_FORCE_INLINE` and `SCL_NOINLINE` probe `__has_attribute` where a compiler has
+  no `__has_cpp_attribute` to answer for the `gnu::` spelling. There the first fell
+  back to plain `inline` and the second to nothing, though the attribute was there.
+
 - `scl::hierarchy::tree::reference` hands out mutable reverse iterators. Its
   `reverse_iterator` aliased the const one, so `rbegin()` reached children that could only
   be read while `begin()` reached children that could be written.

@@ -11,8 +11,8 @@ Function-frequency hint macros.
 
 Marks a function as called frequently. The compiler optimizes it more
 aggressively and places it in a hot section of the binary to improve
-instruction-cache locality. Call sites branching toward a `SCL_HOT`
-function are implicitly treated as likely.
+instruction-cache locality. A branch toward a call of it keeps the probability
+it would have had unannotated; only `SCL_COLD` biases one.
 
 Place before the return type.
 
@@ -20,8 +20,9 @@ Place before the return type.
 
 | Condition | Expansion |
 |-----------|-----------|
+| MSVC other than clang-cl | *(empty, no equivalent)* |
 | `__has_cpp_attribute(gnu::hot)` (GCC, Clang) | `[[gnu::hot]]` |
-| `__has_attribute(hot)` (GCC, Clang older) | `__attribute__((hot))` |
+| `__has_attribute(hot)` (older GCC and Clang) | `__attribute__((hot))` |
 | None of the above | *(empty — no hint)* |
 
 ### Usage
@@ -50,8 +51,9 @@ Place before the return type. Combines naturally with `SCL_NOINLINE` and
 
 | Condition | Expansion |
 |-----------|-----------|
+| MSVC other than clang-cl | *(empty, no equivalent)* |
 | `__has_cpp_attribute(gnu::cold)` (GCC, Clang) | `[[gnu::cold]]` |
-| `__has_attribute(cold)` (GCC, Clang older) | `__attribute__((cold))` |
+| `__has_attribute(cold)` (older GCC and Clang) | `__attribute__((cold))` |
 | None of the above | *(empty — no hint)* |
 
 ### Usage
@@ -61,7 +63,7 @@ Place before the return type. Combines naturally with `SCL_NOINLINE` and
 
 SCL_COLD SCL_NOINLINE void report_oom(std::size_t requested);
 
-SCL_COLD SCL_NORETURN void fatal(const char* msg);
+SCL_NORETURN SCL_COLD void fatal(const char* msg);
 ```
 
 ---
@@ -75,10 +77,10 @@ These are complementary strategies, not overlapping ones:
 | | `SCL_FORCE_INLINE` | `SCL_HOT` |
 |---|---|---|
 | What it does | Inlines the function body at every call site | Keeps the function as a callable; optimises it more aggressively |
-| Function in binary | Eliminated (or kept as a rarely-used fallback) | Present; relocated to `.text.hot` section |
+| Function in binary | Eliminated (or kept as a rarely-used fallback) | Present; moved to a hot section (`.text.hot` on GCC, `.text$hot` on Clang) |
 | I-cache effect | Code is duplicated across call sites | Hot functions are grouped together — better locality |
 
-`SCL_FORCE_INLINE` spreads the code; `SCL_HOT` consolidates it.
+`SCL_FORCE_INLINE` trades code size for call overhead; `SCL_HOT` trades neither.
 Combining `SCL_HOT` with `SCL_NOINLINE` is idiomatic: keep the function as a
 single well-optimised body without bloating every call site.
 
@@ -102,7 +104,7 @@ affect only one specific branch at the call site.
 SCL_HOT SCL_NOINLINE void dispatch(Event e);
 
 // Cold error handler — move away from hot code entirely
-SCL_COLD SCL_NOINLINE SCL_NORETURN void fatal(const char* msg);
+SCL_NORETURN SCL_COLD SCL_NOINLINE void fatal(const char* msg);
 
 // Inside a hot function — fine-grained per-branch hint
 SCL_HOT int process(const Packet* p) {
@@ -117,6 +119,5 @@ SCL_HOT int process(const Packet* p) {
 ## Notes
 
 - `SCL_HOT` and `SCL_COLD` are mutually exclusive on the same function.
-- MSVC has no equivalent; the fallback is empty and the code compiles normally.
 - Each macro can be overridden before inclusion via `#define SCL_HOT` or
   `#define SCL_COLD`.

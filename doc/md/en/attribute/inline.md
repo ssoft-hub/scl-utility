@@ -9,15 +9,16 @@ Function inlining control macros.
 
 ## SCL_FORCE_INLINE
 
-Requests that the compiler always inline the decorated function, overriding
-its own inlining heuristics. Place before the return type.
+Requests that the compiler always inline the annotated function, overriding the
+inlining heuristics it would otherwise apply. Place before the return type.
 
 ### Detection
 
 | Condition | Expansion |
 |-----------|-----------|
-| MSVC native (not Clang-cl) | `__forceinline` |
+| MSVC other than clang-cl | `__forceinline` |
 | `__has_cpp_attribute(gnu::always_inline)` (GCC, Clang) | `[[gnu::always_inline]] inline` |
+| `__has_attribute(always_inline)` (older GCC and Clang) | `__attribute__((always_inline)) inline` |
 | None of the above | `inline` |
 
 > **Note:** The GCC/Clang expansion already includes `inline`. Do not write
@@ -37,7 +38,7 @@ SCL_FORCE_INLINE int clamp(int v, int lo, int hi) {
 
 ## SCL_NOINLINE
 
-Requests that the compiler never inline the decorated function. Useful for:
+Requests that the compiler never inline the annotated function. Useful for:
 
 - Cold error paths that should not bloat hot code.
 - Functions that must appear as named frames in profiler outputs or stack traces.
@@ -47,8 +48,9 @@ Requests that the compiler never inline the decorated function. Useful for:
 
 | Condition | Expansion |
 |-----------|-----------|
-| MSVC native (not Clang-cl) | `__declspec(noinline)` |
+| MSVC other than clang-cl | `__declspec(noinline)` |
 | `__has_cpp_attribute(gnu::noinline)` (GCC, Clang) | `[[gnu::noinline]]` |
+| `__has_attribute(noinline)` (older GCC and Clang) | `__attribute__((noinline))` |
 | None of the above | *(empty — function compiles without hint)* |
 
 ### Usage
@@ -69,7 +71,8 @@ SCL_NOINLINE void cold_path() {
 
 - Both macros affect a single function declaration or definition; they are
   not recursive.
-- The compiler may ignore `SCL_FORCE_INLINE` in pathological cases (e.g.,
-  recursive functions, functions taking address of themselves).
+- A recursive `SCL_FORCE_INLINE` function is not merely un-inlined: GCC rejects it
+  outright at `-O0`, `-O1` and `-Og` (`inlining failed in call to
+  'always_inline'`), and accepts it from `-O2` up. Clang accepts it at every level.
 - Each macro can be overridden before inclusion via
   `#define SCL_FORCE_INLINE` or `#define SCL_NOINLINE`.

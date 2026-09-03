@@ -18,8 +18,8 @@ migrate to a replacement.
 | Condition | Expansion |
 |-----------|-----------|
 | `__has_cpp_attribute(deprecated)` (C++14) | `[[deprecated]]` |
-| MSVC native (not Clang-cl) | `__declspec(deprecated)` |
-| `__has_attribute(deprecated)` (GCC, Clang) | `__attribute__((deprecated))` |
+| MSVC other than clang-cl | `__declspec(deprecated)` |
+| `__has_attribute(deprecated)` (older GCC and Clang) | `__attribute__((deprecated))` |
 | None of the above | *(empty — no warning emitted)* |
 
 ### Usage
@@ -29,7 +29,7 @@ migrate to a replacement.
 
 SCL_DEPRECATED void old_connect(const char* host, int port);
 
-SCL_DEPRECATED struct LegacyHandle { int fd; };
+struct SCL_DEPRECATED LegacyHandle { int fd; };
 ```
 
 ---
@@ -46,8 +46,8 @@ to `SCL_DEPRECATED` (warning without the message text).
 | Condition | Expansion |
 |-----------|-----------|
 | `__has_cpp_attribute(deprecated)` (C++14) | `[[deprecated(msg)]]` |
-| MSVC native (not Clang-cl) | `__declspec(deprecated(msg))` |
-| `__has_attribute(deprecated)` (GCC, Clang) | `__attribute__((deprecated(msg)))` |
+| MSVC other than clang-cl | `__declspec(deprecated(msg))` |
+| `__has_attribute(deprecated)` (older GCC and Clang) | `__attribute__((deprecated(msg)))` |
 | None of the above | *(empty)* |
 
 ### Usage
@@ -58,8 +58,7 @@ to `SCL_DEPRECATED` (warning without the message text).
 SCL_DEPRECATED_MSG("use connect(Endpoint) instead")
 void old_connect(const char* host, int port);
 
-SCL_DEPRECATED_MSG("replaced by ResourceHandle in v2")
-struct LegacyHandle { int fd; };
+struct SCL_DEPRECATED_MSG("replaced by ResourceHandle in v2") LegacyHandle { int fd; };
 ```
 
 ---

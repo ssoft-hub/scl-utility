@@ -11,9 +11,8 @@ Non-returning function annotation.
 
 Marks a function that never returns to its caller — either it throws an
 exception, calls `std::terminate`, enters an infinite loop, or performs a
-`longjmp`. The compiler may optimize call sites that follow a `SCL_NORETURN`
-function as dead code and suppresses "not all control paths return a value"
-warnings.
+`longjmp`. The compiler may treat the code following a call to such a function as
+dead, and it suppresses "not all control paths return a value" warnings.
 
 Place before the return type on declarations and definitions.
 
@@ -25,8 +24,8 @@ Place before the return type on declarations and definitions.
 | Condition | Expansion |
 |-----------|-----------|
 | `__has_cpp_attribute(noreturn)` (C++11) | `[[noreturn]]` |
-| MSVC native (not Clang-cl) | `__declspec(noreturn)` |
-| `__has_attribute(noreturn)` (GCC, Clang) | `__attribute__((noreturn))` |
+| MSVC other than clang-cl | `__declspec(noreturn)` |
+| `__has_attribute(noreturn)` (older GCC and Clang) | `__attribute__((noreturn))` |
 | None of the above | *(empty — no annotation)* |
 
 ### Usage
@@ -49,6 +48,8 @@ int divide(int a, int b) {
 
 ## Notes
 
-- Applies to the function entity, not to individual call sites.
+- Applies to the function declaration, not to individual call sites.
 - Can be used together with `SCL_NOINLINE` to keep fatal paths out of hot code.
-- Each macro can be overridden before inclusion via `#define SCL_NORETURN`.
+  Write `SCL_NORETURN` first: on MSVC the other macros expand to `__declspec`, and
+  `[[noreturn]]` after a `__declspec` is error C3829.
+- The macro can be overridden before inclusion via `#define SCL_NORETURN`.

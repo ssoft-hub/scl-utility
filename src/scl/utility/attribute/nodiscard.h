@@ -19,14 +19,14 @@
  *       @c [[nodiscard]]
  *  2. @c __has_cpp_attribute(nodiscard) (C++17):
  *       @c [[nodiscard]]
- *  3. @c __has_attribute(warn_unused_result) (GCC, Clang pre-C++17):
+ *  3. @c __has_attribute(warn_unused_result) (older GCC and Clang):
  *       @c __attribute__((warn_unused_result))
  *  4. Fallback: empty (no warning emitted)
  *
  * @code{.cpp}
  * SCL_NODISCARD bool try_connect(const char* host);
  *
- * SCL_NODISCARD struct ErrorCode { int value; };
+ * struct SCL_NODISCARD ErrorCode { int value; };
  * @endcode
  */
 
@@ -54,19 +54,34 @@
  */
 
 #ifndef SCL_NODISCARD
+#ifdef __has_cpp_attribute
 #if __has_cpp_attribute(nodiscard) >= 201907L
 #define SCL_NODISCARD [[nodiscard]]
+#ifndef SCL_NODISCARD_MSG
 #define SCL_NODISCARD_MSG(msg) [[nodiscard(msg)]]
+#endif
 #elif __has_cpp_attribute(nodiscard)
 #define SCL_NODISCARD [[nodiscard]]
+#ifndef SCL_NODISCARD_MSG
 #define SCL_NODISCARD_MSG(msg) [[nodiscard]]
-#elif defined(__has_attribute) && __has_attribute(warn_unused_result)
-#define SCL_NODISCARD __attribute__((warn_unused_result))
-#define SCL_NODISCARD_MSG(msg) __attribute__((warn_unused_result))
-#else
-#define SCL_NODISCARD
-#define SCL_NODISCARD_MSG(msg)
 #endif
+#endif
+#endif
+#endif
+
+#ifndef SCL_NODISCARD
+#ifdef __has_attribute
+#if __has_attribute(warn_unused_result)
+#define SCL_NODISCARD __attribute__((warn_unused_result))
+#ifndef SCL_NODISCARD_MSG
+#define SCL_NODISCARD_MSG(msg) __attribute__((warn_unused_result))
+#endif
+#endif
+#endif
+#endif
+
+#ifndef SCL_NODISCARD
+#define SCL_NODISCARD
 #endif
 
 #ifndef SCL_NODISCARD_MSG

@@ -19,7 +19,7 @@ parameters, `assert`-only values).
 | Condition | Expansion |
 |-----------|-----------|
 | `__has_cpp_attribute(maybe_unused)` (C++17) | `[[maybe_unused]]` |
-| `__has_attribute(unused)` (GCC, Clang) | `__attribute__((unused))` |
+| `__has_attribute(unused)` (older GCC and Clang) | `__attribute__((unused))` |
 | None of the above | *(empty — warning may still fire)* |
 
 ### Usage
