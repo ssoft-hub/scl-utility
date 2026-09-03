@@ -37,14 +37,15 @@ namespace scl
      *
      * @code{.cpp}
      * enum class Color : int { Red = 1, Green = 2 };
-     * ::scl::enum_value(Color::Red);  // "Color::1"
-     * ::scl::enum_value(Color{42});   // "Color::42"
+     * auto const red_name     = ::scl::enum_value(Color::Red);  // "Color::1"
+     * auto const other_name   = ::scl::enum_value(Color{42});   // "Color::42"
      *
      * enum class Flags : unsigned { A = 1, B = 2 };
-     * ::scl::enum_value(Flags::B);    // "Flags::2"
+     * auto const flag_name    = ::scl::enum_value(Flags::B);    // "Flags::2"
      * @endcode
      */
     template <concepts::enum_type E>
+    [[nodiscard]]
     ::std::string enum_value(E value)
     {
 #ifdef __cpp_lib_format

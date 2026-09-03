@@ -85,6 +85,7 @@ namespace scl
      *         `const` and `volatile` on top of whatever `T` already had.
      */
     template <typename Base, typename T>
+    [[nodiscard]]
     constexpr decltype(auto) forward_like(T && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
     {
         return static_cast<forward_like_t<Base, T &&>>(t);

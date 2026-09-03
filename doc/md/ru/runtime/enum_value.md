@@ -31,11 +31,11 @@ enum class Flags : unsigned { None = 0, A = 1, B = 2 };
 
 namespace app { enum class Status : int { Ok = 0, Err = 42 }; }
 
-scl::enum_value(Color::Red);       // "Color::1"
-scl::enum_value(Color::Blue);      // "Color::-3"
-scl::enum_value(Color{42});        // "Color::42"  — безымянное значение
-scl::enum_value(Flags::B);         // "Flags::2"
-scl::enum_value(app::Status::Err); // "Status::42" — пространство имён отброшено
+auto const red_name     = scl::enum_value(Color::Red);       // "Color::1"
+auto const blue_name    = scl::enum_value(Color::Blue);      // "Color::-3"
+auto const other_name   = scl::enum_value(Color{42});        // "Color::42"  - безымянное значение
+auto const flag_name    = scl::enum_value(Flags::B);         // "Flags::2"
+auto const status_name  = scl::enum_value(app::Status::Err); // "Status::42" - пространство имён отброшено
 ```
 
 ### Сравнение с аналогом времени компиляции

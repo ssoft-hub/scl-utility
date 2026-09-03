@@ -39,15 +39,15 @@ struct Child : Base {};
 
 // Fundamental type
 int i = 0;
-scl::type_name(i);   // "int"
+auto const int_name     = scl::type_name(i);   // "int"
 
 // Static type
 Child c;
-scl::type_name(c);   // "Child"
+auto const child_name   = scl::type_name(c);   // "Child"
 
 // Polymorphic: resolves to the dynamic type through a base reference
 std::unique_ptr<Base> p = std::make_unique<Child>();
-scl::type_name(*p);  // "Child"  (not "Base")
+auto const dynamic_name = scl::type_name(*p);  // "Child"  (not "Base")
 ```
 
 ### Comparison with the compile-time counterpart
@@ -78,8 +78,8 @@ qualifiers and template arguments.
 namespace app { template <typename T> struct Task : Base {}; }
 
 std::unique_ptr<Base> p = std::make_unique<app::Task<int>>();
-scl::type_name(*p);        // "app::Task<int>"
-scl::type_short_name(*p);  // "Task"
+auto const task_name  = scl::type_name(*p);        // "app::Task<int>"
+auto const task_short = scl::type_short_name(*p);  // "Task"
 ```
 
 ## See also

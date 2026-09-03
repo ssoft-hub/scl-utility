@@ -7,7 +7,6 @@
  */
 
 #include <scl/utility/attribute/lifetimebound.h>
-#include <scl/utility/attribute/nodiscard.h>
 #include <scl/utility/hash/concepts.h>
 
 #include <bit>
@@ -22,8 +21,8 @@ namespace scl::hash
     namespace detail
     {
         template <concepts::integer_element Element>
-        SCL_NODISCARD constexpr ::std::uint8_t
-        byte_of(Element const value, ::std::size_t const index) noexcept
+        [[nodiscard]]
+        constexpr ::std::uint8_t byte_of(Element const value, ::std::size_t const index) noexcept
         {
             if constexpr (::std::is_enum_v<Element>)
             {
@@ -70,7 +69,8 @@ namespace scl::hash
      *       counterpart: `byte_view(u"AB")` carries the zero bytes that `"AB"` does not.
      */
     template <::std::ranges::viewable_range Range>
-    SCL_NODISCARD constexpr auto byte_view(Range && range SCL_LIFETIMEBOUND)
+    [[nodiscard]]
+    constexpr auto byte_view(Range && range SCL_LIFETIMEBOUND)
         requires ::std::ranges::random_access_range<Range> && ::std::ranges::sized_range<Range> &&
         concepts::integer_element<::std::ranges::range_value_t<Range>>
     {

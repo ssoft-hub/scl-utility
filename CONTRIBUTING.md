@@ -52,6 +52,11 @@ ctest --test-dir build/gcc --output-on-failure
 - Root namespace: `scl`. Implementation details go in `scl::detail` or sub-namespace `::detail`.
 - Spell a type parameter `typename`, never `class`; spell a template template parameter
   `class` (`template <typename...> class Operation`).
+- Spell a standard attribute as itself: `[[nodiscard]]`, `[[maybe_unused]]`, `[[likely]]`.
+  An `SCL_*` macro from `attribute/` is for an annotation whose spelling or availability
+  differs by toolchain or by standard level. `attribute/` offers a macro for every standard
+  attribute so a consumer below the C++20 baseline can use one; library code does not,
+  outside the tests that exercise them.
 - Prefer `constexpr` and `noexcept` where applicable.
 
 ## Code quality checks
