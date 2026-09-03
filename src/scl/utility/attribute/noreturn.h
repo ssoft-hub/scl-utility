@@ -13,7 +13,7 @@
  * @details
  * Apply before the return type. The compiler may assume that any call to a
  * @c SCL_NORETURN function is a dead end and optimize accordingly.
- * If a decorated function does return, the behaviour is **undefined**.
+ * If an annotated function does return, the behaviour is **undefined**.
  *
  * Typical uses: @c std::terminate wrappers, @c throw helpers,
  * infinite-loop entry points.
@@ -21,7 +21,7 @@
  * Detection order:
  *  1. @c __has_cpp_attribute(noreturn) (C++11):
  *       @c [[noreturn]] — standard form
- *  2. MSVC native (not Clang-cl):
+ *  2. MSVC other than clang-cl:
  *       @c __declspec(noreturn)
  *  3. @c __has_attribute(noreturn) (GCC, Clang):
  *       @c __attribute__((noreturn))
@@ -38,13 +38,27 @@
  */
 
 #ifndef SCL_NORETURN
+#ifdef __has_cpp_attribute
 #if __has_cpp_attribute(noreturn)
 #define SCL_NORETURN [[noreturn]]
-#elif defined(_MSC_VER) && !defined(__clang__)
-#define SCL_NORETURN __declspec(noreturn)
-#elif defined(__has_attribute) && __has_attribute(noreturn)
-#define SCL_NORETURN __attribute__((noreturn))
-#else
-#define SCL_NORETURN
 #endif
+#endif
+#endif
+
+#ifndef SCL_NORETURN
+#if defined(_MSC_VER) && !defined(__clang__)
+#define SCL_NORETURN __declspec(noreturn)
+#endif
+#endif
+
+#ifndef SCL_NORETURN
+#ifdef __has_attribute
+#if __has_attribute(noreturn)
+#define SCL_NORETURN __attribute__((noreturn))
+#endif
+#endif
+#endif
+
+#ifndef SCL_NORETURN
+#define SCL_NORETURN
 #endif

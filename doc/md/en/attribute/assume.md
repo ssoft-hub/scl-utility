@@ -18,15 +18,15 @@ loop bounds.
 | Condition | Expansion |
 |-----------|-----------|
 | `__has_cpp_attribute(assume)` (C++23) | `[[assume(expr)]]` |
-| MSVC native (not Clang-cl) | `__assume(expr)` |
+| MSVC other than clang-cl | `__assume(expr)` |
 | `__has_builtin(__builtin_assume)` (Clang) | `__builtin_assume(expr)` |
-| `__has_attribute(assume)` (GCC ≥ 13) | `__attribute__((assume(expr)))` |
-| `__has_builtin(__builtin_unreachable)` (GCC < 13) | `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())` |
+| `__has_attribute(assume)` | `__attribute__((assume(expr)))` |
+| `__has_builtin(__builtin_unreachable)` | `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())` |
 | None of the above | `((void)(expr))` |
 
 > **Important:** In the first four branches `expr` is **not evaluated** at
-> runtime. In the GCC < 13 fallback it is evaluated. Never pass expressions
-> with side effects.
+> runtime. In the last two it is evaluated. Never pass expressions with side
+> effects.
 
 ### Usage
 
@@ -57,7 +57,7 @@ point at runtime, the behaviour is **undefined**. Use it to:
 
 | Condition | Expansion |
 |-----------|-----------|
-| MSVC native (not Clang-cl) | `__assume(false)` |
+| MSVC other than clang-cl | `__assume(false)` |
 | `__has_builtin(__builtin_unreachable)` (GCC, Clang) | `__builtin_unreachable()` |
 | None of the above | `((void)0)` |
 
@@ -81,8 +81,10 @@ int priority(Severity s) {
 
 ## Notes
 
-- Both macros work at statement level — terminate with a semicolon.
-- `SCL_ASSUME(false)` is equivalent to `SCL_UNREACHABLE()` on all compilers.
-  Prefer `SCL_UNREACHABLE()` for clarity.
+- Both macros work at statement level — terminate each with a semicolon.
+- `SCL_ASSUME(false)` states the same thing as `SCL_UNREACHABLE()`, and expands to
+  the same text on GCC and MSVC. Clang does not treat it as unreachable code: it
+  still reports `-Wreturn-type` where the function falls off the end. Prefer
+  `SCL_UNREACHABLE()`.
 - Each macro can be overridden before inclusion via `#define SCL_ASSUME(expr)`
   or `#define SCL_UNREACHABLE()`.

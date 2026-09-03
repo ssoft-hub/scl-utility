@@ -50,8 +50,8 @@ void encode(const float* src, std::uint8_t* dst, std::size_t n) {
 
 ## Notes
 
-- On compilers without `[[indeterminate]]` support the fallback is empty:
-  the code compiles and runs correctly, just without the optimisation hint.
+- On compilers without `[[indeterminate]]` support the code compiles and runs
+  correctly, just without the optimisation hint.
 - Unlike `SCL_ASSUME`, there is no runtime expression involved — the attribute
   only affects whether initialisation code is emitted.
 - The macro can be overridden before inclusion via `#define SCL_INDETERMINATE`.

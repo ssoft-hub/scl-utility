@@ -19,7 +19,7 @@
  * Detection order:
  *  1. @c __has_cpp_attribute(maybe_unused) (C++17):
  *       @c [[maybe_unused]]
- *  2. @c __has_attribute(unused) (GCC, Clang pre-C++17):
+ *  2. @c __has_attribute(unused) (older GCC and Clang):
  *       @c __attribute__((unused))
  *  3. Fallback: empty (warning may still fire)
  *
@@ -35,11 +35,21 @@
  */
 
 #ifndef SCL_MAYBE_UNUSED
+#ifdef __has_cpp_attribute
 #if __has_cpp_attribute(maybe_unused)
 #define SCL_MAYBE_UNUSED [[maybe_unused]]
-#elif defined(__has_attribute) && __has_attribute(unused)
-#define SCL_MAYBE_UNUSED __attribute__((unused))
-#else
-#define SCL_MAYBE_UNUSED
 #endif
+#endif
+#endif
+
+#ifndef SCL_MAYBE_UNUSED
+#ifdef __has_attribute
+#if __has_attribute(unused)
+#define SCL_MAYBE_UNUSED __attribute__((unused))
+#endif
+#endif
+#endif
+
+#ifndef SCL_MAYBE_UNUSED
+#define SCL_MAYBE_UNUSED
 #endif

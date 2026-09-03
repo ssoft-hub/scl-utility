@@ -12,14 +12,14 @@
  * @ingroup scl_utility_attribute
  * @details
  * Detection uses @c __has_cpp_attribute to select the right spelling:
- *  1. @c __has_cpp_attribute(no_unique_address) &rarr; @c [[no_unique_address]]
- *  2. @c __has_cpp_attribute(msvc::no_unique_address) &rarr; @c [[msvc::no_unique_address]]
- *  3. Fallback: empty (no layout optimisation; EBO not guaranteed)
+ *  1. @c __has_cpp_attribute(no_unique_address) -> @c [[no_unique_address]]
+ *  2. @c __has_cpp_attribute(msvc::no_unique_address) -> @c [[msvc::no_unique_address]]
+ *  3. Fallback: empty (the empty member is not collapsed)
  *
- * MSVC &lt; 19.30 (VS&nbsp;2019 &le;&nbsp;16.9) does not recognise the standard
- * spelling, so step&nbsp;1 returns 0 and step&nbsp;2 picks up the vendor form.
- * Clang-cl supports the standard attribute; @c __has_cpp_attribute returns
- * non-zero for it and the vendor form is never needed.
+ * The target ABI decides which spelling is available, not the compiler brand. Targeting
+ * the MSVC ABI, step 1 returns 0 and step 2 picks up the vendor form, on MSVC, on
+ * clang-cl and on Clang alike. Only the vendor form collapses the empty member
+ * there. Targeting the Itanium ABI, step 1 answers and step 2 is never reached.
  *
  * @code{.cpp}
  * struct Empty {};
@@ -28,11 +28,15 @@
  * @endcode
  */
 #ifndef SCL_NO_UNIQUE_ADDRESS
+#ifdef __has_cpp_attribute
 #if __has_cpp_attribute(no_unique_address)
 #define SCL_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #elif __has_cpp_attribute(msvc::no_unique_address)
 #define SCL_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
-#else
-#define SCL_NO_UNIQUE_ADDRESS
 #endif
+#endif
+#endif
+
+#ifndef SCL_NO_UNIQUE_ADDRESS
+#define SCL_NO_UNIQUE_ADDRESS
 #endif

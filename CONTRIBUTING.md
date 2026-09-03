@@ -57,6 +57,13 @@ ctest --test-dir build/gcc --output-on-failure
   differs by toolchain or by standard level. `attribute/` offers a macro for every standard
   attribute so a consumer below the C++20 baseline can use one; library code does not,
   outside the tests that exercise them.
+- Ask a `__has_*` operator for a feature only where an `#ifdef` naming that operator already
+  holds, or, mid-chain, an `#elif defined(...)` naming it with the call in a nested `#if` —
+  the shape `preprocessor/exceptions.h` uses. Neither a bare `#if`/`#elif __has_x(...)` nor
+  `#if`/`#elif defined(__has_x) && __has_x(...)` protects the call: the line is macro-replaced
+  and parsed as a whole before it is evaluated, so where the operator is missing the
+  surviving name becomes `0`, and the call form `0(...)` is a syntax error rather than the
+  zero the chain is written to expect.
 - Prefer `constexpr` and `noexcept` where applicable.
 
 ## Code quality checks
