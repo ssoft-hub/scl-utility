@@ -3,7 +3,7 @@
 Common C++20 utilities not available in the standard library.
 
 ScL Utility is a header-only module of the ScL Toolkit. It provides erased views over any
-value, portable attribute macros, type-classifying concepts, a set of scoped-enum values,
+value, portable attribute macros, type-classifying concepts, a type-safe set of enumeration values,
 non-cryptographic hashes, parent-child tree hierarchies, compile-time and runtime name
 extraction, preprocessor utilities and extended type traits.
 
@@ -118,11 +118,11 @@ Then include the umbrella header or individual component headers:
 |-----------|--------|-------------|
 | [key](hash/key.md) | `<scl/utility/hash.h>` | Strongly-typed hash value; usable as switch label, map key, and NTTP |
 
-### Flags — type-safe set of scoped-enum values
+### Flags — type-safe set of enumeration values
 
 | Component | Header | Description |
 |-----------|--------|-------------|
-| [flags](flags/flags.md) | `<scl/utility/flags.h>` | Set of scoped-enum values: set algebra, set predicates, and a bidirectional range over the values held |
+| [flags](flags/flags.md) | `<scl/utility/flags.h>` | Set of enumeration values: set algebra, set predicates, and a bidirectional range over the values held |
 
 ### Preprocessor — macro utilities
 
@@ -209,7 +209,7 @@ int main()
 }
 ```
 
-A type-safe set of scoped-enum values
+A type-safe set of enumeration values
 ([`example/quick_start/flags`](../../../example/quick_start/flags/quick_start_flags_example.cpp)):
 
 <!-- snippet: example/quick_start/flags/quick_start_flags_example.cpp -->

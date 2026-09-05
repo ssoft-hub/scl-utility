@@ -486,11 +486,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     misspelling. Detection moved here out of `runtime/type.h`, where it used to be
     a side effect of including an unrelated header.
 
-- **Flags** — type-safe bitmask over a scoped enum (`#include <scl/utility/flags.h>`):
+- **Flags** — type-safe set of enumeration values (`#include <scl/utility/flags.h>`):
   - `scl::flags<Enum, bit_count>` — a bitmask where each flag occupies the bit at
     its enumerator ordinal, backed by `std::array<std::byte>` so every operation
-    is usable in constant evaluation (unlike `std::bitset` before C++23). A
-    non-scoped `enum` is rejected by `static_assert`; an ordinal `>= bit_count`
+    is usable in constant evaluation (unlike `std::bitset` before C++23). Any
+    enumeration is accepted, scoped or not; an ordinal `>= bit_count`
     throws `std::out_of_range` (ill-formed in constant evaluation).
   - Construction from zero or more flags, `operator[]` membership test, equality,
     bitwise `~ | & ^` and compound `|= &= ^=` (flags and single-flag forms).
@@ -520,7 +520,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   std concept equivalent (`#include <scl/utility/concepts.h>`):
   - `scl::concepts::reference`, `lvalue_reference`, `rvalue_reference`
   - `scl::concepts::const_type`, `volatile_type`, `cv_type`
-  - `scl::concepts::enum_type`, `void_type`, `pointer`, `null_pointer`
+  - `scl::concepts::enum_type`, `scoped_enum`, `void_type`, `pointer`, `null_pointer`
   - `scl::concepts::member_pointer`, `member_object_pointer`, `member_function_pointer`
   - `scl::concepts::array_type`, `bounded_array`, `unbounded_array`
   - `scl::concepts::function_type`, `class_type`, `union_type`

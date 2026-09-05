@@ -8,7 +8,8 @@
 Common C++ utilities not available in the standard library.
 
 ScL Utility is a header-only module of the ScL Toolkit. It provides erased views over any
-value, portable attribute macros, type-classifying concepts, a set of scoped-enum values,
+value, portable attribute macros, type-classifying concepts, a type-safe set of
+enumeration values,
 non-cryptographic hashes, parent-child tree hierarchies, compile-time and runtime name
 extraction, preprocessor utilities and extended type traits. Licensed under
 [The Unlicense](LICENSE.md).
@@ -87,7 +88,7 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
   - `siphash` — SipHash-2-4 64-bit keyed hash (hash-flooding resistant)
   - `key<Hasher>` — strongly-typed hash value; usable as `switch`/`case` label,
     STL unordered container key, and non-type template parameter (C++20 NTTP)
-- **Flags** — type-safe set of scoped-enum values (`#include <scl/utility/flags.h>`):
+- **Flags** — type-safe set of enumeration values (`#include <scl/utility/flags.h>`):
   - `flags<Enum, bit_count>` — one bit per enumerator ordinal; `constexpr`-capable
   - set algebra `| & ^ -` and compound `|= &= ^= -=` (set and single-value forms),
     `operator[]` membership test
@@ -202,7 +203,7 @@ int main()
 }
 ```
 
-A type-safe set of scoped-enum values
+A type-safe set of enumeration values
 ([`example/quick_start/flags`](example/quick_start/flags/quick_start_flags_example.cpp)):
 
 <!-- snippet: example/quick_start/flags/quick_start_flags_example.cpp -->

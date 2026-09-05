@@ -1,6 +1,6 @@
 /**
  * @example quick_start_flags_example.cpp
- * @brief Quick start: a type-safe set of scoped-enum values.
+ * @brief Quick start: a type-safe set of enumeration values.
  */
 
 //! [quick_start]

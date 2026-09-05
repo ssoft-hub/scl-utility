@@ -22,6 +22,36 @@ namespace
 
     struct S
     {};
+
+    enum class Scoped
+    {
+        x,
+        y
+    };
+
+    enum class ScopedSized : unsigned char
+    {
+        x
+    };
+
+    enum PlainSized : unsigned char
+    {
+        c
+    };
+
+    // A scoped_enum argument picks the second: both definitions of the concept conjoin
+    // enum_type, so scoped_enum is the more constrained of the two.
+    template <enum_type Enum>
+    constexpr int more_constrained()
+    {
+        return 1;
+    }
+
+    template <scoped_enum Enum>
+    constexpr int more_constrained()
+    {
+        return 2;
+    }
 } // namespace
 
 TEST(TypeCategory, enum_type)
@@ -29,6 +59,24 @@ TEST(TypeCategory, enum_type)
     STATIC_EXPECT_TRUE(enum_type<Plain>);
     STATIC_EXPECT_FALSE(enum_type<int>);
     STATIC_EXPECT_FALSE(enum_type<S>);
+}
+
+TEST(TypeCategory, scoped_enum)
+{
+    STATIC_EXPECT_TRUE(scoped_enum<Scoped>);
+    STATIC_EXPECT_TRUE(scoped_enum<ScopedSized>);
+    STATIC_EXPECT_FALSE(scoped_enum<Plain>);
+    STATIC_EXPECT_FALSE(scoped_enum<PlainSized>);
+    STATIC_EXPECT_FALSE(scoped_enum<int>);
+    STATIC_EXPECT_FALSE(scoped_enum<S>);
+    STATIC_EXPECT_TRUE(scoped_enum<Scoped const>);
+    STATIC_EXPECT_FALSE(scoped_enum<Scoped &>);
+}
+
+TEST(TypeCategory, scoped_enum_subsumes_enum_type)
+{
+    STATIC_EXPECT_EQ(more_constrained<Scoped>(), 2);
+    STATIC_EXPECT_EQ(more_constrained<Plain>(), 1);
 }
 
 TEST(TypeCategory, enum_value)
