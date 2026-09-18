@@ -10,8 +10,8 @@
 #include <scl/utility/hash/siphash.h>
 
 #include <concepts>
+#include <cstddef>
 #include <functional>
-#include <type_traits>
 #include <utility>
 
 namespace scl::hash::concepts

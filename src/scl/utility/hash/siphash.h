@@ -9,6 +9,7 @@
 #include <scl/utility/hash/concepts.h>
 
 #include <bit>
+#include <cstddef>
 #include <cstdint>
 #include <ranges>
 #include <utility>
