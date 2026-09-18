@@ -120,6 +120,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Breaking:** `fnv1a`, `djb2`, `sdbm`, `jenkins_ota`, `siphash` and `scl::hash::key`
+  refuse an array of any element type, so a call that passes one no longer compiles. The
+  caller should name the bytes with a `std::string_view` object (`"hello"sv` is one) or a
+  `std::span` object.
+- **Breaking:** the range parameter of every hash function and of `scl::hash::key` is a
+  forwarding reference, so a call naming the template argument for an lvalue -
+  `fnv1a<std::string_view>(text)` - no longer compiles.
 - A standard attribute is spelled as itself: `[[nodiscard]]`, `[[likely]]` and
   `[[unlikely]]` replace the `SCL_*` macros, and the includes those headers carried for
   them are gone. A consumer can no longer shape these three by predefining the macro;

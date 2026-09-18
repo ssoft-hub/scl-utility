@@ -35,15 +35,16 @@ Each element contributes `sizeof(element)` bytes, least significant first, whate
 host's own byte order — two machines hash one input alike. A byte-sized element passes
 through unchanged, so saying `byte_view` where none is needed changes nothing.
 
-Two element types stay out of `byte_view` as well. A floating-point one, because its bytes
-tell apart values that compare equal (`0.0` against `-0.0`, one `NaN` against another); and
-`wchar_t`, because its width is what the platform says it is — two bytes on Windows, four
-elsewhere — so one text would reach the hash function as a different number of bytes on each.
-`char16_t` and `char32_t` are fixed by the standard and carry the same text everywhere.
+The function `byte_view` refuses a floating-point element, because its bytes tell apart
+values that compare equal (`0.0` against `-0.0`, one `NaN` against another). It spells an
+element of every integer type, the type `wchar_t` among them.
 
-The width of `int`, `long` and `size_t` is the platform's own, so a hash value taken over them
-is comparable within one build rather than across platforms. Reach for a fixed-width
-element where a hash value has to travel.
+The width of the types `wchar_t`, `int`, `long` and `size_t` is the platform's own. The type
+`wchar_t` is two bytes on Windows and four elsewhere, so a hash value taken over such an
+element is comparable within one build rather than across platforms. The standard fixes the
+width of the types `char16_t` and `char32_t`, so one text occupies the same number of bytes
+in them on every platform, and the caller should take an element of a fixed width where a
+hash value has to compare equal across builds for different platforms.
 
 > **Note on string literals.**
 > A string literal `"hello"` is a `const char[6]` whose last element is the

@@ -10,6 +10,7 @@
 #include <scl/utility/concepts/type_property.h>
 
 #include <concepts>
+#include <ranges>
 #include <type_traits>
 
 namespace scl::hash::concepts
@@ -32,6 +33,10 @@ namespace scl::hash::concepts
      *
      * @par Example
      * @code{.cpp}
+     * #include <scl/utility/hash/concepts.h>
+     *
+     * #include <cstddef>
+     *
      * static_assert( scl::hash::concepts::byte_element<char>);
      * static_assert( scl::hash::concepts::byte_element<std::byte>);
      * static_assert(!scl::hash::concepts::byte_element<char16_t>);
@@ -49,22 +54,76 @@ namespace scl::hash::concepts
      * @brief Satisfied when a value of @p Type has bytes @ref scl::hash::byte_view can spell.
      * @ingroup scl_utility_hash
      *
-     * An integer, or an enumeration standing for one. Two types are left out:
+     * An integer, or an enumeration standing for one. A floating-point type is left out,
+     * because its bytes tell values apart that compare equal - `0.0` against `-0.0`, one
+     * `NaN` against another - so a hash value taken from them answers a different question
+     * than the comparison does.
      *
-     * - A floating-point type. Its bytes tell values apart that compare equal — `0.0`
-     *   against `-0.0`, one `NaN` against another — so a hash value taken from them answers a
-     *   different question than the comparison does.
-     * - `wchar_t`. Its width is what the platform says it is — two bytes on Windows, four
-     *   elsewhere — so one text would reach the hash function as a different number of bytes on
-     *   each. Spell the encoding that is meant: `char16_t` and `char32_t` are fixed by the
-     *   standard and hash alike everywhere.
+     * The width of `wchar_t`, `int`, `long` and `std::size_t` is the platform's own, so a hash
+     * value taken over such an element is comparable within one build rather than across
+     * platforms. `char16_t` and `char32_t` are fixed by the standard and spell one text alike
+     * everywhere.
      *
      * @tparam Type  Element type to check.
      */
-    // clang-format off
     template <typename Type>
-    concept integer_element = (::std::integral<Type> || ::scl::concepts::enum_type<Type>)
-            && !::std::same_as<::std::remove_cv_t<Type>, wchar_t>;
-    // clang-format on
+    concept integer_element = ::std::integral<Type> || ::scl::concepts::enum_type<Type>;
+
+    /**
+     * @brief Satisfied when @p Range is what the ScL hash functions take.
+     * @ingroup scl_utility_hash
+     *
+     * A range whose element is a single byte of data, and which is not a bounded array. A hash
+     * function states this concept in its own signature to refuse what an array would answer
+     * for.
+     *
+     * A bounded array reports the length it was declared with, which is the storage it was
+     * given rather than the content a caller put in it. `char buffer[64]` holding three
+     * characters is sixty-four elements to its type and three to its author, and nothing in the
+     * type says which is meant.
+     *
+     * The refusal follows what the type system can tell apart, not where the wrong answer
+     * actually arises. A string literal and a buffer a caller declares share one kind of
+     * type - `"hello"` is a `char const[6]`, and so is `constexpr char declared[6]`. A
+     * constraint that refuses the literal therefore refuses the declared buffer with it, having
+     * no way to tell the two apart. The refusal reaches the bounded array and stops there,
+     * and the type `std::array<char, 64>` reports sixty-four for the reason `char[64]` does,
+     * is taken all the same, and answers for its whole bound when partially filled.
+     *
+     * Naming the bytes of a filled buffer takes the length the caller knows.
+     * `std::string_view{buffer}` stops at a terminator, which a buffer holding bytes rather
+     * than text need not carry, so `std::string_view{buffer, length}` or
+     * `std::span{buffer, length}` is what names the bytes the caller put there.
+     *
+     * The rule reaches only the array itself, so a view over one, `std::views::all(buffer)`,
+     * is taken and reaches the whole bound.
+     *
+     * @tparam Range  Range to check.
+     *
+     * @par Example
+     * @code{.cpp}
+     * #include <scl/utility/hash/concepts.h>
+     *
+     * #include <cstdint>
+     * #include <ranges>
+     *
+     * template <scl::hash::concepts::hashable_range Range>
+     * constexpr std::uint64_t rolling(Range && range)
+     * {
+     *     std::uint64_t h = 0;
+     *     for (std::ranges::range_value_t<Range> const c : range)
+     *         h = (h * 31ull) + static_cast<std::uint8_t>(c);
+     *     return h;
+     * }
+     *
+     * // char buffer[64]; rolling(buffer) does not compile.
+     * @endcode
+     *
+     * @see scl::hash::concepts::byte_element
+     */
+    template <typename Range>
+    concept hashable_range = ::std::ranges::range<Range> &&
+        !::scl::concepts::bounded_array<::std::remove_cvref_t<Range>> &&
+        ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>;
 
 } // namespace scl::hash::concepts
