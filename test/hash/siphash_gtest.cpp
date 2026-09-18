@@ -4,14 +4,24 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
 
-using namespace ::scl::hash;
+using namespace ::std::string_view_literals;
 
-/// Standard test key from the SipHash paper (bytes 0x00..0x0f, little-endian).
-inline constexpr siphash_key test_key = siphash_default_key;
+namespace
+{
+    /// Standard test key from the SipHash paper (bytes 0x00..0x0f, little-endian).
+    inline constexpr ::scl::hash::siphash_key test_key = ::scl::hash::siphash_default_key;
+
+    /// Satisfied when @ref scl::hash::siphash accepts @p Range.
+    template <typename Range>
+    concept siphash_takes = requires(Range const & range) { ::scl::hash::siphash(range, test_key); };
+} // namespace
+
+using namespace ::scl::hash;
 
 /**
  * @test Reference vector: empty string with the standard test key.
@@ -36,7 +46,7 @@ TEST(SipHashTest, ReferenceVectorOneByte)
  */
 TEST(SipHashTest, Deterministic)
 {
-    STATIC_EXPECT_EQ(siphash("hello", test_key), siphash("hello", test_key));
+    STATIC_EXPECT_EQ(siphash("hello"sv, test_key), siphash("hello"sv, test_key));
 }
 
 /**
@@ -44,9 +54,9 @@ TEST(SipHashTest, Deterministic)
  */
 TEST(SipHashTest, DifferentInputsDifferentHashes)
 {
-    STATIC_EXPECT_NE(siphash("hello", test_key), siphash("world", test_key));
-    STATIC_EXPECT_NE(siphash("hello", test_key), siphash(::std::string_view{}, test_key));
-    STATIC_EXPECT_NE(siphash("ab", test_key), siphash("ba", test_key));
+    STATIC_EXPECT_NE(siphash("hello"sv, test_key), siphash("world"sv, test_key));
+    STATIC_EXPECT_NE(siphash("hello"sv, test_key), siphash(::std::string_view{}, test_key));
+    STATIC_EXPECT_NE(siphash("ab"sv, test_key), siphash("ba"sv, test_key));
 }
 
 /**
@@ -57,7 +67,7 @@ TEST(SipHashTest, DifferentKeysDifferentHashes)
 {
     constexpr siphash_key key_a{0xdeadbeefcafe0000ull, 0x0000cafebabe0001ull};
     constexpr siphash_key key_b{0xdeadbeefcafe0000ull, 0x0000cafebabe0002ull};
-    STATIC_EXPECT_NE(siphash("hello", key_a), siphash("hello", key_b));
+    STATIC_EXPECT_NE(siphash("hello"sv, key_a), siphash("hello"sv, key_b));
 }
 
 /**
@@ -65,40 +75,44 @@ TEST(SipHashTest, DifferentKeysDifferentHashes)
  */
 TEST(SipHashTest, ResultType)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(siphash("hello", test_key)), ::std::uint64_t>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(siphash("hello"sv, test_key)), ::std::uint64_t>));
 }
 
 /**
  * @test Constexpr evaluation produces a non-zero value.
  */
-TEST(SipHashTest, Constexpr) { STATIC_EXPECT_NE(siphash("constexpr", test_key), 0ull); }
+TEST(SipHashTest, Constexpr) { STATIC_EXPECT_NE(siphash("constexpr"sv, test_key), 0ull); }
 
 /**
- * @test A string literal is hashed as its text — every spelling of it agrees.
+ * @test One text produces one value, however it is spelled.
  */
-TEST(SipHashTest, LiteralHashedWithoutTerminatingZero)
+TEST(SipHashTest, OneTextHashesAlikeHoweverSpelled)
 {
-    STATIC_EXPECT_EQ(siphash("hello", test_key), siphash(::std::string_view{"hello"}, test_key));
-    EXPECT_EQ(siphash("hello", test_key), siphash(::std::string{"hello"}, test_key));
+    static constexpr ::std::array<char, 5> held{'h', 'e', 'l', 'l', 'o'};
+    STATIC_EXPECT_EQ(siphash("hello"sv, test_key), siphash(held, test_key));
+    STATIC_EXPECT_EQ(siphash("hello"sv, test_key), siphash(::std::span{held}, test_key));
+    EXPECT_EQ(siphash("hello"sv, test_key), siphash(::std::string{"hello"}, test_key));
 }
 
 /**
- * @test An array that does not end in zero keeps every byte.
+ * @test An array is refused and a wider element with it, while a span over the array
+ *       names the bytes the array holds.
  */
-TEST(SipHashTest, ArrayWithoutTerminatingZeroHashedWhole)
+TEST(SipHashTest, ArrayIsRefusedAndASpanNamesItsBytes)
 {
     static constexpr char raw[3]{'a', 'b', 'c'};
-    STATIC_EXPECT_EQ(siphash(raw, test_key), siphash(::std::string_view{"abc"}, test_key));
+    STATIC_EXPECT_TRUE(siphash_takes<::std::string_view>);
+    STATIC_EXPECT_FALSE(siphash_takes<char[3]>);
+    STATIC_EXPECT_FALSE(siphash_takes<::std::u16string_view>);
+    STATIC_EXPECT_EQ(siphash(::std::span{raw}, test_key), siphash(::std::string_view{"abc"}, test_key));
 }
 
 /**
- * @test A byte array keeps every byte, a zero at its end included.
+ * @test A trailing zero is one more byte.
  */
-TEST(SipHashTest, ByteArrayKeepsTrailingZero)
+TEST(SipHashTest, ATrailingZeroIsOneMoreByte)
 {
-    static constexpr ::std::uint8_t data[4]{1, 2, 3, 0};
-    static constexpr ::std::array<::std::uint8_t, 4> same{1, 2, 3, 0};
-    STATIC_EXPECT_EQ(siphash(data, test_key), siphash(same, test_key));
+    STATIC_EXPECT_NE(siphash(::std::string_view{"abc", 4}, test_key), siphash("abc"sv, test_key));
 }
 
 /**
@@ -106,7 +120,7 @@ TEST(SipHashTest, ByteArrayKeepsTrailingZero)
  */
 TEST(SipHashTest, HasherMatchesFreeFunction)
 {
-    STATIC_EXPECT_EQ(siphash_hasher<test_key>{}("hello"), siphash("hello", test_key));
+    STATIC_EXPECT_EQ(siphash_hasher<test_key>{}("hello"sv), siphash("hello"sv, test_key));
 }
 
 /**

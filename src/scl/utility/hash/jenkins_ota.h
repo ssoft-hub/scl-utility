@@ -6,7 +6,8 @@
  * @ingroup scl_utility_hash
  */
 
-#include <concepts>
+#include <scl/utility/hash/concepts.h>
+
 #include <cstdint>
 #include <ranges>
 #include <utility>
@@ -16,7 +17,7 @@
 namespace scl::hash
 {
     /**
-     * @brief Computes a Jenkins one-at-a-time (OTA) 32-bit hash.
+     * @brief Computes a Jenkins one-at-a-time (OTA) 32-bit hash over a byte range.
      * @ingroup scl_utility_hash
      *
      * Implements Bob Jenkins' one-at-a-time hash algorithm. Each byte is
@@ -41,32 +42,36 @@ namespace scl::hash
      *
      * The function is `constexpr`, allowing compile-time hash computation.
      *
-     * @tparam Range  Any type satisfying `std::ranges::range` whose elements
-     *                are one byte wide — e.g. a string literal, `std::string_view`,
-     *                `std::string`, `std::span<std::byte>`, a byte vector. See
-     *                @ref scl::hash::concepts::byte_element.
+     * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range
+     *                of single trivially copyable bytes that is not a bounded array.
+     *                `std::string_view`, `std::string`, `std::span<std::byte>` and a byte
+     *                vector are such types.
      * @param  range  Input range to hash.
-     * @note   The text is hashed, however it is spelled: a character array's terminating
-     *         zero is left out, so `jenkins_ota("hello")` equals
-     *         `jenkins_ota(std::string_view{"hello"})`. An array that does not end in
-     *         zero, and an array of any other element type, is hashed whole — a zero
-     *         byte is data there, not a terminator.
+     * @note   The bytes the range spans are the bytes hashed, and an array is refused.
+     *         The caller names the bytes with a `std::string_view` - `"text"sv` is one -
+     *         or with a `std::span`. See @ref scl::hash::concepts::hashable_range for
+     *         the reason and for what naming a partly filled buffer takes.
      * @return 32-bit Jenkins OAT hash value of the input range.
      *
      * @par Compile-time example
      * @code
-     * constexpr auto h = scl::hash::jenkins_ota("hello");
+     * #include <scl/utility/hash/jenkins_ota.h>
+     *
+     * #include <string_view>
+     *
+     * using namespace std::string_view_literals;
+     *
+     * constexpr auto h = scl::hash::jenkins_ota("hello"sv);
      * static_assert(h != 0);
      * @endcode
      */
-    template <::std::ranges::range Range>
+    template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
     constexpr ::std::uint32_t jenkins_ota(Range const & range)
-        requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         ::std::uint32_t h = 0;
 
-        for (auto const c : detail::without_terminator(range))
+        for (auto const c : range)
         {
             h += detail::as_byte(c);
             h += h << 10;
@@ -89,10 +94,9 @@ namespace scl::hash
     {
         using result_type = ::std::uint32_t;
 
-        template <::std::ranges::range Range>
+        template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
         constexpr result_type operator()(Range const & range) const noexcept
-            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::jenkins_ota(range);
         }
@@ -114,8 +118,8 @@ namespace scl::hash
  * @fn scl::hash::jenkins_ota_hasher::operator()(Range const & range) const
  * @brief Hashes @p range with @ref scl::hash::jenkins_ota and its default seed.
  *
- * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
- *                convertible to `std::uint8_t`.
+ * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
+ *                single trivially copyable bytes that is not a bounded array.
  * @param  range  Input range to hash.
  * @return 32-bit Jenkins one-at-a-time hash value of @p range.
  */

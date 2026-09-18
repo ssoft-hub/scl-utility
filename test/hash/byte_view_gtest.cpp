@@ -33,6 +33,14 @@ namespace
         value = 7
     };
 
+    /// Satisfied when @p Range reaches a hash function or @ref scl::hash::byte_view.
+    template <typename Range>
+    concept taken = hashable_range<Range> || spellable<Range>;
+
+    /// Satisfied when @p Hasher accepts @p Range.
+    template <typename Hasher, typename Range>
+    concept hasher_takes = requires(Range & range) { Hasher{}(range); };
+
     /// A hash function written outside the group, stating its constraint with the concept.
     template <::scl::hash::concepts::hashable_range Range>
     constexpr ::std::uint64_t rolling(Range && range)
@@ -60,6 +68,12 @@ namespace
     /// Satisfied when @ref unconstrained accepts @p Range.
     template <typename Range>
     concept unconstrained_takes = requires(Range & range) { unconstrained(range); };
+
+    struct two_bytes
+    {
+        char low;
+        char high;
+    };
 
     struct one_byte
     {
@@ -209,7 +223,7 @@ TEST(HashByteViewTest, ByteOrderIsIndependentOfTheHost)
     static constexpr auto storage = ::std::bit_cast<::std::array<::std::uint8_t, 4>>(value[0]);
     static constexpr bool storage_spells_the_value = ::std::endian::native == ::std::endian::little;
 
-    STATIC_EXPECT_EQ(::std::ranges::equal(byte_view(value), storage), storage_spells_the_value);
+    STATIC_EXPECT_EQ(::std::ranges::equal(byte_view(::std::span{value}), storage), storage_spells_the_value);
 }
 
 /**
@@ -250,4 +264,93 @@ TEST(HashElementTest, AnOwnHashFunctionTakesTheRefusalFromTheConcept)
     STATIC_EXPECT_TRUE(unconstrained_takes<char[4]>);
 
     STATIC_EXPECT_EQ(rolling(::std::string_view{"abc"}), unconstrained(::std::string_view{"abc"}));
+}
+
+/**
+ * @test An array is refused, whatever its element type: nothing about a bound tells the
+ *       storage from the content.
+ */
+TEST(HashByteViewTest, ArrayIsRefused)
+{
+    STATIC_EXPECT_FALSE(taken<char[4]>);
+    STATIC_EXPECT_FALSE(taken<char8_t[4]>);
+    STATIC_EXPECT_FALSE(taken<char16_t[4]>);
+    STATIC_EXPECT_FALSE(taken<char32_t[4]>);
+    STATIC_EXPECT_FALSE(taken<::std::uint32_t[4]>);
+    STATIC_EXPECT_FALSE(taken<::std::byte[4]>);
+    STATIC_EXPECT_FALSE(taken<unsigned char[4]>);
+    STATIC_EXPECT_FALSE(taken<signed char[4]>);
+    STATIC_EXPECT_FALSE(taken<::std::uint16_t[4]>);
+    STATIC_EXPECT_FALSE(taken<wchar_t[4]>);
+    STATIC_EXPECT_FALSE(taken<::std::uint8_t[4]>);
+}
+
+/**
+ * @test The refusal stops at the array itself: a view over one is taken, and answers for
+ *       the whole bound.
+ */
+TEST(HashByteViewTest, AViewOverAnArrayIsTakenAndAnswersForItsWholeBound)
+{
+    static constexpr char raw[4]{'a', 'b', 'c'};
+    STATIC_EXPECT_TRUE(taken<decltype(::std::views::all(raw))>);
+    STATIC_EXPECT_EQ(fnv1a(::std::views::all(raw)), fnv1a(::std::string_view{"abc", 4}));
+}
+
+/**
+ * @test A partially filled std::array is taken whole, which is where the rule stops: its
+ *       bound is four, and four bytes are hashed.
+ */
+TEST(HashByteViewTest, APartiallyFilledArrayObjectIsTakenWhole)
+{
+    static constexpr ::std::array<char, 4> held{'a', 'b', 'c'};
+    STATIC_EXPECT_TRUE((taken<::std::array<char, 4>>));
+    STATIC_EXPECT_EQ(fnv1a(held), fnv1a(::std::string_view{"abc", 4}));
+}
+
+/**
+ * @test An element one byte past the rule is refused, whatever spells it.
+ */
+TEST(HashElementTest, AnElementJustPastTheByteRuleIsRefused)
+{
+    STATIC_EXPECT_TRUE(hashable_range<::std::vector<one_byte>>);
+    STATIC_EXPECT_FALSE(hashable_range<::std::vector<two_bytes>>);
+}
+
+/**
+ * @test Every hasher takes and refuses exactly what the free function it wraps does.
+ */
+TEST(HashElementTest, EveryHasherRefusesAnArray)
+{
+    STATIC_EXPECT_TRUE((hasher_takes<fnv1a_hasher, ::std::string_view>));
+    STATIC_EXPECT_TRUE((hasher_takes<djb2_hasher, ::std::string_view>));
+    STATIC_EXPECT_TRUE((hasher_takes<sdbm_hasher, ::std::string_view>));
+    STATIC_EXPECT_TRUE((hasher_takes<jenkins_ota_hasher, ::std::string_view>));
+    STATIC_EXPECT_TRUE((hasher_takes<siphash_hasher<>, ::std::string_view>));
+
+    STATIC_EXPECT_FALSE((hasher_takes<fnv1a_hasher, char[4]>));
+    STATIC_EXPECT_FALSE((hasher_takes<djb2_hasher, char[4]>));
+    STATIC_EXPECT_FALSE((hasher_takes<sdbm_hasher, char[4]>));
+    STATIC_EXPECT_FALSE((hasher_takes<jenkins_ota_hasher, char[4]>));
+    STATIC_EXPECT_FALSE((hasher_takes<siphash_hasher<>, char[4]>));
+
+    STATIC_EXPECT_FALSE((hasher_takes<fnv1a_hasher, ::std::u16string_view>));
+    STATIC_EXPECT_FALSE((hasher_takes<djb2_hasher, ::std::u16string_view>));
+    STATIC_EXPECT_FALSE((hasher_takes<sdbm_hasher, ::std::u16string_view>));
+    STATIC_EXPECT_FALSE((hasher_takes<jenkins_ota_hasher, ::std::u16string_view>));
+    STATIC_EXPECT_FALSE((hasher_takes<siphash_hasher<>, ::std::u16string_view>));
+}
+
+/**
+ * @test Every range the element rule admits is taken unless it is a bounded array, a
+ *       fixed-extent std::array and std::span included.
+ */
+TEST(HashByteViewTest, EveryRangeButTheBoundedArrayIsTaken)
+{
+    STATIC_EXPECT_TRUE(hashable_range<::std::string_view>);
+    STATIC_EXPECT_TRUE((hashable_range<::std::array<char, 4>>));
+    STATIC_EXPECT_TRUE((hashable_range<::std::span<char const, 4>>));
+    STATIC_EXPECT_TRUE(hashable_range<::std::vector<char>>);
+    STATIC_EXPECT_TRUE(spellable<::std::u16string_view>);
+    STATIC_EXPECT_TRUE((spellable<::std::array<char16_t, 4>>));
+    STATIC_EXPECT_TRUE((spellable<::std::span<char16_t const, 4>>));
 }

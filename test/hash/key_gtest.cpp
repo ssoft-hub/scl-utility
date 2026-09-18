@@ -7,12 +7,23 @@
 #include <scl/utility/hash/sdbm.h>
 #include <scl/utility/hash/siphash.h>
 
+#include <array>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+
+using namespace ::std::string_view_literals;
+
+namespace
+{
+    /// Satisfied when @ref scl::hash::key accepts @p Range.
+    template <typename Range>
+    concept key_takes = requires(Range const & range) { ::scl::hash::key<>{range}; };
+} // namespace
 
 using namespace ::scl::hash;
 
@@ -45,11 +56,11 @@ TEST(KeyTypeTest, DefaultHasherIsSipHash)
  */
 TEST(KeyTypeTest, ValueMatchesHasherFreeFunction)
 {
-    STATIC_EXPECT_EQ(key<fnv1a_hasher>{"hello"}.value, fnv1a("hello"));
-    STATIC_EXPECT_EQ(key<djb2_hasher>{"hello"}.value, djb2("hello"));
-    STATIC_EXPECT_EQ(key<sdbm_hasher>{"hello"}.value, sdbm("hello"));
-    STATIC_EXPECT_EQ(key<jenkins_ota_hasher>{"hello"}.value, jenkins_ota("hello"));
-    STATIC_EXPECT_EQ(key<siphash_hasher<>>{"hello"}.value, siphash("hello"));
+    STATIC_EXPECT_EQ(key<fnv1a_hasher>{"hello"sv}.value, fnv1a("hello"sv));
+    STATIC_EXPECT_EQ(key<djb2_hasher>{"hello"sv}.value, djb2("hello"sv));
+    STATIC_EXPECT_EQ(key<sdbm_hasher>{"hello"sv}.value, sdbm("hello"sv));
+    STATIC_EXPECT_EQ(key<jenkins_ota_hasher>{"hello"sv}.value, jenkins_ota("hello"sv));
+    STATIC_EXPECT_EQ(key<siphash_hasher<>>{"hello"sv}.value, siphash("hello"sv));
 }
 
 // ============================================================================
@@ -59,14 +70,14 @@ TEST(KeyTypeTest, ValueMatchesHasherFreeFunction)
 /**
  * @test Same input → equal keys.
  */
-TEST(KeyDefaultTest, EqualityForSameInput) { STATIC_EXPECT_EQ(key<>{"same"}, key<>{"same"}); }
+TEST(KeyDefaultTest, EqualityForSameInput) { STATIC_EXPECT_EQ(key<>{"same"sv}, key<>{"same"sv}); }
 
 /**
  * @test Different inputs → unequal keys.
  */
 TEST(KeyDefaultTest, InequalityForDifferentInputs)
 {
-    STATIC_EXPECT_NE(key<>{"alpha"}, key<>{"beta"});
+    STATIC_EXPECT_NE(key<>{"alpha"sv}, key<>{"beta"sv});
 }
 
 /**
@@ -74,8 +85,8 @@ TEST(KeyDefaultTest, InequalityForDifferentInputs)
  */
 TEST(KeyDefaultTest, ComparisonOperators)
 {
-    constexpr key<> a{"alpha"};
-    constexpr key<> b{"beta"};
+    constexpr key<> a{"alpha"sv};
+    constexpr key<> b{"beta"sv};
     STATIC_EXPECT_TRUE((a < b) != (b < a)); // strict ordering
     STATIC_EXPECT_LE(a, a);
     STATIC_EXPECT_GE(a, a);
@@ -86,7 +97,7 @@ TEST(KeyDefaultTest, ComparisonOperators)
  */
 TEST(KeyDefaultTest, ImplicitConversionToValueType)
 {
-    constexpr key<> k{"convert"};
+    constexpr key<> k{"convert"sv};
     constexpr key<>::value_type v = k;
     STATIC_EXPECT_EQ(v, k.value);
 }
@@ -98,7 +109,7 @@ TEST(KeyDefaultTest, StdHashDeterministic)
 {
     // std::hash<integral>::operator() is not required to be constexpr by the standard.
     ::std::hash<key<>> const h{};
-    key<> const k{"std_hash"};
+    key<> const k{"std_hash"sv};
     EXPECT_EQ(h(k), h(k));
 }
 
@@ -108,7 +119,7 @@ TEST(KeyDefaultTest, StdHashDeterministic)
 TEST(KeyDefaultTest, StdHashDistinct)
 {
     ::std::hash<key<>> const h{};
-    EXPECT_NE(h(key<>{"one"}), h(key<>{"two"}));
+    EXPECT_NE(h(key<>{"one"sv}), h(key<>{"two"sv}));
 }
 
 /**
@@ -117,10 +128,10 @@ TEST(KeyDefaultTest, StdHashDistinct)
 TEST(KeyDefaultTest, UnorderedMapKey)
 {
     ::std::unordered_map<key<>, int> map;
-    map[key<>{"key_a"}] = 1;
-    map[key<>{"key_b"}] = 2;
-    EXPECT_EQ(map.at(key<>{"key_a"}), 1);
-    EXPECT_EQ(map.at(key<>{"key_b"}), 2);
+    map[key<>{"key_a"sv}] = 1;
+    map[key<>{"key_b"sv}] = 2;
+    EXPECT_EQ(map.at(key<>{"key_a"sv}), 1);
+    EXPECT_EQ(map.at(key<>{"key_b"sv}), 2);
     EXPECT_EQ(map.size(), 2u);
 }
 
@@ -130,12 +141,12 @@ TEST(KeyDefaultTest, UnorderedMapKey)
 TEST(KeyDefaultTest, UnorderedSetKey)
 {
     ::std::unordered_set<key<>> set;
-    set.insert(key<>{"alpha"});
-    set.insert(key<>{"beta"});
-    set.insert(key<>{"alpha"}); // duplicate
+    set.insert(key<>{"alpha"sv});
+    set.insert(key<>{"beta"sv});
+    set.insert(key<>{"alpha"sv}); // duplicate
     EXPECT_EQ(set.size(), 2u);
-    EXPECT_TRUE(set.contains(key<>{"alpha"}));
-    EXPECT_FALSE(set.contains(key<>{"gamma"}));
+    EXPECT_TRUE(set.contains(key<>{"alpha"sv}));
+    EXPECT_FALSE(set.contains(key<>{"gamma"sv}));
 }
 
 /**
@@ -148,33 +159,49 @@ TEST(KeyDefaultTest, StringAndStringViewEquivalent)
 }
 
 /**
- * @test A string literal, a view and a string spelling the same text produce one key.
+ * @test One text produces one key, however it is spelled.
  */
-TEST(KeyDefaultTest, LiteralHashedWithoutTerminatingZero)
+TEST(KeyDefaultTest, OneTextMakesOneKeyHoweverSpelled)
 {
-    STATIC_EXPECT_EQ(key<>{"start"}, key<>{::std::string_view{"start"}});
-    EXPECT_EQ(key<>{"start"}, key<>{::std::string{"start"}});
+    static constexpr ::std::array<char, 5> held{'s', 't', 'a', 'r', 't'};
+    STATIC_EXPECT_EQ(key<>{"start"sv}, key<>{held});
+    STATIC_EXPECT_EQ(key<>{"start"sv}, key<>{::std::span{held}});
+    EXPECT_EQ(key<>{"start"sv}, key<>{::std::string{"start"}});
 }
 
 /**
- * @test An array that does not end in zero keeps every byte.
+ * @test A zero byte is data, so a longer input makes a different key.
  */
-TEST(KeyDefaultTest, ArrayWithoutTerminatingZeroHashedWhole)
+TEST(KeyDefaultTest, AZeroByteIsData)
+{
+    static constexpr ::std::string_view with_zero{"start", 6};
+    STATIC_EXPECT_NE(key<>{with_zero}, key<>{"start"sv});
+}
+
+/**
+ * @test An array is refused and a wider element with it, while a span over the array
+ *       names the bytes the array holds.
+ */
+TEST(KeyDefaultTest, ArrayIsRefusedAndASpanNamesItsBytes)
 {
     static constexpr char raw[3]{'a', 'b', 'c'};
-    STATIC_EXPECT_EQ(key<>{raw}, key<>{::std::string_view{"abc"}});
+    STATIC_EXPECT_TRUE(key_takes<::std::string_view>);
+    STATIC_EXPECT_FALSE(key_takes<char[3]>);
+    STATIC_EXPECT_FALSE(key_takes<::std::u16string_view>);
+    STATIC_EXPECT_EQ(key<>{::std::span{raw}}, key<>{::std::string_view{"abc"}});
 }
 
 /**
- * @test Every hasher agrees on a literal and its view spelling.
+ * @test Every hasher agrees on two spellings of one text.
  */
-TEST(KeyCrossAlgorithmTest, LiteralMatchesViewForEveryHasher)
+TEST(KeyCrossAlgorithmTest, EveryHasherAgreesOnTwoSpellings)
 {
-    STATIC_EXPECT_EQ(key<fnv1a_hasher>{"hello"}, key<fnv1a_hasher>{::std::string_view{"hello"}});
-    STATIC_EXPECT_EQ(key<djb2_hasher>{"hello"}, key<djb2_hasher>{::std::string_view{"hello"}});
-    STATIC_EXPECT_EQ(key<sdbm_hasher>{"hello"}, key<sdbm_hasher>{::std::string_view{"hello"}});
-    STATIC_EXPECT_EQ(key<jenkins_ota_hasher>{"hello"}, key<jenkins_ota_hasher>{::std::string_view{"hello"}});
-    STATIC_EXPECT_EQ(key<siphash_hasher<>>{"hello"}, key<siphash_hasher<>>{::std::string_view{"hello"}});
+    static constexpr ::std::array<char, 5> held{'h', 'e', 'l', 'l', 'o'};
+    STATIC_EXPECT_EQ(key<fnv1a_hasher>{"hello"sv}, key<fnv1a_hasher>{held});
+    STATIC_EXPECT_EQ(key<djb2_hasher>{"hello"sv}, key<djb2_hasher>{held});
+    STATIC_EXPECT_EQ(key<sdbm_hasher>{"hello"sv}, key<sdbm_hasher>{held});
+    STATIC_EXPECT_EQ(key<jenkins_ota_hasher>{"hello"sv}, key<jenkins_ota_hasher>{held});
+    STATIC_EXPECT_EQ(key<siphash_hasher<>>{"hello"sv}, key<siphash_hasher<>>{held});
 }
 
 // ============================================================================
@@ -189,24 +216,24 @@ TEST(KeySwitchTest, DefaultHasherSwitchCase)
     auto dispatch = [](key<> cmd) constexpr -> int {
         switch (cmd)
         {
-        case key<>{"start"}:
+        case key<>{"start"sv}:
             return 1;
-        case key<>{"stop"}:
+        case key<>{"stop"sv}:
             return 2;
-        case key<>{"pause"}:
+        case key<>{"pause"sv}:
             return 3;
-        case key<>{"resume"}:
+        case key<>{"resume"sv}:
             return 4;
         default:
             return 0;
         }
     };
-    STATIC_EXPECT_EQ(dispatch(key<>{"start"}), 1);
-    STATIC_EXPECT_EQ(dispatch(key<>{"stop"}), 2);
-    STATIC_EXPECT_EQ(dispatch(key<>{"pause"}), 3);
-    STATIC_EXPECT_EQ(dispatch(key<>{"resume"}), 4);
-    STATIC_EXPECT_EQ(dispatch(key<>{"other"}), 0);
-    STATIC_EXPECT_EQ(dispatch(key<>{""}), 0);
+    STATIC_EXPECT_EQ(dispatch(key<>{"start"sv}), 1);
+    STATIC_EXPECT_EQ(dispatch(key<>{"stop"sv}), 2);
+    STATIC_EXPECT_EQ(dispatch(key<>{"pause"sv}), 3);
+    STATIC_EXPECT_EQ(dispatch(key<>{"resume"sv}), 4);
+    STATIC_EXPECT_EQ(dispatch(key<>{"other"sv}), 0);
+    STATIC_EXPECT_EQ(dispatch(key<>{""sv}), 0);
 }
 
 /**
@@ -218,20 +245,20 @@ TEST(KeySwitchTest, Fnv1aSwitchCase)
     auto dispatch = [](fnv_key cmd) constexpr -> int {
         switch (cmd)
         {
-        case fnv_key{"red"}:
+        case fnv_key{"red"sv}:
             return 1;
-        case fnv_key{"green"}:
+        case fnv_key{"green"sv}:
             return 2;
-        case fnv_key{"blue"}:
+        case fnv_key{"blue"sv}:
             return 3;
         default:
             return 0;
         }
     };
-    STATIC_EXPECT_EQ(dispatch(fnv_key{"red"}), 1);
-    STATIC_EXPECT_EQ(dispatch(fnv_key{"green"}), 2);
-    STATIC_EXPECT_EQ(dispatch(fnv_key{"blue"}), 3);
-    STATIC_EXPECT_EQ(dispatch(fnv_key{"white"}), 0);
+    STATIC_EXPECT_EQ(dispatch(fnv_key{"red"sv}), 1);
+    STATIC_EXPECT_EQ(dispatch(fnv_key{"green"sv}), 2);
+    STATIC_EXPECT_EQ(dispatch(fnv_key{"blue"sv}), 3);
+    STATIC_EXPECT_EQ(dispatch(fnv_key{"white"sv}), 0);
 }
 
 // ============================================================================
@@ -253,19 +280,19 @@ struct nttp_handler
 };
 
 template <>
-struct nttp_handler<key<>{"alpha"}>
+struct nttp_handler<key<>{"alpha"sv}>
 {
     static constexpr int value = 1;
 };
 
 template <>
-struct nttp_handler<key<>{"beta"}>
+struct nttp_handler<key<>{"beta"sv}>
 {
     static constexpr int value = 2;
 };
 
 template <>
-struct nttp_handler<key<>{"gamma"}>
+struct nttp_handler<key<>{"gamma"sv}>
 {
     static constexpr int value = 3;
 };
@@ -275,8 +302,8 @@ struct nttp_handler<key<>{"gamma"}>
  */
 TEST(KeyNttpTest, DistinctTypesForDifferentKeys)
 {
-    STATIC_EXPECT_FALSE((::std::is_same_v<tagged<key<>{"hello"}>, tagged<key<>{"world"}>>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<tagged<key<>{"hello"}>, tagged<key<>{"hello"}>>));
+    STATIC_EXPECT_FALSE((::std::is_same_v<tagged<key<>{"hello"sv}>, tagged<key<>{"world"sv}>>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<tagged<key<>{"hello"sv}>, tagged<key<>{"hello"sv}>>));
 }
 
 /**
@@ -284,7 +311,7 @@ TEST(KeyNttpTest, DistinctTypesForDifferentKeys)
  */
 TEST(KeyNttpTest, EmbeddedIdMatchesKey)
 {
-    STATIC_EXPECT_EQ(tagged<key<>{"event"}>::id, key<>{"event"});
+    STATIC_EXPECT_EQ(tagged<key<>{"event"sv}>::id, key<>{"event"sv});
 }
 
 /**
@@ -292,10 +319,10 @@ TEST(KeyNttpTest, EmbeddedIdMatchesKey)
  */
 TEST(KeyNttpTest, TemplateSpecializationByKey)
 {
-    STATIC_EXPECT_EQ(nttp_handler<key<>{"alpha"}>::value, 1);
-    STATIC_EXPECT_EQ(nttp_handler<key<>{"beta"}>::value, 2);
-    STATIC_EXPECT_EQ(nttp_handler<key<>{"gamma"}>::value, 3);
-    STATIC_EXPECT_EQ(nttp_handler<key<>{"other"}>::value, 0);
+    STATIC_EXPECT_EQ(nttp_handler<key<>{"alpha"sv}>::value, 1);
+    STATIC_EXPECT_EQ(nttp_handler<key<>{"beta"sv}>::value, 2);
+    STATIC_EXPECT_EQ(nttp_handler<key<>{"gamma"sv}>::value, 3);
+    STATIC_EXPECT_EQ(nttp_handler<key<>{"other"sv}>::value, 0);
 }
 
 /**
@@ -304,8 +331,8 @@ TEST(KeyNttpTest, TemplateSpecializationByKey)
 TEST(KeyNttpTest, NonDefaultHasherAsNttp)
 {
     using fnv_key = key<fnv1a_hasher>;
-    STATIC_EXPECT_FALSE((::std::is_same_v<tagged<key<>{"x"}>, tagged<key<>{"y"}>>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<tagged<key<>{"same"}>, tagged<key<>{"same"}>>));
+    STATIC_EXPECT_FALSE((::std::is_same_v<tagged<key<>{"x"sv}>, tagged<key<>{"y"sv}>>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<tagged<key<>{"same"sv}>, tagged<key<>{"same"sv}>>));
     // fnv1a_hasher-based key is a distinct type from siphash-based key.
     STATIC_EXPECT_FALSE((::std::is_same_v<fnv_key, key<>>));
 }
@@ -319,10 +346,10 @@ TEST(KeyNttpTest, NonDefaultHasherAsNttp)
  */
 TEST(KeyCrossAlgorithmTest, AllHashersDistinct)
 {
-    constexpr auto h_fnv = key<fnv1a_hasher>{"hello"}.value;
-    constexpr auto h_djb = key<djb2_hasher>{"hello"}.value;
-    constexpr auto h_sdb = key<sdbm_hasher>{"hello"}.value;
-    constexpr auto h_sip = key<siphash_hasher<>>{"hello"}.value;
+    constexpr auto h_fnv = key<fnv1a_hasher>{"hello"sv}.value;
+    constexpr auto h_djb = key<djb2_hasher>{"hello"sv}.value;
+    constexpr auto h_sdb = key<sdbm_hasher>{"hello"sv}.value;
+    constexpr auto h_sip = key<siphash_hasher<>>{"hello"sv}.value;
     STATIC_EXPECT_NE(h_fnv, h_djb);
     STATIC_EXPECT_NE(h_fnv, h_sdb);
     STATIC_EXPECT_NE(h_fnv, h_sip);

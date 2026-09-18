@@ -71,8 +71,9 @@ namespace scl::hash
     template <::std::ranges::viewable_range Range>
     [[nodiscard]]
     constexpr auto byte_view(Range && range SCL_LIFETIMEBOUND)
-        requires ::std::ranges::random_access_range<Range> && ::std::ranges::sized_range<Range> &&
-        concepts::integer_element<::std::ranges::range_value_t<Range>>
+        requires(!::scl::concepts::bounded_array<::std::remove_cvref_t<Range>>) &&
+        (::std::ranges::random_access_range<Range>) && (::std::ranges::sized_range<Range>) &&
+        (::scl::hash::concepts::integer_element<::std::ranges::range_value_t<Range>>)
     {
         using element_type = ::std::ranges::range_value_t<Range>;
 

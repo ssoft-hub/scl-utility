@@ -83,7 +83,8 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
     `are_sibling`, `are_identical` — adapt to any type via ADL (`adl_parent`,
     `adl_has_parent`, `adl_identity`)
 - **Hash** — non-cryptographic compile-time hash utilities (`#include <scl/utility/hash.h>`):
-  - `fnv1a`, `djb2`, `sdbm` — 64-bit hashes over any byte range; chainable
+  - `fnv1a`, `djb2`, `sdbm` — 64-bit hashes over a byte range; chainable
+  - `byte_view` — spells a range of wider elements as the bytes a hash function takes
   - `jenkins_ota` — 32-bit Jenkins one-at-a-time hash
   - `siphash` — SipHash-2-4 64-bit keyed hash (hash-flooding resistant)
   - `key<Hasher>` — strongly-typed hash value; usable as `switch`/`case` label,
@@ -177,15 +178,17 @@ A string as a `switch` label and as a template parameter
 #include <iostream>
 #include <string_view>
 
+using namespace ::std::string_view_literals;
+
 using ::scl::hash::key;
 
 int code_of(::std::string_view command)
 {
     switch (key<>{command})
     {
-    case key<>{"start"}:
+    case key<>{"start"sv}:
         return 1;
-    case key<>{"stop"}:
+    case key<>{"stop"sv}:
         return 2;
     default:
         return 0;
@@ -193,9 +196,9 @@ int code_of(::std::string_view command)
 }
 
 template <key<> Command>
-constexpr bool is_start = (Command == key<>{"start"});
+constexpr bool is_start = (Command == key<>{"start"sv});
 
-static_assert(is_start<key<>{"start"}>);
+static_assert(is_start<key<>{"start"sv}>);
 
 int main()
 {

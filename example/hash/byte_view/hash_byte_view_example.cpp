@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <span>
 #include <string_view>
 #include <vector>
 
@@ -44,7 +45,7 @@ static_assert(wide_value != fnv1a(::std::string_view{"start"}));
 // Each element contributes its bytes least significant first, whatever the host does with
 // them in memory, so two machines hash one input alike.
 constexpr ::std::uint32_t numbers[]{0x04030201U};
-static_assert(fnv1a(byte_view(numbers)) == fnv1a(::std::string_view{"\x01\x02\x03\x04", 4}));
+static_assert(fnv1a(byte_view(::std::span{numbers})) == fnv1a(::std::string_view{"\x01\x02\x03\x04", 4}));
 
 // ============================================================================
 // A byte-sized element passes straight through

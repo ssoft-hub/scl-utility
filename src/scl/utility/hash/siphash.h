@@ -6,8 +6,9 @@
  * @ingroup scl_utility_hash
  */
 
+#include <scl/utility/hash/concepts.h>
+
 #include <bit>
-#include <concepts>
 #include <cstdint>
 #include <ranges>
 #include <utility>
@@ -66,7 +67,7 @@ namespace scl::hash
     };
 
     /**
-     * @brief Computes a SipHash-2-4 64-bit hash over an arbitrary byte range.
+     * @brief Computes a SipHash-2-4 64-bit hash over a byte range.
      * @ingroup scl_utility_hash
      *
      * SipHash-2-4 (2 compression rounds, 4 finalization rounds) is a fast,
@@ -92,33 +93,37 @@ namespace scl::hash
      *
      * The function is `constexpr`, allowing compile-time hash computation.
      *
-     * @tparam Range  Any type satisfying `std::ranges::range` whose elements
-     *                are one byte wide — e.g. a string literal, `std::string_view`,
-     *                `std::string`, `std::span<std::byte>`, a byte vector. See
-     *                @ref scl::hash::concepts::byte_element.
+     * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range
+     *                of single trivially copyable bytes that is not a bounded array.
+     *                `std::string_view`, `std::string`, `std::span<std::byte>` and a byte
+     *                vector are such types.
      * @param  range  Input range to hash.
-     * @note   The text is hashed, however it is spelled: a character array's terminating
-     *         zero is left out, so `siphash("hello")` equals
-     *         `siphash(std::string_view{"hello"})`. An array that does not end in zero,
-     *         and an array of any other element type, is hashed whole — a zero byte is
-     *         data there, not a terminator.
+     * @note   The bytes the range spans are the bytes hashed, and an array is refused.
+     *         The caller names the bytes with a `std::string_view` - `"text"sv` is one -
+     *         or with a `std::span`. See @ref scl::hash::concepts::hashable_range for
+     *         the reason and for what naming a partly filled buffer takes.
      * @param  key    128-bit secret key. Defaults to @ref siphash_default_key.
      *                For security-sensitive use, provide a randomly generated key.
      * @return 64-bit SipHash-2-4 hash value.
      *
      * @par Compile-time example
      * @code
+     * #include <scl/utility/hash/siphash.h>
+     *
+     * #include <string_view>
+     *
+     * using namespace std::string_view_literals;
+     *
      * constexpr scl::hash::siphash_key my_key{0xdeadbeefcafeull, 0xabad1deaull};
-     * constexpr auto h = scl::hash::siphash("hello", my_key);
+     * constexpr auto h = scl::hash::siphash("hello"sv, my_key);
      * static_assert(h != 0);
      * @endcode
      *
      * @see https://www.131002.net/siphash/ — original paper and reference vectors
      */
-    template <::std::ranges::range Range>
+    template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
     constexpr ::std::uint64_t siphash(Range const & range, siphash_key const key = siphash_default_key)
-        requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
     {
         // State initialised from key XOR'd with magic constants spelling
         // "somepseudorandomlygeneratedbytes".
@@ -131,7 +136,7 @@ namespace scl::hash
         ::std::size_t len = 0;
         int shift = 0; // bits filled in m (0, 8, 16, ..., 56)
 
-        for (auto const c : detail::without_terminator(range))
+        for (auto const c : range)
         {
             m |= static_cast<::std::uint64_t>(detail::as_byte(c)) << shift;
             shift += 8;
@@ -179,10 +184,9 @@ namespace scl::hash
     {
         using result_type = ::std::uint64_t;
 
-        template <::std::ranges::range Range>
+        template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
         constexpr result_type operator()(Range const & range) const noexcept
-            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
         {
             return ::scl::hash::siphash(range, Key);
         }
@@ -213,8 +217,8 @@ namespace scl::hash
  * @fn scl::hash::siphash_hasher::operator()(Range const & range) const
  * @brief Hashes @p range with @ref scl::hash::siphash under the embedded key.
  *
- * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
- *                convertible to `std::uint8_t`.
+ * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
+ *                single trivially copyable bytes that is not a bounded array.
  * @param  range  Input range to hash.
  * @return 64-bit SipHash-2-4 hash value of @p range.
  */

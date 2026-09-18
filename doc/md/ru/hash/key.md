@@ -19,9 +19,11 @@
 - **Параметры шаблона по строке (NTTP)** — `key` является структурным типом,
   поэтому в C++20 его можно использовать как нетиповой параметр шаблона.
 
-Все хеш-функции принимают любой `std::ranges::range`, элемент которого занимает один
-байт: строковые литералы, `std::string_view`, `std::string`, `std::span<std::byte>`,
-байтовые векторы.
+Все хеш-функции принимают диапазон, отвечающий концепту `std::ranges::range`, элемент
+которого занимает ровно один байт данных и тривиально копируется, а сам диапазон не
+является ограниченным массивом. Этим требованиям отвечают типы `std::string_view`,
+`std::string`, `std::span<std::byte>` и вектор байтов. Массив передать нельзя;
+причина изложена в примечании ниже.
 
 Более широкий элемент — `wchar_t`, `char16_t`, `char32_t` или любой арифметический
 тип — отвергается на этапе компиляции, а не усекается до младшего байта: усечение
@@ -33,6 +35,9 @@
 
 ```cpp
 #include <scl/utility/hash/byte_view.h>
+#include <scl/utility/hash/fnv1a.h>
+
+#include <string_view>
 
 constexpr auto value = scl::hash::fnv1a(scl::hash::byte_view(std::u16string_view{u"start"}));
 ```
@@ -53,16 +58,53 @@ constexpr auto value = scl::hash::fnv1a(scl::hash::byte_view(std::u16string_view
 байтов на любой платформе. Если хеш-значения сравниваются между сборками для разных платформ,
 вызывающей стороне следует брать элемент фиксированной ширины.
 
-> **Примечание о строковых литералах.**
-> Строковый литерал `"hello"` — это `const char[6]`, последний элемент которого —
-> нулевой терминатор. Он не является частью текста и не хешируется, поэтому
-> `"hello"`, `std::string_view{"hello"}` и `std::string{"hello"}` дают **одно и то
-> же** хеш-значение. Правило распространяется на массивы `char` и `char8_t` — двух
-> символьных типов, единица кода которых равна байту, — и затрагивает только
-> последний элемент: массив, не оканчивающийся нулём — `const char raw[3]{'a', 'b',
-> 'c'}` — хешируется целиком, как и массив любого другого типа элемента, где
-> `std::uint8_t data[4]{1, 2, 3, 0}` сохраняет все четыре байта: нулевой байт там —
-> данные, а не терминатор.
+> **Примечание о массивах.**
+> Хешируются те байты, которые охватывает диапазон, а у массива тип не показывает, какие
+> из его байтов вызывающая сторона считает данными. Массив типа `char[64]` с тремя
+> символами - это шестьдесят четыре элемента с точки зрения типа и три с точки зрения
+> того, кто его заполнил, и в типе это различие не выражено. У строкового литерала размер
+> задан языком, а не вызывающей стороной, и шестой элемент типа `char const[6]` у
+> литерала `"hello"` - завершающий нуль, отсутствующий в тексте. Поэтому массив не
+> принимается ни при каком типе элемента, и массив типа `std::uint8_t[64]` с тремя байтами
+> полезных данных - тот же случай.
+>
+> Вызывающей стороне следует явно указывать, какие байты берутся; тогда
+> хеш-значение совпадает с эталонным значением алгоритма для этих байтов:
+>
+> ```cpp
+> #include <scl/utility/hash/fnv1a.h>
+>
+> #include <span>
+> #include <string_view>
+>
+> using namespace std::string_view_literals;
+>
+> char buffer[64]{'a', 'b', 'c'};                       // три элемента из интерфейса C
+>
+> auto const named = scl::hash::fnv1a("hello"sv);                // пять символов
+> auto const text = scl::hash::fnv1a(std::string_view{buffer});  // текст в буфере
+> auto const whole = scl::hash::fnv1a(std::span{buffer});        // каждый элемент буфера
+> ```
+>
+> Длина заполненной части буфера известна только вызывающей стороне.
+> Выражение `std::string_view{buffer}` охватывает байты до завершающего нуля, которого
+> в буфере с байтами, а не с текстом, может не быть. Выражение
+> `std::string_view{buffer, length}` или `std::span{buffer, length}` охватывает ровно те
+> байты, которые записаны в буфер.
+>
+> Правило опирается на то, что различает система типов, а не на то, где возникает
+> неверный результат. Строковый литерал и объявленный буфер относятся к одному виду
+> типов, и объявление `constexpr char declared[6]` даёт тот же тип `char const[6]`, что и
+> литерал `"hello"` выше. Ограничение, не принимающее литерал, не примет и объявленный
+> буфер, потому что различить их оно не может. Правило касается только ограниченного
+> массива. Размер типа `std::array<char, 64>` задан так же, как размер типа `char[64]`, и всё же
+> объект типа `std::array<char, 64>` принимается, а заполненный частично объект
+> хешируется целиком. Принимаются объекты типов `std::string_view`, `std::span` и
+> `std::array`, а также объект любого контейнера, элемент которого занимает один байт
+> данных.
+>
+> Правило касается только самого массива, поэтому представление
+> `std::views::all(buffer)` принимается и охватывает массив целиком.
 
 ---
 
@@ -73,7 +115,9 @@ constexpr auto value = scl::hash::fnv1a(scl::hash::byte_view(std::u16string_view
 ```cpp
 #include <scl/utility/hash/fnv1a.h>
 
-constexpr auto h = scl::hash::fnv1a("hello");
+using namespace std::string_view_literals;
+
+constexpr auto h = scl::hash::fnv1a("hello"sv);
 ```
 
 | Свойство | Значение |
@@ -91,9 +135,17 @@ constexpr auto h = scl::hash::fnv1a("hello");
 **Цепочечное хеширование** двух диапазонов в одно хеш-значение:
 
 ```cpp
-auto h = scl::hash::fnv1a(std::string_view{"foo"});
-h      = scl::hash::fnv1a(std::string_view{"bar"}, h);
-// h == fnv1a(std::string_view{"foobar"})
+#include <scl/utility/hash/fnv1a.h>
+
+#include <cstdint>
+#include <string_view>
+
+std::uint64_t chained()
+{
+    auto h = scl::hash::fnv1a(std::string_view{"foo"});
+    h      = scl::hash::fnv1a(std::string_view{"bar"}, h);
+    return h;   // == fnv1a(std::string_view{"foobar"})
+}
 ```
 
 ---
@@ -103,7 +155,9 @@ h      = scl::hash::fnv1a(std::string_view{"bar"}, h);
 ```cpp
 #include <scl/utility/hash/djb2.h>
 
-constexpr auto h = scl::hash::djb2("hello");
+using namespace std::string_view_literals;
+
+constexpr auto h = scl::hash::djb2("hello"sv);
 ```
 
 | Свойство | Значение |
@@ -125,7 +179,9 @@ constexpr auto h = scl::hash::djb2("hello");
 ```cpp
 #include <scl/utility/hash/sdbm.h>
 
-constexpr auto h = scl::hash::sdbm("hello");
+using namespace std::string_view_literals;
+
+constexpr auto h = scl::hash::sdbm("hello"sv);
 ```
 
 | Свойство | Значение |
@@ -146,7 +202,9 @@ constexpr auto h = scl::hash::sdbm("hello");
 ```cpp
 #include <scl/utility/hash/jenkins_ota.h>
 
-constexpr auto h = scl::hash::jenkins_ota("hello");
+using namespace std::string_view_literals;
+
+constexpr auto h = scl::hash::jenkins_ota("hello"sv);
 ```
 
 | Свойство | Значение |
@@ -168,8 +226,12 @@ constexpr auto h = scl::hash::jenkins_ota("hello");
 ```cpp
 #include <scl/utility/hash/siphash.h>
 
-constexpr auto h = scl::hash::siphash("hello");            // ключ по умолчанию
-constexpr auto h = scl::hash::siphash("hello", my_key);   // произвольный ключ
+using namespace std::string_view_literals;
+
+constexpr scl::hash::siphash_key my_key{0xdeadbeefull, 0xcafebabeull};
+
+constexpr auto with_default = scl::hash::siphash("hello"sv);          // ключ по умолчанию
+constexpr auto with_own     = scl::hash::siphash("hello"sv, my_key);  // собственный ключ
 ```
 
 | Свойство | Значение |
@@ -218,14 +280,27 @@ scl::hash::siphash_key runtime_key{
 | `siphash_hasher<Key>` | `std::uint64_t` | SipHash-2-4 |
 
 ```cpp
+#include <scl/utility/hash/fnv1a.h>
+
+#include <string_view>
+
+using namespace std::string_view_literals;
+
 scl::hash::fnv1a_hasher h;
-auto value = h("hello");   // то же, что scl::hash::fnv1a("hello")
+auto value = h("hello"sv);   // то же, что scl::hash::fnv1a("hello"sv)
 ```
 
 `siphash_hasher<Key>` встраивает ключ как нетиповой параметр шаблона, поэтому
 два экземпляра с разными ключами являются **разными типами**:
 
 ```cpp
+#include <scl/utility/hash/siphash.h>
+
+#include <type_traits>
+
+constexpr scl::hash::siphash_key key_a{1, 2};
+constexpr scl::hash::siphash_key key_b{3, 4};
+
 using hasher_a = scl::hash::siphash_hasher<key_a>;
 using hasher_b = scl::hash::siphash_hasher<key_b>;
 static_assert(!std::is_same_v<hasher_a, hasher_b>);
@@ -241,20 +316,45 @@ concept byte_hasher =
     std::integral<typename H::result_type>;
 ```
 
-Любой пользовательский хешер, предоставляющий `result_type` и
-`operator()(Range&&)`, можно использовать с `key<>`.
+Шаблон класса `key` принимает любой хешер, у которого есть конструктор по умолчанию,
+объявлен целочисленный тип `result_type` и определён оператор вызова
+`operator()(Range&&)`.
+
+Ограничение стоит в каждой сигнатуре отдельно, и единого места, откуда ограниченный массив не
+принимался бы сразу во всех хеш-функциях модуля `scl::hash`, нет. Поэтому в хешере,
+написанном вызывающей стороной, это ограничение следует указывать явно - концептом
+`hashable_range`, который требует однобайтового тривиально копируемого элемента и запрещает
+ограниченный массив:
+
+```cpp
+struct rolling_hasher {
+    using result_type = std::uint64_t;
+
+    template <scl::hash::concepts::hashable_range Range>
+    constexpr result_type operator()(Range&& range) const;
+};
+```
+
+Без такого ограничения вызов хешера с массивом типа `char[64]` компилируется, и в
+хеш-значение входят все шестьдесят четыре элемента, а не те три, что записаны в массив.
+Построить из того же массива объект типа `key<rolling_hasher>` всё равно не удастся:
+ограничение стоит в конструкторе шаблона класса `key` и действует при любом хешере.
 
 ---
 
 ## `key<Hasher>` — строго типизированное хеш-значение
 
 ```cpp
+#include <scl/utility/hash/fnv1a.h>
 #include <scl/utility/hash/key.h>
 
+#include <string_view>
+
+using namespace std::string_view_literals;
 using namespace scl::hash;
 
-constexpr key<> id{"my_event"};           // по умолчанию: siphash_hasher<>
-constexpr key<fnv1a_hasher> fnv_id{"x"};
+constexpr key<> id{"my_event"sv};           // по умолчанию: siphash_hasher<>
+constexpr key<fnv1a_hasher> fnv_id{"x"sv};
 ```
 
 `key<Hasher>` оборачивает целочисленное хеш-значение, созданное `Hasher`, в
@@ -272,9 +372,18 @@ constexpr key<fnv1a_hasher> fnv_id{"x"};
 ### Конструирование
 
 ```cpp
-constexpr key<> a{"hello"};                     // строковый литерал (с '\0')
-constexpr key<> b{std::string_view{"hello"}};   // 5 байт, без '\0'
-// a != b — разные последовательности байт
+#include <scl/utility/hash/key.h>
+
+#include <array>
+#include <string_view>
+
+using namespace std::string_view_literals;
+using namespace scl::hash;
+
+constexpr key<> a{"hello"sv};                          // пять символов
+constexpr std::array<char, 5> held{'h', 'e', 'l', 'l', 'o'};
+constexpr key<> b{held};                               // те же пять, в хранилище
+static_assert(a == b);                                 // одни и те же байты
 ```
 
 ### Диспетчеризация через `switch`/`case`
@@ -284,12 +393,18 @@ constexpr key<> b{std::string_view{"hello"}};   // 5 байт, без '\0'
 целочисленный switch с нулевыми накладными расходами:
 
 ```cpp
+#include <scl/utility/hash/key.h>
+
+#include <string_view>
+
+using namespace std::string_view_literals;
+
 int handle(scl::hash::key<> cmd)
 {
     switch (cmd) {
-    case scl::hash::key<>{"start"}:  return 1;
-    case scl::hash::key<>{"stop"}:   return 2;
-    case scl::hash::key<>{"status"}: return 3;
+    case scl::hash::key<>{"start"sv}:  return 1;
+    case scl::hash::key<>{"stop"sv}:   return 2;
+    case scl::hash::key<>{"status"sv}: return 3;
     default:                          return 0;
     }
 }
@@ -304,9 +419,18 @@ int handle(scl::hash::key<> cmd)
 непосредственно как ключ в `std::unordered_map` и `std::unordered_set`:
 
 ```cpp
-std::unordered_map<scl::hash::key<>, int> registry;
-registry[scl::hash::key<>{"alpha"}] = 1;
-registry[scl::hash::key<>{"beta"}]  = 2;
+#include <scl/utility/hash/key.h>
+
+#include <string_view>
+#include <unordered_map>
+
+using namespace std::string_view_literals;
+
+void fill(std::unordered_map<scl::hash::key<>, int> & registry)
+{
+    registry[scl::hash::key<>{"alpha"sv}] = 1;
+    registry[scl::hash::key<>{"beta"sv}]  = 2;
+}
 ```
 
 ### Нетиповой параметр шаблона (NTTP)
@@ -315,20 +439,26 @@ registry[scl::hash::key<>{"beta"}]  = 2;
 скаляр), поэтому в C++20 его можно использовать как нетиповой параметр шаблона:
 
 ```cpp
-// 1. Тип-тег из строкового литерала времени компиляции
+#include <scl/utility/hash/key.h>
+
+#include <string_view>
+
+using namespace std::string_view_literals;
+
+// 1. Тег типа из строкового литерала, известного при компиляции
 template <scl::hash::key<> Tag>
 struct event {};
 
-using start_event = event<scl::hash::key<>{"start"}>;
-using stop_event  = event<scl::hash::key<>{"stop"}>;
+using start_event = event<scl::hash::key<>{"start"sv}>;
+using stop_event  = event<scl::hash::key<>{"stop"sv}>;
 static_assert(!std::is_same_v<start_event, stop_event>);
 
 // 2. Специализация шаблона по строковому ключу
 template <scl::hash::key<> Cmd> struct handler { static constexpr int value = 0; };
-template <> struct handler<scl::hash::key<>{"start"}> { static constexpr int value = 1; };
-template <> struct handler<scl::hash::key<>{"stop"}>  { static constexpr int value = 2; };
+template <> struct handler<scl::hash::key<>{"start"sv}> { static constexpr int value = 1; };
+template <> struct handler<scl::hash::key<>{"stop"sv}>  { static constexpr int value = 2; };
 
-static_assert(handler<scl::hash::key<>{"start"}>::value == 1);
+static_assert(handler<scl::hash::key<>{"start"sv}>::value == 1);
 ```
 
 ---
@@ -355,10 +485,11 @@ static_assert(handler<scl::hash::key<>{"start"}>::value == 1);
 ```cpp
 namespace scl::hash {
 
-// Каким должен быть элемент
+// Каким должен быть элемент и чем не должен быть диапазон
 namespace concepts {
     template <typename Type> concept byte_element;     // один байт данных
     template <typename Type> concept integer_element;  // byte_view разложит его на байты
+    template <typename Range> concept hashable_range;  // однобайтовый элемент и запрет массива
 }
 
 // Явное преобразование для широкого элемента
@@ -386,7 +517,7 @@ struct key {
     using value_type  = Hasher::result_type;
     value_type value{};
 
-    constexpr key(Range&&) noexcept;
+    explicit constexpr key(Range&&) noexcept;
     constexpr operator value_type() const noexcept;
     friend constexpr auto operator<=>(key const&, key const&) noexcept = default;
 };
@@ -410,9 +541,10 @@ struct std::hash<scl::hash::key<Hasher>>;
 ## Смотрите также
 
 - [`example/hash/key_nttp`](../../../../example/hash/key_nttp/hash_key_nttp_example.cpp) —
-  рабочая версия: `key` как нетиповой параметр шаблона — тег типа из строкового
-  литерала, специализация по строковому значению и диспетчеризация по ключу,
-  вычисленному на этапе компиляции.
+  рабочий пример: объект типа `key` стоит нетиповым параметром шаблона. Программа строит
+  тег типа из строкового литерала, известного при компиляции, выбирает специализацию по
+  строковому значению и выполняет диспетчеризацию по такому ключу.
 - [`example/hash/byte_view`](../../../../example/hash/byte_view/hash_byte_view_example.cpp) —
-  рабочая версия: хеширование `std::u16string_view` и `std::vector<std::uint32_t>`
-  через `byte_view` и что даёт фиксированный порядок байт.
+  рабочий пример: программа хеширует объекты типов `std::u16string_view` и
+  `std::vector<std::uint32_t>` через функцию `byte_view` и показывает, какой результат даёт
+  фиксированный порядок байтов.

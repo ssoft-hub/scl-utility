@@ -75,7 +75,9 @@ namespace scl::hash::concepts
      *
      * A range whose element is a single byte of data, and which is not a bounded array. A hash
      * function states this concept in its own signature to refuse what an array would answer
-     * for.
+     * for. Every hash function of this module states it, and the function template
+     * @ref scl::hash::byte_view states the array rule beside
+     * @ref scl::hash::concepts::integer_element, its element being the wider one.
      *
      * A bounded array reports the length it was declared with, which is the storage it was
      * given rather than the content a caller put in it. `char buffer[64]` holding three

@@ -4,8 +4,19 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
+
+using namespace ::std::string_view_literals;
+
+namespace
+{
+    /// Satisfied when @ref scl::hash::sdbm accepts @p Range.
+    template <typename Range>
+    concept sdbm_takes = requires(Range const & range) { ::scl::hash::sdbm(range); };
+} // namespace
 
 using namespace ::scl::hash;
 
@@ -25,16 +36,16 @@ TEST(SdbmTest, EmptyRangeWithCustomSeed)
 /**
  * @test Identical inputs produce identical results (determinism).
  */
-TEST(SdbmTest, Deterministic) { STATIC_EXPECT_EQ(sdbm("hello"), sdbm("hello")); }
+TEST(SdbmTest, Deterministic) { STATIC_EXPECT_EQ(sdbm("hello"sv), sdbm("hello"sv)); }
 
 /**
  * @test Different inputs produce different hash values.
  */
 TEST(SdbmTest, DifferentInputsDifferentHashes)
 {
-    STATIC_EXPECT_NE(sdbm("hello"), sdbm("world"));
-    STATIC_EXPECT_NE(sdbm("hello"), sdbm(::std::string_view{}));
-    STATIC_EXPECT_NE(sdbm("ab"), sdbm("ba"));
+    STATIC_EXPECT_NE(sdbm("hello"sv), sdbm("world"sv));
+    STATIC_EXPECT_NE(sdbm("hello"sv), sdbm(::std::string_view{}));
+    STATIC_EXPECT_NE(sdbm("ab"sv), sdbm("ba"sv));
 }
 
 /**
@@ -51,40 +62,45 @@ TEST(SdbmTest, ChainingEquivalentToConcatenation)
  */
 TEST(SdbmTest, ResultType)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(sdbm("hello")), ::std::uint64_t>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(sdbm("hello"sv)), ::std::uint64_t>));
 }
 
 /**
  * @test Constexpr evaluation produces a value distinct from the seed.
  */
-TEST(SdbmTest, Constexpr) { STATIC_EXPECT_NE(sdbm("constexpr"), 0ull); }
+TEST(SdbmTest, Constexpr) { STATIC_EXPECT_NE(sdbm("constexpr"sv), 0ull); }
 
 /**
- * @test A string literal is hashed as its text — every spelling of it agrees.
+ * @test One text produces one value, however it is spelled.
  */
-TEST(SdbmTest, LiteralHashedWithoutTerminatingZero)
+TEST(SdbmTest, OneTextHashesAlikeHoweverSpelled)
 {
-    STATIC_EXPECT_EQ(sdbm("hello"), sdbm(::std::string_view{"hello"}));
-    EXPECT_EQ(sdbm("hello"), sdbm(::std::string{"hello"}));
+    static constexpr ::std::array<char, 5> held{'h', 'e', 'l', 'l', 'o'};
+    STATIC_EXPECT_EQ(sdbm("hello"sv), sdbm(held));
+    STATIC_EXPECT_EQ(sdbm("hello"sv), sdbm(::std::span{held}));
+    EXPECT_EQ(sdbm("hello"sv), sdbm(::std::string{"hello"}));
+    EXPECT_EQ(sdbm("hello"sv), sdbm(::std::vector<char>{'h', 'e', 'l', 'l', 'o'}));
 }
 
 /**
- * @test An array that does not end in zero keeps every byte.
+ * @test An array is refused and a wider element with it, while a span over the array
+ *       names the bytes the array holds.
  */
-TEST(SdbmTest, ArrayWithoutTerminatingZeroHashedWhole)
+TEST(SdbmTest, ArrayIsRefusedAndASpanNamesItsBytes)
 {
     static constexpr char raw[3]{'a', 'b', 'c'};
-    STATIC_EXPECT_EQ(sdbm(raw), sdbm(::std::string_view{"abc"}));
+    STATIC_EXPECT_TRUE(sdbm_takes<::std::string_view>);
+    STATIC_EXPECT_FALSE(sdbm_takes<char[3]>);
+    STATIC_EXPECT_FALSE(sdbm_takes<::std::u16string_view>);
+    STATIC_EXPECT_EQ(sdbm(::std::span{raw}), sdbm(::std::string_view{"abc"}));
 }
 
 /**
- * @test A byte array keeps every byte, a zero at its end included.
+ * @test A trailing zero is one more byte.
  */
-TEST(SdbmTest, ByteArrayKeepsTrailingZero)
+TEST(SdbmTest, ATrailingZeroIsOneMoreByte)
 {
-    static constexpr ::std::uint8_t data[4]{1, 2, 3, 0};
-    static constexpr ::std::array<::std::uint8_t, 4> same{1, 2, 3, 0};
-    STATIC_EXPECT_EQ(sdbm(data), sdbm(same));
+    STATIC_EXPECT_NE(sdbm(::std::string_view{"abc", 4}), sdbm("abc"sv));
 }
 
 /**
@@ -92,5 +108,13 @@ TEST(SdbmTest, ByteArrayKeepsTrailingZero)
  */
 TEST(SdbmTest, HasherMatchesFreeFunction)
 {
-    STATIC_EXPECT_EQ(sdbm_hasher{}("hello"), sdbm("hello"));
+    STATIC_EXPECT_EQ(sdbm_hasher{}("hello"sv), sdbm("hello"sv));
+}
+
+/**
+ * @test The value the SDBM recurrence gives for the three bytes of "abc".
+ */
+TEST(SdbmTest, ThreeBytesAnswerTheSpecifiedValue)
+{
+    STATIC_EXPECT_EQ(sdbm("abc"sv), 417419622498ull);
 }

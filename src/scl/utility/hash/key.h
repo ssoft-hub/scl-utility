@@ -60,35 +60,56 @@ namespace scl::hash
      * @tparam Hasher  A type satisfying @ref scl::hash::concepts::byte_hasher.
      *                 Defaults to `fnv1a_hasher`.
      *
-     * @par Compile-time example (default FNV-1a hasher)
+     * @par Compile-time example (default key)
      * @code
-     * constexpr scl::hash::key id{"my_event"};
-     * static_assert(id == scl::hash::key{"my_event"});
-     * static_assert(id != scl::hash::key{"other"});
+     * #include <scl/utility/hash/key.h>
+     *
+     * #include <string_view>
+     *
+     * using namespace std::string_view_literals;
+     *
+     * constexpr scl::hash::key id{"my_event"sv};
+     * static_assert(id == scl::hash::key{"my_event"sv});
+     * static_assert(id != scl::hash::key{"other"sv});
      * @endcode
      *
-     * @par Compile-time example (SipHash hasher)
+     * @par Compile-time example (a caller's own key)
      * @code
+     * #include <scl/utility/hash/key.h>
+     *
+     * #include <string_view>
+     *
+     * using namespace std::string_view_literals;
+     *
      * constexpr scl::hash::siphash_key my_key{0xdeadbeefull, 0xcafebabeull};
      * using sip_key = scl::hash::key<scl::hash::siphash_hasher<my_key>>;
-     * constexpr sip_key id{"my_event"};
+     * constexpr sip_key id{"my_event"sv};
      * @endcode
      *
      * @par Switch/case dispatching
      * @code
+     * #include <scl/utility/hash/key.h>
+     *
+     * #include <string_view>
+     *
+     * using namespace std::string_view_literals;
+     *
      * int handle(std::string_view command) {
      *     switch (scl::hash::key<>{command}) {
-     *         case scl::hash::key<>{"start"}: return 1;
-     *         case scl::hash::key<>{"stop"}:  return 2;
+     *         case scl::hash::key<>{"start"sv}: return 1;
+     *         case scl::hash::key<>{"stop"sv}:  return 2;
      *         default: return 0;
      *     }
      * }
      * @endcode
      *
-     * @note A key holds the hash of the text it is given, whatever spells it: a character
-     *       array's terminating zero is not part of that text, so `key<>{"start"}` equals
-     *       the key built from `std::string_view{"start"}` or `std::string`. An array of
-     *       any other element type is data and keeps every byte, a trailing zero included.
+     * @note A key holds the hash of the bytes it is given, whatever spells them, so a key
+     *       built from `"start"sv` equals one built from a `std::string`, from a
+     *       `std::array<char, 5>` or from a `std::span` over either. An array is refused:
+     *       its bound is the storage it was declared with rather than the content a caller
+     *       put in it, and a key built from a `char[64]` holding three characters would
+     *       answer for the whole bound its type reports rather than the three bytes its
+     *       author put there. See @ref scl::hash::concepts::hashable_range.
      */
     template <concepts::byte_hasher Hasher = siphash_hasher<>>
     struct key
@@ -98,9 +119,8 @@ namespace scl::hash
 
         value_type value{};
 
-        template <::std::ranges::range Range>
+        template <::scl::hash::concepts::hashable_range Range>
         explicit constexpr key(Range const & range) noexcept
-            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
             : value{Hasher{}(range)}
         {}
 
@@ -154,9 +174,9 @@ struct std::hash<::scl::hash::key<Hasher>>
  * @fn scl::hash::key::key(Range const & range)
  * @brief Constructs the hash value by hashing @p range with @p Hasher.
  *
- * @tparam Range  Any type satisfying `std::ranges::range` whose elements are one byte
- *                wide. See @ref scl::hash::concepts::byte_element.
- * @param  range  Input range (e.g. `std::string`, `std::span<std::byte>`).
+ * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
+ *                single trivially copyable bytes that is not a bounded array.
+ * @param  range  Input range (e.g. `std::string`, `std::span<std::byte>`, `"text"sv`).
  */
 
 /**

@@ -15,9 +15,10 @@ strongly-typed hash-value wrapper `key<Hasher>`. Together they enable:
 - **String-keyed template parameters (NTTP)** — `key` is a structural type,
   so it may appear as a non-type template argument (C++20).
 
-All hash functions accept any `std::ranges::range` whose element is one byte wide —
-string literals, `std::string_view`, `std::string`, `std::span<std::byte>` and byte
-vectors among them.
+All hash functions accept a range satisfying `std::ranges::range` whose element is one
+trivially copyable byte of data and which is not a bounded array - a `std::string_view`
+object, a `std::string` object, a `std::span<std::byte>` object and byte vectors among
+them. An array is refused; the note below says why.
 
 A wider element — `wchar_t`, `char16_t`, `char32_t`, or any arithmetic type — is
 rejected at compile time rather than truncated to its low byte, which would let two
@@ -27,6 +28,9 @@ inputs differing above that byte produce one hash value.
 
 ```cpp
 #include <scl/utility/hash/byte_view.h>
+#include <scl/utility/hash/fnv1a.h>
+
+#include <string_view>
 
 constexpr auto value = scl::hash::fnv1a(scl::hash::byte_view(std::u16string_view{u"start"}));
 ```
@@ -46,15 +50,52 @@ width of the types `char16_t` and `char32_t`, so one text occupies the same numb
 in them on every platform, and the caller should take an element of a fixed width where a
 hash value has to compare equal across builds for different platforms.
 
-> **Note on string literals.**
-> A string literal `"hello"` is a `const char[6]` whose last element is the
-> terminating zero. That zero is not part of the text and is not hashed, so
-> `"hello"`, `std::string_view{"hello"}` and `std::string{"hello"}` produce the
-> **same** hash value. The rule covers arrays of `char` and `char8_t` — the two
-> character types whose code unit is a byte — and only their last element: an array
-> that does not end in zero — `const char raw[3]{'a', 'b', 'c'}` — is hashed whole,
-> and so is an array of any other element type, where `std::uint8_t data[4]{1, 2, 3, 0}`
-> keeps all four bytes because a zero byte is data rather than a terminator.
+> **Note on arrays.**
+> The bytes a range spans are the bytes hashed, and the type of an array does not show
+> which of its bytes the caller counts as data. An array declared `char buffer[64]` and
+> holding three characters is sixty-four elements to its type and three to its author, and
+> nothing in the type says which is meant. A string literal poses the same question with
+> the count already fixed, since the literal `"hello"` has the type `char const[6]`, whose
+> sixth element is a terminator
+> the text does not contain, and no caller wrote that bound of six. The refusal reaches an
+> array of any element type - an array declared `std::uint8_t buffer[64]` and carrying
+> three bytes of payload is the same case.
+>
+> The caller should name the bytes instead, and every spelling then answers the published
+> value of its algorithm over them:
+>
+> ```cpp
+> #include <scl/utility/hash/fnv1a.h>
+>
+> #include <span>
+> #include <string_view>
+>
+> using namespace std::string_view_literals;
+>
+> char buffer[64]{'a', 'b', 'c'};                       // three elements from a C interface
+>
+> auto const named = scl::hash::fnv1a("hello"sv);                // the five characters
+> auto const text = scl::hash::fnv1a(std::string_view{buffer});  // the text the buffer holds
+> auto const whole = scl::hash::fnv1a(std::span{buffer});        // every element of the buffer
+> ```
+>
+> Naming the bytes of a filled buffer takes the length the caller knows.
+> `std::string_view{buffer}` stops at a terminator, which a buffer holding bytes rather
+> than text need not carry, so `std::string_view{buffer, length}` or
+> `std::span{buffer, length}` is what names the bytes the caller put there.
+>
+> The refusal follows what the type system can tell apart, not where the wrong answer
+> actually arises. A string literal and a buffer a caller declares share one kind of
+> type - `"hello"` is a `char const[6]`, and so is `constexpr char declared[6]`. A
+> constraint that refuses the literal therefore refuses the declared buffer with it,
+> having no way to tell the two apart. The refusal reaches the bounded array and stops
+> there: the type `std::array<char, 64>` reports sixty-four for the reason `char[64]` does, is
+> taken all the same, and a partially filled one answers for its whole bound. A
+> `std::string_view` object, a `std::span` object, a `std::array` object and a container
+> are all taken.
+>
+> The rule reaches only the array itself, so the view `std::views::all(buffer)` is taken
+> and reaches the whole bound of the array.
 
 ---
 
@@ -65,7 +106,9 @@ hash value has to compare equal across builds for different platforms.
 ```cpp
 #include <scl/utility/hash/fnv1a.h>
 
-constexpr auto h = scl::hash::fnv1a("hello");
+using namespace std::string_view_literals;
+
+constexpr auto h = scl::hash::fnv1a("hello"sv);
 ```
 
 | Property | Value |
@@ -83,9 +126,17 @@ order gives better avalanche for similar inputs compared to the original FNV-1
 **Chaining** two ranges into one hash value:
 
 ```cpp
-auto h = scl::hash::fnv1a(std::string_view{"foo"});
-h      = scl::hash::fnv1a(std::string_view{"bar"}, h);
-// h == fnv1a(std::string_view{"foobar"})
+#include <scl/utility/hash/fnv1a.h>
+
+#include <cstdint>
+#include <string_view>
+
+std::uint64_t chained()
+{
+    auto h = scl::hash::fnv1a(std::string_view{"foo"});
+    h      = scl::hash::fnv1a(std::string_view{"bar"}, h);
+    return h;   // == fnv1a(std::string_view{"foobar"})
+}
 ```
 
 ---
@@ -95,7 +146,9 @@ h      = scl::hash::fnv1a(std::string_view{"bar"}, h);
 ```cpp
 #include <scl/utility/hash/djb2.h>
 
-constexpr auto h = scl::hash::djb2("hello");
+using namespace std::string_view_literals;
+
+constexpr auto h = scl::hash::djb2("hello"sv);
 ```
 
 | Property | Value |
@@ -117,7 +170,9 @@ variant (`djb2`) for inputs with similar prefixes.
 ```cpp
 #include <scl/utility/hash/sdbm.h>
 
-constexpr auto h = scl::hash::sdbm("hello");
+using namespace std::string_view_literals;
+
+constexpr auto h = scl::hash::sdbm("hello"sv);
 ```
 
 | Property | Value |
@@ -138,7 +193,9 @@ long keys with repeated substrings.
 ```cpp
 #include <scl/utility/hash/jenkins_ota.h>
 
-constexpr auto h = scl::hash::jenkins_ota("hello");
+using namespace std::string_view_literals;
+
+constexpr auto h = scl::hash::jenkins_ota("hello"sv);
 ```
 
 | Property | Value |
@@ -160,8 +217,12 @@ input bit. Use a 64-bit algorithm when a 64-bit hash value is required.
 ```cpp
 #include <scl/utility/hash/siphash.h>
 
-constexpr auto h = scl::hash::siphash("hello");             // default key
-constexpr auto h = scl::hash::siphash("hello", my_key);    // custom key
+using namespace std::string_view_literals;
+
+constexpr scl::hash::siphash_key my_key{0xdeadbeefull, 0xcafebabeull};
+
+constexpr auto with_default = scl::hash::siphash("hello"sv);          // default key
+constexpr auto with_own     = scl::hash::siphash("hello"sv, my_key);  // a caller's own key
 ```
 
 | Property | Value |
@@ -210,14 +271,27 @@ Each algorithm ships with a callable wrapper struct that satisfies the
 | `siphash_hasher<Key>` | `std::uint64_t` | SipHash-2-4 |
 
 ```cpp
+#include <scl/utility/hash/fnv1a.h>
+
+#include <string_view>
+
+using namespace std::string_view_literals;
+
 scl::hash::fnv1a_hasher h;
-auto value = h("hello");   // same as scl::hash::fnv1a("hello")
+auto value = h("hello"sv);   // same as scl::hash::fnv1a("hello"sv)
 ```
 
 `siphash_hasher<Key>` embeds the key as a non-type template parameter, making
 two instantiations with different keys **distinct types**:
 
 ```cpp
+#include <scl/utility/hash/siphash.h>
+
+#include <type_traits>
+
+constexpr scl::hash::siphash_key key_a{1, 2};
+constexpr scl::hash::siphash_key key_b{3, 4};
+
 using hasher_a = scl::hash::siphash_hasher<key_a>;
 using hasher_b = scl::hash::siphash_hasher<key_b>;
 static_assert(!std::is_same_v<hasher_a, hasher_b>);
@@ -233,20 +307,46 @@ concept byte_hasher =
     std::integral<typename H::result_type>;
 ```
 
-Any custom hasher that exposes `result_type` and `operator()(Range&&)` can be
-used with `key<>`.
+A hasher of a caller's own stands as the template argument of the class template
+`key<Hasher>` once it is default-constructible and names an integral `result_type` member
+type; the constructor of `key` calls it, so it also needs the call operator
+`operator()(Range&&)`.
+
+Each hash function states the refusal of a bounded array in its own signature, and no shared
+mechanism states it for the whole set of them, so the author of a hasher of their own should
+constrain its call operator with the concept `scl::hash::concepts::hashable_range`, which
+carries the element rule and the array rule together:
+
+```cpp
+struct rolling_hasher {
+    using result_type = std::uint64_t;
+
+    template <scl::hash::concepts::hashable_range Range>
+    constexpr result_type operator()(Range&& range) const;
+};
+```
+
+With the constraint left unstated, the hasher takes an array of type `char[64]` and hashes
+all sixty-four of its elements, including the elements past the payload the caller wrote into
+it. Building an object of type `key<rolling_hasher>` from that array is ill-formed all the
+same, because the constraint stands in the constructor of the class template `key`, whatever
+hasher that template holds.
 
 ---
 
 ## `key<Hasher>` — Strongly-Typed Hash Value
 
 ```cpp
+#include <scl/utility/hash/fnv1a.h>
 #include <scl/utility/hash/key.h>
 
+#include <string_view>
+
+using namespace std::string_view_literals;
 using namespace scl::hash;
 
-constexpr key<> id{"my_event"};           // default: siphash_hasher<>
-constexpr key<fnv1a_hasher> fnv_id{"x"};
+constexpr key<> id{"my_event"sv};           // default: siphash_hasher<>
+constexpr key<fnv1a_hasher> fnv_id{"x"sv};
 ```
 
 `key<Hasher>` wraps the integer hash value produced by `Hasher` in a named type,
@@ -264,9 +364,18 @@ is deduced from `Hasher::result_type`.
 ### Construction
 
 ```cpp
-constexpr key<> a{"hello"};              // string literal (includes '\0')
-constexpr key<> b{std::string_view{"hello"}};  // 5 bytes, no '\0'
-// a != b  — different byte sequences
+#include <scl/utility/hash/key.h>
+
+#include <array>
+#include <string_view>
+
+using namespace std::string_view_literals;
+using namespace scl::hash;
+
+constexpr key<> a{"hello"sv};                          // the five characters
+constexpr std::array<char, 5> held{'h', 'e', 'l', 'l', 'o'};
+constexpr key<> b{held};                               // the same five, held in storage
+static_assert(a == b);                                 // one and the same sequence of bytes
 ```
 
 ### `switch`/`case` Dispatch
@@ -275,12 +384,18 @@ The implicit conversion to `value_type` lets a `key` appear as a `case` label.
 This replaces long `if`/`else if` chains with a zero-overhead integer switch:
 
 ```cpp
+#include <scl/utility/hash/key.h>
+
+#include <string_view>
+
+using namespace std::string_view_literals;
+
 int handle(scl::hash::key<> cmd)
 {
     switch (cmd) {
-    case scl::hash::key<>{"start"}:  return 1;
-    case scl::hash::key<>{"stop"}:   return 2;
-    case scl::hash::key<>{"status"}: return 3;
+    case scl::hash::key<>{"start"sv}:  return 1;
+    case scl::hash::key<>{"stop"sv}:   return 2;
+    case scl::hash::key<>{"status"sv}: return 3;
     default:                          return 0;
     }
 }
@@ -295,9 +410,18 @@ same code as if the integer constants were written by hand.
 `std::unordered_map` and `std::unordered_set`:
 
 ```cpp
-std::unordered_map<scl::hash::key<>, int> registry;
-registry[scl::hash::key<>{"alpha"}] = 1;
-registry[scl::hash::key<>{"beta"}]  = 2;
+#include <scl/utility/hash/key.h>
+
+#include <string_view>
+#include <unordered_map>
+
+using namespace std::string_view_literals;
+
+void fill(std::unordered_map<scl::hash::key<>, int> & registry)
+{
+    registry[scl::hash::key<>{"alpha"sv}] = 1;
+    registry[scl::hash::key<>{"beta"sv}]  = 2;
+}
 ```
 
 ### Non-Type Template Parameter (NTTP)
@@ -306,20 +430,26 @@ registry[scl::hash::key<>{"beta"}]  = 2;
 a scalar), so it may be used as a non-type template parameter in C++20:
 
 ```cpp
-// 1. Type tag from a compile-time string
+#include <scl/utility/hash/key.h>
+
+#include <string_view>
+
+using namespace std::string_view_literals;
+
+// 1. Type tag from a compile-time string-view literal
 template <scl::hash::key<> Tag>
 struct event {};
 
-using start_event = event<scl::hash::key<>{"start"}>;
-using stop_event  = event<scl::hash::key<>{"stop"}>;
+using start_event = event<scl::hash::key<>{"start"sv}>;
+using stop_event  = event<scl::hash::key<>{"stop"sv}>;
 static_assert(!std::is_same_v<start_event, stop_event>);
 
 // 2. Template specialisation by string key
 template <scl::hash::key<> Cmd> struct handler { static constexpr int value = 0; };
-template <> struct handler<scl::hash::key<>{"start"}> { static constexpr int value = 1; };
-template <> struct handler<scl::hash::key<>{"stop"}>  { static constexpr int value = 2; };
+template <> struct handler<scl::hash::key<>{"start"sv}> { static constexpr int value = 1; };
+template <> struct handler<scl::hash::key<>{"stop"sv}>  { static constexpr int value = 2; };
 
-static_assert(handler<scl::hash::key<>{"start"}>::value == 1);
+static_assert(handler<scl::hash::key<>{"start"sv}>::value == 1);
 ```
 
 ---
@@ -345,10 +475,11 @@ protection at runtime, construct a `siphash_key` from a random source and use
 ```cpp
 namespace scl::hash {
 
-// What an element must be
+// The rule on an element, and the rule on a range
 namespace concepts {
     template <typename Type> concept byte_element;     // one byte of data
     template <typename Type> concept integer_element;  // byte_view can spell its bytes
+    template <typename Range> concept hashable_range;      // the element rule and the array rule
 }
 
 // Explicit conversion for a wider element
@@ -376,7 +507,7 @@ struct key {
     using value_type  = Hasher::result_type;
     value_type value{};
 
-    constexpr key(Range&&) noexcept;
+    explicit constexpr key(Range&&) noexcept;
     constexpr operator value_type() const noexcept;
     friend constexpr auto operator<=>(key const&, key const&) noexcept = default;
 };
@@ -400,8 +531,9 @@ struct std::hash<scl::hash::key<Hasher>>;
 ## See also
 
 - [`example/hash/key_nttp`](../../../../example/hash/key_nttp/hash_key_nttp_example.cpp) —
-  runnable version: `key` as a non-type template parameter — a type tag from a string
-  literal, a specialisation selected by string value, and dispatch on a compile-time key.
+  runnable version: the class template `key` as a non-type template parameter - a type tag
+  from a compile-time string-view literal, a specialisation selected by string value, and
+  dispatch on a compile-time key.
 - [`example/hash/byte_view`](../../../../example/hash/byte_view/hash_byte_view_example.cpp) —
   runnable version: hashing a `std::u16string_view` and a `std::vector<std::uint32_t>`
   through `byte_view`, and what the fixed byte order buys.
