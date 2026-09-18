@@ -49,13 +49,15 @@ namespace scl::hash
      *       @endcode
      *
      * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range
-     *                of single trivially copyable bytes that is not a bounded array.
+     *                of trivially copyable non-empty elements one byte wide that is not a
+     *                bounded array.
      *                `std::string_view`, `std::string`, `std::span<std::byte>` and a byte
      *                vector are such types.
      * @param  range  Input range to hash.
      * @note   The bytes the range spans are the bytes hashed, and an array is refused.
-     *         The caller names the bytes with a `std::string_view` - `"text"sv` is one -
-     *         or with a `std::span`. See @ref scl::hash::concepts::hashable_range for
+     *         The caller should name the bytes with a `std::string_view` object - `"text"sv` is
+     *         one -
+     *         or with a `std::span` object. See @ref scl::hash::concepts::hashable_range for
      *         the reason and for what naming a partly filled buffer takes.
      * @param  h      Initial hash value. Defaults to the traditional djb2
      *                seed `5381`.
@@ -75,7 +77,8 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint64_t djb2(Range && range, ::std::uint64_t h = 5381ull)
+    constexpr ::std::uint64_t djb2(Range && range, ::std::uint64_t h = 5381ull) /**/
+        noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
         for (::std::ranges::range_value_t<Range> const c :
             ::scl::hash::detail::read_only(::std::forward<Range>(range)))
@@ -94,7 +97,8 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range && range) const noexcept
+        constexpr result_type operator()(Range && range) const /**/
+            noexcept(noexcept(::scl::hash::djb2(::std::forward<Range>(range))))
         {
             return ::scl::hash::djb2(::std::forward<Range>(range));
         }

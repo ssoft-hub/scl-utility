@@ -95,13 +95,15 @@ namespace scl::hash
      * The function is `constexpr`, allowing compile-time hash computation.
      *
      * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range
-     *                of single trivially copyable bytes that is not a bounded array.
+     *                of trivially copyable non-empty elements one byte wide that is not a
+     *                bounded array.
      *                `std::string_view`, `std::string`, `std::span<std::byte>` and a byte
      *                vector are such types.
      * @param  range  Input range to hash.
      * @note   The bytes the range spans are the bytes hashed, and an array is refused.
-     *         The caller names the bytes with a `std::string_view` - `"text"sv` is one -
-     *         or with a `std::span`. See @ref scl::hash::concepts::hashable_range for
+     *         The caller should name the bytes with a `std::string_view` object - `"text"sv` is
+     *         one -
+     *         or with a `std::span` object. See @ref scl::hash::concepts::hashable_range for
      *         the reason and for what naming a partly filled buffer takes.
      * @param  key    128-bit secret key. Defaults to @ref siphash_default_key.
      *                For security-sensitive use, provide a randomly generated key.
@@ -125,7 +127,8 @@ namespace scl::hash
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
     constexpr ::std::uint64_t
-    siphash(Range && range, ::scl::hash::siphash_key const key = ::scl::hash::siphash_default_key)
+    siphash(Range && range, ::scl::hash::siphash_key const key = ::scl::hash::siphash_default_key) /**/
+        noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
         // State initialised from key XOR'd with magic constants spelling
         // "somepseudorandomlygeneratedbytes".
@@ -189,7 +192,8 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range && range) const noexcept
+        constexpr result_type operator()(Range && range) const /**/
+            noexcept(noexcept(::scl::hash::siphash(::std::forward<Range>(range), Key)))
         {
             return ::scl::hash::siphash(::std::forward<Range>(range), Key);
         }

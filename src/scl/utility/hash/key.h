@@ -118,7 +118,8 @@ namespace scl::hash
         value_type value{};
 
         template <::scl::hash::concepts::hashable_range Range>
-        explicit constexpr key(Range && range) noexcept
+        explicit constexpr key(Range && range) /**/
+            noexcept(noexcept(Hasher{}(::std::forward<Range>(range))))
             : value{Hasher{}(::std::forward<Range>(range))}
         {}
 

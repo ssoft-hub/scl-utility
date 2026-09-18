@@ -104,6 +104,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   order, so two machines hash one input alike; a byte-sized element passes through
   unchanged. `example/hash/byte_view/hash_byte_view_example.cpp` shows it running.
 
+- A conditional `noexcept` on `fnv1a`, `djb2`, `sdbm`, `jenkins_ota` and `siphash`: each
+  throws nothing where iterating the range it is given throws nothing, so a call stands
+  inside a `noexcept` boundary.
+
 - `scl::hash::concepts::hashable_range` - the concept stating the rule every hash function
   of the module places on its argument: a range of single-byte elements that is not a
   bounded array. A hash function written outside the module states it to refuse the same.
@@ -300,18 +304,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   constraint, works. The new `scl::hash::concepts::byte_element` states the rule, and
   hash values of the byte ranges that remain accepted are unchanged.
 - `djb2` and `sdbm` take a range whose end of traversal is of its own type, a view from
-  `std::views::take_while` among them. Both folded with `std::accumulate`, which takes two
-  iterators of one type, so such a range satisfied every constraint and then failed to
-  compile inside the header.
+  `std::views::take_while` among them. Such a range satisfied every constraint and then
+  failed to compile inside the header.
+- `noexcept` on `fnv1a_hasher`, `djb2_hasher`, `sdbm_hasher`, `jenkins_ota_hasher`,
+  `siphash_hasher` and on the constructor of `scl::hash::key` now follows the range. Stated
+  unconditionally, it sent a throwing iterator into a `noexcept` boundary, which ended the
+  program instead of propagating.
 - A view that cannot be read through a `const` reference now reaches every hash function
-  and `scl::hash::key`; it satisfied every constraint and then failed to compile inside the
-  header. **A call naming the template argument for an lvalue no longer compiles** -
-  `fnv1a<std::string_view>(text)` - the parameter being a forwarding reference.
-- An array is refused by `fnv1a`, `djb2`, `sdbm`, `jenkins_ota`, `siphash` and
-  `scl::hash::key`, whatever its element type: its bound is the storage it was declared
-  with, not the content a caller put in it. **A call that passes an array no longer
-  compiles**; the caller names the bytes with a `std::string_view` (`"hello"sv` is one)
-  or a `std::span`. Stated by `scl::hash::concepts::hashable_range`.
+  and `scl::hash::key`. Such a view satisfied every constraint and then failed to compile
+  inside the header.
 - Documentation blocks that silently failed to reach their target now appear in the
   generated reference: each `scl::any_cast` overload carries its own description, and
   `has_value` / `type_name` / `type_key` are listed and described on `scl::any_view` and

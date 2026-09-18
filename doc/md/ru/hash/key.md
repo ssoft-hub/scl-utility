@@ -391,6 +391,13 @@ static_assert(a == b);                                 // одни и те же 
 чтение не вызывает копирования. Представление над изменяемым объектом обращается к этому
 объекту по неконстантной ссылке независимо от того, как квалифицировано само.
 
+Конструктор не выбрасывает исключений, если их не выбрасывает обход диапазона, и в его
+объявлении это записано как `noexcept(noexcept(Hasher{}(range)))`. Такое же условие стоит у
+функций `fnv1a`, `djb2`, `sdbm`, `jenkins_ota` и `siphash`. Условие проверяется по
+спецификациям `noexcept` у операций самого диапазона, а эти спецификации зависят от
+реализации стандартной библиотеки, и у итератора контейнера `std::vector<bool>` в реализации
+libstdc++ их нет, а в реализации MSVC есть.
+
 ### Диспетчеризация через `switch`/`case`
 
 Неявное преобразование к `value_type` позволяет `key` использоваться в
@@ -500,12 +507,12 @@ namespace concepts {
 // Явное преобразование для широкого элемента
 constexpr auto byte_view(Range&&);   // view из uint8_t, младший байт первым
 
-// Свободные функции
-constexpr uint64_t fnv1a(Range&&, uint64_t h = offset_basis);
-constexpr uint64_t djb2 (Range&&, uint64_t h = 5381);
-constexpr uint64_t sdbm (Range&&, uint64_t h = 0);
-constexpr uint32_t jenkins_ota(Range&&);
-constexpr uint64_t siphash(Range&&, siphash_key key = siphash_default_key);
+// Свободные функции - каждая noexcept там, где обход диапазона не выбрасывает исключений
+constexpr uint64_t fnv1a(Range&&, uint64_t h = offset_basis) noexcept(...);
+constexpr uint64_t djb2 (Range&&, uint64_t h = 5381) noexcept(...);
+constexpr uint64_t sdbm (Range&&, uint64_t h = 0) noexcept(...);
+constexpr uint32_t jenkins_ota(Range&&) noexcept(...);
+constexpr uint64_t siphash(Range&&, siphash_key key = siphash_default_key) noexcept(...);
 
 // Структуры хешеров (удовлетворяют byte_hasher)
 struct fnv1a_hasher;
@@ -522,7 +529,7 @@ struct key {
     using value_type  = Hasher::result_type;
     value_type value{};
 
-    explicit constexpr key(Range&&) noexcept;
+    explicit constexpr key(Range&& range) noexcept(noexcept(Hasher{}(range)));
     constexpr operator value_type() const noexcept;
     friend constexpr auto operator<=>(key const&, key const&) noexcept = default;
 };

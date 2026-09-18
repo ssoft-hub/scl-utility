@@ -18,6 +18,7 @@
 #include <ranges>
 #include <span>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -70,6 +71,81 @@ namespace
     template <typename Range>
     concept unconstrained_takes = requires(Range & range) { unconstrained(range); };
 
+    /// The one operation of a traversal that the fixtures below let throw.
+    enum class throwing_operation : ::std::uint8_t
+    {
+        none,
+        begin,
+        end,
+        compare,
+        increment,
+        dereference,
+        conversion,
+        size
+    };
+
+    /// A reference read without throwing, whose conversion to the element type throws.
+    struct throwing_reference
+    {
+        char c;
+
+        operator char() const { return c; }
+    };
+
+    template <throwing_operation Operation>
+    struct throwing_iterator
+    {
+        using value_type = char;
+        using difference_type = ::std::ptrdiff_t;
+        using reference_type =
+            ::std::conditional_t<Operation == throwing_operation::conversion, throwing_reference, char>;
+
+        char const * position = nullptr;
+
+        reference_type operator*() const /**/
+            noexcept(Operation != throwing_operation::dereference)
+        {
+            return {*position};
+        }
+
+        throwing_iterator & operator++() /**/
+            noexcept(Operation != throwing_operation::increment)
+        {
+            ++position;
+            return *this;
+        }
+
+        void operator++(int) /**/
+            noexcept(Operation != throwing_operation::increment)
+        {
+            ++position;
+        }
+
+        bool operator==(throwing_iterator const & other) const /**/
+            noexcept(Operation != throwing_operation::compare)
+        {
+            return position == other.position;
+        }
+    };
+
+    template <throwing_operation Operation>
+    struct throwing_range : public ::std::ranges::view_interface<throwing_range<Operation>>
+    {
+        char const * first = "abc";
+
+        throwing_iterator<Operation> begin() const /**/
+            noexcept(Operation != throwing_operation::begin)
+        {
+            return {first};
+        }
+
+        throwing_iterator<Operation> end() const /**/
+            noexcept(Operation != throwing_operation::end)
+        {
+            return {first + 3};
+        }
+    };
+
     /**
      * A container whose copies share one buffer until a write. Reading it through a
      * non-constant reference is what would separate that buffer.
@@ -104,6 +180,50 @@ namespace
         char const * end() noexcept { return narrow + 3; }
         wchar_t const * begin() const noexcept { return wide; }
         wchar_t const * end() const noexcept { return wide + 3; }
+    };
+
+    /// The traversal of @ref throwing_range, offered only through a non-constant reference.
+    template <throwing_operation Operation>
+    struct mutable_throwing_range : public ::std::ranges::view_interface<mutable_throwing_range<Operation>>
+    {
+        char const * first = "abc";
+
+        throwing_iterator<Operation> begin() /**/
+            noexcept(Operation != throwing_operation::begin)
+        {
+            return {first};
+        }
+
+        throwing_iterator<Operation> end() /**/
+            noexcept(Operation != throwing_operation::end)
+        {
+            return {first + 3};
+        }
+    };
+
+    /// A sentinel whose comparison with the iterator is the only operation that can throw.
+    struct compare_throwing_sentinel
+    {
+        char const * last = nullptr;
+
+        friend bool
+        operator==(char const * const position, compare_throwing_sentinel const & sentinel) /**/
+            noexcept(false)
+        {
+            return position == sentinel.last;
+        }
+    };
+
+    struct distinct_sentinel_range : public ::std::ranges::view_interface<distinct_sentinel_range>
+    {
+        char const * first = "abc";
+
+        char const * begin() const noexcept { return first; }
+
+        compare_throwing_sentinel end() const noexcept
+        {
+            return compare_throwing_sentinel{first + 3};
+        }
     };
 
     struct two_bytes
@@ -440,6 +560,87 @@ TEST(HashElementTest, AProxyReferenceIsReadThroughTheElementType)
 }
 
 /**
+ * @test A range that can throw while iterated is reported as such, and one that cannot is
+ *       still nothrow at every entry point.
+ */
+TEST(HashElementTest, NoexceptFollowsTheRange)
+{
+    ::std::string_view safe{"abc"};
+    throwing_range<throwing_operation::dereference> risky;
+    throwing_range<throwing_operation::conversion> sneaky;
+
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::fnv1a(sneaky)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::fnv1a(safe)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::fnv1a_hasher{}(safe)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::key<>{safe}));
+
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::fnv1a(risky)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::fnv1a_hasher{}(risky)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::key<>{risky}));
+}
+
+/**
+ * @test Each operation the concept names answers on its own: a range that throws at
+ *       exactly one of them is refused, and the same range throwing at none is taken.
+ */
+TEST(HashElementTest, EveryOperationTheConceptNamesIsAnswered)
+{
+    using ::scl::hash::detail::nothrow_iterable;
+
+    STATIC_EXPECT_TRUE(nothrow_iterable<throwing_range<throwing_operation::none> &>);
+    STATIC_EXPECT_FALSE(nothrow_iterable<throwing_range<throwing_operation::begin> &>);
+    STATIC_EXPECT_FALSE(nothrow_iterable<throwing_range<throwing_operation::end> &>);
+    STATIC_EXPECT_FALSE(nothrow_iterable<throwing_range<throwing_operation::compare> &>);
+    STATIC_EXPECT_FALSE(nothrow_iterable<throwing_range<throwing_operation::increment> &>);
+    STATIC_EXPECT_FALSE(nothrow_iterable<throwing_range<throwing_operation::dereference> &>);
+    STATIC_EXPECT_FALSE(nothrow_iterable<throwing_range<throwing_operation::conversion> &>);
+}
+
+/**
+ * @test Every free function of the group throws where walking the range it is given throws.
+ */
+TEST(HashElementTest, EveryFreeFunctionFollowsTheRange)
+{
+    ::std::string_view safe{"abc"};
+    throwing_range<throwing_operation::dereference> risky;
+
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::djb2(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::djb2(risky)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::sdbm(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::sdbm(risky)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::jenkins_ota(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::jenkins_ota(risky)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::siphash(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::siphash(risky)));
+}
+
+/**
+ * @test Every hasher throws exactly where the free function it wraps throws.
+ */
+TEST(HashElementTest, EveryHasherFollowsTheRange)
+{
+    ::std::string_view safe{"abc"};
+    throwing_range<throwing_operation::dereference> risky;
+
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::djb2_hasher{}(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::djb2_hasher{}(risky)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::sdbm_hasher{}(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::sdbm_hasher{}(risky)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::jenkins_ota_hasher{}(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::jenkins_ota_hasher{}(risky)));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::siphash_hasher<>{}(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::siphash_hasher<>{}(risky)));
+}
+
+/**
+ * @test The concept weighs the iterator against the sentinel, not against itself.
+ */
+TEST(HashElementTest, TheConceptComparesTheIteratorAgainstTheEnd)
+{
+    STATIC_EXPECT_FALSE(::scl::hash::detail::nothrow_iterable<distinct_sentinel_range &>);
+}
+
+/**
  * @test A container whose copies share one buffer is read through a reference to a constant,
  *       whatever names it, so reading it never separates that buffer.
  */
@@ -483,4 +684,26 @@ TEST(HashElementTest, AWiderElementUnderAConstantTraversalIsLeftToTheMutableOne)
     STATIC_EXPECT_FALSE(::scl::hash::detail::same_element_as_const<widening_range>);
     STATIC_EXPECT_TRUE(::std::ranges::range<widening_range const>);
     EXPECT_EQ(::scl::hash::fnv1a(source), ::scl::hash::fnv1a(::std::string_view{"abc"}));
+}
+
+/**
+ * @test A hash function reports the guarantee of the traversal it performs, which for a source
+ *       promising nothing while mutable is the one its constant operations carry.
+ */
+TEST(HashElementTest, ASharedBufferIsWeighedByItsConstantOperations)
+{
+    shared_buffer named;
+
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::fnv1a(named)));
+}
+
+/**
+ * @test A source readable only through a non-constant reference is walked through that
+ *       reference, and keeps the guarantee its own operations carry.
+ */
+TEST(HashElementTest, ASourceReadableOnlyWhileMutableKeepsItsGuarantee)
+{
+    mutable_throwing_range<throwing_operation::none> safe;
+
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::fnv1a(safe)));
 }

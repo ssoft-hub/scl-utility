@@ -43,13 +43,15 @@ namespace scl::hash
      * The function is `constexpr`, allowing compile-time hash computation.
      *
      * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range
-     *                of single trivially copyable bytes that is not a bounded array.
+     *                of trivially copyable non-empty elements one byte wide that is not a
+     *                bounded array.
      *                `std::string_view`, `std::string`, `std::span<std::byte>` and a byte
      *                vector are such types.
      * @param  range  Input range to hash.
      * @note   The bytes the range spans are the bytes hashed, and an array is refused.
-     *         The caller names the bytes with a `std::string_view` - `"text"sv` is one -
-     *         or with a `std::span`. See @ref scl::hash::concepts::hashable_range for
+     *         The caller should name the bytes with a `std::string_view` object - `"text"sv` is
+     *         one -
+     *         or with a `std::span` object. See @ref scl::hash::concepts::hashable_range for
      *         the reason and for what naming a partly filled buffer takes.
      * @return 32-bit Jenkins OAT hash value of the input range.
      *
@@ -67,7 +69,8 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint32_t jenkins_ota(Range && range)
+    constexpr ::std::uint32_t jenkins_ota(Range && range) /**/
+        noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
         ::std::uint32_t h = 0;
 
@@ -97,7 +100,8 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range && range) const noexcept
+        constexpr result_type operator()(Range && range) const /**/
+            noexcept(noexcept(::scl::hash::jenkins_ota(::std::forward<Range>(range))))
         {
             return ::scl::hash::jenkins_ota(::std::forward<Range>(range));
         }

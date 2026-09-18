@@ -385,6 +385,14 @@ with its copies until a write therefore leaves that buffer shared. The reference
 hands out is fixed by that range alone, and a view over a mutable object reaches that object
 mutably, whatever the qualification on the view itself.
 
+The constructor throws nothing where reading the range throws nothing, and its signature
+carries that condition as `noexcept(noexcept(Hasher{}(range)))`. The free functions `fnv1a`,
+`djb2`, `sdbm`, `jenkins_ota` and `siphash` carry the same conditional guarantee. The
+compiler computes it from the `noexcept` markings on the range's own operations, so one type
+carries the guarantee under one standard library and not under another. The libstdc++
+standard library leaves the iterator operations of the container `std::vector<bool>`
+unmarked, whereas the MSVC standard library marks them.
+
 ### `switch`/`case` Dispatch
 
 The implicit conversion to `value_type` lets a `key` appear as a `case` label.
@@ -492,12 +500,12 @@ namespace concepts {
 // Explicit conversion for a wider element
 constexpr auto byte_view(Range&&);   // view of uint8_t, least significant byte first
 
-// Free functions
-constexpr uint64_t fnv1a(Range&&, uint64_t h = offset_basis);
-constexpr uint64_t djb2 (Range&&, uint64_t h = 5381);
-constexpr uint64_t sdbm (Range&&, uint64_t h = 0);
-constexpr uint32_t jenkins_ota(Range&&);
-constexpr uint64_t siphash(Range&&, siphash_key key = siphash_default_key);
+// Free functions - each noexcept where iterating the range throws nothing
+constexpr uint64_t fnv1a(Range&&, uint64_t h = offset_basis) noexcept(...);
+constexpr uint64_t djb2 (Range&&, uint64_t h = 5381) noexcept(...);
+constexpr uint64_t sdbm (Range&&, uint64_t h = 0) noexcept(...);
+constexpr uint32_t jenkins_ota(Range&&) noexcept(...);
+constexpr uint64_t siphash(Range&&, siphash_key key = siphash_default_key) noexcept(...);
 
 // Hasher structs (satisfy byte_hasher)
 struct fnv1a_hasher;
@@ -514,7 +522,7 @@ struct key {
     using value_type  = Hasher::result_type;
     value_type value{};
 
-    explicit constexpr key(Range&&) noexcept;
+    explicit constexpr key(Range&& range) noexcept(noexcept(Hasher{}(range)));
     constexpr operator value_type() const noexcept;
     friend constexpr auto operator<=>(key const&, key const&) noexcept = default;
 };
