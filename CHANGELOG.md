@@ -299,6 +299,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `std::span<std::byte>`, promised in the documentation but rejected by the old
   constraint, works. The new `scl::hash::concepts::byte_element` states the rule, and
   hash values of the byte ranges that remain accepted are unchanged.
+- `djb2` and `sdbm` take a range whose end of traversal is of its own type, a view from
+  `std::views::take_while` among them. Both folded with `std::accumulate`, which takes two
+  iterators of one type, so such a range satisfied every constraint and then failed to
+  compile inside the header.
 - An array is refused by `fnv1a`, `djb2`, `sdbm`, `jenkins_ota`, `siphash` and
   `scl::hash::key`, whatever its element type: its bound is the storage it was declared
   with, not the content a caller put in it. **A call that passes an array no longer

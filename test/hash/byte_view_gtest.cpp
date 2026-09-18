@@ -354,3 +354,18 @@ TEST(HashByteViewTest, EveryRangeButTheBoundedArrayIsTaken)
     STATIC_EXPECT_TRUE((spellable<::std::array<char16_t, 4>>));
     STATIC_EXPECT_TRUE((spellable<::std::span<char16_t const, 4>>));
 }
+
+/**
+ * @test A range whose end of traversal is of its own type is hashed by every function of
+ *       the group, which a fold over two iterators of one type could not take.
+ */
+TEST(HashElementTest, ARangeWhoseSentinelIsOfItsOwnTypeIsHashed)
+{
+    ::std::string_view const text{"abcx"};
+    auto taken = ::std::views::take_while(text, [](char const c) { return c != 'x'; });
+
+    STATIC_EXPECT_TRUE(hashable_range<decltype(taken)>);
+    EXPECT_EQ(::scl::hash::djb2(taken), ::scl::hash::djb2(::std::string_view{"abc"}));
+    EXPECT_EQ(::scl::hash::sdbm(taken), ::scl::hash::sdbm(::std::string_view{"abc"}));
+    EXPECT_EQ(::scl::hash::fnv1a(taken), ::scl::hash::fnv1a(::std::string_view{"abc"}));
+}

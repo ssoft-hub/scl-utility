@@ -9,7 +9,6 @@
 #include <scl/utility/hash/concepts.h>
 
 #include <cstdint>
-#include <numeric>
 #include <ranges>
 
 #include "detail/base.h"
@@ -77,8 +76,13 @@ namespace scl::hash
     [[nodiscard]]
     constexpr ::std::uint64_t djb2(Range const & range, ::std::uint64_t h = 5381ull)
     {
-        return ::std::accumulate(::std::ranges::begin(range), ::std::ranges::end(range), h,
-            [](::std::uint64_t acc, auto c) noexcept { return (acc * 33ull) ^ detail::as_byte(c); });
+        for (auto const c : range)
+        {
+            // cppcheck-suppress useStlAlgorithm
+            h = (h * 33ull) ^ ::scl::hash::detail::as_byte(c);
+        }
+
+        return h;
     }
 
     /**
