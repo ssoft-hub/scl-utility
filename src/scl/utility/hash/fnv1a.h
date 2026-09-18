@@ -80,7 +80,7 @@ namespace scl::hash
     {
         for (auto const c : range)
         {
-            h ^= detail::as_byte(c);
+            h ^= ::scl::hash::detail::as_byte(c);
             h *= 1099511628211ull;
         }
         return h;

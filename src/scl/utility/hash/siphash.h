@@ -123,7 +123,8 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint64_t siphash(Range const & range, siphash_key const key = siphash_default_key)
+    constexpr ::std::uint64_t
+    siphash(Range const & range, ::scl::hash::siphash_key const key = ::scl::hash::siphash_default_key)
     {
         // State initialised from key XOR'd with magic constants spelling
         // "somepseudorandomlygeneratedbytes".
@@ -138,15 +139,15 @@ namespace scl::hash
 
         for (auto const c : range)
         {
-            m |= static_cast<::std::uint64_t>(detail::as_byte(c)) << shift;
+            m |= static_cast<::std::uint64_t>(::scl::hash::detail::as_byte(c)) << shift;
             shift += 8;
             ++len;
 
             if (shift == 64) // full 8-byte block ready
             {
                 v3 ^= m;
-                detail::sip_round(v0, v1, v2, v3); // c = 2
-                detail::sip_round(v0, v1, v2, v3);
+                ::scl::hash::detail::sip_round(v0, v1, v2, v3); // c = 2
+                ::scl::hash::detail::sip_round(v0, v1, v2, v3);
                 v0 ^= m;
                 m = 0;
                 shift = 0;
@@ -156,16 +157,16 @@ namespace scl::hash
         // Last (partial) block: high byte encodes message length mod 256.
         m |= static_cast<::std::uint64_t>(len & 0xffull) << 56;
         v3 ^= m;
-        detail::sip_round(v0, v1, v2, v3); // c = 2
-        detail::sip_round(v0, v1, v2, v3);
+        ::scl::hash::detail::sip_round(v0, v1, v2, v3); // c = 2
+        ::scl::hash::detail::sip_round(v0, v1, v2, v3);
         v0 ^= m;
 
         // Finalization: d = 4 rounds.
         v2 ^= 0xffull;
-        detail::sip_round(v0, v1, v2, v3);
-        detail::sip_round(v0, v1, v2, v3);
-        detail::sip_round(v0, v1, v2, v3);
-        detail::sip_round(v0, v1, v2, v3);
+        ::scl::hash::detail::sip_round(v0, v1, v2, v3);
+        ::scl::hash::detail::sip_round(v0, v1, v2, v3);
+        ::scl::hash::detail::sip_round(v0, v1, v2, v3);
+        ::scl::hash::detail::sip_round(v0, v1, v2, v3);
 
         return v0 ^ v1 ^ v2 ^ v3;
     }

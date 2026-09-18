@@ -73,7 +73,7 @@ namespace scl::hash
 
         for (auto const c : range)
         {
-            h += detail::as_byte(c);
+            h += ::scl::hash::detail::as_byte(c);
             h += h << 10;
             h ^= h >> 6;
         }
