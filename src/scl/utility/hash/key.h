@@ -58,7 +58,7 @@ namespace scl::hash
      *   `std::unordered_map` / `std::unordered_set`.
      *
      * @tparam Hasher  A type satisfying @ref scl::hash::concepts::byte_hasher.
-     *                 Defaults to `fnv1a_hasher`.
+     *                 Defaults to `siphash_hasher<>`.
      *
      * @par Compile-time example (default key)
      * @code
@@ -105,11 +105,9 @@ namespace scl::hash
      *
      * @note A key holds the hash of the bytes it is given, whatever spells them, so a key
      *       built from `"start"sv` equals one built from a `std::string`, from a
-     *       `std::array<char, 5>` or from a `std::span` over either. An array is refused:
-     *       its bound is the storage it was declared with rather than the content a caller
-     *       put in it, and a key built from a `char[64]` holding three characters would
-     *       answer for the whole bound its type reports rather than the three bytes its
-     *       author put there. See @ref scl::hash::concepts::hashable_range.
+     *       `std::array<char, 5>` or from a `std::span` over either. An array is refused;
+     *       the concept @ref scl::hash::concepts::hashable_range gives the reason and what
+     *       naming a partly filled buffer takes.
      */
     template <concepts::byte_hasher Hasher = siphash_hasher<>>
     struct key

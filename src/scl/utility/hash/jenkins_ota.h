@@ -116,7 +116,7 @@ namespace scl::hash
 
 /**
  * @fn scl::hash::jenkins_ota_hasher::operator()(Range const & range) const
- * @brief Hashes @p range with @ref scl::hash::jenkins_ota and its default seed.
+ * @brief Hashes @p range with @ref scl::hash::jenkins_ota.
  *
  * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
  *                single trivially copyable bytes that is not a bounded array.
