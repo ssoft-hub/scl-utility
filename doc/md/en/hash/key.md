@@ -40,6 +40,13 @@ Each element contributes `sizeof(element)` bytes, least significant first, whate
 host's own byte order — two machines hash one input alike. A byte-sized element passes
 through unchanged, so saying `byte_view` where none is needed changes nothing.
 
+The function `byte_view` requires of its source neither random access nor a reported size, so
+a caller passes a `std::list` container, a `std::forward_list` container or a filtered view
+the way it passes a `std::span` object. The view follows its source: forward where the source
+is forward, sized where the source is sized, and readable through a `const` reference where
+the source is. It is never more than a forward range, so random access does not survive it,
+and its end is a sentinel rather than an iterator.
+
 The function `byte_view` refuses a floating-point element, because its bytes tell apart
 values that compare equal (`0.0` against `-0.0`, one `NaN` against another). It spells an
 element of every integer type, the type `wchar_t` among them.
@@ -498,7 +505,7 @@ namespace concepts {
 }
 
 // Explicit conversion for a wider element
-constexpr auto byte_view(Range&&);   // view of uint8_t, least significant byte first
+constexpr auto byte_view(Range&&) noexcept(...);   // view of uint8_t, least significant byte first
 
 // Free functions - each noexcept where iterating the range throws nothing
 constexpr uint64_t fnv1a(Range&&, uint64_t h = offset_basis) noexcept(...);

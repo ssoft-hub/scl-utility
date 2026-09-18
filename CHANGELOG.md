@@ -104,9 +104,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   order, so two machines hash one input alike; a byte-sized element passes through
   unchanged. `example/hash/byte_view/hash_byte_view_example.cpp` shows it running.
 
+- `scl::hash::byte_view` refuses a bounded array as the hash functions do, asks for neither
+  random access nor a reported size, and is forward, sized and `const`-readable exactly
+  where its source is.
+
 - A conditional `noexcept` on `fnv1a`, `djb2`, `sdbm`, `jenkins_ota` and `siphash`: each
   throws nothing where iterating the range it is given throws nothing, so a call stands
-  inside a `noexcept` boundary.
+  inside a `noexcept` boundary. `scl::hash::byte_view` carries the guarantee of its source.
 
 - `scl::hash::concepts::hashable_range` - the concept stating the rule every hash function
   of the module places on its argument: a range of single-byte elements that is not a

@@ -13,10 +13,13 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <forward_list>
+#include <list>
 #include <memory>
 #include <ranges>
 #include <span>
+#include <sstream>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -146,6 +149,97 @@ namespace
         }
     };
 
+    /// A forward counterpart of @ref throwing_iterator: its postfix increment answers a copy.
+    template <throwing_operation Operation>
+    struct forward_throwing_iterator
+    {
+        using value_type = char;
+        using difference_type = ::std::ptrdiff_t;
+        using iterator_concept = ::std::forward_iterator_tag;
+
+        char const * position = nullptr;
+
+        char operator*() const /**/
+            noexcept(Operation != throwing_operation::dereference)
+        {
+            return *position;
+        }
+
+        forward_throwing_iterator & operator++() /**/
+            noexcept(Operation != throwing_operation::increment)
+        {
+            ++position;
+            return *this;
+        }
+
+        forward_throwing_iterator operator++(int) /**/
+            noexcept(Operation != throwing_operation::increment)
+        {
+            auto taken = *this;
+            ++position;
+            return taken;
+        }
+
+        bool operator==(forward_throwing_iterator const & other) const /**/
+            noexcept(Operation != throwing_operation::compare)
+        {
+            return position == other.position;
+        }
+    };
+
+    template <throwing_operation Operation>
+    struct forward_throwing_range : public ::std::ranges::view_interface<forward_throwing_range<Operation>>
+    {
+        char const * first = "abc";
+
+        forward_throwing_iterator<Operation> begin() const /**/
+            noexcept(Operation != throwing_operation::begin)
+        {
+            return {first};
+        }
+
+        forward_throwing_iterator<Operation> end() const /**/
+            noexcept(Operation != throwing_operation::end)
+        {
+            return {first + 3};
+        }
+    };
+
+    /// A range whose reported size is the only operation that can throw.
+    template <throwing_operation Operation>
+    struct sized_throwing_range : public ::std::ranges::view_interface<sized_throwing_range<Operation>>
+    {
+        char const * first = "abc";
+
+        char const * begin() const noexcept { return first; }
+
+        char const * end() const noexcept { return first + 3; }
+
+        ::std::size_t size() const /**/
+            noexcept(Operation != throwing_operation::size)
+        {
+            return 3;
+        }
+    };
+
+    /// The same, reporting a size only through a non-const reference.
+    template <throwing_operation Operation>
+    struct mutable_sized_throwing_range
+        : public ::std::ranges::view_interface<mutable_sized_throwing_range<Operation>>
+    {
+        char const * first = "abc";
+
+        char const * begin() noexcept { return first; }
+
+        char const * end() noexcept { return first + 3; }
+
+        ::std::size_t size() /**/
+            noexcept(Operation != throwing_operation::size)
+        {
+            return 3;
+        }
+    };
+
     /**
      * A container whose copies share one buffer until a write. Reading it through a
      * non-constant reference is what would separate that buffer.
@@ -201,6 +295,120 @@ namespace
         }
     };
 
+    /// An iterator whose move construction is the only operation that can throw.
+    struct move_throwing_iterator
+    {
+        using value_type = char;
+        using difference_type = ::std::ptrdiff_t;
+
+        char const * position = nullptr;
+
+        move_throwing_iterator() = default;
+
+        explicit move_throwing_iterator(char const * const at) noexcept
+            : position{at}
+        {}
+
+        move_throwing_iterator(move_throwing_iterator const &) = default;
+
+        move_throwing_iterator(move_throwing_iterator && other) /**/
+            noexcept(false)
+            : position{other.position}
+        {}
+
+        ~move_throwing_iterator() = default;
+
+        move_throwing_iterator & operator=(move_throwing_iterator const &) = default;
+
+        move_throwing_iterator & operator=(move_throwing_iterator && other) /**/
+            noexcept(false)
+        {
+            position = other.position;
+            return *this;
+        }
+
+        char operator*() const noexcept { return *position; }
+
+        move_throwing_iterator & operator++() noexcept
+        {
+            ++position;
+            return *this;
+        }
+
+        void operator++(int) noexcept { ++position; }
+
+        bool operator==(move_throwing_iterator const & other) const noexcept
+        {
+            return position == other.position;
+        }
+    };
+
+    /// A sentinel of its own type, telling it without throwing.
+    struct plain_sentinel
+    {
+        char const * last = nullptr;
+
+        friend bool
+        operator==(move_throwing_iterator const & position, plain_sentinel const & sentinel) noexcept
+        {
+            return position.position == sentinel.last;
+        }
+    };
+
+    struct move_throwing_iterator_range : public ::std::ranges::view_interface<move_throwing_iterator_range>
+    {
+        char const * first = "abc";
+
+        move_throwing_iterator begin() const noexcept { return move_throwing_iterator{first}; }
+
+        plain_sentinel end() const noexcept { return plain_sentinel{first + 3}; }
+    };
+
+    /// A sentinel whose move construction is the only operation that can throw.
+    struct move_throwing_sentinel
+    {
+        char const * last = nullptr;
+
+        move_throwing_sentinel() = default;
+
+        explicit move_throwing_sentinel(char const * const at) noexcept
+            : last{at}
+        {}
+
+        move_throwing_sentinel(move_throwing_sentinel const &) = default;
+
+        move_throwing_sentinel(move_throwing_sentinel && other) /**/
+            noexcept(false)
+            : last{other.last}
+        {}
+
+        ~move_throwing_sentinel() = default;
+
+        move_throwing_sentinel & operator=(move_throwing_sentinel const &) = default;
+
+        move_throwing_sentinel & operator=(move_throwing_sentinel && other) /**/
+            noexcept(false)
+        {
+            last = other.last;
+            return *this;
+        }
+
+        friend bool
+        operator==(char const * const position, move_throwing_sentinel const & sentinel) noexcept
+        {
+            return position == sentinel.last;
+        }
+    };
+
+    struct move_throwing_sentinel_range : public ::std::ranges::view_interface<move_throwing_sentinel_range>
+    {
+        char const * first = "abc";
+
+        char const * begin() const noexcept { return first; }
+
+        move_throwing_sentinel end() const noexcept { return move_throwing_sentinel{first + 3}; }
+    };
+
     /// A sentinel whose comparison with the iterator is the only operation that can throw.
     struct compare_throwing_sentinel
     {
@@ -226,10 +434,113 @@ namespace
         }
     };
 
+    /// A forward iterator whose copy construction is the only operation that can throw.
+    struct copy_throwing_iterator
+    {
+        using value_type = char;
+        using difference_type = ::std::ptrdiff_t;
+        using iterator_concept = ::std::forward_iterator_tag;
+
+        char const * position = nullptr;
+
+        copy_throwing_iterator() = default;
+
+        explicit copy_throwing_iterator(char const * const at) noexcept
+            : position{at}
+        {}
+
+        copy_throwing_iterator(copy_throwing_iterator const & other) /**/
+            noexcept(false)
+            : position{other.position}
+        {}
+
+        copy_throwing_iterator(copy_throwing_iterator &&) = default;
+
+        ~copy_throwing_iterator() = default;
+
+        copy_throwing_iterator & operator=(copy_throwing_iterator const & other) /**/
+            noexcept(false)
+        {
+            position = other.position;
+            return *this;
+        }
+
+        copy_throwing_iterator & operator=(copy_throwing_iterator &&) = default;
+
+        char operator*() const noexcept { return *position; }
+
+        copy_throwing_iterator & operator++() noexcept
+        {
+            ++position;
+            return *this;
+        }
+
+        copy_throwing_iterator operator++(int) /**/
+            noexcept(false)
+        {
+            auto taken = *this;
+            ++position;
+            return taken;
+        }
+
+        bool operator==(copy_throwing_iterator const & other) const noexcept
+        {
+            return position == other.position;
+        }
+    };
+
+    struct copy_throwing_range : public ::std::ranges::view_interface<copy_throwing_range>
+    {
+        char const * first = "abc";
+
+        copy_throwing_iterator begin() const noexcept { return copy_throwing_iterator{first}; }
+
+        copy_throwing_iterator end() const noexcept { return copy_throwing_iterator{first + 3}; }
+    };
+
+    /// A container whose buffer reports how many owners it has.
+    struct counted_buffer
+    {
+        ::std::shared_ptr<::std::array<char16_t, 3>> held;
+
+        char16_t const * begin() const noexcept { return held->data(); }
+
+        char16_t const * end() const noexcept { return held->data() + held->size(); }
+    };
+
     struct two_bytes
     {
         char low;
         char high;
+    };
+
+    /// A range whose move constructor is the only operation that can throw.
+    struct move_throwing_range : public ::std::ranges::view_interface<move_throwing_range>
+    {
+        char const * first = "abc";
+
+        move_throwing_range() = default;
+        move_throwing_range(move_throwing_range const &) = default;
+
+        move_throwing_range(move_throwing_range && other) /**/
+            noexcept(false)
+            : first{other.first}
+        {}
+
+        ~move_throwing_range() = default;
+
+        move_throwing_range & operator=(move_throwing_range const &) = default;
+
+        move_throwing_range & operator=(move_throwing_range && other) /**/
+            noexcept(false)
+        {
+            first = other.first;
+            return *this;
+        }
+
+        char const * begin() const noexcept { return first; }
+
+        char const * end() const noexcept { return first + 3; }
     };
 
     struct one_byte
@@ -313,6 +624,161 @@ TEST(HashByteViewTest, MakesAWiderRangeHashable)
 }
 
 /**
+ * @test Two cursors on one element are told apart by the byte they stand on.
+ */
+TEST(HashByteViewTest, TwoCursorsOnOneElementDifferByTheirByte)
+{
+    ::std::u16string_view const wide{u"A"};
+    auto bytes = byte_view(wide);
+
+    auto const first = ::std::ranges::begin(bytes);
+    auto const second = ::std::ranges::next(first);
+
+    EXPECT_TRUE(first != second);
+    EXPECT_EQ(*first, 0x41u);
+    EXPECT_EQ(*second, 0x00u);
+    EXPECT_TRUE(::std::ranges::next(second) == ::std::ranges::end(bytes));
+}
+
+/**
+ * @test Postfix increment answers the byte it stood on and steps past it.
+ */
+TEST(HashByteViewTest, PostfixIncrementAnswersTheByteItStoodOn)
+{
+    ::std::u16string_view const wide{u"A"};
+    auto bytes = byte_view(wide);
+
+    auto moving = ::std::ranges::begin(bytes);
+    auto const taken = moving++;
+
+    EXPECT_EQ(*taken, 0x41u);
+    EXPECT_EQ(*moving, 0x00u);
+}
+
+/**
+ * @test A range that cannot be read through a const reference is taken.
+ */
+TEST(HashByteViewTest, ARangeThatCannotBeReadAsConstIsTaken)
+{
+    ::std::u16string_view const wide{u"AxB"};
+    auto kept = wide | ::std::views::filter([](char16_t const c) { return c != u'x'; });
+
+    STATIC_EXPECT_FALSE(::std::ranges::range<decltype(kept) const>);
+    EXPECT_EQ(fnv1a(byte_view(kept)), fnv1a(byte_view(::std::u16string_view{u"AB"})));
+}
+
+/**
+ * @test A container handed over as a temporary is taken and owned.
+ */
+TEST(HashByteViewTest, ATemporaryContainerIsTakenAndOwned)
+{
+    EXPECT_EQ(fnv1a(byte_view(::std::vector<char16_t>{u'A', u'B'})),
+        fnv1a(byte_view(::std::u16string_view{u"AB"})));
+}
+
+/**
+ * @test A source that reports a size only while mutable still reports one through the view.
+ */
+TEST(HashByteViewTest, ASourceSizedOnlyWhileMutableStillReportsASize)
+{
+    ::std::u16string_view const wide{u"AB"};
+    auto counted = wide | ::std::views::transform([seen = 0](char16_t const c) mutable {
+        ++seen;
+        return c;
+    });
+
+    STATIC_EXPECT_TRUE(::std::ranges::sized_range<decltype(counted)>);
+    STATIC_EXPECT_FALSE(::std::ranges::range<decltype(counted) const>);
+
+    auto bytes = byte_view(counted);
+    EXPECT_EQ(bytes.size(), 4u);
+}
+
+/**
+ * @test A source that can be read once is taken.
+ */
+TEST(HashByteViewTest, AnInputOnlySourceIsTaken)
+{
+    ::std::istringstream stream{"A B"};
+
+    EXPECT_EQ(fnv1a(byte_view(::std::ranges::istream_view<char>(stream))), fnv1a(::std::string_view{"AB"}));
+}
+
+/**
+ * @test Three properties follow the source, and the view is never more than forward.
+ */
+TEST(HashByteViewTest, TheViewCarriesThePropertiesOfItsSource)
+{
+    using over_contiguous = decltype(byte_view(::std::declval<::std::u16string_view &>()));
+    using over_list = decltype(byte_view(::std::declval<::std::list<char16_t> &>()));
+    using over_forward = decltype(byte_view(::std::declval<::std::forward_list<char16_t> &>()));
+
+    STATIC_EXPECT_TRUE(::std::ranges::view<over_contiguous>);
+    STATIC_EXPECT_TRUE(::std::ranges::range<over_contiguous const>);
+    STATIC_EXPECT_TRUE(::std::ranges::sized_range<over_contiguous const>);
+    STATIC_EXPECT_TRUE(::std::ranges::forward_range<over_contiguous>);
+    STATIC_EXPECT_FALSE(::std::ranges::random_access_range<over_contiguous>);
+    STATIC_EXPECT_FALSE(::std::ranges::common_range<over_contiguous>);
+    STATIC_EXPECT_TRUE(::std::ranges::forward_range<over_list>);
+
+    STATIC_EXPECT_TRUE(::std::ranges::sized_range<over_list>);
+    STATIC_EXPECT_FALSE(::std::ranges::sized_range<over_forward>);
+
+    STATIC_EXPECT_TRUE((::std::is_same_v<::std::ranges::range_value_t<over_contiguous>, ::std::uint8_t>));
+}
+
+/**
+ * @test The byte count is the element count times the width of one element.
+ */
+TEST(HashByteViewTest, TheSizeIsTheElementCountTimesTheElementWidth)
+{
+    ::std::u16string_view const wide{u"AB"};
+    ::std::string_view const narrow{"AB"};
+
+    STATIC_EXPECT_EQ(byte_view(::std::u16string_view{u"AB"}).size(), 4u);
+    STATIC_EXPECT_EQ(byte_view(::std::string_view{"AB"}).size(), 2u);
+    EXPECT_EQ(::std::ranges::distance(byte_view(wide)), 4);
+    EXPECT_EQ(::std::ranges::distance(byte_view(narrow)), 2);
+}
+
+/**
+ * @test A named result reads through a const reference, so const by default holds.
+ */
+TEST(HashByteViewTest, ANamedResultReadsThroughAConstReference)
+{
+    ::std::u16string_view const wide{u"AB"};
+    auto const bytes = byte_view(wide);
+
+    STATIC_EXPECT_TRUE(::std::ranges::range<decltype(bytes)>);
+    EXPECT_EQ(fnv1a(bytes), fnv1a(::std::string_view{"A\0B\0", 4}));
+}
+
+/**
+ * @test A range is spelled whether or not it reports a size or gives random access, and
+ *       every hash function of the group then takes it.
+ */
+TEST(HashByteViewTest, ARangeNeedsNeitherRandomAccessNorSize)
+{
+    using unsized = decltype(::std::views::take_while(::std::u16string_view{}, [](char16_t const c) {
+        return c != u'x';
+    }));
+
+    STATIC_EXPECT_TRUE(spellable<::std::list<char16_t>>);         // sized, not random-access
+    STATIC_EXPECT_TRUE(spellable<unsized>);                       // random-access, not sized
+    STATIC_EXPECT_TRUE(spellable<::std::forward_list<char16_t>>); // neither
+    STATIC_EXPECT_TRUE(spellable<::std::deque<char16_t>>);        // both, not contiguous
+
+    ::std::forward_list<char16_t> wide{u'A', u'B'};
+    ::std::u16string_view contiguous{u"AB"};
+
+    EXPECT_EQ(fnv1a(byte_view(wide)), fnv1a(byte_view(contiguous)));
+    EXPECT_EQ(djb2(byte_view(wide)), djb2(byte_view(contiguous)));
+    EXPECT_EQ(sdbm(byte_view(wide)), sdbm(byte_view(contiguous)));
+    EXPECT_EQ(jenkins_ota(byte_view(wide)), jenkins_ota(byte_view(contiguous)));
+    EXPECT_EQ(siphash(byte_view(wide)), siphash(byte_view(contiguous)));
+}
+
+/**
  * @test A floating-point element is refused, and an integer of any width is spelled.
  */
 TEST(HashByteViewTest, AFloatingPointElementIsRefused)
@@ -364,23 +830,6 @@ TEST(HashByteViewTest, ElementsSpellTheirBytesLittleEndian)
     static constexpr ::std::uint32_t values[]{0x04030201U, 0x08070605U};
     static constexpr ::std::uint8_t expected[]{1, 2, 3, 4, 5, 6, 7, 8};
     STATIC_EXPECT_TRUE(::std::ranges::equal(byte_view(::std::span{values}), ::std::span{expected}));
-}
-
-/**
- * @test The byte order comes from the value, not from the element's storage.
- *
- * On a little-endian host the two orders coincide, so the assertion above passes for a
- * `bit_cast` implementation as well. Reading the element's own bytes is what the module
- * must not do — two machines would then hash one input differently — and this is where
- * such an implementation parts ways with the contract.
- */
-TEST(HashByteViewTest, ByteOrderIsIndependentOfTheHost)
-{
-    static constexpr ::std::uint32_t value[]{0x04030201U};
-    static constexpr auto storage = ::std::bit_cast<::std::array<::std::uint8_t, 4>>(value[0]);
-    static constexpr bool storage_spells_the_value = ::std::endian::native == ::std::endian::little;
-
-    STATIC_EXPECT_EQ(::std::ranges::equal(byte_view(::std::span{value}), storage), storage_spells_the_value);
 }
 
 /**
@@ -471,6 +920,253 @@ TEST(HashElementTest, AnElementJustPastTheByteRuleIsRefused)
 {
     STATIC_EXPECT_TRUE(hashable_range<::std::vector<one_byte>>);
     STATIC_EXPECT_FALSE(hashable_range<::std::vector<two_bytes>>);
+}
+
+/**
+ * @test The view carries the guarantee of its source: hashing it throws nothing where
+ *       walking the source throws nothing, and stops promising where the source does.
+ */
+TEST(HashByteViewTest, NoexceptFollowsTheSource)
+{
+    ::std::u16string_view const wide{u"start"};
+    throwing_range<throwing_operation::none> const safe;
+    throwing_range<throwing_operation::dereference> risky;
+
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::fnv1a(::scl::hash::byte_view(wide))));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::fnv1a(::scl::hash::byte_view(safe))));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::fnv1a(::scl::hash::byte_view(risky))));
+}
+
+/**
+ * @test A view built over a temporary owns it, so the source outlives the expression that
+ *       made the view.
+ */
+TEST(HashByteViewTest, AViewOfATemporaryKeepsTheSourceAlive)
+{
+    auto const kept = ::std::make_shared<::std::array<char16_t, 3>>(::std::array<char16_t, 3>{
+        u'A', u'B', u'C'});
+
+    auto const bytes = ::scl::hash::byte_view(counted_buffer{kept});
+
+    EXPECT_EQ(kept.use_count(), 2);
+    EXPECT_EQ(::scl::hash::fnv1a(bytes),
+        ::scl::hash::fnv1a(::scl::hash::byte_view(::std::u16string_view{u"ABC"})));
+}
+
+/**
+ * @test A source the view owns is walked by the constant cursor, so a container whose copies
+ *       share one buffer is not read through a non-constant reference.
+ */
+TEST(HashByteViewTest, AnOwnedSourceIsWalkedByTheConstantCursor)
+{
+    auto owned = ::scl::hash::byte_view(shared_buffer{});
+    shared_buffer::mutable_reads = 0;
+
+    for (auto position = ::std::ranges::begin(owned); !(position == ::std::ranges::end(owned)); ++position)
+        static_cast<void>(*position);
+
+    EXPECT_EQ(shared_buffer::mutable_reads, 0);
+}
+
+/**
+ * @test The cursor a source readable only through a non-constant reference answers follows
+ *       that source, as the constant one does.
+ */
+TEST(HashByteViewTest, TheMutableCursorFollowsTheSource)
+{
+    mutable_throwing_range<throwing_operation::none> safe;
+    mutable_throwing_range<throwing_operation::dereference> risky;
+    auto safe_bytes = ::scl::hash::byte_view(safe);
+    auto risky_bytes = ::scl::hash::byte_view(risky);
+
+    STATIC_EXPECT_TRUE(noexcept(::std::ranges::begin(safe_bytes)));
+    STATIC_EXPECT_FALSE(noexcept(::std::ranges::begin(risky_bytes)));
+}
+
+/**
+ * @test The cursor promises nothing where moving the source iterator can throw.
+ */
+TEST(HashByteViewTest, TheCursorFollowsAnIteratorThatCanThrowWhenMoved)
+{
+    move_throwing_iterator_range source;
+    auto bytes = ::scl::hash::byte_view(source);
+
+    STATIC_EXPECT_FALSE(noexcept(::std::ranges::begin(bytes)));
+}
+
+/**
+ * @test The cursor promises nothing where moving the sentinel can throw.
+ */
+TEST(HashByteViewTest, TheCursorFollowsAnEndThatCanThrowWhenMoved)
+{
+    move_throwing_sentinel_range source;
+    auto bytes = ::scl::hash::byte_view(source);
+
+    STATIC_EXPECT_FALSE(noexcept(::std::ranges::begin(bytes)));
+}
+
+/**
+ * @test The cursor reads an element through the element type, so a reference whose conversion
+ *       throws stops the promise.
+ */
+TEST(HashByteViewTest, TheCursorFollowsTheConversionToTheElementType)
+{
+    throwing_range<throwing_operation::conversion> sneaky;
+    auto bytes = ::scl::hash::byte_view(sneaky);
+
+    STATIC_EXPECT_FALSE(noexcept(::std::ranges::begin(bytes)));
+}
+
+/**
+ * @test The cursor weighs the iterator against the sentinel, which a source whose two
+ *       differ tells apart from weighing the iterator against itself.
+ */
+TEST(HashByteViewTest, TheCursorComparesTheIteratorAgainstTheEnd)
+{
+    distinct_sentinel_range source;
+    auto bytes = ::scl::hash::byte_view(source);
+
+    STATIC_EXPECT_FALSE(noexcept(::std::ranges::begin(bytes)));
+}
+
+/**
+ * @test Postfix increment copies the cursor, so a copy that can throw stops its promise while
+ *       the prefix one keeps it.
+ */
+TEST(HashByteViewTest, ThePostfixIncrementFollowsTheCopyOfTheCursor)
+{
+    copy_throwing_range source;
+    auto bytes = ::scl::hash::byte_view(source);
+    auto position = ::std::ranges::begin(bytes);
+
+    STATIC_EXPECT_TRUE(noexcept(++position));
+    STATIC_EXPECT_FALSE(noexcept(position++));
+}
+
+/**
+ * @test A byte-sized element with no unsigned counterpart passes through unchanged.
+ */
+TEST(HashByteViewTest, AByteSizedElementWithNoUnsignedCounterpartPassesThrough)
+{
+    ::std::vector<bool> const flags{true, false, true};
+
+    EXPECT_EQ(::scl::hash::fnv1a(::scl::hash::byte_view(flags)), ::scl::hash::fnv1a(flags));
+}
+
+/**
+ * @test A source of one element spells exactly the bytes of that element.
+ */
+TEST(HashByteViewTest, ASingleElementSourceSpellsItsBytes)
+{
+    static constexpr ::std::uint8_t expected[]{0x41U, 0x00U};
+
+    STATIC_EXPECT_TRUE(::std::ranges::equal(::scl::hash::byte_view(::std::u16string_view{u"A"}),
+        ::std::span{expected}));
+}
+
+/**
+ * @test The cursor promises nothing its source does not promise, operation by operation.
+ */
+TEST(HashByteViewTest, TheCursorPromisesNothingTheSourceDoesNotPromise)
+{
+    throwing_range<throwing_operation::compare> risky;
+    throwing_range<throwing_operation::none> safe;
+    auto risky_bytes = ::scl::hash::byte_view(risky);
+    auto safe_bytes = ::scl::hash::byte_view(safe);
+    auto slow = ::std::ranges::begin(risky_bytes);
+    auto quick = ::std::ranges::begin(safe_bytes);
+
+    STATIC_EXPECT_TRUE(noexcept(::std::ranges::begin(safe_bytes)));
+    STATIC_EXPECT_FALSE(noexcept(::std::ranges::begin(risky_bytes)));
+    STATIC_EXPECT_TRUE(noexcept(++quick));
+    STATIC_EXPECT_FALSE(noexcept(++slow));
+    STATIC_EXPECT_TRUE(noexcept(quick++));
+    STATIC_EXPECT_FALSE(noexcept(slow++));
+    STATIC_EXPECT_TRUE(noexcept(quick == ::std::ranges::end(safe_bytes)));
+    STATIC_EXPECT_FALSE(noexcept(slow == ::std::ranges::end(risky_bytes)));
+    STATIC_EXPECT_TRUE(noexcept(quick == quick));
+    STATIC_EXPECT_FALSE(noexcept(slow == slow));
+    STATIC_EXPECT_TRUE(noexcept(*quick));
+}
+
+/**
+ * @test The cursor a const view answers follows the source as the mutable one does.
+ */
+TEST(HashByteViewTest, TheConstCursorFollowsTheSource)
+{
+    throwing_range<throwing_operation::compare> const risky;
+    ::std::u16string_view const wide{u"AB"};
+    auto const bytes = ::scl::hash::byte_view(risky);
+    auto const safe = ::scl::hash::byte_view(wide);
+
+    STATIC_EXPECT_TRUE(noexcept(::std::ranges::begin(safe)));
+    STATIC_EXPECT_FALSE(noexcept(::std::ranges::begin(bytes)));
+}
+
+/**
+ * @test The postfix increment of a forward cursor follows the source, and answers a copy.
+ */
+TEST(HashByteViewTest, TheForwardCursorPostfixFollowsTheSource)
+{
+    forward_throwing_range<throwing_operation::increment> risky;
+    forward_throwing_range<throwing_operation::none> safe;
+    auto risky_bytes = ::scl::hash::byte_view(risky);
+    auto safe_bytes = ::scl::hash::byte_view(safe);
+    auto slow = ::std::ranges::begin(risky_bytes);
+    auto quick = ::std::ranges::begin(safe_bytes);
+
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(quick++), decltype(quick)>));
+    STATIC_EXPECT_TRUE(noexcept(quick++));
+    STATIC_EXPECT_FALSE(noexcept(slow++));
+}
+
+/**
+ * @test Taking a source that can throw when it is moved is not itself noexcept.
+ */
+TEST(HashByteViewTest, TakingASourceThatCanThrowWhenMovedIsNotNoexcept)
+{
+    move_throwing_range source;
+
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::byte_view(::std::u16string_view{u"AB"})));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::byte_view(source)));
+}
+
+/**
+ * @test The reported size throws exactly where the source reports its own size throwing.
+ */
+TEST(HashByteViewTest, TheSizeThrowsExactlyWhereTheSourceSizeThrows)
+{
+    sized_throwing_range<throwing_operation::none> safe;
+    sized_throwing_range<throwing_operation::size> risky;
+    mutable_sized_throwing_range<throwing_operation::none> safe_while_mutable;
+    mutable_sized_throwing_range<throwing_operation::size> risky_while_mutable;
+
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::byte_view(safe).size()));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::byte_view(risky).size()));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::byte_view(safe_while_mutable).size()));
+    STATIC_EXPECT_FALSE(noexcept(::scl::hash::byte_view(risky_while_mutable).size()));
+}
+
+/**
+ * @test An empty source spells no bytes, and the cursor reads no element to find that out.
+ */
+TEST(HashByteViewTest, AnEmptySourceSpellsNoBytes)
+{
+    STATIC_EXPECT_TRUE(::scl::hash::byte_view(::std::u16string_view{}).empty());
+    STATIC_EXPECT_EQ(::scl::hash::fnv1a(::scl::hash::byte_view(::std::u16string_view{})),
+        ::scl::hash::fnv1a(::std::string_view{}));
+}
+
+/**
+ * @test A view is iterable through a const reference exactly where its source is.
+ */
+TEST(HashByteViewTest, AConstViewIsIterableExactlyWhereItsSourceIs)
+{
+    ::std::u16string_view const wide{u"AxB"};
+    auto kept = wide | ::std::views::filter([](char16_t const c) { return c != u'x'; });
+
+    STATIC_EXPECT_FALSE(::std::ranges::range<decltype(::scl::hash::byte_view(kept)) const>);
+    STATIC_EXPECT_TRUE(::std::ranges::range<decltype(::scl::hash::byte_view(wide)) const>);
 }
 
 /**
@@ -651,6 +1347,8 @@ TEST(HashElementTest, ASharedBufferIsReadThroughAConstantReference)
 
     static_cast<void>(::scl::hash::fnv1a(named));
     static_cast<void>(::scl::hash::fnv1a(shared_buffer{}));
+    static_cast<void>(::scl::hash::fnv1a(::scl::hash::byte_view(named)));
+    static_cast<void>(::scl::hash::fnv1a(::scl::hash::byte_view(shared_buffer{})));
 
     EXPECT_EQ(shared_buffer::mutable_reads, 0);
 }

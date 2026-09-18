@@ -85,6 +85,30 @@ namespace scl::hash::detail
     concept nothrow_traversable = ::scl::hash::detail::nothrow_iterable<
         decltype(::scl::hash::detail::read_only(::std::declval<Range &&>()))>;
 
+    /**
+     * Answers a named @p range as @ref read_only hands it over, and a temporary as it
+     * stands. Routing a temporary through @ref read_only would hand the range
+     * adaptor object `std::views::all` a reference to a constant, from which that adaptor builds
+     * an object of the class template `std::ranges::ref_view` onto an object that dies with the
+     * full expression. Handed the temporary as an rvalue, the same adaptor builds an object of
+     * the class template `std::ranges::owning_view`, which keeps the source alive. The owned source is then traversed by the constant cursor.
+     */
+    template <typename Range>
+    [[nodiscard]]
+    constexpr decltype(auto) view_source(Range && range) noexcept
+    {
+        if constexpr (::std::is_lvalue_reference_v<Range>)
+            return ::scl::hash::detail::read_only(range);
+        else
+            return ::std::forward<Range>(range);
+    }
+
+    /// The view the function template @ref scl::hash::byte_view builds on, for a source of
+    /// type @p Range.
+    template <typename Range>
+    using viewed_source_t =
+        ::std::views::all_t<decltype(::scl::hash::detail::view_source(::std::declval<Range &&>()))>;
+
     template <::scl::hash::concepts::byte_element Element>
     [[nodiscard]]
     SCL_FORCE_INLINE constexpr ::std::uint8_t as_byte(Element const value) noexcept
@@ -92,4 +116,27 @@ namespace scl::hash::detail
         return ::std::bit_cast<::std::uint8_t>(value);
     }
 
+    /**
+     * Answers the bits of @p value as an unsigned integer of the element's own width, which is
+     * what a cursor hands out one byte at a time, least significant first.
+     */
+    template <::scl::hash::concepts::integer_element Element>
+    [[nodiscard]]
+    SCL_FORCE_INLINE constexpr auto element_bits(Element const value) noexcept
+    {
+        if constexpr (sizeof(Element) == 1)
+        {
+            return ::scl::hash::detail::as_byte(value);
+        }
+        else
+        {
+            // The trait std::make_unsigned_t takes an enumeration to the unsigned counterpart
+            // of its underlying type.
+            return static_cast<::std::make_unsigned_t<Element>>(value);
+        }
+    }
+
+    /// The type @ref element_bits answers for @p Element.
+    template <typename Element>
+    using element_bits_t = decltype(::scl::hash::detail::element_bits(::std::declval<Element>()));
 } // namespace scl::hash::detail
