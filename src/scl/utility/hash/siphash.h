@@ -125,7 +125,7 @@ namespace scl::hash
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
     constexpr ::std::uint64_t
-    siphash(Range const & range, ::scl::hash::siphash_key const key = ::scl::hash::siphash_default_key)
+    siphash(Range && range, ::scl::hash::siphash_key const key = ::scl::hash::siphash_default_key)
     {
         // State initialised from key XOR'd with magic constants spelling
         // "somepseudorandomlygeneratedbytes".
@@ -138,7 +138,8 @@ namespace scl::hash
         ::std::size_t len = 0;
         int shift = 0; // bits filled in m (0, 8, 16, ..., 56)
 
-        for (auto const c : range)
+        for (::std::ranges::range_value_t<Range> const c :
+            ::scl::hash::detail::read_only(::std::forward<Range>(range)))
         {
             m |= static_cast<::std::uint64_t>(::scl::hash::detail::as_byte(c)) << shift;
             shift += 8;
@@ -188,9 +189,9 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range const & range) const noexcept
+        constexpr result_type operator()(Range && range) const noexcept
         {
-            return ::scl::hash::siphash(range, Key);
+            return ::scl::hash::siphash(::std::forward<Range>(range), Key);
         }
     };
 
@@ -216,11 +217,12 @@ namespace scl::hash
  */
 
 /**
- * @fn scl::hash::siphash_hasher::operator()(Range const & range) const
+ * @fn scl::hash::siphash_hasher::operator()(Range && range) const
  * @brief Hashes @p range with @ref scl::hash::siphash under the embedded key.
  *
  * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
- *                single trivially copyable bytes that is not a bounded array.
+ *                trivially copyable non-empty elements one byte wide that is not a bounded
+ *                array.
  * @param  range  Input range to hash.
  * @return 64-bit SipHash-2-4 hash value of @p range.
  */

@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <ranges>
+#include <utility>
 
 #include "detail/base.h"
 
@@ -74,14 +75,12 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint64_t djb2(Range const & range, ::std::uint64_t h = 5381ull)
+    constexpr ::std::uint64_t djb2(Range && range, ::std::uint64_t h = 5381ull)
     {
-        for (auto const c : range)
-        {
+        for (::std::ranges::range_value_t<Range> const c :
+            ::scl::hash::detail::read_only(::std::forward<Range>(range)))
             // cppcheck-suppress useStlAlgorithm
             h = (h * 33ull) ^ ::scl::hash::detail::as_byte(c);
-        }
-
         return h;
     }
 
@@ -95,9 +94,9 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range const & range) const noexcept
+        constexpr result_type operator()(Range && range) const noexcept
         {
-            return ::scl::hash::djb2(range);
+            return ::scl::hash::djb2(::std::forward<Range>(range));
         }
     };
 
@@ -113,11 +112,12 @@ namespace scl::hash
  */
 
 /**
- * @fn scl::hash::djb2_hasher::operator()(Range const & range) const
+ * @fn scl::hash::djb2_hasher::operator()(Range && range) const
  * @brief Hashes @p range with @ref scl::hash::djb2 and its default seed.
  *
  * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
- *                single trivially copyable bytes that is not a bounded array.
+ *                trivially copyable non-empty elements one byte wide that is not a bounded
+ *                array.
  * @param  range  Input range to hash.
  * @return 64-bit djb2a hash value of @p range.
  */

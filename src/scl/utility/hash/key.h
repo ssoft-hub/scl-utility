@@ -118,8 +118,8 @@ namespace scl::hash
         value_type value{};
 
         template <::scl::hash::concepts::hashable_range Range>
-        explicit constexpr key(Range const & range) noexcept
-            : value{Hasher{}(range)}
+        explicit constexpr key(Range && range) noexcept
+            : value{Hasher{}(::std::forward<Range>(range))}
         {}
 
         [[nodiscard]]
@@ -169,11 +169,12 @@ struct std::hash<::scl::hash::key<Hasher>>
  */
 
 /**
- * @fn scl::hash::key::key(Range const & range)
+ * @fn scl::hash::key::key(Range && range)
  * @brief Constructs the hash value by hashing @p range with @p Hasher.
  *
  * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
- *                single trivially copyable bytes that is not a bounded array.
+ *                trivially copyable non-empty elements one byte wide that is not a bounded
+ *                array.
  * @param  range  Input range (e.g. `std::string`, `std::span<std::byte>`, `"text"sv`).
  */
 

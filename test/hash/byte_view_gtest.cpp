@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <forward_list>
+#include <memory>
 #include <ranges>
 #include <span>
 #include <string_view>
@@ -26,7 +27,7 @@ namespace
 
     /// Satisfied when @ref scl::hash::byte_view accepts @p Range.
     template <typename Range>
-    concept spellable = requires(Range const & range) { ::scl::hash::byte_view(range); };
+    concept spellable = requires(Range & range) { ::scl::hash::byte_view(range); };
 
     enum class byte_enum : unsigned char
     {
@@ -68,6 +69,42 @@ namespace
     /// Satisfied when @ref unconstrained accepts @p Range.
     template <typename Range>
     concept unconstrained_takes = requires(Range & range) { unconstrained(range); };
+
+    /**
+     * A container whose copies share one buffer until a write. Reading it through a
+     * non-constant reference is what would separate that buffer.
+     */
+    struct shared_buffer
+    {
+        ::std::shared_ptr<::std::array<char, 3>> held =
+            ::std::make_shared<::std::array<char, 3>>(::std::array<char, 3>{'a', 'b', 'c'});
+
+        inline static int mutable_reads = 0;
+
+        char * begin()
+        {
+            ++mutable_reads;
+            return held->data();
+        }
+
+        char * end() { return held->data() + held->size(); }
+
+        char const * begin() const noexcept { return held->data(); }
+
+        char const * end() const noexcept { return held->data() + held->size(); }
+    };
+
+    /// A range whose constant traversal answers a wider element than its mutable one.
+    struct widening_range
+    {
+        static constexpr char narrow[]{'a', 'b', 'c'};
+        static constexpr wchar_t wide[]{L'x', L'y', L'z'};
+
+        char const * begin() noexcept { return narrow; }
+        char const * end() noexcept { return narrow + 3; }
+        wchar_t const * begin() const noexcept { return wide; }
+        wchar_t const * end() const noexcept { return wide + 3; }
+    };
 
     struct two_bytes
     {
@@ -368,4 +405,82 @@ TEST(HashElementTest, ARangeWhoseSentinelIsOfItsOwnTypeIsHashed)
     EXPECT_EQ(::scl::hash::djb2(taken), ::scl::hash::djb2(::std::string_view{"abc"}));
     EXPECT_EQ(::scl::hash::sdbm(taken), ::scl::hash::sdbm(::std::string_view{"abc"}));
     EXPECT_EQ(::scl::hash::fnv1a(taken), ::scl::hash::fnv1a(::std::string_view{"abc"}));
+}
+
+/**
+ * @test A range that cannot be traversed through a reference to a constant reaches every
+ *       hash function of the group.
+ */
+TEST(HashElementTest, ARangeReadableOnlyWhileMutableIsHashed)
+{
+    ::std::string_view const text{"abc"};
+    int counter = 0;
+    auto counted = text | ::std::views::transform([counter](char const c) mutable {
+        ++counter;
+        return c;
+    });
+
+    STATIC_EXPECT_FALSE(::std::ranges::range<decltype(counted) const>);
+    STATIC_EXPECT_TRUE(hashable_range<decltype(counted)>);
+    EXPECT_EQ(::scl::hash::fnv1a(counted), ::scl::hash::fnv1a(text));
+}
+
+/**
+ * @test A range whose reference is a proxy is read through its element type.
+ */
+TEST(HashElementTest, AProxyReferenceIsReadThroughTheElementType)
+{
+    ::std::vector<bool> flags{true, false, true};
+    ::std::vector<bool> const frozen{true, false, true};
+    ::std::array<bool, 3> const held{true, false, true};
+
+    STATIC_EXPECT_TRUE(hashable_range<::std::vector<bool>>);
+    EXPECT_EQ(::scl::hash::fnv1a(flags), ::scl::hash::fnv1a(held));
+    EXPECT_EQ(::scl::hash::fnv1a(frozen), ::scl::hash::fnv1a(held));
+}
+
+/**
+ * @test A container whose copies share one buffer is read through a reference to a constant,
+ *       whatever names it, so reading it never separates that buffer.
+ */
+TEST(HashElementTest, ASharedBufferIsReadThroughAConstantReference)
+{
+    shared_buffer::mutable_reads = 0;
+    shared_buffer named;
+
+    static_cast<void>(::scl::hash::fnv1a(named));
+    static_cast<void>(::scl::hash::fnv1a(shared_buffer{}));
+
+    EXPECT_EQ(shared_buffer::mutable_reads, 0);
+}
+
+/**
+ * @test Every hash function of the group reads a container whose copies share one buffer
+ *       through a reference to a constant, not only the one the other test walks.
+ */
+TEST(HashElementTest, EveryFreeFunctionReadsASharedBufferThroughAConstantReference)
+{
+    shared_buffer named;
+    shared_buffer::mutable_reads = 0;
+
+    static_cast<void>(::scl::hash::djb2(named));
+    static_cast<void>(::scl::hash::sdbm(named));
+    static_cast<void>(::scl::hash::jenkins_ota(named));
+    static_cast<void>(::scl::hash::siphash(named));
+    static_cast<void>(::scl::hash::key<>{named});
+
+    EXPECT_EQ(shared_buffer::mutable_reads, 0);
+}
+
+/**
+ * @test A range answering a wider element to a constant traversal is traversed through the
+ *       mutable one, which is the element the constraint weighed.
+ */
+TEST(HashElementTest, AWiderElementUnderAConstantTraversalIsLeftToTheMutableOne)
+{
+    widening_range source;
+
+    STATIC_EXPECT_FALSE(::scl::hash::detail::same_element_as_const<widening_range>);
+    STATIC_EXPECT_TRUE(::std::ranges::range<widening_range const>);
+    EXPECT_EQ(::scl::hash::fnv1a(source), ::scl::hash::fnv1a(::std::string_view{"abc"}));
 }

@@ -303,6 +303,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `std::views::take_while` among them. Both folded with `std::accumulate`, which takes two
   iterators of one type, so such a range satisfied every constraint and then failed to
   compile inside the header.
+- A view that cannot be read through a `const` reference now reaches every hash function
+  and `scl::hash::key`; it satisfied every constraint and then failed to compile inside the
+  header. **A call naming the template argument for an lvalue no longer compiles** -
+  `fnv1a<std::string_view>(text)` - the parameter being a forwarding reference.
 - An array is refused by `fnv1a`, `djb2`, `sdbm`, `jenkins_ota`, `siphash` and
   `scl::hash::key`, whatever its element type: its bound is the storage it was declared
   with, not the content a caller put in it. **A call that passes an array no longer

@@ -15,10 +15,11 @@ strongly-typed hash-value wrapper `key<Hasher>`. Together they enable:
 - **String-keyed template parameters (NTTP)** — `key` is a structural type,
   so it may appear as a non-type template argument (C++20).
 
-All hash functions accept a range satisfying `std::ranges::range` whose element is one
-trivially copyable byte of data and which is not a bounded array - a `std::string_view`
-object, a `std::string` object, a `std::span<std::byte>` object and byte vectors among
-them. An array is refused; the note below says why.
+All hash functions accept a range satisfying the concept `std::ranges::range` whose element
+is one trivially copyable byte of data and which is not a bounded array - a
+`std::string_view` object, a `std::string` object, a `std::span<std::byte>` object and byte
+vectors among them. A hash function also accepts a range that only a non-`const` reference
+traverses. The note on arrays below gives the reason a bounded array stands outside that set.
 
 A wider element — `wchar_t`, `char16_t`, `char32_t`, or any arithmetic type — is
 rejected at compile time rather than truncated to its low byte, which would let two
@@ -377,6 +378,12 @@ constexpr std::array<char, 5> held{'h', 'e', 'l', 'l', 'o'};
 constexpr key<> b{held};                               // the same five, held in storage
 static_assert(a == b);                                 // one and the same sequence of bytes
 ```
+
+A hash function reads a range through a reference to a constant wherever a reference to a
+constant traverses it with the same element type. Hashing a container that shares one buffer
+with its copies until a write therefore leaves that buffer shared. The reference a range
+hands out is fixed by that range alone, and a view over a mutable object reaches that object
+mutably, whatever the qualification on the view itself.
 
 ### `switch`/`case` Dispatch
 

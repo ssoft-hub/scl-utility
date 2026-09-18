@@ -67,11 +67,12 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint32_t jenkins_ota(Range const & range)
+    constexpr ::std::uint32_t jenkins_ota(Range && range)
     {
         ::std::uint32_t h = 0;
 
-        for (auto const c : range)
+        for (::std::ranges::range_value_t<Range> const c :
+            ::scl::hash::detail::read_only(::std::forward<Range>(range)))
         {
             h += ::scl::hash::detail::as_byte(c);
             h += h << 10;
@@ -96,9 +97,9 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range const & range) const noexcept
+        constexpr result_type operator()(Range && range) const noexcept
         {
-            return ::scl::hash::jenkins_ota(range);
+            return ::scl::hash::jenkins_ota(::std::forward<Range>(range));
         }
     };
 
@@ -115,11 +116,12 @@ namespace scl::hash
  */
 
 /**
- * @fn scl::hash::jenkins_ota_hasher::operator()(Range const & range) const
+ * @fn scl::hash::jenkins_ota_hasher::operator()(Range && range) const
  * @brief Hashes @p range with @ref scl::hash::jenkins_ota.
  *
  * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
- *                single trivially copyable bytes that is not a bounded array.
+ *                trivially copyable non-empty elements one byte wide that is not a bounded
+ *                array.
  * @param  range  Input range to hash.
  * @return 32-bit Jenkins one-at-a-time hash value of @p range.
  */
