@@ -376,6 +376,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   digest, so a check and the published reference come from the same build. The Doxyfile no
   longer carries the four `CLANG_*` tags that image reports as options its Doxygen was not
   built with.
+- A `benchmark/` tree builds one Google Benchmark program and one code-size library per
+  group, both off unless `SCL_BUILD_BENCHMARKS` is set.
 - A `doc-snippets` gate: a Markdown code block introduced by an HTML comment naming a
   source file must repeat the region of that file between its `//! [quick_start]`
   markers, so a documented program and its copy in the text cannot drift apart

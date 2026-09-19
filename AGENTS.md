@@ -15,6 +15,7 @@ src/scl/utility/     — public headers
   type_traits/       — extended type traits
 test/                — unit tests
 example/             — usage examples
+benchmark/           — performance and code-size measurements
 project/cmake/       — CMakeLists.txt
 project/doxygen/     — Doxyfile
 ```
@@ -62,7 +63,7 @@ Every base name ends in the token naming what the file is built into, and the ta
 in the same token: `example` for an example, `<framework>` for a test — `gtest`, `doctest`,
 `catch2`, plus `_shared.cpp` for a companion shared library — and `<tool>` for a benchmark.
 In `test/` and `benchmark/` the CMake glob keys on it, and every file of a group builds
-into one executable per framework; in `example/` one source tree is one program, so an
+into one target per framework or tool; in `example/` one source tree is one program, so an
 example's base name is its whole target name without the `utility_` prefix, and the token
 is what keeps that target apart from the test target of the same group. Every target name
 is derived from the path, so a rename needs no build-file edit.
@@ -79,8 +80,6 @@ covered by its directory.
 - Every example needs a directory of its own. All sources under one example root link into
   a single program, so a second `main` beside it is a link error. Directories holding only
   sub-directories are pure grouping, and the tree may nest freely.
-- No `benchmark/` tree and no `project/cmake/benchmark/CMakeLists.txt` exist yet. The rule
-  is written now; the plumbing lands with the first benchmark.
 
 ## Required Checks Before Every Commit
 Run on every changed `.h` / `.hpp` file:
@@ -105,9 +104,9 @@ cppcheck --enable=warning,style,performance,portability \
 bash script/lint/doxygen.sh
 ```
 
-The format gate checks `src/`, `test/` and `example/`, headers and sources alike, so a
-changed `.cpp` is subject to it too. `bash script/lint/clang_format.sh` runs it over the
-whole tree the way CI does.
+The format check covers `src/`, `test/`, `example/` and `benchmark/`, headers and sources
+alike, so a changed `.cpp` is subject to it too. `bash script/lint/clang_format.sh` runs it
+over the whole tree the way CI does.
 
 ## Branching
 - Branch name format: `{user}/feat/{subject}`, `{user}/fix/{subject}`, `{user}/refactor/{subject}`

@@ -140,6 +140,8 @@ file joins:
 | `*_doctest.cpp` | doctest | doctest header-only |
 | `*_catch2.cpp` | Catch2 | Catch2 |
 | `*_shared.cpp` | — | companion shared library, linked into every test target of the directory |
+| `*_gbench.cpp` | Google Benchmark | `benchmark::benchmark_main` |
+| `*_size.cpp` | - | none: a static library read with the command `size` |
 
 Each public component should have tests in at least one framework.
 
@@ -157,8 +159,28 @@ is named `common`, as in `example/any/common/any_common_example.cpp`. Every exam
 directory of its own: all sources under one example root link into a single program, so a
 second `main` beside it is a link error.
 
-No `benchmark/` tree exists yet. The rule is written now; the plumbing lands with the
-first benchmark.
+## Benchmarks
+
+Benchmarks are not CTest tests, and the CMake option `SCL_BUILD_BENCHMARKS` is off by
+default. A figure quoted in an issue or a merge request must come from a Release build.
+
+The commands that build the benchmark tree of one preset and run its timing suites, from
+the super-project root:
+
+```sh
+script/ci/build.sh clang-x64 Release \
+    -DSCL_BUILD_BENCHMARKS=ON -DSCL_BUILD_TESTS=OFF -DSCL_BUILD_EXAMPLES=OFF
+script/ci/run_benchmarks.sh clang-x64
+```
+
+A `*_size.cpp` source is never linked or run, which is what lets it build under a
+bare-metal cross compiler. The command `arm-none-eabi-size` then reads the `.text` section
+off the library. The commands that build that library and measure it, from the same root:
+
+```sh
+cmake --preset arm-none-eabi && cmake --build --preset arm-none-eabi
+script/ci/run_size.sh arm-none-eabi
+```
 
 ## Documentation
 
