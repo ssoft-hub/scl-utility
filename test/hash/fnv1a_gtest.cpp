@@ -4,9 +4,19 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
+
+using namespace ::std::string_view_literals;
+
+namespace
+{
+    /// Satisfied when @ref scl::hash::fnv1a accepts @p Range.
+    template <typename Range>
+    concept fnv1a_takes = requires(Range const & range) { ::scl::hash::fnv1a(range); };
+} // namespace
 
 using namespace ::scl::hash;
 
@@ -30,16 +40,19 @@ TEST(Fnv1aTest, EmptyRangeWithCustomInitial)
 /**
  * @test Identical inputs produce identical results (determinism).
  */
-TEST(Fnv1aTest, Deterministic) { STATIC_EXPECT_EQ(fnv1a("hello, world"), fnv1a("hello, world")); }
+TEST(Fnv1aTest, Deterministic)
+{
+    STATIC_EXPECT_EQ(fnv1a("hello, world"sv), fnv1a("hello, world"sv));
+}
 
 /**
  * @test Different inputs produce different hash values.
  */
 TEST(Fnv1aTest, DifferentInputsDifferentHashes)
 {
-    STATIC_EXPECT_NE(fnv1a("hello"), fnv1a("world"));
-    STATIC_EXPECT_NE(fnv1a("hello"), fnv1a(::std::string_view{}));
-    STATIC_EXPECT_NE(fnv1a("ab"), fnv1a("ba"));
+    STATIC_EXPECT_NE(fnv1a("hello"sv), fnv1a("world"sv));
+    STATIC_EXPECT_NE(fnv1a("hello"sv), fnv1a(::std::string_view{}));
+    STATIC_EXPECT_NE(fnv1a("ab"sv), fnv1a("ba"sv));
 }
 
 /**
@@ -56,13 +69,13 @@ TEST(Fnv1aTest, ChainingEquivalentToConcatenation)
  */
 TEST(Fnv1aTest, ResultType)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(fnv1a("hello")), ::std::uint64_t>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(fnv1a("hello"sv)), ::std::uint64_t>));
 }
 
 /**
  * @test Constexpr evaluation produces a value distinct from the offset basis.
  */
-TEST(Fnv1aTest, Constexpr) { STATIC_EXPECT_NE(fnv1a("constexpr"), 14695981039346656037ull); }
+TEST(Fnv1aTest, Constexpr) { STATIC_EXPECT_NE(fnv1a("constexpr"sv), 14695981039346656037ull); }
 
 /**
  * @test std::vector<uint8_t> of the same bytes yields the same hash value as string_view.
@@ -78,45 +91,50 @@ TEST(Fnv1aTest, VectorRange)
  */
 TEST(Fnv1aTest, SignedCharEquivalentToUnsigned)
 {
-    ::std::string const s{"\x68\x65\x6c\x6c\x6f"};
+    ::std::string const s{"\x68\x65\x6c\x6c\x6f"sv};
     ::std::vector<::std::uint8_t> const bytes{0x68, 0x65, 0x6c, 0x6c, 0x6f};
     EXPECT_EQ(fnv1a(::std::string_view{s}), fnv1a(bytes));
 }
 
 /**
- * @test A string literal is hashed as its text — every spelling of it agrees.
+ * @test One text produces one value, however it is spelled.
  */
-TEST(Fnv1aTest, LiteralHashedWithoutTerminatingZero)
+TEST(Fnv1aTest, OneTextHashesAlikeHoweverSpelled)
 {
-    STATIC_EXPECT_EQ(fnv1a("hello"), fnv1a(::std::string_view{"hello"}));
-    EXPECT_EQ(fnv1a("hello"), fnv1a(::std::string{"hello"}));
+    static constexpr ::std::array<char, 5> held{'h', 'e', 'l', 'l', 'o'};
+    STATIC_EXPECT_EQ(fnv1a("hello"sv), fnv1a(held));
+    STATIC_EXPECT_EQ(fnv1a("hello"sv), fnv1a(::std::span{held}));
+    EXPECT_EQ(fnv1a("hello"sv), fnv1a(::std::string{"hello"}));
+    EXPECT_EQ(fnv1a("hello"sv), fnv1a(::std::vector<char>{'h', 'e', 'l', 'l', 'o'}));
 }
 
 /**
- * @test An array that does not end in zero keeps every byte.
+ * @test An array is refused and a wider element with it, while a span over the array
+ *       names the bytes the array holds.
  */
-TEST(Fnv1aTest, ArrayWithoutTerminatingZeroHashedWhole)
+TEST(Fnv1aTest, ArrayIsRefusedAndASpanNamesItsBytes)
 {
     static constexpr char raw[3]{'a', 'b', 'c'};
-    STATIC_EXPECT_EQ(fnv1a(raw), fnv1a(::std::string_view{"abc"}));
+    STATIC_EXPECT_TRUE(fnv1a_takes<::std::string_view>);
+    STATIC_EXPECT_FALSE(fnv1a_takes<char[3]>);
+    STATIC_EXPECT_FALSE(fnv1a_takes<::std::u16string_view>);
+    STATIC_EXPECT_EQ(fnv1a(::std::span{raw}), fnv1a(::std::string_view{"abc"}));
 }
 
 /**
- * @test A UTF-8 literal follows the same rule as a narrow one.
+ * @test A UTF-8 spelling carries the same bytes as a narrow one.
  */
-TEST(Fnv1aTest, Utf8LiteralHashedWithoutTerminatingZero)
+TEST(Fnv1aTest, Utf8SpellingCarriesTheSameBytes)
 {
-    STATIC_EXPECT_EQ(fnv1a(u8"hello"), fnv1a(::std::string_view{"hello"}));
+    STATIC_EXPECT_EQ(fnv1a(u8"hello"sv), fnv1a(::std::string_view{"hello"}));
 }
 
 /**
- * @test A byte array keeps every byte, a zero at its end included.
+ * @test A trailing zero is one more byte.
  */
-TEST(Fnv1aTest, ByteArrayKeepsTrailingZero)
+TEST(Fnv1aTest, ATrailingZeroIsOneMoreByte)
 {
-    static constexpr ::std::uint8_t data[4]{1, 2, 3, 0};
-    static constexpr ::std::array<::std::uint8_t, 4> same{1, 2, 3, 0};
-    STATIC_EXPECT_EQ(fnv1a(data), fnv1a(same));
+    STATIC_EXPECT_NE(fnv1a(::std::string_view{"abc", 4}), fnv1a("abc"sv));
 }
 
 /**
@@ -124,5 +142,14 @@ TEST(Fnv1aTest, ByteArrayKeepsTrailingZero)
  */
 TEST(Fnv1aTest, HasherMatchesFreeFunction)
 {
-    STATIC_EXPECT_EQ(fnv1a_hasher{}("hello"), fnv1a("hello"));
+    STATIC_EXPECT_EQ(fnv1a_hasher{}("hello"sv), fnv1a("hello"sv));
+}
+
+/**
+ * @test The value the FNV-1a specification gives for the three bytes of "abc", with the
+ *       64-bit offset basis and prime that specification fixes.
+ */
+TEST(Fnv1aTest, ThreeBytesAnswerTheSpecifiedValue)
+{
+    STATIC_EXPECT_EQ(fnv1a("abc"sv), 16654208175385433931ull);
 }

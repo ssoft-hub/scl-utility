@@ -3,6 +3,9 @@
 #include <scl/utility.h>
 
 #include <string>
+#include <string_view>
+
+using namespace ::std::string_view_literals;
 
 namespace
 {
@@ -49,7 +52,7 @@ TEST(UmbrellaHeaderTest, ExposesFlags)
  */
 TEST(UmbrellaHeaderTest, ExposesHash)
 {
-    STATIC_EXPECT_EQ(::scl::hash::key<>{"same"}, ::scl::hash::key<>{"same"});
+    STATIC_EXPECT_EQ(::scl::hash::key<>{"same"sv}, ::scl::hash::key<>{"same"sv});
 }
 
 /**

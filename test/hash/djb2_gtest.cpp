@@ -4,8 +4,19 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
+
+using namespace ::std::string_view_literals;
+
+namespace
+{
+    /// Satisfied when @ref scl::hash::djb2 accepts @p Range.
+    template <typename Range>
+    concept djb2_takes = requires(Range const & range) { ::scl::hash::djb2(range); };
+} // namespace
 
 using namespace ::scl::hash;
 
@@ -25,16 +36,16 @@ TEST(Djb2Test, EmptyRangeWithCustomSeed)
 /**
  * @test Identical inputs produce identical results (determinism).
  */
-TEST(Djb2Test, Deterministic) { STATIC_EXPECT_EQ(djb2("hello"), djb2("hello")); }
+TEST(Djb2Test, Deterministic) { STATIC_EXPECT_EQ(djb2("hello"sv), djb2("hello"sv)); }
 
 /**
  * @test Different inputs produce different hash values.
  */
 TEST(Djb2Test, DifferentInputsDifferentHashes)
 {
-    STATIC_EXPECT_NE(djb2("hello"), djb2("world"));
-    STATIC_EXPECT_NE(djb2("hello"), djb2(::std::string_view{}));
-    STATIC_EXPECT_NE(djb2("ab"), djb2("ba"));
+    STATIC_EXPECT_NE(djb2("hello"sv), djb2("world"sv));
+    STATIC_EXPECT_NE(djb2("hello"sv), djb2(::std::string_view{}));
+    STATIC_EXPECT_NE(djb2("ab"sv), djb2("ba"sv));
 }
 
 /**
@@ -51,40 +62,45 @@ TEST(Djb2Test, ChainingEquivalentToConcatenation)
  */
 TEST(Djb2Test, ResultType)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(djb2("hello")), ::std::uint64_t>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(djb2("hello"sv)), ::std::uint64_t>));
 }
 
 /**
  * @test Constexpr evaluation produces a value distinct from the seed.
  */
-TEST(Djb2Test, Constexpr) { STATIC_EXPECT_NE(djb2("constexpr"), 5381ull); }
+TEST(Djb2Test, Constexpr) { STATIC_EXPECT_NE(djb2("constexpr"sv), 5381ull); }
 
 /**
- * @test A string literal is hashed as its text — every spelling of it agrees.
+ * @test One text produces one value, however it is spelled.
  */
-TEST(Djb2Test, LiteralHashedWithoutTerminatingZero)
+TEST(Djb2Test, OneTextHashesAlikeHoweverSpelled)
 {
-    STATIC_EXPECT_EQ(djb2("hello"), djb2(::std::string_view{"hello"}));
-    EXPECT_EQ(djb2("hello"), djb2(::std::string{"hello"}));
+    static constexpr ::std::array<char, 5> held{'h', 'e', 'l', 'l', 'o'};
+    STATIC_EXPECT_EQ(djb2("hello"sv), djb2(held));
+    STATIC_EXPECT_EQ(djb2("hello"sv), djb2(::std::span{held}));
+    EXPECT_EQ(djb2("hello"sv), djb2(::std::string{"hello"}));
+    EXPECT_EQ(djb2("hello"sv), djb2(::std::vector<char>{'h', 'e', 'l', 'l', 'o'}));
 }
 
 /**
- * @test An array that does not end in zero keeps every byte.
+ * @test An array is refused and a wider element with it, while a span over the array
+ *       names the bytes the array holds.
  */
-TEST(Djb2Test, ArrayWithoutTerminatingZeroHashedWhole)
+TEST(Djb2Test, ArrayIsRefusedAndASpanNamesItsBytes)
 {
     static constexpr char raw[3]{'a', 'b', 'c'};
-    STATIC_EXPECT_EQ(djb2(raw), djb2(::std::string_view{"abc"}));
+    STATIC_EXPECT_TRUE(djb2_takes<::std::string_view>);
+    STATIC_EXPECT_FALSE(djb2_takes<char[3]>);
+    STATIC_EXPECT_FALSE(djb2_takes<::std::u16string_view>);
+    STATIC_EXPECT_EQ(djb2(::std::span{raw}), djb2(::std::string_view{"abc"}));
 }
 
 /**
- * @test A byte array keeps every byte, a zero at its end included.
+ * @test A trailing zero is one more byte.
  */
-TEST(Djb2Test, ByteArrayKeepsTrailingZero)
+TEST(Djb2Test, ATrailingZeroIsOneMoreByte)
 {
-    static constexpr ::std::uint8_t data[4]{1, 2, 3, 0};
-    static constexpr ::std::array<::std::uint8_t, 4> same{1, 2, 3, 0};
-    STATIC_EXPECT_EQ(djb2(data), djb2(same));
+    STATIC_EXPECT_NE(djb2(::std::string_view{"abc", 4}), djb2("abc"sv));
 }
 
 /**
@@ -92,5 +108,11 @@ TEST(Djb2Test, ByteArrayKeepsTrailingZero)
  */
 TEST(Djb2Test, HasherMatchesFreeFunction)
 {
-    STATIC_EXPECT_EQ(djb2_hasher{}("hello"), djb2("hello"));
+    STATIC_EXPECT_EQ(djb2_hasher{}("hello"sv), djb2("hello"sv));
 }
+
+/**
+ * @test The value the djb2a recurrence gives for the three bytes of "abc", from the seed
+ *       5381 that variant fixes.
+ */
+TEST(Djb2Test, ThreeBytesAnswerTheSpecifiedValue) { STATIC_EXPECT_EQ(djb2("abc"sv), 193409669ull); }

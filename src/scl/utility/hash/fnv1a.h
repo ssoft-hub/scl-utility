@@ -6,7 +6,8 @@
  * @ingroup scl_utility_hash
  */
 
-#include <concepts>
+#include <scl/utility/hash/concepts.h>
+
 #include <cstdint>
 #include <ranges>
 #include <utility>
@@ -16,7 +17,7 @@
 namespace scl::hash
 {
     /**
-     * @brief Computes an FNV-1a 64-bit hash over an arbitrary byte range.
+     * @brief Computes an FNV-1a 64-bit hash over a byte range.
      * @ingroup scl_utility_hash
      *
      * Implements the FNV-1a variant of the Fowler-Noll-Vo non-cryptographic
@@ -32,19 +33,31 @@ namespace scl::hash
      * @note **Chaining:** pass the result of a previous call as @p h to hash
      *       several ranges into a single hash value:
      *       @code
-     *       auto h = scl::hash::fnv1a(first_range);
-     *       h     = scl::hash::fnv1a(second_range, h);
+     *       #include <scl/utility/hash/fnv1a.h>
+     *
+     *       #include <cstdint>
+     *       #include <string_view>
+     *
+     *       using namespace std::string_view_literals;
+     *
+     *       std::uint64_t chained()
+     *       {
+     *           auto const h = scl::hash::fnv1a("foo"sv);
+     *           return scl::hash::fnv1a("bar"sv, h);   // == fnv1a("foobar"sv)
+     *       }
      *       @endcode
      *
-     * @tparam Range  Any type satisfying `std::ranges::range` whose elements
-     *                are one byte wide — e.g. a string literal, `std::string_view`,
-     *                `std::string`, `std::span<std::byte>`, a byte vector. See
-     *                @ref scl::hash::concepts::byte_element.
+     * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range
+     *                of trivially copyable non-empty elements one byte wide that is not a
+     *                bounded array.
+     *                `std::string_view`, `std::string`, `std::span<std::byte>` and a byte
+     *                vector are such types.
      * @param  range  Input range to hash.
-     * @note   The text is hashed, however it is spelled: a character array's terminating
-     *         zero is left out, so `fnv1a("hello")` equals `fnv1a(std::string_view{"hello"})`.
-     *         An array that does not end in zero, and an array of any other element type,
-     *         is hashed whole — a zero byte is data there, not a terminator.
+     * @note   The bytes the range spans are the bytes hashed, and an array is refused.
+     *         The caller should name the bytes with a `std::string_view` object - `"text"sv` is
+     *         one -
+     *         or with a `std::span` object. See @ref scl::hash::concepts::hashable_range for
+     *         the reason and for what naming a partly filled buffer takes.
      * @param  h      Initial hash value (offset basis).
      *                Defaults to the standard FNV-1a 64-bit offset basis
      *                `14695981039346656037` (`0xcbf29ce484222325`).
@@ -53,18 +66,25 @@ namespace scl::hash
      *
      * @par Compile-time example
      * @code
-     * constexpr auto h = scl::hash::fnv1a("hello");
+     * #include <scl/utility/hash/fnv1a.h>
+     *
+     * #include <string_view>
+     *
+     * using namespace std::string_view_literals;
+     *
+     * constexpr auto h = scl::hash::fnv1a("hello"sv);
      * static_assert(h != 0);
      * @endcode
      */
-    template <::std::ranges::range Range>
+    template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint64_t fnv1a(Range const & range, ::std::uint64_t h = 14695981039346656037ull)
-        requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
+    constexpr ::std::uint64_t fnv1a(Range && range, ::std::uint64_t h = 14695981039346656037ull) /**/
+        noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
-        for (auto const c : detail::without_terminator(range))
+        for (::std::ranges::range_value_t<Range> const c :
+            ::scl::hash::detail::read_only(::std::forward<Range>(range)))
         {
-            h ^= detail::as_byte(c);
+            h ^= ::scl::hash::detail::as_byte(c);
             h *= 1099511628211ull;
         }
         return h;
@@ -78,12 +98,12 @@ namespace scl::hash
     {
         using result_type = ::std::uint64_t;
 
-        template <::std::ranges::range Range>
+        template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range const & range) const noexcept
-            requires ::scl::hash::concepts::byte_element<::std::ranges::range_value_t<Range>>
+        constexpr result_type operator()(Range && range) const /**/
+            noexcept(noexcept(::scl::hash::fnv1a(::std::forward<Range>(range))))
         {
-            return ::scl::hash::fnv1a(range);
+            return ::scl::hash::fnv1a(::std::forward<Range>(range));
         }
     };
 
@@ -99,11 +119,12 @@ namespace scl::hash
  */
 
 /**
- * @fn scl::hash::fnv1a_hasher::operator()(Range const & range) const
+ * @fn scl::hash::fnv1a_hasher::operator()(Range && range) const
  * @brief Hashes @p range with @ref scl::hash::fnv1a and its default offset basis.
  *
- * @tparam Range  Any type satisfying `std::ranges::range` whose elements are
- *                convertible to `std::uint8_t`.
+ * @tparam Range  Any type satisfying @ref scl::hash::concepts::hashable_range - a range of
+ *                trivially copyable non-empty elements one byte wide that is not a bounded
+ *                array.
  * @param  range  Input range to hash.
  * @return 64-bit FNV-1a hash value of @p range.
  */

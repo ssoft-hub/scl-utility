@@ -184,15 +184,17 @@ int main()
 #include <iostream>
 #include <string_view>
 
+using namespace ::std::string_view_literals;
+
 using ::scl::hash::key;
 
 int code_of(::std::string_view command)
 {
     switch (key<>{command})
     {
-    case key<>{"start"}:
+    case key<>{"start"sv}:
         return 1;
-    case key<>{"stop"}:
+    case key<>{"stop"sv}:
         return 2;
     default:
         return 0;
@@ -200,9 +202,9 @@ int code_of(::std::string_view command)
 }
 
 template <key<> Command>
-constexpr bool is_start = (Command == key<>{"start"});
+constexpr bool is_start = (Command == key<>{"start"sv});
 
-static_assert(is_start<key<>{"start"}>);
+static_assert(is_start<key<>{"start"sv}>);
 
 int main()
 {

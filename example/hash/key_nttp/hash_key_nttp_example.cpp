@@ -7,7 +7,7 @@
  * scl::hash::key<> stores a single integral value, so it qualifies.
  *
  * This enables three useful compile-time patterns:
- *   1. Distinct types tagged by a string literal.
+ *   1. Distinct types tagged by a compile-time string-view literal.
  *   2. Template specialisation selected by a string value.
  *   3. Generic dispatch functions keyed on compile-time strings.
  */
@@ -15,7 +15,10 @@
 #include <scl/utility/hash/key.h>
 
 #include <iostream>
+#include <string_view>
 #include <type_traits>
+
+using namespace ::std::string_view_literals;
 
 using ::scl::hash::key;
 
@@ -32,8 +35,8 @@ struct event_tag
     static constexpr key<> id = Tag;
 };
 
-static_assert(!::std::is_same_v<event_tag<key<>{"start"}>, event_tag<key<>{"stop"}>>);
-static_assert(::std::is_same_v<event_tag<key<>{"start"}>, event_tag<key<>{"start"}>>);
+static_assert(!::std::is_same_v<event_tag<key<>{"start"sv}>, event_tag<key<>{"stop"sv}>>);
+static_assert(::std::is_same_v<event_tag<key<>{"start"sv}>, event_tag<key<>{"start"sv}>>);
 
 // ============================================================================
 // Pattern 2 — template specialisation by string key
@@ -49,19 +52,19 @@ struct command_handler
 };
 
 template <>
-struct command_handler<key<>{"start"}>
+struct command_handler<key<>{"start"sv}>
 {
     static void execute() { ::std::cout << "Starting...\n"; }
 };
 
 template <>
-struct command_handler<key<>{"stop"}>
+struct command_handler<key<>{"stop"sv}>
 {
     static void execute() { ::std::cout << "Stopping...\n"; }
 };
 
 template <>
-struct command_handler<key<>{"status"}>
+struct command_handler<key<>{"status"sv}>
 {
     static void execute() { ::std::cout << "Status: all systems nominal.\n"; }
 };
@@ -83,16 +86,16 @@ void dispatch()
 int main(int, char **)
 {
     // Pattern 1: types are distinct for different keys.
-    using start_event = event_tag<key<>{"start"}>;
-    using stop_event = event_tag<key<>{"stop"}>;
+    using start_event = event_tag<key<>{"start"sv}>;
+    using stop_event = event_tag<key<>{"stop"sv}>;
     static_assert(!::std::is_same_v<start_event, stop_event>);
-    static_assert(start_event::id == key<>{"start"});
+    static_assert(start_event::id == key<>{"start"sv});
 
     // Pattern 2 & 3: specialisation selected by compile-time string.
-    dispatch<key{"start"}>();  // Starting...
-    dispatch<key{"stop"}>();   // Stopping...
-    dispatch<key{"status"}>(); // Status: all systems nominal.
-    dispatch<key{"reboot"}>(); // (unknown command)
+    dispatch<key{"start"sv}>();  // Starting...
+    dispatch<key{"stop"sv}>();   // Stopping...
+    dispatch<key{"status"sv}>(); // Status: all systems nominal.
+    dispatch<key{"reboot"sv}>(); // (unknown command)
 
     return {};
 }

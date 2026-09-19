@@ -98,9 +98,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `scl::hash::byte_view` — a lazy view spelling a range of wider elements as the bytes the
   hash functions take: `fnv1a(byte_view(text))` where `text` is a `std::u16string_view`.
+  It refuses a bounded array as the hash functions do, so a wide text is named as a
+  `std::u16string_view`, a `std::span` or a `std::array`.
   Each element contributes its bytes least significant first, whatever the host's own byte
   order, so two machines hash one input alike; a byte-sized element passes through
   unchanged. `example/hash/byte_view/hash_byte_view_example.cpp` shows it running.
+
+- `scl::hash::byte_view` refuses a bounded array as the hash functions do, asks for neither
+  random access nor a reported size, and is forward, sized and `const`-readable exactly
+  where its source is.
+
+- A conditional `noexcept` on `fnv1a`, `djb2`, `sdbm`, `jenkins_ota` and `siphash`: each
+  throws nothing where iterating the range it is given throws nothing, so a call stands
+  inside a `noexcept` boundary. `scl::hash::byte_view` carries the guarantee of its source.
+
+- `scl::hash::concepts::hashable_range` - the concept stating the rule every hash function
+  of the module places on its argument: a range of single-byte elements that is not a
+  bounded array. A hash function written outside the module states it to refuse the same.
 
 - An `Examples` page in the generated reference, listing every program under
   `example/` with its description and full source, and an `Examples` section in
@@ -120,6 +134,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Breaking:** `fnv1a`, `djb2`, `sdbm`, `jenkins_ota`, `siphash` and `scl::hash::key`
+  refuse an array of any element type, so a call that passes one no longer compiles. The
+  caller should name the bytes with a `std::string_view` object (`"hello"sv` is one) or a
+  `std::span` object.
+- **Breaking:** the range parameter of every hash function and of `scl::hash::key` is a
+  forwarding reference, so a call naming the template argument for an lvalue -
+  `fnv1a<std::string_view>(text)` - no longer compiles.
 - A standard attribute is spelled as itself: `[[nodiscard]]`, `[[likely]]` and
   `[[unlikely]]` replace the `SCL_*` macros, and the includes those headers carried for
   them are gone. A consumer can no longer shape these three by predefining the macro;
@@ -285,21 +306,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   bytes of such a range explicitly when that is what is meant — and
   `std::span<std::byte>`, promised in the documentation but rejected by the old
   constraint, works. The new `scl::hash::concepts::byte_element` states the rule, and
-  hash values of byte ranges are unchanged.
-- A string literal is hashed as the text it spells. Its terminating zero counted as one
-  more byte, so `scl::hash::key<>{"start"}` equalled neither the key built from a
-  `std::string_view` nor the one built from a `std::string`, and a `switch` over a key
-  taken from a runtime string fell through to `default` with nothing reported.
-  `fnv1a`, `djb2`, `sdbm`, `jenkins_ota` and `siphash` follow the same rule. It covers
-  the last element of an array of `char` or `char8_t` — the character types whose code
-  unit is a byte — and nothing else: an array that does not end in zero —
-  `char const raw[3]{'a', 'b', 'c'}` — is still hashed whole, and so is an array of any
-  other element type, where `std::uint8_t data[4]{1, 2, 3, 0}` keeps all four bytes.
-  **The value produced for a string literal changes**: a hash value stored by an earlier
-  version no longer matches the one computed now. A literal keeps folding to a constant
-  at compile time, and a view, a string or a byte range costs what it did before;
-  hashing a character array whose contents are only known at run time may cost slightly
-  more, since its length is no longer a constant.
+  hash values of the byte ranges that remain accepted are unchanged.
+- `djb2` and `sdbm` take a range whose end of traversal is of its own type, a view from
+  `std::views::take_while` among them. Such a range satisfied every constraint and then
+  failed to compile inside the header.
+- `noexcept` on `fnv1a_hasher`, `djb2_hasher`, `sdbm_hasher`, `jenkins_ota_hasher`,
+  `siphash_hasher` and on the constructor of `scl::hash::key` now follows the range. Stated
+  unconditionally, it sent a throwing iterator into a `noexcept` boundary, which ended the
+  program instead of propagating.
+- A view that cannot be read through a `const` reference now reaches every hash function
+  and `scl::hash::key`. Such a view satisfied every constraint and then failed to compile
+  inside the header.
 - Documentation blocks that silently failed to reach their target now appear in the
   generated reference: each `scl::any_cast` overload carries its own description, and
   `has_value` / `type_name` / `type_key` are listed and described on `scl::any_view` and
