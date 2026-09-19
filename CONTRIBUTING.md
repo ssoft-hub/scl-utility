@@ -68,7 +68,8 @@ ctest --test-dir build/gcc --output-on-failure
 
 ## Code quality checks
 
-All code must pass automated checks before merging. CI runs the following tools:
+All code must pass automated checks before merging. On a merge request the checks start by
+hand, and the merge waits for them. CI runs the following tools:
 
 ### clang-format
 Enforces consistent code formatting:

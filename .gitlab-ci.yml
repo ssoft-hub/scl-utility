@@ -14,10 +14,13 @@ variables:
 
 # The policy of the workflow block above, as the lint stage states it: a check answers for
 # what a merge request proposes. A job extends this instead of repeating the condition, so
-# the stage cannot come to hold two policies.
+# the stage cannot come to hold two policies. A person starts the checks, and the merge
+# waits for them: a manual job left allowed to fail would let the pipeline pass unrun.
 .lint_rules:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: false
 
 # The check and the publish run one generator. The two GitHub workflows repeat this same
 # reference, which a raised pin has to reach as well.
