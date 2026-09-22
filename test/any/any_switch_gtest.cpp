@@ -254,7 +254,7 @@ TEST(AnySwitchTest, FirstMatchingCaseWins)
 
 TEST(AnySwitchTest, VoidCaseMatchesEmptySubject)
 {
-    ::scl::any_view const empty;
+    ::scl::any_view const empty{};
     bool seen = false;
 
     ::scl::any_switch<>().in_case<int>([](int) {}).in_case<void>([&seen]() {
@@ -321,7 +321,7 @@ TEST(AnySwitchTest, HasCaseReportsWhetherABranchMatches)
 TEST(AnySwitchTest, HasCaseIsAlwaysTrueWithAFallback)
 {
     double unmatched = 1.5;
-    ::scl::any_view const empty;
+    ::scl::any_view const empty{};
 
     auto const matcher = ::scl::any_switch<>().in_case<int>([](int) {}).or_else([]() {});
 
@@ -403,7 +403,7 @@ TEST(AnySwitchTest, FallbackReceivesTheSubject)
 
 TEST(AnySwitchTest, FallbackCatchesEmptySubjectWithoutVoidCase)
 {
-    ::scl::any_view const empty;
+    ::scl::any_view const empty{};
     bool seen = false;
 
     ::scl::any_switch<>().in_case<int>([](int) {}).or_else([&seen]() { seen = true; }).apply(empty);

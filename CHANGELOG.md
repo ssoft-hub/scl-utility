@@ -273,6 +273,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The Any tests build on Clang 17 to 19 again. Three cases declared a const
+  `scl::any_view` and left it default-initialised, which those releases refuse for a
+  class whose default constructor is defaulted rather than user-provided.
+
 - Every header under `src/scl/utility/attribute/`, and `runtime/type.h`, preprocesses
   where `__has_cpp_attribute`, `__has_attribute`, `__has_builtin` and `__has_include`
   are absent. A preprocessor missing one read the probe for it as a syntax error
