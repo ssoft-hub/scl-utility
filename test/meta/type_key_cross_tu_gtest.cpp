@@ -4,6 +4,8 @@
 
 #include <scl/utility/meta/type_key.h>
 
+#include <vector>
+
 /**
  * @brief Same-named TU-local type as in type_key_cross_tu_provider_gtest.cpp:
  *        a distinct type, expected to produce a different key.
@@ -16,6 +18,7 @@ namespace
 
 ::scl::type_key const & cross_tu_provider_duck_key() noexcept;
 ::scl::type_key const & cross_tu_provider_goose_key() noexcept;
+::scl::type_key const & cross_tu_provider_nested_duck_key() noexcept;
 
 /**
  * @test Verify same-named anonymous-namespace types from two translation
@@ -43,4 +46,18 @@ TEST(TypeKeyCrossTuTest, SharedExternalTypeMatches)
 
     EXPECT_EQ(&local_key, &provider_key);
     EXPECT_EQ(local_key, provider_key);
+}
+
+/**
+ * @test Verify a TU-local type reached only through a template argument still
+ *       separates the keys of two translation units, where a compiler renders
+ *       the component without its anonymous-namespace qualification.
+ */
+TEST(TypeKeyCrossTuTest, NestedTuLocalTypesDiffer)
+{
+    auto const & local_key = ::scl::type_key_of<::std::vector<int CrossTuDuck::*>>();
+    auto const & provider_key = cross_tu_provider_nested_duck_key();
+
+    EXPECT_EQ(local_key.name(), provider_key.name());
+    EXPECT_NE(local_key, provider_key);
 }

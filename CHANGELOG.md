@@ -273,6 +273,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `scl::is_tu_local` answers from what a compound type is built from rather than
+  from its rendered name, so a TU-local class reached through a pointer to member
+  is detected on every compiler.
+
 - The Any tests build on Clang 17 to 19 again. Three cases declared a const
   `scl::any_view` and left it default-initialised, which those releases refuse for a
   class whose default constructor is defaulted rather than user-provided.

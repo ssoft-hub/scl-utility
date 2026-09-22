@@ -95,6 +95,16 @@ TEST(TuLocalTest, CompoundTypes)
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void (*)(AnonDuck)>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck[3]>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::*>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::* const>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::**>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void (AnonDuck::*)(int)>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck GlobalDuck::*>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::*&>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::* [3]>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::* GlobalDuck::*>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void (*)(int AnonDuck::*)>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<TuLocalNs::Box<int AnonDuck::*>>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<::std::vector<int AnonDuck::*>>);
 }
 
 /**
@@ -104,6 +114,12 @@ TEST(TuLocalTest, ExternalCompoundTypes)
 {
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<GlobalDuck *>);
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<TuLocalNs::Box<GlobalDuck>>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<int GlobalDuck::*>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<int GlobalDuck::**>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<void (GlobalDuck::*)(int)>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<void (*)(int GlobalDuck::*)>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<TuLocalNs::Box<int GlobalDuck::*>>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<::std::vector<int GlobalDuck::*>>);
 }
 
 /**
