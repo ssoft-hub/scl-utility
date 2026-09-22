@@ -140,6 +140,55 @@ namespace scl::detail
         return false;
     }
 
+    template <typename T>
+    struct tu_local_impl : ::std::bool_constant<contains_anonymous_namespace_marker(type_name<T>())>
+    {};
+
+    template <typename T>
+    struct tu_local_impl<T *> : tu_local_impl<::std::remove_cv_t<T>>
+    {};
+
+    template <typename T>
+    struct tu_local_impl<T &> : tu_local_impl<::std::remove_cv_t<T>>
+    {};
+
+    template <typename T>
+    struct tu_local_impl<T &&> : tu_local_impl<::std::remove_cv_t<T>>
+    {};
+
+    template <typename T, ::std::size_t N>
+    struct tu_local_impl<T[N]> // NOLINT(*-avoid-c-arrays): matches an array, declares none
+        : tu_local_impl<::std::remove_cv_t<T>>
+    {};
+
+    template <typename T>
+    struct tu_local_impl<T[]> // NOLINT(*-avoid-c-arrays): matches an array, declares none
+        : tu_local_impl<::std::remove_cv_t<T>>
+    {};
+
+    template <typename T, typename C>
+    struct tu_local_impl<T C::*>
+        : ::std::bool_constant<tu_local_impl<C>::value || tu_local_impl<::std::remove_cv_t<T>>::value>
+    {};
+
+    template <typename R, typename... Args>
+    struct tu_local_impl<R(Args...)>
+        : ::std::bool_constant<tu_local_impl<::std::remove_cv_t<R>>::value ||
+              (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
+    {};
+
+    template <typename R, typename... Args>
+    struct tu_local_impl<R(Args...) noexcept>
+        : ::std::bool_constant<tu_local_impl<::std::remove_cv_t<R>>::value ||
+              (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
+    {};
+
+    template <template <typename...> class Template, typename... Args>
+    struct tu_local_impl<Template<Args...>>
+        : ::std::bool_constant<contains_anonymous_namespace_marker(type_name<Template<Args...>>()) ||
+              (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
+    {};
+
 } // namespace scl::detail
 
 namespace scl
@@ -156,19 +205,29 @@ namespace scl
      * type has internal linkage: a same-named declaration in another translation
      * unit denotes a different type.
      *
-     * Detection derives the compiler's anonymous-namespace marker at compile
-     * time, by diffing the ::scl::type_name<T>() rendering of a TU-local probe
-     * type against an external probe of the same shape, and searches the
-     * rendered name of T for it. Two markers are derived, because MSVC spells
-     * the marker differently for top-level types and for types nested inside
-     * template arguments. A marker is accepted anywhere outside string and
-     * character literals: compound types are covered, while a string non-type
-     * template parameter spelling the marker inside its quoted value does not
+     * A compound type is decomposed structurally: a pointer, a reference, an
+     * array, a function type and a template specialization answer from what
+     * they are built from, and a pointer to member from either its class or
+     * its member type. A rendering carries no contract, and a release that
+     * prints a component unqualified would otherwise classify it as external.
+     *
+     * What remains, a class type, is classified by searching its rendered name
+     * for the compiler's anonymous-namespace marker, derived at compile time by
+     * diffing the ::scl::type_name<T>() rendering of a TU-local probe type
+     * against an external probe of the same shape. Two markers are derived,
+     * because MSVC spells the marker differently for top-level types and for
+     * types nested inside template arguments. A marker is accepted anywhere
+     * outside string and character literals, so a string non-type template
+     * parameter spelling the marker inside its quoted value does not
      * misclassify an external type.
      *
      * @note Local classes and closure types are outside the contract of this
      * trait: compilers render them without a reliable marker (Clang prints a
      * bare name). Only namespace-scope types are classified.
+     *
+     * @note A template taking a non-type parameter, and a function type with
+     * a cv-qualifier, a ref-qualifier or a C-style ellipsis, are classified
+     * from the rendering rather than decomposed.
      *
      * @code
      * namespace { struct duck {}; }
@@ -179,7 +238,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
-    struct is_tu_local : ::std::bool_constant<detail::contains_anonymous_namespace_marker(type_name<T>())>
+    struct is_tu_local : detail::tu_local_impl<::std::remove_cv_t<T>>
     {};
 
     /**
