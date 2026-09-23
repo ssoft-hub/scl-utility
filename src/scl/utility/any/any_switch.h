@@ -101,6 +101,10 @@ namespace scl::detail
     inline constexpr bool any_switch_produces_v = ::std::is_convertible_v<Produced, Result> ||
         ::std::is_convertible_v<Produced, ::std::optional<Result>>;
 
+    // libc++ rejects is_convertible<void, optional<T>> as ill-formed rather than answering false.
+    template <typename Result>
+    inline constexpr bool any_switch_produces_v<void, Result> = ::std::is_void_v<Result>;
+
     template <typename Handler, typename Result, typename... Argument>
     consteval bool any_switch_handler_check() noexcept
     {

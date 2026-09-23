@@ -27,13 +27,15 @@
   На MSVC результат включает префиксы `struct `, `class `, `union ` и `enum ` для
   пользовательских типов (`"struct MyStruct"`, `"enum Color"`) - как на верхнем уровне, так
   и внутри аргументов шаблона. GCC и Clang эти ключевые слова не добавляют. Сверх того
-  расходятся встроенные пространства имён и аргументы шаблона, заданные по умолчанию.
+  расходятся встроенные пространства имён, аргументы шаблона, заданные по умолчанию, и
+  псевдоним, который libc++ отмечает как предпочтительное имя типа.
   `std::string`, измерено на GCC 13.1, Clang 22.1 и MSVC 19.44:
 
   ```text
-  GCC    std::__cxx11::basic_string<char>
-  Clang  std::basic_string<char>
-  MSVC   class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
+  GCC                std::__cxx11::basic_string<char>
+  Clang, libstdc++   std::basic_string<char>
+  Clang, libc++      std::string
+  MSVC               class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
   ```
 - **Для чего предназначен результат:**
   Для показа - строка журнала, сообщение об ошибке, имя для человека. Это не устойчивый
@@ -66,10 +68,11 @@ constexpr auto npos = ::std::string_view::npos;
 static_assert(::scl::type_name<int>() == "int");
 
 // A standard library type spells itself the way the toolchain does. std::string:
-// GCC:   "std::__cxx11::basic_string<char>"
-// Clang: "std::basic_string<char>"
-// MSVC:  "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
-static_assert(::scl::type_name<::std::string>().find("basic_string") != npos);
+// GCC:              "std::__cxx11::basic_string<char>"
+// Clang, libstdc++: "std::basic_string<char>"
+// Clang, libc++:    "std::string"
+// MSVC:             "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
+static_assert(::scl::type_name<::std::string>().find("string") != npos);
 
 // A user-defined type carries the MSVC prefix.
 // GCC/Clang: "MyStruct"  |  MSVC: "struct MyStruct"

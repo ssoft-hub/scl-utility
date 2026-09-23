@@ -25,14 +25,15 @@ extract the exact type representation.
 - **Compiler-specific output:**
   On MSVC, the result includes the `struct `, `class `, `union ` and `enum ` prefixes for
   user-defined types (`"struct MyStruct"`, `"enum Color"`), at the top level and inside
-  template arguments alike. GCC and Clang omit these keywords. Inline namespaces and
-  defaulted template arguments diverge on top of that. `std::string` measured on GCC 13.1,
-  Clang 22.1 and MSVC 19.44:
+  template arguments alike. GCC and Clang omit these keywords. Inline namespaces,
+  defaulted template arguments and the alias libc++ marks as a type's preferred name
+  diverge on top of that. `std::string` measured on GCC 13.1, Clang 22.1 and MSVC 19.44:
 
   ```text
-  GCC    std::__cxx11::basic_string<char>
-  Clang  std::basic_string<char>
-  MSVC   class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
+  GCC                std::__cxx11::basic_string<char>
+  Clang, libstdc++   std::basic_string<char>
+  Clang, libc++      std::string
+  MSVC               class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
   ```
 - **What the result is for:**
   Display - a log line, an error message, a name shown to a human. It is not a stable
@@ -64,10 +65,11 @@ constexpr auto npos = ::std::string_view::npos;
 static_assert(::scl::type_name<int>() == "int");
 
 // A standard library type spells itself the way the toolchain does. std::string:
-// GCC:   "std::__cxx11::basic_string<char>"
-// Clang: "std::basic_string<char>"
-// MSVC:  "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
-static_assert(::scl::type_name<::std::string>().find("basic_string") != npos);
+// GCC:              "std::__cxx11::basic_string<char>"
+// Clang, libstdc++: "std::basic_string<char>"
+// Clang, libc++:    "std::string"
+// MSVC:             "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
+static_assert(::scl::type_name<::std::string>().find("string") != npos);
 
 // A user-defined type carries the MSVC prefix.
 // GCC/Clang: "MyStruct"  |  MSVC: "struct MyStruct"

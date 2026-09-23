@@ -31,10 +31,11 @@ constexpr auto npos = ::std::string_view::npos;
 static_assert(::scl::type_name<int>() == "int");
 
 // A standard library type spells itself the way the toolchain does. std::string:
-// GCC:   "std::__cxx11::basic_string<char>"
-// Clang: "std::basic_string<char>"
-// MSVC:  "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
-static_assert(::scl::type_name<::std::string>().find("basic_string") != npos);
+// GCC:              "std::__cxx11::basic_string<char>"
+// Clang, libstdc++: "std::basic_string<char>"
+// Clang, libc++:    "std::string"
+// MSVC:             "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
+static_assert(::scl::type_name<::std::string>().find("string") != npos);
 
 // A user-defined type carries the MSVC prefix.
 // GCC/Clang: "MyStruct"  |  MSVC: "struct MyStruct"
