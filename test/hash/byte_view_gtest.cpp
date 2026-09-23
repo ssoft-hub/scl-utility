@@ -1126,8 +1126,9 @@ TEST(HashByteViewTest, TheForwardCursorPostfixFollowsTheSource)
 TEST(HashByteViewTest, TakingASourceThatCanThrowWhenMovedIsNotNoexcept)
 {
     move_throwing_range source;
+    ::std::u16string_view const text{u"AB"};
 
-    STATIC_EXPECT_TRUE(noexcept(::scl::hash::byte_view(::std::u16string_view{u"AB"})));
+    STATIC_EXPECT_TRUE(noexcept(::scl::hash::byte_view(text)));
     STATIC_EXPECT_FALSE(noexcept(::scl::hash::byte_view(source)));
 }
 

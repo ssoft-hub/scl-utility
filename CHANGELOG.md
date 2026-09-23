@@ -273,6 +273,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The module builds with libc++: `scl::any_switch`, a `byte_view` test and the `type_name` example.
+
 - `scl::is_tu_local` answers from what a compound type is built from rather than
   from its rendered name, so a TU-local class reached through a pointer to member
   is detected on every compiler.
