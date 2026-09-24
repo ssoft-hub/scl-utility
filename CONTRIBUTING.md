@@ -14,6 +14,7 @@ already.
 | `Goal`, `Problem` | must | the symptom or the missing capability, its cost and what triggers it; no history of the discovery, no alternative weighed |
 | `Steps to reproduce` | must | one action per step |
 | Acceptance criterion | must | one condition, `Given ..., when ..., then ...`, ticked by one observation of what the work delivers by the time the issue closes |
+| Criteria of a `Fix` | must | one criterion for a test covering the steps to reproduce that fails against the behaviour before the change, and one for that test passing against the change |
 | Plan of checks | must | none in the body |
 
 ```
@@ -40,7 +41,8 @@ Fix(hash): Refuse a range the hash bodies cannot iterate
 | Branch | must | named as the Commits and branches section states |
 | Changelog | must | a key change has an entry in `CHANGELOG.md`, new or corrected, as the Changelog section states |
 | Merge request | must | targets `dev`; titled `<issue-num>: Subject`, where `<issue-num>` is the identifier of the issue, or in the form of a commit subject where the request has no issue; the description carries the sections `Problem`, `Summary`, `Implementation` and `Test plan` |
-| Merge | must | the request is merged into `dev` once its checks have passed and its approvals are given |
+| Merge | must | the request is merged into `dev` once its checks have passed, its approvals are given and every acceptance criterion of its issue is checked |
+| Close | must | the issue closes after the merge of the request that meets its criteria |
 
 ## Licence
 
