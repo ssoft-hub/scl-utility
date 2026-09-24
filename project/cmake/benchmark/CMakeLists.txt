@@ -21,8 +21,7 @@ foreach(subdir IN LISTS SCL_UTILITY_BENCHMARK_SUBDIRS)
         endif()
 
         # --- Code size ---
-        # Outside the framework guard: a bare-metal target has no framework and no
-        # startup code, so these sources are compiled and never linked.
+        # No framework guard: the size library builds for a bare-metal host, which has no framework.
         file(GLOB_RECURSE srcs CONFIGURE_DEPENDS
             "${subdir}/*_size.c" "${subdir}/*_size.cc" "${subdir}/*_size.cpp"
         )
