@@ -1,8 +1,3 @@
-# Generate benchmarks for utility: per subdirectory of module/utility/benchmark/*, one
-# Google Benchmark program and one code-size library.
-
-include(${CMAKE_SOURCE_DIR}/project/cmake/SCLDependencies.cmake)
-
 get_filename_component(SCL_UTILITY_BENCHMARK_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../benchmark" ABSOLUTE)
 
 file(GLOB SCL_UTILITY_BENCHMARK_SUBDIRS LIST_DIRECTORIES true "${SCL_UTILITY_BENCHMARK_DIR}/*")
@@ -26,8 +21,7 @@ foreach(subdir IN LISTS SCL_UTILITY_BENCHMARK_SUBDIRS)
         endif()
 
         # --- Code size ---
-        # Outside the framework guard: a bare-metal target has no framework and no
-        # startup code, so these sources are compiled and never linked.
+        # No framework guard: the size library builds for a bare-metal host, which has no framework.
         file(GLOB_RECURSE srcs CONFIGURE_DEPENDS
             "${subdir}/*_size.c" "${subdir}/*_size.cc" "${subdir}/*_size.cpp"
         )
