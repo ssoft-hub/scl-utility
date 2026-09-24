@@ -204,11 +204,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   ill-formed in constant evaluation either way, and a build with exceptions still throws
   `std::out_of_range` as before.
 
-- Example, test and benchmark sources follow one naming rule, written in `AGENTS.md` and
-  `CONTRIBUTING.md`: an example is `example/<group>/<name>/<group>_<name>_example.cpp`, a
-  test is `test/<group>/<subject>_<framework>.cpp`, and a benchmark will read the same way.
-  An example base name is all Doxygen has to address `@example` by, and two examples
-  sharing one left the second unreachable.
 - Every example target is renamed, because an example target now carries the same trailing
   `_example` its source does, the way a test target carries the framework: `utility_any`
   becomes `utility_any_common_example`, `utility_hash_key_nttp` becomes
@@ -566,11 +561,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Both functions support polymorphism and are available only when RTTI is enabled.
   - `::scl::enum_value(value)` — string representation of an enum value as `"TypeName::N"`,
     where N is the underlying numeric value; does not require RTTI.
-
-- `AGENTS.md` — development guidelines for contributors and agents:
-  code conventions, branching rules, required pre-commit checks
-  (clang-format, clang-tidy, cppcheck), commit message format,
-  Doxygen documentation requirements, and compatibility constraints.
 
 ### CI
 
