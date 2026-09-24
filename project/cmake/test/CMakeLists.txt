@@ -24,7 +24,7 @@ if (EXISTS "${SCL_UTILITY_TEST_DIR}")
             # --- GoogleTest ---
             if (GTEST_FOUND)
                 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS
-                    "${subdir}/*gtest.c" "${subdir}/*gtest.cc" "${subdir}/*gtest.cpp"
+                    "${subdir}/*_gtest.c" "${subdir}/*_gtest.cc" "${subdir}/*_gtest.cpp"
                 )
                 if (srcs)
                     set(tgt "utility_${name}_gtest")
@@ -40,7 +40,7 @@ if (EXISTS "${SCL_UTILITY_TEST_DIR}")
             # --- doctest ---
             if (DOCTEST_FOUND)
                 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS
-                    "${subdir}/*doctest.c" "${subdir}/*doctest.cc" "${subdir}/*doctest.cpp"
+                    "${subdir}/*_doctest.c" "${subdir}/*_doctest.cc" "${subdir}/*_doctest.cpp"
                 )
                 if (srcs)
                     set(tgt "utility_${name}_doctest")
@@ -54,7 +54,7 @@ if (EXISTS "${SCL_UTILITY_TEST_DIR}")
             # --- Catch2 ---
             if (CATCH2_FOUND)
                 file(GLOB_RECURSE srcs CONFIGURE_DEPENDS
-                    "${subdir}/*catch2.c" "${subdir}/*catch2.cc" "${subdir}/*catch2.cpp"
+                    "${subdir}/*_catch2.c" "${subdir}/*_catch2.cc" "${subdir}/*_catch2.cpp"
                 )
                 if (srcs)
                     if (TARGET Catch2::Catch2WithMain)
