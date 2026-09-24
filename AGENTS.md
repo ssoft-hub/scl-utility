@@ -1,281 +1,116 @@
-# ScL Utility — Agent Instructions
+# ScL Utility
 
 ## Overview
-C++20 header-only library, part of the [ScL Toolkit](https://gitlab.com/ssoft-scl/scl-kit).
-No external dependencies. License: Unlicense.
-Provides compile-time meta-programming helpers, preprocessor utilities, extended type traits, and hash utilities.
 
-## Source Layout
-```
-src/scl/utility/     — public headers
-  attribute/         — compiler attribute macros
-  hash/              — non-cryptographic hash utilities
-  meta/              — type/enum/symbol name extraction
-  preprocessor/      — macro utilities
-  type_traits/       — extended type traits
-test/                — unit tests
-example/             — usage examples
-benchmark/           — performance and code-size measurements
-project/cmake/       — CMakeLists.txt
-project/doxygen/     — Doxyfile
-```
+Header-only library of compile-time and low-level utilities for C++20 and later.
 
-## Code Conventions
-- C++20 standard, header-only (`src/scl/utility/`)
-- No external dependencies
-- Follow existing naming and style — do not invent new patterns
-- All public symbols live in namespace `scl::` or `scl::utility::`
-- Every file starts with `#pragma once`
-- When adding a new header, include it in the corresponding top-level header (e.g. `src/scl/utility/meta.h`)
-- Example, test and benchmark sources are named by the rule in **Source file naming** below; every new public API must have a GoogleTest (`*_gtest.cpp`) test
-- No comments unless the WHY is non-obvious
-- All source comments and identifiers in **English**
-- A `requires` clause goes **after** the declaration, never between the template head and
-  the declaration:
+## Commands
 
-```cpp
-template <typename Type>
-[[nodiscard]]
-constexpr Type * any_cast(Type * arg) noexcept
-    requires(::std::is_object_v<Type>)
-{ ... }
-```
+| Command | Description |
+|---------|-------------|
+| `script/lint/lint.sh` | Every lint check, from any directory |
+| `script/lint/clang_format.sh` | Formatting check alone |
+| `script/lint/clang_tidy.sh` | Naming and static analysis, no build tree needed |
+| `script/lint/cppcheck.sh` | Static analysis by cppcheck |
+| `script/lint/doxygen.sh` | Documentation parse, fails on any diagnostic |
+| `script/lint/doc_snippets.sh --write` | Refill snippet blocks from example sources |
+| `script/doxygen/build.sh` | Versioned reference into `doc/doxygen/`, from the module root (see Pitfalls) |
 
-  It follows every other part of the declarator — parameter list, `const`, `noexcept`,
-  trailing return type — and precedes `= delete` / `= default` and a constructor's
-  initialiser list. A `requires` *expression* inside a `concept` is a different construct
-  and is unaffected.
+## Architecture
 
-### Source file naming
+| Content | Path |
+|---|---|
+| Sources | `src/scl/utility/<group>/` |
+| Tests | `test/<group>/` |
+| Examples | `example/<group>/<name>/` |
+| Benchmarks | `benchmark/<group>/` |
+| Documentation pages | `doc/md/<language>/<group>/` |
+| Lint scripts | `script/lint/` |
+| Projects | `project/<tool>/`: `cmake`, `qmake`, `doxygen`, etc. |
 
-```
-example/<group>/<name>/<group>_<name>_example.cpp   ->  target utility_<group>_<name>_example
-test/<group>/<subject>[_<aspect>]_<framework>.cpp   ->  target utility_<group>_<framework>
-benchmark/<group>/<subject>[_<aspect>]_<tool>.cpp   ->  target utility_<group>_<tool>
-```
+## Key Files
 
-`<group>` is the header's own directory under `src/scl/utility/`; a header sitting at that
-root (`flags.h`) is its own group. `<subject>` is the header the file covers, followed by
-an aspect when one header needs several files (`type_key_cross_tu_gtest.cpp`,
-`enum_fallback_gtest.cpp`).
+- `CONTRIBUTING.md` - rules of development
+- `CHANGELOG.md` - an entry for a key change only
 
-Every base name ends in the token naming what the file is built into, and the target ends
-in the same token: `example` for an example, `<framework>` for a test — `gtest`, `doctest`,
-`catch2`, plus `_shared.cpp` for a companion shared library — and `<tool>` for a benchmark.
-In `test/` and `benchmark/` the CMake glob keys on it, and every file of a group builds
-into one target per framework or tool; in `example/` one source tree is one program, so an
-example's base name is its whole target name without the `utility_` prefix, and the token
-is what keeps that target apart from the test target of the same group. Every target name
-is derived from the path, so a rename needs no build-file edit.
+## Principles
 
-Only `example/` is read by Doxygen (`INPUT` and `EXAMPLE_PATH` in
-`project/doxygen/Doxyfile`), and `@example` addresses a file by base name alone. That is
-why an example carries its group inside the base name and a test does not: two examples
-sharing a base name leave the second unreachable, while a test's uniqueness is already
-covered by its directory.
+- Header-only: no `.c` or `.cpp` under `src/`
+- Standard library only, no other dependency
+- C++20 baseline; a feature beyond C++20 sits behind `__has_include`, `__has_cpp_attribute`
+  or a `__cpp_*` macro
+- Headers compile with exceptions and RTTI off: `SCL_HAS_EXCEPTIONS`, `SCL_HAS_RTTI` from
+  `preprocessor/`
+- Groups by logical layer, from the most basic:
 
-- The `<name>` level is always present, with no collapsing when it repeats the group. An
-  example covering its group as a whole rather than one subject is named `common`:
-  `example/any/common/any_common_example.cpp`.
-- Every example needs a directory of its own. All sources under one example root link into
-  a single program, so a second `main` beside it is a link error. Directories holding only
-  sub-directories are pure grouping, and the tree may nest freely.
+| Layer | Groups |
+|---|---|
+| 0 | `preprocessor`, `attribute` |
+| 1 | `type_traits`, `concepts` |
+| 2 | `meta`, `runtime` |
+| 3 | `hash`, `flags`, `hierarchy`, `any` |
 
-## Required Checks Before Every Commit
-Run on every changed `.h` / `.hpp` file:
+## Finding Related Code
+
+- LSP first: definitions, references, callers
+- The umbrella `src/scl/utility/<group>.h` lists every public header of a group
+- Grep for exact strings: a macro, an error message, a function name
+- Follow includes: `#include <scl/utility/...>` names the group it depends on
+- A test is usually named after the header it covers: `hash/djb2.h` -> `test/hash/djb2_gtest.cpp`
+- Test files reveal usage patterns and expected behavior
+
+## Validating
 
 ```sh
-# Format check
-clang-format --dry-run --Werror <files>
-
-# Apply format
-clang-format -i <files>
-
-# Static analysis
-clang-tidy <file> -- -std=c++20 -xc++ -Isrc
-cppcheck --enable=warning,style,performance,portability \
-  --check-level=exhaustive \
-  --max-configs=32 \
-  --std=c++20 --language=c++ --inline-suppr \
-  --error-exitcode=1 --suppress=missingIncludeSystem \
-  -Isrc -UDOXYGEN <files>
-
-# Documentation blocks reach their target
-bash script/lint/doxygen.sh
+bash script/lint/lint.sh            # every lint check, from any directory
+bash script/lint/clang_format.sh    # one of them, when only formatting is in question
 ```
 
-The format check covers `src/`, `test/`, `example/` and `benchmark/`, headers and sources
-alike, so a changed `.cpp` is subject to it too. `bash script/lint/clang_format.sh` runs it
-over the whole tree the way CI does.
+- Lint scripts need no build tree
 
-## Branching
-- Branch name format: `{user}/feat/{subject}`, `{user}/fix/{subject}`, `{user}/refactor/{subject}`
-- **Never commit directly to `dev` or `main`**
-- Every commit must be in a buildable state
+## Building
 
-## Compatibility
-- Supported compilers: MSVC 19.30+, GCC 13+, Clang 16+
-- Breaking change = removing or renaming any public API symbol; avoid unless necessary
-- Use C++ feature test macros (`__cpp_*`, `__has_cpp_attribute`) to guard functionality dependent on std version
-- Do not use compiler-specific extensions directly — abstract them via attribute or type_traits helpers in this library
+- No top-level `CMakeLists.txt` and no presets: a host project builds the module
+- `project/cmake` - the library, target `scl::utility`
+- `project/cmake/test` - `utility_<group>_<framework>` per test directory
+- `project/cmake/example` - `utility_<group>_<name>_example` per example directory
+- `project/cmake/benchmark` - `utility_<group>_gbench`, `utility_<group>_size`
+- `project/cmake/test` and `project/cmake/benchmark` rely on the host to find GoogleTest,
+  doctest, Catch2 and Google Benchmark; a framework not found gets no target, and
+  `utility_<group>_size` needs none
+- In a host that builds the tests, one group runs as its own executable,
+  `utility_<group>_gtest`, with `--gtest_filter` for a subset; CTest names each GoogleTest test
+  `Suite.Test`, so `ctest -R` never matches a GoogleTest target name
 
-## Before PR/MR
-1. Update `CHANGELOG.md` with a description of the change
-2. Ensure all commits are in a buildable state
-3. For releases: grep for the old version string and update **all** occurrences — `CHANGELOG.md`, `project/doxygen/Doxyfile` (`PROJECT_NUMBER`), `CMakeLists.txt`, `README.md`
+## Coding Guidelines
 
-## Commit Message Format
-Use Conventional Commits. Language: **English only**.
+- `lower_case` for namespaces, types, functions, variables, members, aliases
+- `CamelCase` for template parameters, `SCL_UPPER_CASE` for macros under `src/`
+- East const: `int const & value`, `char const * name`
+- `#pragma once`; root namespace `scl`, implementation details in a nested `detail`
+- `typename` for a type parameter
+- Documentation blocks: `@brief`, `@tparam`, `@param`, `@ingroup scl_utility_<group>` or a
+  subgroup of it
 
-```
-type(scope): short description (max 72 chars)
+## Workflow
 
-Body describing WHY the change was made, WHAT problem it solves,
-and HOW it was approached. Wrap lines at 72 characters.
-```
+- New public header: `src/scl/utility/<group>/<name>.h`, add it to `<group>.h`, test in
+  `test/<group>/<name>_gtest.cpp`, then `bash script/lint/lint.sh`
+- Edited an example that a page quotes: `bash script/lint/doc_snippets.sh --write`
 
-**Required types:** `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `ci`, `perf`, `style`
+## Code Quality
 
-- No `Co-Authored-By` or any co-authorship trailers
+| Tool | Configuration | Script |
+|---|---|---|
+| clang-format | `.clang-format` | `script/lint/clang_format.sh` |
+| clang-tidy | `src/.clang-tidy` | `script/lint/clang_tidy.sh` |
+| cppcheck | `.cppcheck` | `script/lint/cppcheck.sh` |
+| Doxygen | `project/doxygen/Doxyfile` | `script/lint/doxygen.sh` |
+| Snippet sync | markers in the Markdown pages | `script/lint/doc_snippets.sh` |
 
-Example:
-```
-feat(hash): add SipHash-2-4 keyed 64-bit hash
+## Pitfalls
 
-SipHash provides hash-flooding resistance missing in fnv1a/djb2.
-Implements the reference SipHash-2-4 algorithm with a 128-bit key.
-Key is passed as two uint64_t values to avoid struct padding issues.
-```
-
-## Doxygen Documentation
-Every public header, class, struct, function, and type alias must have a Doxygen comment. Language: **English only**.
-
-- A block spanning more than one line is written as `/** */`, one `*` per line; `///` is
-  left to a comment that says everything in a single line, and `///<` to a trailing one
-- Use `@brief` for one-line description
-- A documented function describes every parameter and its return value; where the value
-  carries nothing beyond its type — a chaining `operator=`, an iterator's sentinel — say so
-  in one line rather than omitting `@return`. A deleted member, and a defaulted constructor
-  or destructor, is the exception: it says what it does or why it is refused, and nothing
-  else. A defaulted assignment operator is not — it hands back a reference, and the check
-  asks about it
-- Use `@tparam` for every template parameter
-- Every entity must declare `@ingroup <group>` matching its thematic group
-- Groups are defined with `@defgroup` in the top-level module header or dedicated group header
-
-Example:
-```cpp
-/// @defgroup ScL_Utility_Hash Hash utilities
-/// @ingroup ScL_Utility
-/// @{
-
-/// @brief Computes FNV-1a 64-bit hash over a byte range.
-/// @ingroup ScL_Utility_Hash
-/// @tparam Iter  Input iterator over byte-sized elements.
-/// @param  first Begin of range.
-/// @param  last  End of range.
-/// @return 64-bit FNV-1a digest.
-template <typename Iter>
-constexpr uint64_t fnv1a(Iter first, Iter last) noexcept;
-
-/// @}
-```
-
-### Out-of-line blocks
-
-A header keeps its class bodies clean: the blocks live in the `Documentation` section at
-the end of the file and name their target with `@class` / `@fn` / `@typedef` / `@var`.
-Doxygen matches such a block by the target's rendered signature, and a block that matches
-nothing is dropped — the entity reaches the reference with no description at all. Spell the
-declaration the way Doxygen renders it, parameter names included: `node(Arguments &&...)`
-matches nothing, `node(Arguments &&... arguments)` matches. Run `script/lint/doxygen.sh`
-(a lint job in both CI pipelines) after touching a public header; it fails on every Doxygen
-diagnostic, an unattached block and a stale `@param` name alike.
-
-Attribute macros are expanded before matching, so `@fn` spells the clean declaration —
-`SCL_HOT` and `SCL_LIFETIMEBOUND` never appear in it. A new attribute macro needs no entry
-anywhere for this to hold.
-
-Four shapes defeat out-of-line matching in Doxygen 1.15 and 1.16. The first three have a
-fix on the declaration side:
-
-- **Two overloads whose parameter lists render the same are one entity.** Parameter
-  *names* do not disambiguate, so `any_cast(Wrapper * view)` in one header and
-  `any_cast(Wrapper * arg)` in another collapse into a single member and one of the two
-  blocks is dropped without a warning. Give the deduced template parameters distinct names
-  so the rendered signatures differ, naming each after the role it plays —
-  `ValueArgument`, `WriteArgument`, `ReadArgument` for the three `any_cast` forms
-  that read and write through an argument. A trailing `requires` clause tells such
-  overloads apart for the compiler but not for Doxygen, so the names are what make each
-  addressable from an `@fn` block.
-- **A `requires` clause needs each conjunct parenthesised** — `requires(A) && (B)`, not
-  `requires A && B`. Doxygen drops the leading `::` of a conjunct that follows `&&`, and
-  the mangled clause no longer matches the declaration it came from.
-- **A function template whose return type is a dependent east-const pointer or reference
-  (`Type const *`) must not be both declared and defined.** Doxygen renders the two with
-  different spacing and fails to pair them; a `friend` declaration inside the class is
-  declaration enough, so the separate namespace-scope one can go.
-- **An overload set told apart only by its template parameter list cannot be addressed
-  from outside at all.** `get<I>()` against `get<T>()` render identically, and no `@fn`
-  spelling separates them — a template argument list in the name is accepted and silently
-  ignored. Document those overloads in place, directly above the declaration.
-
-A member re-exported from a private base with `using` has no unique target either: the
-base declares each as a `const` / `const volatile` pair, and the member is left out of the
-class page entirely. Keep the `using`, and declare the member for Doxygen alone in a single
-`Documentation-only declarations` block at the end of the header, which reopens the class:
-
-```cpp
-#ifdef DOXYGEN
-namespace scl
-{
-    class any_view
-    {
-    public:
-        constexpr bool has_value() const noexcept;
-    };
-} // namespace scl
-#endif
-```
-
-Name a befriended **class** from the root — `friend class ::scl::hierarchy::tree<Payload,
-Observer, Allocator>;`, `template <typename, typename...> friend class ::scl::any_switch;`.
-An unqualified one whose name matches a member of the befriending class (`friend class
-tree;` inside `tree::reference`, which also has a `tree()` accessor) captures that member's
-out-of-line block, and nothing is reported, since the block did reach a target.
-
-A befriended **free function** takes the namespace *without* the leading `::` —
-`friend constexpr Type * scl::any_cast(...)`. The leading form loses the function's own
-definition instead. Qualifying it at all needs a prior namespace-scope declaration, so a
-function returning a dependent east-const pointer stays unqualified — see the third trap
-above. A hidden friend, defined in the class body like `type_key::operator==`, cannot be
-qualified at all.
-
-Judge coverage from the generated HTML, not from the report: a block can be attached, carry
-its text in the XML and still not reach the reader. Compare the `memtitle` count on a class
-page against its member rows.
-
-### Visibility
-
-The public API is documented in full — every public member carries a block, deleted and
-defaulted special members, type aliases and iterator boilerplate included. A one-line
-`@brief` is enough where there is nothing more to say.
-
-No gate holds this for a `= delete` or `= default` member: `WARN_IF_UNDOCUMENTED` never
-reports one, and Doxygen leaves such a member off its class page instead of listing it
-undescribed, so an omission shows up neither in the log nor in the reference. Write the block
-when the declaration goes in.
-
-Private and protected members stay out of the reference. A block written for one, because a
-reader of the code needs it, carries `@internal`.
-
-An internal entity declared in *public* scope — a pattern anchor, an `SCL_DETAIL_*` probe —
-takes `@internal` **and** an `EXCLUDE_SYMBOLS` entry. The tag alone is not enough: an
-`@internal` block is discarded before it counts as documentation, which leaves the entity
-reported as undocumented instead of excluded.
-
-## Do Not
-- Add runtime dependencies
-- Break C++20 compatibility (MSVC 19.30+, GCC 13+, Clang 16+)
-- Commit without running clang-format and clang-tidy
-- Add implementation (.cpp) files — library is header-only
+- A test or benchmark source without its suffix joins no target: `_gtest`, `_doctest`,
+  `_catch2`, `_shared`, `_gbench`, `_size`
+- A `.cpp` under `src/` turns the interface target into a compiled library
+- `script/doxygen/build.sh` runs `git checkout -f`: commit before running it

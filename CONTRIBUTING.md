@@ -1,211 +1,365 @@
 # Contributing to ScL Utility
 
-## Building and testing
+## Issues
 
-### Prerequisites
+A reporter should open an issue for one concern, where no open issue carries that concern
+already.
 
-- C++20 compiler: MSVC 19.30+, GCC 13+, or Clang 16+
-- CMake 3.20+
-- Ninja (recommended)
+| Part | Force | Rule |
+|---|---|---|
+| Title | must | `Type(scope): Subject`, the scope optional; the subject imperative, capitalised, with no final period; the whole title at most 80 characters |
+| Type | should | one of the table below |
+| Body of a `Fix` | must | the sections `Problem`, `Steps to reproduce`, `Expected behaviour`, `Actual behaviour`, `Acceptance criteria` and `Environment` |
+| Body of any other type | must | the sections `Goal` and `Acceptance criteria` |
+| `Goal`, `Problem` | must | the symptom or the missing capability, its cost and what triggers it; no history of the discovery, no alternative weighed |
+| `Steps to reproduce` | must | one action per step |
+| Acceptance criterion | must | one condition, `Given ..., when ..., then ...`, ticked by one observation of what the work delivers by the time the issue closes |
+| Plan of checks | must | none in the body |
 
-### Build
-
-The module is built as part of the [scl-kit](https://github.com/ssoft-hub/scl-kit) ([GitLab](https://gitlab.com/ssoft-scl/complex/scl-kit)) super-project:
-
-```bash
-git clone --recurse-submodules https://github.com/ssoft-hub/scl-kit.git
-cd scl-kit
-
-# GCC
-cmake -B build/gcc -S . -G Ninja -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
-cmake --build build/gcc
-
-# Clang
-cmake -B build/clang -S . -G Ninja -DCMAKE_BUILD_TYPE=Debug \
-    -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
-cmake --build build/clang
-
-# MSVC (from Developer Command Prompt or after vcvarsall.bat)
-cmake -B build/msvc -S . -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build/msvc
-
-# Run tests
-ctest --test-dir build/gcc --output-on-failure
+```
+Fix(hash): Refuse a range the hash bodies cannot iterate
 ```
 
-### CMake options
+| Type | What the issue covers |
+|---|---|
+| `Feat` | functionality a user does not have yet |
+| `Fix` | behaviour that departs from what the module states it does |
+| `Refactor` | the shape of the code or the text, with nothing a user sees changed |
+| `Perf` | a measured cost - time, memory, size - that the work brings down |
+| `Docs` | what a reader is told, in documentation or in a comment |
+| `Test` | behaviour no test reaches yet |
+| `Chore` | the build, the tooling, a dependency or a module reference |
+| `Ci` | the pipeline running the checks |
+| `Style` | formatting alone, with no logic and no wording changed |
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| SCL_BUILD_TESTS | ON | Build tests |
-| SCL_BUILD_EXAMPLES | ON | Build examples |
-| SCL_ENABLE_GTEST | ON | Enable GoogleTest-based tests |
-| SCL_ENABLE_DOCTEST | ON | Enable doctest-based tests |
-| SCL_ENABLE_CATCH2 | ON | Enable Catch2-based tests |
+## Workflow
+
+| Step | Force | Rule |
+|---|---|---|
+| Issue | should | a change starts from an issue |
+| Branch | must | named as the Commits and branches section states |
+| Changelog | must | a key change has an entry in `CHANGELOG.md`, new or corrected, as the Changelog section states |
+| Merge request | must | targets `dev`; titled `<issue-num>: Subject`, where `<issue-num>` is the identifier of the issue, or in the form of a commit subject where the request has no issue; the description carries the sections `Problem`, `Summary`, `Implementation` and `Test plan` |
+| Merge | must | the request is merged into `dev` once its checks have passed and its approvals are given |
+
+## Licence
+
+By opening a merge request, a contributor affirms the right to contribute the content of the
+request and contributes it under the terms of `LICENSE.md`.
+
+## Building
+
+### CMake
+
+A host project builds the module: the module carries no top-level `CMakeLists.txt` and no
+presets.
+
+| The host adds | Targets |
+|---|---|
+| `project/cmake` | `scl::utility`, an interface target |
+| `project/cmake/test` | `utility_<group>_<framework>` per `test/<group>/` |
+| `project/cmake/example` | `utility_<group>_<name>_example` per example directory |
+| `project/cmake/benchmark` | `utility_<group>_gbench` and `utility_<group>_size` per `benchmark/<group>/` |
+
+The CMake lists under `project/cmake/test` and `project/cmake/benchmark` read `GTEST_FOUND`,
+`DOCTEST_FOUND`, `CATCH2_FOUND` and `BENCHMARK_FOUND`, which the host project sets, and create
+no target for a framework that is not found; `utility_<group>_size` needs no framework.
+
+## Rules that reject a change
+
+- A contributor must not add a runtime dependency beyond the standard library.
+- A contributor must not add a `.c` or `.cpp` file under `src/`: such a file turns the
+  interface target into a compiled library, with no diagnostic from the build.
+
+## Writing
+
+| Subject | Force | Rule |
+|---|---|---|
+| Language | must | English: identifiers, comments, documentation blocks, commits, issues, merge requests. A page under `doc/md/<language>/` is written in its language |
+| Punctuation | must | keyboard characters: `-` for a dash, `"` and `'` for quotes, `...` for an ellipsis |
+| Comments | should | only a lint suppression, a formatter hint, a section marker or a fact the code cannot show; the Documentation section of this file governs documentation blocks |
 
 ## Code style
 
-- **C++20**, header-only — all code goes in `.h` files under `src/scl/utility/`.
-- Follow the existing `.clang-format` configuration.
-- Use `#pragma once` as include guard.
-- Root namespace: `scl`. Implementation details go in `scl::detail` or sub-namespace `::detail`.
-- Spell a type parameter `typename`, never `class`; spell a template template parameter
-  `class` (`template <typename...> class Operation`).
-- Spell a standard attribute as itself: `[[nodiscard]]`, `[[maybe_unused]]`, `[[likely]]`.
-  An `SCL_*` macro from `attribute/` is for an annotation whose spelling or availability
-  differs by toolchain or by standard level. `attribute/` offers a macro for every standard
-  attribute so a consumer below the C++20 baseline can use one; library code does not,
-  outside the tests that exercise them.
-- Ask a `__has_*` operator for a feature only where an `#ifdef` naming that operator already
-  holds, or, mid-chain, an `#elif defined(...)` naming it with the call in a nested `#if` —
-  the shape `preprocessor/exceptions.h` uses. Neither a bare `#if`/`#elif __has_x(...)` nor
-  `#if`/`#elif defined(__has_x) && __has_x(...)` protects the call: the line is macro-replaced
-  and parsed as a whole before it is evaluated, so where the operator is missing the
-  surviving name becomes `0`, and the call form `0(...)` is a syntax error rather than the
-  zero the chain is written to expect.
-- Prefer `constexpr` and `noexcept` where applicable.
+A contributor should leave formatting to `clang-format -i <file>`, which applies layout,
+qualifier order, include order and pointer alignment from `.clang-format`.
 
-## Code quality checks
+| Rule | Force | Example |
+|---|---|---|
+| `lower_case` for namespaces, types, functions, variables, members and aliases | must | `::scl::hash::key`, `::scl::hash::byte_view()` |
+| `CamelCase` for template parameters | must | `template <typename ValueArgument>` |
+| `UPPER_CASE` for macros, prefixed `SCL_` under `src/` | must | `SCL_HAS_EXCEPTIONS` |
+| `m_` before the name of a private non-static data member | should | `m_parent` |
+| A namespace-qualified name starts from the global namespace | must | `::std::size_t`, `::std::is_object_v<Type>`, `::scl::detail::any_holder_base` |
+| Every header opens with `#pragma once` | must | |
+| Root namespace `scl`; a group's own namespace where it has one; internals in a nested `detail` | must | `::scl::hash`, `::scl::hierarchy`, `::scl::concepts`, `::scl::detail` |
+| A new header joins the umbrella of its group | must | `src/scl/utility/meta/type.h` in `src/scl/utility/meta.h` |
+| `typename` for a type parameter, `class` for a template template parameter | should | `template <typename...> class Operation` |
+| A standard attribute is spelled as itself inside the library | should | `[[nodiscard]]`, not `SCL_NODISCARD` |
+| `constexpr` and `noexcept` wherever the declaration admits them | should | |
 
-All code must pass automated checks before merging. On a merge request the checks start by
-hand, and the merge waits for them. CI runs the following tools:
+A contributor should use an `SCL_*` macro from `attribute/` for an annotation whose spelling or
+availability differs by toolchain or standard level, such as `SCL_NO_UNIQUE_ADDRESS`.
 
-### clang-format
-Enforces consistent code formatting:
-```bash
-# Check formatting
-find src -name '*.h' -o -name '*.hpp' | xargs clang-format --dry-run --Werror
+A contributor must place the `requires` clause of a function after the declarator: after the
+parameter list, `const`, `noexcept` and a trailing return type, before `= delete`, `= default`
+and a member initializer list.
 
-# Auto-fix formatting
-find src -name '*.h' -o -name '*.hpp' | xargs clang-format -i
+```cpp
+template <typename Type>
+[[nodiscard]]
+constexpr Type * any_cast(Type * arg) noexcept
+    requires(::std::is_object_v<Type>)
+{ ... }
 ```
 
-### clang-tidy
-Static analysis for common issues:
-```bash
-find src \( -name '*.h' -o -name '*.hpp' \) | while IFS= read -r f; do
-  clang-tidy "$f" --quiet --warnings-as-errors='*' -- -std=c++20 -xc++ -Isrc
-done
+A contributor must call a `__has_*` operator only inside a branch opened by a `defined` test
+of it. The call on the same line as the test is a syntax error on a compiler lacking the
+operator, since the whole line is parsed before it is evaluated.
+
+```cpp
+// Defective
+#elif defined(__has_feature) && __has_feature(cxx_exceptions)
+
+// Correct
+#elif defined(__has_feature)
+#if __has_feature(cxx_exceptions)
 ```
 
-### cppcheck
-Additional static analysis with configured suppressions (see `.cppcheck`):
-```bash
-find src \( -name '*.h' -o -name '*.hpp' \) -exec cppcheck \
-  --enable=warning,style,performance,portability \
-  --std=c++20 \
-  --language=c++ \
-  --inline-suppr \
-  --error-exitcode=1 \
-  --suppress=missingIncludeSystem \
-  --suppress=unusedFunction \
-  -Isrc \
-  -UDOXYGEN \
-  {} +
+An empty block comment `/**/` at the end of a declarator line is a break hint for
+clang-format: the declarator stays whole on its line, and `noexcept(...)` moves to the next.
+A contributor should put it only where the formatter would otherwise break the declarator
+itself.
+
+```cpp
+[[nodiscard]]
+constexpr auto begin() /**/
+    noexcept(noexcept(cursor{::std::ranges::begin(source), ::std::ranges::end(source)}))
 ```
 
-### Documentation snippets
+A contributor must list the members of a class body in three sections: types and aliases,
+then data, then functions. Within a section the contributor must order the access levels
+`public`, `protected`, `private`, put the static members of one access level before the
+non-static ones, and close the access level with its `friend` declarations, hidden friends
+included. A contributor must give a member the narrowest access its callers allow.
 
-A Markdown code block introduced by a snippet marker repeats a region of a compiled
-program, and CI fails when the two have drifted apart:
-```bash
-# Check every page
-bash script/lint/doc_snippets.sh
+```cpp
+template <typename Payload>
+class node
+{
+public:
+    using payload = Payload;
 
-# Fill the blocks in from their sources, after editing an example
-bash script/lint/doc_snippets.sh --write
+private:
+    using nodes = ::std::list<node>;
+
+    friend class ::scl::hierarchy::tree<Payload>;
+
+private:
+    node * m_parent{};
+    nodes m_nodes;
+
+public:
+    constexpr node() noexcept = default;
+
+    [[nodiscard]]
+    constexpr bool empty() const noexcept;
+
+private:
+    static constexpr void link(node & parent, node & child) noexcept;
+
+    friend bool operator==(node const &, node const &) = default;
+};
 ```
-The write mode is for local work only — CI checks and never writes.
+
+## Compatibility
+
+| Change | Force | Requirement |
+|---|---|---|
+| A change that breaks a consumer | must | the commit subject marked with `!` and a `CHANGELOG.md` entry naming what breaks |
+| A feature beyond C++20 that makes an implementation simpler or more efficient | should | an alternative implementation beside the C++20 one |
+| Choosing between the implementations | must | a feature test: a `__cpp_*` macro, `__has_include`, `__has_cpp_attribute`; never a compiler version |
+| A compiler extension | must | behind a probe of the extension: `__has_attribute`, `__has_builtin`, `__has_cpp_attribute`, `__has_include`; a test of the compiler only where no probe exists |
 
 ## Source file naming
 
-Examples, tests and benchmarks follow one rule. `<group>` is the header's own directory
-under `src/scl/utility/` — a header sitting at that root, such as `flags.h`, is its own
-group.
+`<group>` is a header's directory under `src/scl/utility/`; a header at that root, such as
+`flags.h`, is a group of its own. `test/umbrella/` holds the tests of the umbrella headers,
+and `example/quick_start/<group>/` holds the programs `README.md` quotes.
 
 | Tree | Path | Target |
-|------|------|--------|
+|---|---|---|
 | `example/` | `<group>/<name>/<group>_<name>_example.cpp` | `utility_<group>_<name>_example` |
 | `test/` | `<group>/<subject>[_<aspect>]_<framework>.cpp` | `utility_<group>_<framework>` |
 | `benchmark/` | `<group>/<subject>[_<aspect>]_<tool>.cpp` | `utility_<group>_<tool>` |
 
-`<subject>` is the header the file covers, followed by an aspect when one header needs
-several files. The trailing token is what CMake globs on, and it decides which target the
-file joins:
+`<subject>` is the header the file covers, `<aspect>` tells apart several files of one
+header: `type_key_cross_tu_gtest.cpp`, `enum_fallback_gtest.cpp`.
 
-| Suffix | Framework | Linked target |
-|--------|-----------|---------------|
-| `*_gtest.cpp` | GoogleTest | `GTest::gtest_main` |
-| `*_doctest.cpp` | doctest | doctest header-only |
-| `*_catch2.cpp` | Catch2 | Catch2 |
-| `*_shared.cpp` | — | companion shared library, linked into every test target of the directory |
-| `*_gbench.cpp` | Google Benchmark | `benchmark::benchmark_main` |
-| `*_size.cpp` | - | none: a static library read with the command `size` |
+| Suffix | Framework | Linked with | Where `main` is defined |
+|---|---|---|---|
+| `*_gtest.cpp` | GoogleTest | `GTest::gtest_main` | the library |
+| `*_doctest.cpp` | doctest | `doctest::doctest` | the test source |
+| `*_catch2.cpp` | Catch2 v3 | `Catch2::Catch2WithMain` | the library |
+| `*_catch2.cpp` | Catch2 v2, target `utility_<group>_catch2_v2` | `Catch2::Catch2` | the test source |
+| `*_shared.cpp` | - | a shared library linked into every test of the directory | - |
+| `*_gbench.cpp` | Google Benchmark | `benchmark::benchmark_main` | the library |
+| `*_size.cpp` | - | nothing, see Benchmarks | - |
 
-Each public component should have tests in at least one framework.
+- A test or benchmark source without its suffix joins no target and is never compiled, with no
+  diagnostic from the build.
+- A contributor must repeat the group in the base name of an example: Doxygen resolves
+  `@example` by base name alone.
+- A contributor must give every example a directory of its own: all sources under it link into
+  one program. A contributor should name an example covering its whole group `common`:
+  `example/any/common/any_common_example.cpp`.
 
-Every base name ends in the token naming what the file is built into, and the target ends
-in the same token: `example`, or the framework or tool. The trees differ in how many files
-share a target — one example is one program, while every test of a group builds into one
-executable per framework — so only an example's base name is its whole target name without
-the `utility_` prefix. The suffix also keeps an example target apart from the test target
-of the same group.
+## Testing
 
-An example carries its group inside the base name because Doxygen resolves `@example` by
-base name alone, and only `example/` is in its input; a test's directory already makes it
-unique. The `<name>` level is always present — an example covering its group as a whole
-is named `common`, as in `example/any/common/any_common_example.cpp`. Every example needs a
-directory of its own: all sources under one example root link into a single program, so a
-second `main` beside it is a link error.
+- A contributor adding a public interface must add a test under `test/<group>/`.
+- `STATIC_EXPECT_*` from `test/gtest_utils.h` checks a compile-time fact twice, with
+  `static_assert` and with the matching `EXPECT_*`.
+- A contributor writing a `*_shared.cpp` library must export the symbols the tests use, in
+  the way the platform requires: `__declspec(dllexport)` on Windows, for one.
+
+## Checks
+
+```sh
+bash script/lint/lint.sh
+```
+
+The script runs every check below from any directory and needs no build tree; a script of
+the table runs one check alone. The scripts need Bash with GNU findutils and diffutils, and
+find each tool on `PATH` or through its variable. A contributor should use the tool versions
+of the images the CI uses: another version of clang-format formats differently.
+
+| Script | Tool | Variable | Configuration |
+|---|---|---|---|
+| `script/lint/clang_format.sh` | clang-format | `CLANG_FORMAT` | `.clang-format` |
+| `script/lint/clang_tidy.sh` | clang-tidy | `CLANG_TIDY` | `src/.clang-tidy` |
+| `script/lint/cppcheck.sh` | cppcheck | `CPPCHECK` | `.cppcheck` |
+| `script/lint/doxygen.sh` | Doxygen | `DOXYGEN` | `project/doxygen/Doxyfile` |
+| `script/lint/doc_snippets.sh` | snippet sync | | snippet markers in the Markdown pages |
+
+- Each script is the source of truth for its tool: directories, flags and suppressions live
+  there and in the configuration files.
+- `bash script/lint/doc_snippets.sh --write` refills the snippet blocks after an example
+  changes.
 
 ## Benchmarks
 
-Benchmarks are not CTest tests, and the CMake option `SCL_BUILD_BENCHMARKS` is off by
-default. A figure quoted in an issue or a merge request must come from a Release build.
-
-The commands that build the benchmark tree of one preset and run its timing suites, from
-the super-project root:
-
-```sh
-script/ci/build.sh clang-x64 Release \
-    -DSCL_BUILD_BENCHMARKS=ON -DSCL_BUILD_TESTS=OFF -DSCL_BUILD_EXAMPLES=OFF
-script/ci/run_benchmarks.sh clang-x64
-```
-
-A `*_size.cpp` source is never linked or run, which is what lets it build under a
-bare-metal cross compiler. The command `arm-none-eabi-size` then reads the `.text` section
-off the library. The commands that build that library and measure it, from the same root:
-
-```sh
-cmake --preset arm-none-eabi && cmake --build --preset arm-none-eabi
-script/ci/run_size.sh arm-none-eabi
-```
+- Benchmarks are not CTest tests.
+- A contributor must quote a figure in an issue or a merge request only from a Release build.
+- A `*_size.cpp` source is compiled into a static library and never linked or run, so a
+  bare-metal cross compiler builds it; `size` reads the `.text` section of the library.
 
 ## Documentation
 
-- All public APIs must have Doxygen comments in the header files.
-- A documented function should describe every parameter and its return value; where the
-  value says nothing its type does not — a chaining `operator=`, an iterator's sentinel
-  — say so in one line rather than omit `@return`. A deleted member, and a defaulted constructor or
-  destructor, is the exception: it says what it does or why it is refused and nothing else. A
-  defaulted assignment operator still describes the reference it hands back.
-- A `= delete` or `= default` member must carry a block written by hand: no gate reports one,
-  and Doxygen leaves an undescribed member of that shape off its class page rather than
-  listing it there.
-- A header that only aggregates other headers declares its group with `@defgroup` and must
-  not carry `@ingroup`: the tag lists it among the files of the group, where it offers a
-  reader a page carrying a brief and no symbol.
-- Markdown documentation is maintained per language under `doc/md/<language>/`:
-  - English: `doc/md/en/`
-  - Russian: `doc/md/ru/`
-- When adding or modifying a component, update every language version.
-- A language added under `doc/md/` needs no configuration: the snippet check and the
-  documentation build find its pages by path.
-- Follow the existing doc format (see `doc/md/en/meta/type_name.md` as reference).
+A contributor must document every public entity with a Doxygen block. The documentation build
+reports an undocumented entity, an undescribed parameter or return value, a stale `@param`, a
+block reaching no target and an unknown `@ingroup`. The rules below are the ones it does not
+report.
 
-## Commit messages
+| Rule | Force | Detail |
+|---|---|---|
+| The description of a block opens with `@brief` in one line | must | a one-line block is `///`, a trailing one `///<`, a longer one `/** */` |
+| `@tparam` describes every template parameter | must | |
+| `@ingroup scl_utility_<group>`, or a subgroup nested under it, stands on every documented entity at namespace scope, or a `@{ @}` block of that group encloses it | must | an umbrella header that only includes others carries none; `@defgroup` stands in the umbrella or a header of its own |
+| A `= default` member carries a block written by hand | must | without one Doxygen drops the member from the class page and reports nothing |
+| A private or protected member stays out of the reference | must | its block carries `@internal` |
+| An internal entity in public scope takes `@internal` and an `EXCLUDE_SYMBOLS` entry | must | `SCL_DETAIL_*` probes, pattern anchors |
 
-- Use conventional prefixes: `feat:`, `fix:`, `docs:`, `test:`, `build:`, `refactor:`.
-- Keep the subject line under 72 characters.
-- Reference related issues when applicable.
+Pages live under `doc/md/<language>/`. A contributor must carry an edit of a page into its
+version in every language.
+
+### Out-of-line blocks
+
+A contributor must place a block in the `Documentation` section at the end of the header,
+except where the table below says to document in place, and must name its target with
+`@class`, `@fn`, `@typedef` or `@var`. A contributor must spell the target the way Doxygen
+renders it, parameter names included: `node(Arguments &&... arguments)`, not
+`node(Arguments &&...)`. Attribute macros are expanded before matching, so a contributor must
+spell an `@fn` without them.
+
+| Shape | Failure | Fix, should |
+|---|---|---|
+| Two overloads whose parameter lists render the same | one block dropped, no warning | distinct template parameter names by role: `ValueArgument`, `WriteArgument`, `ReadArgument` |
+| `requires A && B` | the leading `::` after `&&` is dropped, no match | `requires(A) && (B)` |
+| A dependent east-const pointer return, declared and defined | the two render differently, no pairing | drop the namespace-scope declaration; the `friend` one suffices |
+| Overloads told apart only by the template parameter list | no `@fn` spelling separates them | document in place, above the declaration |
+| A member re-exported from a private base with `using` | left off the class page | declare it once more in a `Documentation-only declarations` block under `#ifdef DOXYGEN`, as the example below shows |
+| An unqualified befriended class sharing a member's name | it captures that member's block, no report | name it from the root: `friend class ::scl::hierarchy::tree<...>;` |
+
+```cpp
+// Documentation-only declarations
+
+#ifdef DOXYGEN
+namespace scl
+{
+    class any_view
+    {
+    public:
+        constexpr bool has_value() const noexcept;
+    };
+} // namespace scl
+#endif
+```
+
+## Commits and branches
+
+Commit messages must follow
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). What the
+specification leaves to the project:
+
+| Part | Force | Rule |
+|---|---|---|
+| `{type}` | must | `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, or one more lowercase word for a recurring kind of work none of these names |
+| `(scope)` | should | the group the change touches, or the tool of a `ci` or `build` change |
+| `!` | must | marks a change that breaks a consumer; the body says what breaks |
+| First line | must | at most 72 characters |
+| Body | must | wrapped at 72: why the change was made and what it solves |
+| Issue | should | named by the branch and the merge request title; a footer only where neither makes the link plain |
+
+```
+fix(hash)!: refuse an array, whose bound is storage rather than content
+```
+
+A contributor must name a branch `{user}/{type}/{issue-num}/{subject}`, without
+`{issue-num}` where no issue is linked. Every commit of the branch must build, and
+`bash script/lint/lint.sh` must pass on it with no error.
+
+## Changelog
+
+`CHANGELOG.md` follows Keep a Changelog; `[Unreleased]` collects the release in progress. The
+rules below bind every entry a change adds or corrects.
+
+| Rule | Force |
+|---|---|
+| An entry records a key change a consumer notices: a new public entity, a change of behaviour, a break, a fix of a visible defect | should |
+| A refactoring, a test, a tooling or a pipeline change takes no entry | should |
+| Subsections appear once each, in the order `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed` | must |
+| An entry is one sentence of at most 100 characters saying what changed, with no detail or retelling | must |
+| No two entries of a release cover the same change: the entry already covering it is extended to the change, and no new one is added | must |
+| An entry of the release in progress that a change makes untrue is corrected in place | must |
+| No entry contradicts the code | must |
+
+```
+- [hash] Added `byte_view`, presenting wider elements as the bytes a hash takes
+- [hash] Refused a bounded array in every hash function
+- [any] Added `any_mutable_view`, a non-owning view that writes through
+```
+
+Defective, the second entry retelling the first:
+
+```
+- [hash] Added `byte_view`, presenting wider elements as the bytes a hash takes
+- [hash] `byte_view` refuses a bounded array and asks for neither random access nor a size
+```
+
+## Release
+
+| Step | Force | Rule |
+|---|---|---|
+| `[Unreleased]` | must | its entries meet the rules of the Changelog section, and its heading is renamed to the version and date |
+| Version | must | `SCL_UTILITY_VERSION` of `project/cmake/CMakeLists.txt` and `PROJECT_NUMBER` of `project/doxygen/Doxyfile` carry the new version |
+| Released heading | must | a released heading of `CHANGELOG.md` stays as it is |

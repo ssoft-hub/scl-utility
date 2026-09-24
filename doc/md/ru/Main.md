@@ -29,16 +29,13 @@ find_package(scl REQUIRED COMPONENTS utility)
 target_link_libraries(your_target PRIVATE scl::utility)
 ```
 
-Та же цель доступна из супер-проекта, собираемого в составе вашего дерева, — он собирает
-модуль вместе с соседними:
+Та же цель доступна из точки входа CMake модуля, каталога `project/cmake/`, добавленного
+в дерево сборки:
 
 ```cmake
-add_subdirectory(path/to/scl-kit)             # или FetchContent_MakeAvailable(scl-kit)
+add_subdirectory(path/to/scl-utility/project/cmake scl-utility)
 target_link_libraries(your_target PRIVATE scl::utility)
 ```
-
-Собственного `CMakeLists.txt` у `module/utility` нет — точка входа CMake это
-`project/cmake/`, который супер-проект подключает для каждого модуля.
 
 Затем подключите общий заголовок или заголовки отдельных компонентов:
 
