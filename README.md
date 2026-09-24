@@ -14,11 +14,6 @@ non-cryptographic hashes, parent-child tree hierarchies, compile-time and runtim
 extraction, preprocessor utilities and extended type traits. Licensed under
 [The Unlicense](LICENSE.md).
 
-The module is built and tested from the toolkit super-project
-[scl-kit](https://gitlab.com/ssoft-scl/scl-kit). The checks above run for a merge request on
-GitLab and for `dev` and `main` on GitHub; the GitLab pipeline on `dev` publishes the
-documentation.
-
 ## Features
 
 Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all ten.
@@ -118,16 +113,13 @@ find_package(scl REQUIRED COMPONENTS utility)
 target_link_libraries(your_target PRIVATE scl::utility)
 ```
 
-The same target comes from the super-project built in tree, which composes the module
-with its siblings:
+The same target comes from the CMake entry point of the module, `project/cmake/`, added to
+the build tree:
 
 ```cmake
-add_subdirectory(path/to/scl-kit)             # or FetchContent_MakeAvailable(scl-kit)
+add_subdirectory(path/to/scl-utility/project/cmake scl-utility)
 target_link_libraries(your_target PRIVATE scl::utility)
 ```
-
-`module/utility` carries no `CMakeLists.txt` of its own — its CMake entry point is
-`project/cmake/`, which the super-project adds per module.
 
 Then include the umbrella header or a single component:
 
