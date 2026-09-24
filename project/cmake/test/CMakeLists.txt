@@ -1,8 +1,3 @@
-# Generate tests for utility: one test target per subdirectory under module/utility/test/*
-# Supports GTest, doctest, and Catch2 depending on availability/toggles.
-
-include(${CMAKE_SOURCE_DIR}/project/cmake/SCLDependencies.cmake)
-
 get_filename_component(SCL_UTILITY_TEST_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../test" ABSOLUTE)
 
 if (EXISTS "${SCL_UTILITY_TEST_DIR}")

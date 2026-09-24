@@ -1,8 +1,3 @@
-# Generate benchmarks for utility: per subdirectory of module/utility/benchmark/*, one
-# Google Benchmark program and one code-size library.
-
-include(${CMAKE_SOURCE_DIR}/project/cmake/SCLDependencies.cmake)
-
 get_filename_component(SCL_UTILITY_BENCHMARK_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../benchmark" ABSOLUTE)
 
 file(GLOB SCL_UTILITY_BENCHMARK_SUBDIRS LIST_DIRECTORIES true "${SCL_UTILITY_BENCHMARK_DIR}/*")
