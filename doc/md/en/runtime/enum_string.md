@@ -16,9 +16,9 @@ an enum, including out-of-range values that have no named enumerator.
 ### Semantics
 
 - **Type name** is extracted at compile-time via `scl::type_short_name<E>()` — no RTTI needed.
-- **Numeric value** is cast to `std::underlying_type_t<E>` before formatting, so the sign
-  and magnitude always match the declaration (e.g., `unsigned char` renders as `0`–`255`,
-  `int` renders with a leading `-` for negative values).
+- **Numeric value** is widened to the largest integer of its signedness before formatting, so
+  the sign and magnitude always match the declaration and a character or `bool` underlying
+  type renders as a number (e.g., `unsigned char` renders as `0`–`255`, `char` `'P'` as `80`).
 - **Out-of-range values** that have no named enumerator are represented by their numeric value.
 
 ### Examples

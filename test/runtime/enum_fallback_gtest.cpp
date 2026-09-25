@@ -1,12 +1,15 @@
 #include <gtest_utils.h>
 
-// Force the fallback implementation regardless of std::format availability.
-// This TU is compiled independently: #pragma once in enum.h does not block
-// re-inclusion because this is a separate translation unit with its own
-// preprocessor state.
+// Takes the path without std::format: <version> is included first, so the include
+// inside enum.h cannot define the macro again.
+#include <version>
 #undef __cpp_lib_format
 
 #include <scl/utility/runtime/enum.h>
+
+#ifdef __cpp_lib_format
+#error "enum.h took the std::format path"
+#endif
 
 namespace
 {
@@ -24,6 +27,21 @@ namespace
     enum class FbByte : unsigned char
     {
         X = 255,
+    };
+
+    enum class FbChar : char
+    {
+        A = 65,
+    };
+
+    enum class FbWide : wchar_t
+    {
+        B = 66,
+    };
+
+    enum class FbBool : bool
+    {
+        Yes = true,
     };
 
     namespace ns
@@ -66,6 +84,23 @@ TEST(EnumStringFallbackTest, ScopedUnsigned)
 TEST(EnumStringFallbackTest, UnderlyingByte)
 {
     EXPECT_EQ(::scl::enum_string(FbByte::X), "FbByte::255");
+}
+
+/**
+ * @test Verify fallback path: a character underlying type renders as a number.
+ */
+TEST(EnumStringFallbackTest, CharUnderlyingRendersNumber)
+{
+    EXPECT_EQ(::scl::enum_string(FbChar::A), "FbChar::65");
+    EXPECT_EQ(::scl::enum_string(FbWide::B), "FbWide::66");
+}
+
+/**
+ * @test Verify fallback path: a bool underlying type renders as a number.
+ */
+TEST(EnumStringFallbackTest, BoolUnderlyingRendersNumber)
+{
+    EXPECT_EQ(::scl::enum_string(FbBool::Yes), "FbBool::1");
 }
 
 /**

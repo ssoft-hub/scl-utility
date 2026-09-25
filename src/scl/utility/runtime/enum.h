@@ -6,8 +6,8 @@
  * @ingroup scl_utility_runtime
  * @details
  * - ::scl::enum_string(value):
- *     Returns a string of the form "TypeName::N" where N is the underlying
- *     numeric value cast to the enum's underlying type.
+ *     Returns a string of the form "TypeName::N" where N is the value as a number, a
+ *     character or bool underlying type included.
  */
 
 #include <scl/utility/concepts/type_category.h>
@@ -15,6 +15,7 @@
 
 #include <string>
 #include <type_traits>
+#include <version>
 
 #ifdef __cpp_lib_format
 #include <format>
@@ -23,6 +24,15 @@
 #include <charconv>
 #include <iterator>
 #endif
+
+namespace scl::detail
+{
+    // A character or bool underlying type still renders as a number.
+    template <typename Enum>
+    using enum_number_t =
+        ::std::conditional_t<::std::is_signed_v<::std::underlying_type_t<Enum>>, long long, unsigned long long>;
+
+} // namespace scl::detail
 
 namespace scl
 {
@@ -48,14 +58,15 @@ namespace scl
     [[nodiscard]]
     ::std::string enum_string(E value)
     {
+        static_assert(sizeof(::std::underlying_type_t<E>) <= sizeof(long long),
+            "enum_string spells an underlying type no wider than long long");
+        auto const number = static_cast<::scl::detail::enum_number_t<E>>(value);
 #ifdef __cpp_lib_format
-        return ::std::format("{}::{}", ::scl::type_short_name<E>(),
-            static_cast<::std::underlying_type_t<E>>(value));
+        return ::std::format("{}::{}", ::scl::type_short_name<E>(), number);
 #else
         auto const type = ::scl::type_short_name<E>();
         ::std::array<char, 32> buf{};
-        ::std::to_chars(buf.data(), ::std::next(buf.data(), static_cast<::std::ptrdiff_t>(buf.size())),
-            static_cast<::std::underlying_type_t<E>>(value));
+        ::std::to_chars(buf.data(), ::std::next(buf.data(), static_cast<::std::ptrdiff_t>(buf.size())), number);
         ::std::string result;
         result.reserve(type.size() + 2 + buf.size());
         result += type;
