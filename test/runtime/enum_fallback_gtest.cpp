@@ -11,6 +11,28 @@
 #error "enum.h took the std::format path"
 #endif
 
+#include <array>
+#include <bitset>
+#include <charconv>
+#include <climits>
+#include <string>
+
+namespace
+{
+    // Spells a number in hexadecimal with a 0x prefix, through to_chars on every library.
+    struct hex_format
+    {
+        template <typename Number>
+        [[nodiscard]]
+        ::std::string operator()(Number number) const
+        {
+            ::std::array<char, 32> buf{};
+            auto const end = ::std::to_chars(buf.data(), buf.data() + buf.size(), number, 16).ptr;
+            return "0x" + ::std::string{buf.data(), end};
+        }
+    };
+} // namespace
+
 namespace
 {
     enum class FbColor : int
@@ -129,4 +151,31 @@ TEST(EnumStringFallbackTest, OutOfRangeValue)
 TEST(EnumStringFallbackTest, NamespacedEnum)
 {
     EXPECT_EQ(::scl::enum_string(ns::FbStatus::Err), "FbStatus::42");
+}
+
+/**
+ * @test Verify fallback path: a function object spells the number in the base it chooses.
+ */
+TEST(EnumStringFallbackTest, FormatSpellsNumber)
+{
+    EXPECT_EQ(::scl::enum_string(FbFlags::B, hex_format{}), "FbFlags::0x2");
+}
+
+/**
+ * @test Verify fallback path: the function object may return a pointer to characters.
+ */
+TEST(EnumStringFallbackTest, FormatReturnsAnyStringView)
+{
+    EXPECT_EQ(::scl::enum_string(FbFlags::B, [](auto) { return "two"; }), "FbFlags::two");
+}
+
+/**
+ * @test Verify fallback path: the function object spells the number in binary as wide as its type.
+ */
+TEST(EnumStringFallbackTest, FormatSpellsBinary)
+{
+    auto const binary = [](auto number) {
+        return ::std::bitset<sizeof(number) * CHAR_BIT>(number).to_string();
+    };
+    EXPECT_EQ(::scl::enum_string(FbChar::A, binary), "FbChar::" + ::std::bitset<CHAR_BIT>(65).to_string());
 }
