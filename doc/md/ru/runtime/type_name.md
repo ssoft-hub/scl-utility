@@ -1,91 +1,89 @@
-# Утилиты для получения имени типа во время выполнения
+# `type_name(obj)`
 
-Извлечение человекочитаемых имён типов через RTTI с поддержкой полиморфизма.
-
-- Заголовок: `#include <scl/utility/runtime/type.h>`
-- Требует: включённый RTTI (`/GR` на MSVC; не `-fno-rtti`)
-
-Содержание:
-- [`type_name(obj)`](#type_nameobj)
-- [`type_short_name(obj)`](#type_short_nameobj)
-
----
-
-## `type_name(obj)`
-
-Возвращает деманглированное полностью квалифицированное имя **динамического** типа объекта `obj`
-в виде `std::string`.
+Шаблон функции `type_name(obj)` с помощью RTTI возвращает имя динамического типа для объекта
+полиморфного класса и имя статического типа для любого другого объекта. Шаблон функции
+`type_short_name(obj)` возвращает то же имя без квалификаторов пространств имён и классов,
+без аргументов шаблона и без префикса, например `class` или `struct`.
 
 - Заголовок: `#include <scl/utility/runtime/type.h>`
-- Объявление: `template <typename T> std::string type_name(T const& obj);`
-
-### Семантика
-
-- **Динамическая диспетчеризация:** Если тип `T` является полиморфным и `obj` доступен через
-  ссылку на базовый класс, `typeid(obj)` возвращает фактический тип времени выполнения,
-  а не статический тип в точке вызова.
-- **Деманглирование:** На GCC и Clang мангленное имя из `typeid` деманглируется через
-  `abi::__cxa_demangle`. На MSVC `typeid().name()` уже читабелен и возвращается без изменений.
-- **Защита от отсутствия RTTI:** Обе функции отключаются при сборке без RTTI.
-  Для условной компиляции используйте `SCL_HAS_RTTI` (`<scl/utility/preprocessor/rtti.h>`);
-  он определён всегда, поэтому проверяйте его через `#if`.
-
-### Примеры
+- Оба шаблона функций объявлены только там, где макрос `SCL_HAS_RTTI` равен `1`.
+- Код для остальных случаев приведён в разделе [Без RTTI](index.md#без-rtti) страницы группы.
 
 ```cpp
-#include <scl/utility/runtime/type.h>
-#include <memory>
+template <typename T>
+[[nodiscard]] ::std::string type_name(T const & obj);
 
-struct Base  { virtual ~Base() = default; };
-struct Child : Base {};
-
-// Фундаментальный тип
-int i = 0;
-auto const int_name     = scl::type_name(i);   // "int"
-
-// Статический тип
-Child c;
-auto const child_name   = scl::type_name(c);   // "Child"
-
-// Полиморфизм: возвращает динамический тип через ссылку на базовый класс
-std::unique_ptr<Base> p = std::make_unique<Child>();
-auto const dynamic_name = scl::type_name(*p);  // "Child"  (не "Base")
+template <typename T>
+[[nodiscard]] ::std::string type_short_name(T const & obj);
 ```
 
-### Сравнение с аналогом времени компиляции
+## Семантика
 
-| | `scl::type_name<T>()` | `scl::type_name(obj)` |
+- **Динамический тип:** тип определяется с помощью оператора `typeid`. Поэтому для объекта,
+  полученного через указатель или ссылку на полиморфный базовый класс, шаблон функции возвращает имя
+  класса, экземпляром которого был создан объект, а для объекта, полученного через указатель
+  или ссылку на базовый класс без виртуальных функций, возвращает имя этого базового класса.
+- **Написание:** там, где есть заголовок `<cxxabi.h>`, как у GCC и у Clang на Linux, macOS и MinGW,
+  имя восстанавливается с помощью функции `abi::__cxa_demangle`. В остальных случаях, как у MSVC
+  и у Clang с библиотекой MSVC, результат `typeid().name()` возвращается без изменений, с префиксом,
+  например `class` или `struct`, если он есть в этом имени. Если восстановить имя не удаётся, оно
+  возвращается без изменений.
+- **Короткое имя:** для типа `app::Task<int>` шаблон функции `type_short_name(obj)` возвращает
+  `Task`.
+
+## Примеры
+
+Классы примеров:
+
+<!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp types -->
+```cpp
+namespace app
+{
+    struct Base
+    {
+        virtual ~Base() = default;
+    };
+
+    struct Derived : Base
+    {};
+
+    template <typename T>
+    struct Task : Base
+    {};
+} // namespace app
+```
+
+Для объекта, полученного через указатель на базовый класс, на этапе компиляции получается имя
+статического типа, а во время выполнения имя динамического типа:
+
+<!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp dynamic -->
+```cpp
+    std::unique_ptr<app::Base> const pointer = std::make_unique<app::Derived>();
+
+    auto const static_name = scl::type_name<app::Base>(); // app::Base
+    auto const dynamic_name = scl::type_name(*pointer);   // app::Derived, or struct app::Derived
+```
+
+Полное и короткое имя объекта специализации шаблона класса во время выполнения:
+
+<!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp short -->
+```cpp
+    std::unique_ptr<app::Base> const pointer = std::make_unique<app::Task<int>>();
+
+    auto const full_name = scl::type_name(*pointer); // app::Task<int>, or struct app::Task<int>
+    auto const short_name = scl::type_short_name(*pointer); // Task
+```
+
+## Сравнение с именем, получаемым на этапе компиляции
+
+| | шаблон функции `scl::type_name<T>()` | шаблон функции `scl::type_name(obj)` |
 |---|---|---|
-| Вычисление | Время компиляции (`constexpr`) | Время выполнения |
-| Возвращаемый тип | `std::string_view` (без аллокации) | `std::string` |
-| Полиморфизм | Нет — `T` фиксирован в точке вызова | Да — возвращает динамический тип |
-| RTTI | Не требуется | Требуется |
-
----
-
-## `type_short_name(obj)`
-
-Возвращает неквалифицированный идентификатор динамического типа объекта `obj`, удаляя все
-квалификаторы пространств имён и шаблонные аргументы.
-
-- Заголовок: `#include <scl/utility/runtime/type.h>`
-- Объявление: `template <typename T> std::string type_short_name(T const& obj);`
-
-### Пример
-
-```cpp
-#include <scl/utility/runtime/type.h>
-#include <memory>
-
-namespace app { template <typename T> struct Task : Base {}; }
-
-std::unique_ptr<Base> p = std::make_unique<app::Task<int>>();
-auto const task_name  = scl::type_name(*p);        // "app::Task<int>"
-auto const task_short = scl::type_short_name(*p);  // "Task"
-```
+| Вычисляется | на этапе компиляции | во время выполнения |
+| Возвращает | `std::string_view` | `std::string` |
+| Называет | тип, записанный в точке вызова | динамический тип полиморфного объекта |
+| RTTI | не требуется | требуется |
 
 ## Смотрите также
 
-- [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp) —
-  рабочая версия: формы времени компиляции и времени выполнения рядом для статического
-  типа, через ссылку на базовый класс и для шаблона, доступного через указатель на базу.
+- [Runtime](index.md)
+- [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp)
