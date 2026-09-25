@@ -77,7 +77,10 @@ TEST(UmbrellaHeaderTest, ExposesPreprocessor) { STATIC_EXPECT_EQ(SCL_FORWARD(ans
 /**
  * @test The umbrella header carries the runtime utilities.
  */
-TEST(UmbrellaHeaderTest, ExposesRuntime) { EXPECT_EQ(::scl::enum_value(color::green), "color::2"); }
+TEST(UmbrellaHeaderTest, ExposesRuntime)
+{
+    EXPECT_EQ(::scl::enum_string(color::green), "color::2");
+}
 
 /**
  * @test The umbrella header carries the type traits.

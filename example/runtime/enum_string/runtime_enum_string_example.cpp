@@ -1,11 +1,11 @@
 /**
- * @example runtime_enum_value_example.cpp
- * @brief Demonstrates scl::enum_value for runtime enum representation.
+ * @example runtime_enum_string_example.cpp
+ * @brief Demonstrates scl::enum_string for runtime enum representation.
  *
  * Compile-time:  scl::enum_name<V>()    — returns the member identifier as a string_view
  *                                         (e.g. "Red"); requires a valid named enumerator as
  *                                         a non-type template parameter.
- * Runtime:       scl::enum_value(v)     — returns "TypeName::N" where N is the underlying
+ * Runtime:       scl::enum_string(v)     — returns "TypeName::N" where N is the underlying
  *                                         numeric value; works for any value including
  *                                         out-of-range ones that have no named enumerator.
  */
@@ -52,8 +52,8 @@ static void show_named()
     ::std::cout << "[compile-time] enum_short_name : " << ct_short << '\n'; // Red
 
     // Runtime: accepts any value; returns "TypeName::N".
-    ::std::cout << "[runtime     ] enum_value       : " << ::scl::enum_value(Color::Red) << '\n'; // Color::1
-    ::std::cout << "[runtime     ] enum_value       : " << ::scl::enum_value(Color::Blue) << '\n'; // Color::-3
+    ::std::cout << "[runtime     ] enum_string       : " << ::scl::enum_string(Color::Red) << '\n'; // Color::1
+    ::std::cout << "[runtime     ] enum_string       : " << ::scl::enum_string(Color::Blue) << '\n'; // Color::-3
 }
 
 // ============================================================================
@@ -63,8 +63,8 @@ static void show_named()
 static void show_out_of_range()
 {
     // Compile-time enum_name requires a valid enumerator — no way to instantiate Color{42}.
-    // Runtime enum_value handles any underlying value.
-    ::std::cout << "[runtime     ] enum_value(Color{42}) : " << ::scl::enum_value(Color{42}) << '\n'; // Color::42
+    // Runtime enum_string handles any underlying value.
+    ::std::cout << "[runtime     ] enum_string(Color{42}) : " << ::scl::enum_string(Color{42}) << '\n'; // Color::42
 }
 
 // ============================================================================
@@ -73,8 +73,8 @@ static void show_out_of_range()
 
 static void show_unsigned_and_namespaced()
 {
-    ::std::cout << "[runtime     ] Flags::B          : " << ::scl::enum_value(Flags::B) << '\n'; // Flags::2
-    ::std::cout << "[runtime     ] app::Status::Err  : " << ::scl::enum_value(app::Status::Err) << '\n'; // Status::42
+    ::std::cout << "[runtime     ] Flags::B          : " << ::scl::enum_string(Flags::B) << '\n'; // Flags::2
+    ::std::cout << "[runtime     ] app::Status::Err  : " << ::scl::enum_string(app::Status::Err) << '\n'; // Status::42
 }
 
 // ============================================================================

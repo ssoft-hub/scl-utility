@@ -109,7 +109,7 @@
  *   including token forwarding (SCL_FORWARD) and a compile-time counter
  *   (SCL_COUNTER_VALUE / SCL_COUNTER_NEXT).
  * - **Runtime** (@ref scl_utility_runtime) — the runtime counterparts of the meta
- *   utilities: type_name(obj) through RTTI, and enum_value for any enum value.
+ *   utilities: type_name(obj) through RTTI, and enum_string for any enum value.
  * - **Type traits** (@ref scl_utility_type_traits) — detection idiom,
  *   forward_like, member pointer decomposition, and overload_cast.
  */

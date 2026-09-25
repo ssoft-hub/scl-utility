@@ -59,7 +59,7 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
 - **Runtime** — the runtime counterparts of the meta utilities
   (`#include <scl/utility/runtime.h>`):
   - `type_name(obj)` / `type_short_name(obj)` — the dynamic type's name, via RTTI
-  - `enum_value(v)` — any enum value as `"TypeName::N"`, named or not, without RTTI
+  - `enum_string(v)` — any enum value as `"TypeName::N"`, named or not, without RTTI
 - **Preprocessor** — macro utilities:
   - `SCL_FORWARD` — identity macro for token forwarding in macro chains
   - `SCL_COUNTER_VALUE` / `SCL_COUNTER_NEXT` — compile-time counter via ADL
@@ -374,7 +374,7 @@ reference.
 - [`example/meta/type_name`](example/meta/type_name/meta_type_name_example.cpp) — `type_name`
   and `type_short_name`, and the part of a rendered name that depends on the compiler. It is
   the source of the snippets on the `meta/type_name` pages.
-- [`example/runtime/enum_value`](example/runtime/enum_value/runtime_enum_value_example.cpp) — `enum_value` against its
+- [`example/runtime/enum_string`](example/runtime/enum_string/runtime_enum_string_example.cpp) — `enum_string` against its
   compile-time counterpart, including values outside the enumerator set.
 - [`example/runtime/type_name`](example/runtime/type_name/runtime_type_name_example.cpp) — compile-time and runtime
   type names side by side under polymorphism.

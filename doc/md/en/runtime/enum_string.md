@@ -8,10 +8,10 @@ an enum, including out-of-range values that have no named enumerator.
 
 ---
 
-## `enum_value(value)`
+## `enum_string(value)`
 
 - Header: `#include <scl/utility/runtime/enum.h>`
-- Declaration: `template <typename E> std::string enum_value(E value) requires std::is_enum_v<E>;`
+- Declaration: `template <typename E> std::string enum_string(E value) requires std::is_enum_v<E>;`
 
 ### Semantics
 
@@ -31,16 +31,16 @@ enum class Flags : unsigned { None = 0, A = 1, B = 2 };
 
 namespace app { enum class Status : int { Ok = 0, Err = 42 }; }
 
-auto const red_name     = scl::enum_value(Color::Red);       // "Color::1"
-auto const blue_name    = scl::enum_value(Color::Blue);      // "Color::-3"
-auto const other_name   = scl::enum_value(Color{42});        // "Color::42"  - unnamed value
-auto const flag_name    = scl::enum_value(Flags::B);         // "Flags::2"
-auto const status_name  = scl::enum_value(app::Status::Err); // "Status::42" - namespace stripped
+auto const red_name     = scl::enum_string(Color::Red);       // "Color::1"
+auto const blue_name    = scl::enum_string(Color::Blue);      // "Color::-3"
+auto const other_name   = scl::enum_string(Color{42});        // "Color::42"  - unnamed value
+auto const flag_name    = scl::enum_string(Flags::B);         // "Flags::2"
+auto const status_name  = scl::enum_string(app::Status::Err); // "Status::42" - namespace stripped
 ```
 
 ### Comparison with the compile-time counterpart
 
-| | `scl::enum_name<V>()` | `scl::enum_value(v)` |
+| | `scl::enum_name<V>()` | `scl::enum_string(v)` |
 |---|---|---|
 | Evaluation | Compile-time (`constexpr`) | Runtime |
 | Return type | `std::string_view` (no allocation) | `std::string` |
@@ -50,6 +50,6 @@ auto const status_name  = scl::enum_value(app::Status::Err); // "Status::42" - n
 
 ## See also
 
-- [`example/runtime/enum_value/runtime_enum_value_example.cpp`](../../../../example/runtime/enum_value/runtime_enum_value_example.cpp) —
+- [`example/runtime/enum_string/runtime_enum_string_example.cpp`](../../../../example/runtime/enum_string/runtime_enum_string_example.cpp) —
   runnable version: a named enumerator against its compile-time counterpart, a value
   outside the enumerator set, an unsigned underlying type and a namespaced enum.
