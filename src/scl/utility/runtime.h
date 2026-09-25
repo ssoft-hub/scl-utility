@@ -8,10 +8,16 @@
 
 /**
  * @defgroup scl_utility_runtime ScL Runtime Utilities
- * @brief Runtime type identification utilities via RTTI.
+ * @brief Names read from a value while the program runs.
  * @details
- * Provides runtime counterparts to the compile-time meta utilities in @ref scl_utility_meta.
- * All functions in this group require RTTI to be enabled.
+ * ::scl::type_name(obj) and ::scl::type_short_name(obj) name, through RTTI, the dynamic type
+ * of an object of a polymorphic class and the static type of any other object; they are
+ * declared only where `SCL_HAS_RTTI` is `1`. ::scl::enum_string spells the number an
+ * enumeration value holds and needs no RTTI. The names a type has at compile time are in
+ * @ref scl_utility_meta.
+ *
+ * Code that builds with and without RTTI branches on the macro:
+ * @snippet runtime/type_name/runtime_type_name_example.cpp no_rtti
  * @{
  */
 

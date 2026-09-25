@@ -2,12 +2,8 @@
 
 /**
  * @file
- * @brief Runtime enum value representation (C++20).
+ * @brief An enumeration value spelled as its type and its number.
  * @ingroup scl_utility_runtime
- * @details
- * - ::scl::enum_string(value):
- *     Returns a string of the form "TypeName::N" where N is the value as a number, a
- *     character or bool underlying type included.
  */
 
 #include <scl/utility/concepts/type_category.h>
@@ -36,24 +32,6 @@ namespace scl::detail
 
 namespace scl
 {
-    /**
-     * @brief Returns a string representation of an enum value as "TypeName::N".
-     * @ingroup scl_utility_runtime
-     * @tparam E Enum type (deduced automatically).
-     * @param  value The enum value to represent.
-     * @return String of the form "TypeName::N" where N is the underlying numeric value.
-     *
-     * @note Does not require RTTI. The type name is extracted at compile time.
-     *
-     * @code{.cpp}
-     * enum class Color : int { Red = 1, Green = 2 };
-     * auto const red_name     = ::scl::enum_string(Color::Red);  // "Color::1"
-     * auto const other_name   = ::scl::enum_string(Color{42});   // "Color::42"
-     *
-     * enum class Flags : unsigned { A = 1, B = 2 };
-     * auto const flag_name    = ::scl::enum_string(Flags::B);    // "Flags::2"
-     * @endcode
-     */
     template <::scl::concepts::enum_type E>
     [[nodiscard]]
     ::std::string enum_string(E value)
@@ -77,3 +55,25 @@ namespace scl
     }
 
 } // namespace scl
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @fn scl::enum_string(E value)
+ * @ingroup scl_utility_runtime
+ * @brief Returns @p value spelled as `Type::N`, where `N` is its number.
+ *
+ * `Type` is ::scl::type_short_name<E>(), read at compile time with no RTTI. `N` is the
+ * number of @p value in its underlying type, so a value no enumerator names is spelled as
+ * well as one that is named, and a character or `bool` underlying type still gives a
+ * number.
+ *
+ * @snippet runtime/enum_string/runtime_enum_string_example.cpp named
+ * @snippet runtime/enum_string/runtime_enum_string_example.cpp unnamed
+ *
+ * @tparam E Enumeration type, deduced.
+ * @param value Value to spell.
+ * @return `Type::N`, for example `Color::1`.
+ */
