@@ -20,9 +20,7 @@
 
 #if SCL_HAS_RTTI || defined(DOXYGEN)
 
-#include <memory>
 #include <string>
-#include <string_view>
 #include <typeinfo>
 
 #include <scl/utility/meta/type.h>
@@ -31,6 +29,7 @@
 #if __has_include(<cxxabi.h>)
 #include <cstdlib>
 #include <cxxabi.h>
+#include <memory>
 #define SCL_DETAIL_HAS_CXXABI 1
 #endif
 #endif
@@ -76,7 +75,7 @@ namespace scl
     [[nodiscard]]
     ::std::string type_name(T const & obj)
     {
-        return detail::demangle(typeid(obj).name());
+        return ::scl::detail::demangle(typeid(obj).name());
     }
 
     /**
@@ -99,8 +98,8 @@ namespace scl
     [[nodiscard]]
     ::std::string type_short_name(T const & obj)
     {
-        ::std::string const full = detail::demangle(typeid(obj).name());
-        return ::std::string{detail::short_name_from(full)};
+        ::std::string const full = ::scl::detail::demangle(typeid(obj).name());
+        return ::std::string{::scl::detail::short_name_from(full)};
     }
 
 } // namespace scl
