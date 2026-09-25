@@ -54,7 +54,7 @@ namespace scl
      * auto const flag_name    = ::scl::enum_string(Flags::B);    // "Flags::2"
      * @endcode
      */
-    template <concepts::enum_type E>
+    template <::scl::concepts::enum_type E>
     [[nodiscard]]
     ::std::string enum_string(E value)
     {
