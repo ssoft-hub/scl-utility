@@ -138,6 +138,7 @@ Then include the umbrella header or individual component headers:
 | [forward_like](type_traits/forward_like.md) | `<scl/utility/type_traits/forward_like.h>` | Forward with value category of another type |
 | [member_like](type_traits/member_like.md) | `<scl/utility/type_traits/member_like.h>` | Member pointer trait decomposition |
 | [overload_cast](type_traits/overload_cast.md) | `<scl/utility/type_traits/overload_cast.h>` | Overloaded function disambiguation |
+| [signature](type_traits/signature.md) | `<scl/utility/type_traits/signature.h>` | Properties of a callable type |
 
 ## Quick start
 
