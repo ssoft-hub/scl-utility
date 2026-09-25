@@ -21,6 +21,41 @@ enum class ByteEnum : unsigned char
     X = 255,
 };
 
+enum class CharEnum : char
+{
+    A = 65,
+};
+
+enum class SignedCharEnum : signed char
+{
+    Low = -128,
+};
+
+enum class WideEnum : wchar_t
+{
+    B = 66,
+};
+
+enum class Char8Enum : char8_t
+{
+    X = 200,
+};
+
+enum class Char16Enum : char16_t
+{
+    Max = 0xFFFF,
+};
+
+enum class Char32Enum : char32_t
+{
+    Max = 0x10FFFF,
+};
+
+enum class BoolEnum : bool
+{
+    Yes = true,
+};
+
 namespace ns
 {
     enum class Status : int
@@ -59,11 +94,32 @@ TEST(EnumStringTest, ScopedUnsigned)
 }
 
 /**
- * @test Verify that enum_string promotes unsigned char underlying to unsigned and formats correctly.
+ * @test Verify that enum_string spells an unsigned char underlying value as a number.
  */
-TEST(EnumStringTest, UnderlyingBytePromotedToUnsigned)
+TEST(EnumStringTest, UnderlyingByteRendersNumber)
 {
     EXPECT_EQ(::scl::enum_string(ByteEnum::X), "ByteEnum::255");
+}
+
+/**
+ * @test Verify that a character underlying type renders as a number, not as a character.
+ */
+TEST(EnumStringTest, CharUnderlyingRendersNumber)
+{
+    EXPECT_EQ(::scl::enum_string(CharEnum::A), "CharEnum::65");
+    EXPECT_EQ(::scl::enum_string(SignedCharEnum::Low), "SignedCharEnum::-128");
+    EXPECT_EQ(::scl::enum_string(WideEnum::B), "WideEnum::66");
+    EXPECT_EQ(::scl::enum_string(Char8Enum::X), "Char8Enum::200");
+    EXPECT_EQ(::scl::enum_string(Char16Enum::Max), "Char16Enum::65535");
+    EXPECT_EQ(::scl::enum_string(Char32Enum::Max), "Char32Enum::1114111");
+}
+
+/**
+ * @test Verify that a bool underlying type renders as a number.
+ */
+TEST(EnumStringTest, BoolUnderlyingRendersNumber)
+{
+    EXPECT_EQ(::scl::enum_string(BoolEnum::Yes), "BoolEnum::1");
 }
 
 /**
