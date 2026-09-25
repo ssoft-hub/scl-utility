@@ -36,51 +36,51 @@ enum Unscoped : int // NOLINT(performance-enum-size)
 };
 
 /**
- * @test Verify that enum_value formats a scoped enum with int underlying type.
+ * @test Verify that enum_string formats a scoped enum with int underlying type.
  */
-TEST(EnumValueTest, ScopedIntPositive)
+TEST(EnumStringTest, ScopedIntPositive)
 {
-    EXPECT_EQ(::scl::enum_value(Color::Red), "Color::1");
-    EXPECT_EQ(::scl::enum_value(Color::Green), "Color::2");
+    EXPECT_EQ(::scl::enum_string(Color::Red), "Color::1");
+    EXPECT_EQ(::scl::enum_string(Color::Green), "Color::2");
 }
 
 /**
- * @test Verify that enum_value formats negative underlying values correctly.
+ * @test Verify that enum_string formats negative underlying values correctly.
  */
-TEST(EnumValueTest, ScopedIntNegative) { EXPECT_EQ(::scl::enum_value(Color::Blue), "Color::-3"); }
+TEST(EnumStringTest, ScopedIntNegative) { EXPECT_EQ(::scl::enum_string(Color::Blue), "Color::-3"); }
 
 /**
- * @test Verify that enum_value formats a scoped enum with unsigned underlying type.
+ * @test Verify that enum_string formats a scoped enum with unsigned underlying type.
  */
-TEST(EnumValueTest, ScopedUnsigned)
+TEST(EnumStringTest, ScopedUnsigned)
 {
-    EXPECT_EQ(::scl::enum_value(Flags::None), "Flags::0");
-    EXPECT_EQ(::scl::enum_value(Flags::B), "Flags::2");
+    EXPECT_EQ(::scl::enum_string(Flags::None), "Flags::0");
+    EXPECT_EQ(::scl::enum_string(Flags::B), "Flags::2");
 }
 
 /**
- * @test Verify that enum_value promotes unsigned char underlying to unsigned and formats correctly.
+ * @test Verify that enum_string promotes unsigned char underlying to unsigned and formats correctly.
  */
-TEST(EnumValueTest, UnderlyingBytePromotedToUnsigned)
+TEST(EnumStringTest, UnderlyingBytePromotedToUnsigned)
 {
-    EXPECT_EQ(::scl::enum_value(ByteEnum::X), "ByteEnum::255");
+    EXPECT_EQ(::scl::enum_string(ByteEnum::X), "ByteEnum::255");
 }
 
 /**
- * @test Verify that enum_value handles an out-of-range (unnamed) enum value.
+ * @test Verify that enum_string handles an out-of-range (unnamed) enum value.
  */
-TEST(EnumValueTest, OutOfRangeValue) { EXPECT_EQ(::scl::enum_value(Color{42}), "Color::42"); }
+TEST(EnumStringTest, OutOfRangeValue) { EXPECT_EQ(::scl::enum_string(Color{42}), "Color::42"); }
 
 /**
- * @test Verify that enum_value strips namespace qualifiers from the type name.
+ * @test Verify that enum_string strips namespace qualifiers from the type name.
  */
-TEST(EnumValueTest, NamespacedEnum)
+TEST(EnumStringTest, NamespacedEnum)
 {
-    EXPECT_EQ(::scl::enum_value(ns::Status::Ok), "Status::0");
-    EXPECT_EQ(::scl::enum_value(ns::Status::Err), "Status::42");
+    EXPECT_EQ(::scl::enum_string(ns::Status::Ok), "Status::0");
+    EXPECT_EQ(::scl::enum_string(ns::Status::Err), "Status::42");
 }
 
 /**
- * @test Verify that enum_value works for unscoped enums.
+ * @test Verify that enum_string works for unscoped enums.
  */
-TEST(EnumValueTest, UnscopedEnum) { EXPECT_EQ(::scl::enum_value(ValA), "Unscoped::7"); }
+TEST(EnumStringTest, UnscopedEnum) { EXPECT_EQ(::scl::enum_string(ValA), "Unscoped::7"); }

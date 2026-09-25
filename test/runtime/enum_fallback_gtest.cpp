@@ -39,47 +39,47 @@ namespace
 /**
  * @test Verify fallback path: positive int underlying value.
  */
-TEST(EnumValueFallbackTest, ScopedIntPositive)
+TEST(EnumStringFallbackTest, ScopedIntPositive)
 {
-    EXPECT_EQ(::scl::enum_value(FbColor::Red), "FbColor::1");
+    EXPECT_EQ(::scl::enum_string(FbColor::Red), "FbColor::1");
 }
 
 /**
  * @test Verify fallback path: negative int underlying value.
  */
-TEST(EnumValueFallbackTest, ScopedIntNegative)
+TEST(EnumStringFallbackTest, ScopedIntNegative)
 {
-    EXPECT_EQ(::scl::enum_value(FbColor::Blue), "FbColor::-3");
+    EXPECT_EQ(::scl::enum_string(FbColor::Blue), "FbColor::-3");
 }
 
 /**
  * @test Verify fallback path: unsigned underlying type.
  */
-TEST(EnumValueFallbackTest, ScopedUnsigned)
+TEST(EnumStringFallbackTest, ScopedUnsigned)
 {
-    EXPECT_EQ(::scl::enum_value(FbFlags::B), "FbFlags::2");
+    EXPECT_EQ(::scl::enum_string(FbFlags::B), "FbFlags::2");
 }
 
 /**
  * @test Verify fallback path: unsigned char underlying type.
  */
-TEST(EnumValueFallbackTest, UnderlyingByte)
+TEST(EnumStringFallbackTest, UnderlyingByte)
 {
-    EXPECT_EQ(::scl::enum_value(FbByte::X), "FbByte::255");
+    EXPECT_EQ(::scl::enum_string(FbByte::X), "FbByte::255");
 }
 
 /**
  * @test Verify fallback path: out-of-range value.
  */
-TEST(EnumValueFallbackTest, OutOfRangeValue)
+TEST(EnumStringFallbackTest, OutOfRangeValue)
 {
-    EXPECT_EQ(::scl::enum_value(FbColor{42}), "FbColor::42");
+    EXPECT_EQ(::scl::enum_string(FbColor{42}), "FbColor::42");
 }
 
 /**
  * @test Verify fallback path: namespace qualifier stripped from type name.
  */
-TEST(EnumValueFallbackTest, NamespacedEnum)
+TEST(EnumStringFallbackTest, NamespacedEnum)
 {
-    EXPECT_EQ(::scl::enum_value(ns::FbStatus::Err), "FbStatus::42");
+    EXPECT_EQ(::scl::enum_string(ns::FbStatus::Err), "FbStatus::42");
 }
