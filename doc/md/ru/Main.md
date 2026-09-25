@@ -108,7 +108,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | Компонент | Заголовок | Описание |
 |-----------|-----------|----------|
 | [type_name(obj)](runtime/type_name.md) | `<scl/utility/runtime/type.h>` | Имя типа через RTTI с поддержкой полиморфизма |
-| [enum_string(v)](runtime/enum_string.md) | `<scl/utility/runtime/enum.h>` | Значение перечисления как `"TypeName::N"`; RTTI не требуется |
+| [enum_string(v)](runtime/enum_string.md) | `<scl/utility/runtime/enum.h>` | Значение перечисления как `"Type::N"`; RTTI не требуется |
 
 ### Hash — некриптографические хеш-утилиты
 

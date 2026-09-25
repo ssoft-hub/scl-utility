@@ -58,8 +58,8 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
   - `type_key` / `type_key_of<T>` — RTTI-free identity key that tells TU-local types apart
 - **Runtime** — the runtime counterparts of the meta utilities
   (`#include <scl/utility/runtime.h>`):
-  - `type_name(obj)` / `type_short_name(obj)` — the dynamic type's name, via RTTI
-  - `enum_string(v)` — any enum value as `"TypeName::N"`, named or not, without RTTI
+  - `type_name(obj)` / `type_short_name(obj)` — the dynamic type's name of a polymorphic object, via RTTI
+  - `enum_string(v)` — any enum value as `"Type::N"`, named or not, without RTTI
 - **Preprocessor** — macro utilities:
   - `SCL_FORWARD` — identity macro for token forwarding in macro chains
   - `SCL_COUNTER_VALUE` / `SCL_COUNTER_NEXT` — compile-time counter via ADL

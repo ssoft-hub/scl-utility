@@ -1,23 +1,22 @@
 /**
  * @example runtime_type_name_example.cpp
- * @brief Compares compile-time and runtime type name extraction.
+ * @brief Names the type of an object through RTTI, beside the compile-time name of its type.
  *
- * Compile-time:  scl::type_name<T>()       — T is a template parameter; no object required;
- *                                             result is a constexpr std::string_view.
- * Runtime:       scl::type_name(obj)        — T is deduced from the object; supports polymorphism
- *                                             via RTTI; result is a std::string (heap-allocated).
- *
- * When T is statically known, both approaches produce the same name.
- * When an object is accessed through a base pointer only the runtime variant
- * resolves to the actual dynamic type.
+ * scl::type_name<T>() names the type written at the call site, at compile time;
+ * scl::type_name(obj) names the type the object was created as, through RTTI. The two agree
+ * on a static type and part ways behind a base reference. Without RTTI only the compile-time
+ * form exists, and a caller branches on SCL_HAS_RTTI.
  */
 
 #include <scl/utility/meta/type.h>
+#include <scl/utility/preprocessor/rtti.h>
 #include <scl/utility/runtime/type.h>
 
 #include <iostream>
 #include <memory>
+#include <string>
 
+//! [types]
 namespace app
 {
     struct Base
@@ -31,90 +30,74 @@ namespace app
     template <typename T>
     struct Task : Base
     {};
-
 } // namespace app
+//! [types]
 
-// ============================================================================
-// Pattern 1 — static type: both approaches agree
-// ============================================================================
+//! [no_rtti]
+template <typename T>
+::std::string name_of(T const & object)
+{
+#if SCL_HAS_RTTI
+    return ::scl::type_name(object); // the dynamic type of a polymorphic object
+#else
+    static_cast<void>(object);
+    return ::std::string{::scl::type_name<T>()}; // the static type only
+#endif
+}
+//! [no_rtti]
 
 static void show_static()
 {
-    app::Derived d;
+    ::app::Derived const derived;
 
-    // Compile-time: result is constexpr, evaluated at compile time, no allocation.
-    constexpr auto ct_full = ::scl::type_name<app::Derived>();
-    constexpr auto ct_short = ::scl::type_short_name<app::Derived>();
-
-    ::std::cout << "[compile-time] type_name       : " << ct_full << '\n';
-    ::std::cout << "[compile-time] type_short_name : " << ct_short << '\n';
-
-#if SCL_HAS_RTTI
-    // Runtime: deduces T = app::Derived from the argument; same result here.
-    ::std::cout << "[runtime     ] type_name       : " << ::scl::type_name(d) << '\n';
-    ::std::cout << "[runtime     ] type_short_name : " << ::scl::type_short_name(d) << '\n';
-#endif
+    ::std::cout << "compile time: " << ::scl::type_name<::app::Derived>() << '\n';
+    ::std::cout << "run time    : " << name_of(derived) << '\n';
 }
 
-// ============================================================================
-// Pattern 2 — polymorphism: compile-time sees the static type, runtime the dynamic one
-// ============================================================================
-
-static void show_polymorphic()
+static void show_dynamic()
 {
 #if SCL_HAS_RTTI
-    ::std::unique_ptr<app::Base> p = ::std::make_unique<app::Derived>();
+    //! [dynamic]
+    ::std::unique_ptr<::app::Base> const pointer = ::std::make_unique<::app::Derived>();
 
-    // Compile-time only knows the static type at the pointer declaration.
-    constexpr auto ct_full = ::scl::type_name<app::Base>();
-    constexpr auto ct_short = ::scl::type_short_name<app::Base>();
+    auto const static_name = ::scl::type_name<::app::Base>(); // app::Base
+    auto const dynamic_name = ::scl::type_name(*pointer); // app::Derived, or struct app::Derived
+    //! [dynamic]
 
-    ::std::cout << "[compile-time] type_name       : " << ct_full << '\n';  // app::Base
-    ::std::cout << "[compile-time] type_short_name : " << ct_short << '\n'; // Base
-
-    // Runtime resolves the actual dynamic type through the base pointer via typeid.
-    ::std::cout << "[runtime     ] type_name       : " << ::scl::type_name(*p) << '\n'; // app::Derived
-    ::std::cout << "[runtime     ] type_short_name : " << ::scl::type_short_name(*p) << '\n'; // Derived
+    ::std::cout << "compile time: " << static_name << '\n';
+    ::std::cout << "run time    : " << dynamic_name << '\n';
 #else
-    ::std::cout << "(RTTI disabled — runtime functions not available)\n";
+    ::std::cout << "run time    : not declared without RTTI\n";
 #endif
 }
 
-// ============================================================================
-// Pattern 3 — template type accessed through a base pointer
-// ============================================================================
-
-static void show_template()
+static void show_short()
 {
-    // Compile-time: full type including template argument.
-    constexpr auto ct_full = ::scl::type_name<app::Task<int>>();
-    constexpr auto ct_short = ::scl::type_short_name<app::Task<int>>();
-
-    ::std::cout << "[compile-time] type_name       : " << ct_full << '\n';  // app::Task<int>
-    ::std::cout << "[compile-time] type_short_name : " << ct_short << '\n'; // Task
-
 #if SCL_HAS_RTTI
-    ::std::unique_ptr<app::Base> p = ::std::make_unique<app::Task<int>>();
+    //! [short]
+    ::std::unique_ptr<::app::Base> const pointer = ::std::make_unique<::app::Task<int>>();
 
-    ::std::cout << "[runtime     ] type_name       : " << ::scl::type_name(*p) << '\n'; // app::Task<int>
-    ::std::cout << "[runtime     ] type_short_name : " << ::scl::type_short_name(*p) << '\n'; // Task
+    auto const full_name = ::scl::type_name(*pointer); // app::Task<int>, or struct app::Task<int>
+    auto const short_name = ::scl::type_short_name(*pointer); // Task
+    //! [short]
+
+    ::std::cout << "type_name       : " << full_name << '\n';
+    ::std::cout << "type_short_name : " << short_name << '\n';
+#else
+    ::std::cout << "type_short_name : not declared without RTTI\n";
 #endif
 }
-
-// ============================================================================
-// main
-// ============================================================================
 
 int main(int, char **)
 {
     ::std::cout << "=== Static type ===\n";
     show_static();
 
-    ::std::cout << "\n=== Polymorphic type (base pointer -> derived object) ===\n";
-    show_polymorphic();
+    ::std::cout << "\n=== Through a base pointer ===\n";
+    show_dynamic();
 
-    ::std::cout << "\n=== Template type (base pointer -> Task<int>) ===\n";
-    show_template();
+    ::std::cout << "\n=== Short name ===\n";
+    show_short();
 
     return {};
 }

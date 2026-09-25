@@ -107,7 +107,7 @@ Then include the umbrella header or individual component headers:
 | Component | Header | Description |
 |-----------|--------|-------------|
 | [type_name(obj)](runtime/type_name.md) | `<scl/utility/runtime/type.h>` | Runtime type name via RTTI; supports polymorphism |
-| [enum_string(v)](runtime/enum_string.md) | `<scl/utility/runtime/enum.h>` | Enum value as `"TypeName::N"`; no RTTI required |
+| [enum_string(v)](runtime/enum_string.md) | `<scl/utility/runtime/enum.h>` | Enum value as `"Type::N"`; no RTTI required |
 
 ### Hash — non-cryptographic hash utilities
 

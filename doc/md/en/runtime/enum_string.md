@@ -1,55 +1,74 @@
-# Runtime enum value representation
+# `enum_string(value)`
 
-Returns a string of the form `"TypeName::N"` where `N` is the underlying numeric value of
-an enum, including out-of-range values that have no named enumerator.
-
-- Header: `#include <scl/utility/runtime/enum.h>`
-- Does **not** require RTTI.
-
----
-
-## `enum_string(value)`
+Returns an enumeration value spelled as `Type::N`, where `N` is its number. It needs no RTTI.
 
 - Header: `#include <scl/utility/runtime/enum.h>`
-- Declaration: `template <typename E> std::string enum_string(E value) requires std::is_enum_v<E>;`
-
-### Semantics
-
-- **Type name** is extracted at compile-time via `scl::type_short_name<E>()` — no RTTI needed.
-- **Numeric value** is widened to the largest integer of its signedness before formatting, so
-  the sign and magnitude always match the declaration and a character or `bool` underlying
-  type renders as a number (e.g., `unsigned char` renders as `0`–`255`, `char` `'P'` as `80`).
-- **Out-of-range values** that have no named enumerator are represented by their numeric value.
-
-### Examples
 
 ```cpp
-#include <scl/utility/runtime/enum.h>
-
-enum class Color : int  { Red = 1, Green = 2, Blue = -3 };
-enum class Flags : unsigned { None = 0, A = 1, B = 2 };
-
-namespace app { enum class Status : int { Ok = 0, Err = 42 }; }
-
-auto const red_name     = scl::enum_string(Color::Red);       // "Color::1"
-auto const blue_name    = scl::enum_string(Color::Blue);      // "Color::-3"
-auto const other_name   = scl::enum_string(Color{42});        // "Color::42"  - unnamed value
-auto const flag_name    = scl::enum_string(Flags::B);         // "Flags::2"
-auto const status_name  = scl::enum_string(app::Status::Err); // "Status::42" - namespace stripped
+template <::scl::concepts::enum_type E>
+[[nodiscard]] ::std::string enum_string(E value);
 ```
 
-### Comparison with the compile-time counterpart
+## Semantics
 
-| | `scl::enum_name<V>()` | `scl::enum_string(v)` |
+- **Type:** `Type` is `scl::type_short_name<E>()`, read at compile time, so a namespaced
+  enumeration answers its bare name.
+- **Number:** `N` is the value in its underlying type, with the sign of the underlying type. A
+  character or `bool` underlying type still gives a number: `'P'` answers `80`.
+- **Any value:** a value no enumerator names is spelled as well as one that is named.
+
+## Examples
+
+<!-- snippet: example/runtime/enum_string/runtime_enum_string_example.cpp types -->
+```cpp
+enum class Color : int
+{
+    Red = 1,
+    Blue = -3,
+};
+
+enum class Grade : char
+{
+    Pass = 'P',
+};
+
+namespace net
+{
+    enum class Status : unsigned
+    {
+        Err = 42,
+    };
+} // namespace net
+```
+
+<!-- snippet: example/runtime/enum_string/runtime_enum_string_example.cpp named -->
+```cpp
+    constexpr auto name = ::scl::enum_name<Color::Red>(); // Color::Red
+    auto const red = ::scl::enum_string(Color::Red);      // Color::1
+    auto const blue = ::scl::enum_string(Color::Blue);    // Color::-3
+```
+
+<!-- snippet: example/runtime/enum_string/runtime_enum_string_example.cpp unnamed -->
+```cpp
+    auto const unnamed = ::scl::enum_string(Color{42}); // Color::42
+```
+
+<!-- snippet: example/runtime/enum_string/runtime_enum_string_example.cpp underlying -->
+```cpp
+    auto const grade = ::scl::enum_string(Grade::Pass);         // Grade::80
+    auto const status = ::scl::enum_string(::net::Status::Err); // Status::42
+```
+
+## Against the compile-time name
+
+| | `scl::enum_name<V>()` | `scl::enum_string(value)` |
 |---|---|---|
-| Evaluation | Compile-time (`constexpr`) | Runtime |
-| Return type | `std::string_view` (no allocation) | `std::string` |
-| Result | Member identifier (`"Color::Red"`) | Numeric value (`"Color::1"`) |
-| Out-of-range values | Not applicable — `V` must be a named enumerator | Supported |
-| RTTI | Not required | Not required |
+| Evaluated | at compile time | at run time |
+| Returns | `std::string_view` | `std::string` |
+| Spells | the enumerator, `Color::Red` | the number, `Color::1` |
+| Takes | an enumerator named at compile time | any value |
 
 ## See also
 
-- [`example/runtime/enum_string/runtime_enum_string_example.cpp`](../../../../example/runtime/enum_string/runtime_enum_string_example.cpp) —
-  runnable version: a named enumerator against its compile-time counterpart, a value
-  outside the enumerator set, an unsigned underlying type and a namespaced enum.
+- [Runtime](index.md)
+- [`example/runtime/enum_string/runtime_enum_string_example.cpp`](../../../../example/runtime/enum_string/runtime_enum_string_example.cpp)

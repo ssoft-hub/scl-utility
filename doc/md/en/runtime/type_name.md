@@ -1,89 +1,81 @@
-# Runtime type name utilities
+# `type_name(obj)`
 
-Runtime extraction of human-readable type names via RTTI, with polymorphism support.
-
-- Header: `#include <scl/utility/runtime/type.h>`
-- Requires: RTTI enabled (`/GR` on MSVC; not `-fno-rtti`)
-
-Contents:
-- [`type_name(obj)`](#type_nameobj)
-- [`type_short_name(obj)`](#type_short_nameobj)
-
----
-
-## `type_name(obj)`
-
-Returns the demangled fully qualified name of the **dynamic** type of `obj` as a `std::string`.
+Returns the name of the type an object of a polymorphic class was created as, and of the
+static type for any other object, read through RTTI.
+`type_short_name(obj)` returns the same name with no qualifiers.
 
 - Header: `#include <scl/utility/runtime/type.h>`
-- Declaration: `template <typename T> std::string type_name(T const& obj);`
-
-### Semantics
-
-- **Dynamic dispatch:** If `T` is polymorphic and `obj` is accessed through a base reference,
-  `typeid(obj)` resolves to the actual runtime type, not the static type at the call site.
-- **Demangling:** On GCC and Clang the mangled name from `typeid` is demangled via
-  `abi::__cxa_demangle`. On MSVC `typeid().name()` is already human-readable and returned as-is.
-- **RTTI guard:** Both functions are compiled out when RTTI is disabled.
-  Branch on `SCL_HAS_RTTI` (`<scl/utility/preprocessor/rtti.h>`) if conditional
-  compilation is needed; it is always defined, so interrogate it with `#if`.
-
-### Examples
+- Declared only where `SCL_HAS_RTTI` is `1`; see [Without RTTI](index.md#without-rtti)
 
 ```cpp
-#include <scl/utility/runtime/type.h>
-#include <memory>
+template <typename T>
+[[nodiscard]] ::std::string type_name(T const & obj);
 
-struct Base  { virtual ~Base() = default; };
-struct Child : Base {};
-
-// Fundamental type
-int i = 0;
-auto const int_name     = scl::type_name(i);   // "int"
-
-// Static type
-Child c;
-auto const child_name   = scl::type_name(c);   // "Child"
-
-// Polymorphic: resolves to the dynamic type through a base reference
-std::unique_ptr<Base> p = std::make_unique<Child>();
-auto const dynamic_name = scl::type_name(*p);  // "Child"  (not "Base")
+template <typename T>
+[[nodiscard]] ::std::string type_short_name(T const & obj);
 ```
 
-### Comparison with the compile-time counterpart
+## Semantics
+
+- **Dynamic type:** `typeid(obj)` resolves the type, so an object reached through a pointer
+  or a reference to a polymorphic base answers the class it was created as. Through a pointer
+  or a reference to a base with no virtual function, the answer is that base.
+- **Spelling:** where `<cxxabi.h>` exists, as with GCC and with Clang on Linux, macOS and
+  MinGW, the name goes through `abi::__cxa_demangle`. Elsewhere, as with MSVC and with Clang
+  on the MSVC library, `typeid().name()` is returned as it is, with a prefix such as `class`
+  or `struct` where the type has one.
+- **Short name:** `type_short_name(obj)` drops the namespace and class qualifiers and the
+  template arguments: `app::Task<int>` answers `Task`.
+
+## Examples
+
+<!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp types -->
+```cpp
+namespace app
+{
+    struct Base
+    {
+        virtual ~Base() = default;
+    };
+
+    struct Derived : Base
+    {};
+
+    template <typename T>
+    struct Task : Base
+    {};
+} // namespace app
+```
+
+Through a pointer or a reference to a base the compile-time name is the static type's and the
+runtime name the dynamic type's:
+
+<!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp dynamic -->
+```cpp
+    ::std::unique_ptr<::app::Base> const pointer = ::std::make_unique<::app::Derived>();
+
+    auto const static_name = ::scl::type_name<::app::Base>(); // app::Base
+    auto const dynamic_name = ::scl::type_name(*pointer); // app::Derived, or struct app::Derived
+```
+
+<!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp short -->
+```cpp
+    ::std::unique_ptr<::app::Base> const pointer = ::std::make_unique<::app::Task<int>>();
+
+    auto const full_name = ::scl::type_name(*pointer); // app::Task<int>, or struct app::Task<int>
+    auto const short_name = ::scl::type_short_name(*pointer); // Task
+```
+
+## Against the compile-time name
 
 | | `scl::type_name<T>()` | `scl::type_name(obj)` |
 |---|---|---|
-| Evaluation | Compile-time (`constexpr`) | Runtime |
-| Return type | `std::string_view` (no allocation) | `std::string` |
-| Polymorphism | No — `T` is fixed at the call site | Yes — resolves the dynamic type |
-| RTTI | Not required | Required |
-
----
-
-## `type_short_name(obj)`
-
-Returns the unqualified identifier of the dynamic type of `obj`, stripping all namespace
-qualifiers and template arguments.
-
-- Header: `#include <scl/utility/runtime/type.h>`
-- Declaration: `template <typename T> std::string type_short_name(T const& obj);`
-
-### Example
-
-```cpp
-#include <scl/utility/runtime/type.h>
-#include <memory>
-
-namespace app { template <typename T> struct Task : Base {}; }
-
-std::unique_ptr<Base> p = std::make_unique<app::Task<int>>();
-auto const task_name  = scl::type_name(*p);        // "app::Task<int>"
-auto const task_short = scl::type_short_name(*p);  // "Task"
-```
+| Evaluated | at compile time | at run time |
+| Returns | `std::string_view` | `std::string` |
+| Names | the type written at the call site | the dynamic type of a polymorphic object |
+| RTTI | not required | required |
 
 ## See also
 
-- [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp) —
-  runnable version: the compile-time and runtime forms side by side on a static type,
-  through a base reference, and on a template accessed through a base pointer.
+- [Runtime](index.md)
+- [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp)

@@ -25,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [meta] Added `scl::is_tu_local`, telling a type declared in an anonymous namespace
 - [preprocessor] Added `SCL_HAS_RTTI` and `SCL_HAS_EXCEPTIONS`, telling what a build enables
 - [runtime] Added `scl::type_name(object)` and `type_short_name(object)` for a dynamic type
-- [runtime] Added `scl::enum_string`, rendering an enumerator as `TypeName::N`
+- [runtime] Added `scl::enum_string`, spelling an enumeration value as `Type::N`
 - Added runnable examples, a Quick start among them, each linked from the page of its subject
 - Added a version selector to the published reference, with one version per release
 
