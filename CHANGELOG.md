@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [preprocessor] Added `SCL_HAS_RTTI` and `SCL_HAS_EXCEPTIONS`, telling what a build enables
 - [runtime] Added `scl::type_name(object)` and `type_short_name(object)` for a dynamic type
 - [runtime] Added `scl::enum_value`, rendering an enumerator as `TypeName::N`
+- [type_traits] Added `scl::signature_t` and the namespace `scl::signature`, the parts of a callable type
 - Added runnable examples, a Quick start among them, each linked from the page of its subject
 - Added a version selector to the published reference, with one version per release
 

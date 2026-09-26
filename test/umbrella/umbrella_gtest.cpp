@@ -85,4 +85,5 @@ TEST(UmbrellaHeaderTest, ExposesRuntime) { EXPECT_EQ(::scl::enum_value(color::gr
 TEST(UmbrellaHeaderTest, ExposesTypeTraits)
 {
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::forward_like_t<int const &, double>, double const &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<void (*)(int)>, void(int)>));
 }

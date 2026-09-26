@@ -70,6 +70,7 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
   - `forward_like` — forward with value category of another type
   - `member_like` — member pointer trait decomposition
   - `overload_cast<Args...>` — overloaded function pointer disambiguation
+  - `signature_t<F>` and the namespace `signature` - the parts of a callable type
 - **Hierarchy** — parent-child tree structures (`#include <scl/utility/hierarchy.h>`):
   - `node<Payload, Allocator>` — tree node owning children in `std::list`
   - `tree<Payload, Observer, Allocator>` — root-level node list with observer notifications

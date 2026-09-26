@@ -20,5 +20,6 @@
 #include <scl/utility/type_traits/forward_like.h>
 #include <scl/utility/type_traits/member_like.h>
 #include <scl/utility/type_traits/overload_cast.h>
+#include <scl/utility/type_traits/signature.h>
 
 /** @} */ // end of group scl_utility_type_traits

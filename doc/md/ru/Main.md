@@ -139,6 +139,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [forward_like](type_traits/forward_like.md) | `<scl/utility/type_traits/forward_like.h>` | Проброс с категорией значения другого типа |
 | [member_like](type_traits/member_like.md) | `<scl/utility/type_traits/member_like.h>` | Декомпозиция свойств указателей на члены |
 | [overload_cast](type_traits/overload_cast.md) | `<scl/utility/type_traits/overload_cast.h>` | Разрешение неоднозначности перегруженных функций |
+| [signature](type_traits/signature.md) | `<scl/utility/type_traits/signature.h>` | Свойства вызываемого типа |
 
 ## Быстрый старт
 
