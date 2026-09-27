@@ -102,12 +102,12 @@ Then include the umbrella header or individual component headers:
 | [type_key](meta/type_key.md) | `<scl/utility/meta/type_key.h>` | RTTI-free type identity key distinguishing TU-local types |
 | [is_tu_local](meta/type_key.md#is_tu_local) | `<scl/utility/meta/tu_local.h>` | Detects types declared in an anonymous namespace |
 
-### Runtime — runtime type and enum utilities
+### Runtime - runtime type and enum utilities
 
 | Component | Header | Description |
 |-----------|--------|-------------|
 | [type_name(obj)](runtime/type_name.md) | `<scl/utility/runtime/type.h>` | Runtime type name via RTTI; supports polymorphism |
-| [enum_value(v)](runtime/enum_value.md) | `<scl/utility/runtime/enum.h>` | Enum value as `"TypeName::N"`; no RTTI required |
+| [enum_string(v)](runtime/enum_string.md) | `<scl/utility/runtime/enum.h>` | Enum value as `"Type::N"`; no RTTI required |
 
 ### Hash — non-cryptographic hash utilities
 

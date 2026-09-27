@@ -2,9 +2,30 @@
 
 #include <memory>
 
+// Declares ::scl without RTTI, where the concepts below would otherwise name nothing.
+#include <scl/utility/meta/type.h>
 #include <scl/utility/runtime/type.h>
 
+namespace
+{
+    template <typename T>
+    concept runtime_type_name_declared = requires(T const & object) { ::scl::type_name(object); };
+
+    template <typename T>
+    concept runtime_type_short_name_declared =
+        requires(T const & object) { ::scl::type_short_name(object); };
+} // namespace
+
 #if SCL_HAS_RTTI
+
+/**
+ * @test Verify that both functions are declared where RTTI is enabled.
+ */
+TEST(RuntimeTypeTest, DeclaredWithRtti)
+{
+    STATIC_EXPECT_TRUE(runtime_type_name_declared<int>);
+    STATIC_EXPECT_TRUE(runtime_type_short_name_declared<int>);
+}
 
 struct SimpleStruct
 {};
@@ -98,9 +119,13 @@ TEST(TypeShortNameTest, Polymorphism)
 
 #else
 
-TEST(RuntimeTypeTest, SkippedWithoutRtti)
+/**
+ * @test Verify that neither function is declared where RTTI is disabled.
+ */
+TEST(RuntimeTypeTest, AbsentWithoutRtti)
 {
-    GTEST_SKIP() << "RTTI disabled — scl::type_name and scl::type_short_name are not available";
+    STATIC_EXPECT_FALSE(runtime_type_name_declared<int>);
+    STATIC_EXPECT_FALSE(runtime_type_short_name_declared<int>);
 }
 
 #endif // SCL_HAS_RTTI
