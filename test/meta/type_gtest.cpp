@@ -1,5 +1,7 @@
 #include <gtest_utils.h>
 
+#include <cstddef>
+#include <string_view>
 #include <vector>
 
 #include <scl/utility/meta/type.h>
@@ -122,6 +124,164 @@ TEST(MetaTypeTest, TemplateTypes)
 
     EXPECT_EQ(::scl::type_short_name<T>(), "TemplateStruct");
     EXPECT_EQ(::scl::type_short_name<TT>(), "TemplateClass");
+}
+
+/**
+ * @test Verify that type_short_name gives a closure type a non-empty ending of its full name.
+ */
+TEST(MetaTypeTest, ClosureShortName)
+{
+    auto closure = [](int number) { return number; };
+    using closure_type = decltype(closure);
+    EXPECT_FALSE(::scl::type_short_name<closure_type>().empty());
+    EXPECT_TRUE(::scl::type_name<closure_type>().ends_with(::scl::type_short_name<closure_type>()));
+    EXPECT_EQ(::scl::type_short_name<closure_type>().find("::"), ::std::string_view::npos);
+}
+
+namespace
+{
+    [[maybe_unused]] struct
+    {
+        int value;
+    } const unnamed_object{};
+
+    [[maybe_unused]] enum { unnamed_first } const unnamed_value{};
+} // namespace
+
+/**
+ * @test Verify that type_short_name gives an unnamed class or enumeration a non-empty ending of its
+ *       full name.
+ */
+TEST(MetaTypeTest, UnnamedTypeShortName)
+{
+    using object_type = decltype(unnamed_object);
+    using value_type = decltype(unnamed_value);
+    EXPECT_FALSE(::scl::type_short_name<object_type>().empty());
+    EXPECT_TRUE(::scl::type_name<object_type>().ends_with(::scl::type_short_name<object_type>()));
+    EXPECT_EQ(::scl::type_short_name<object_type>().find("::"), ::std::string_view::npos);
+    EXPECT_FALSE(::scl::type_short_name<value_type>().empty());
+    EXPECT_TRUE(::scl::type_name<value_type>().ends_with(::scl::type_short_name<value_type>()));
+    EXPECT_EQ(::scl::type_short_name<value_type>().find("::"), ::std::string_view::npos);
+}
+
+namespace
+{
+    template <char Character>
+    struct CharArg
+    {};
+
+    template <::std::size_t Size>
+    struct Text
+    {
+        char value[Size]{};
+
+        constexpr Text(char const (&text)[Size]) // NOLINT(google-explicit-constructor)
+        {
+            for (::std::size_t i = 0; i < Size; ++i)
+                value[i] = text[i];
+        }
+    };
+
+    template <Text Value>
+    struct TextArg
+    {
+        struct Inner
+        {};
+
+        template <Text Other>
+        struct Nested
+        {};
+    };
+
+    struct Ordered
+    {};
+
+    auto operator<(Ordered, Ordered)
+    {
+        return [](int number) { return number; };
+    }
+
+    auto operator<=(Ordered, Ordered)
+    {
+        struct Local
+        {};
+        return Local{};
+    }
+
+    int operator-(Ordered, Ordered) { return 0; }
+
+    int operator>(Ordered, Ordered) { return 0; }
+
+    template <auto Function>
+    struct Holder
+    {};
+
+    template <typename T>
+    struct Box
+    {};
+
+    template <typename T>
+    struct cooperator
+    {};
+} // namespace
+
+/**
+ * @test Verify that a bracket in a character literal of a template argument does not hide the last
+ *       scope operator.
+ */
+TEST(MetaTypeTest, CharacterLiteralArgumentShortName)
+{
+    EXPECT_EQ(::scl::type_short_name<CharArg<'('>>(), "CharArg");
+    EXPECT_EQ(::scl::type_short_name<CharArg<')'>>(), "CharArg");
+}
+
+/**
+ * @test Verify that a bracket in a string of a template argument does not hide the last scope
+ *       operator.
+ */
+TEST(MetaTypeTest, StringArgumentShortName)
+{
+    EXPECT_EQ(::scl::type_short_name<TextArg<"a(b">::Inner>(), "Inner");
+    EXPECT_EQ(::scl::type_short_name<TextArg<"a(b">>(), "TextArg");
+}
+
+/**
+ * @test Verify that an escaped quote in a string of a template argument does not end the string.
+ */
+TEST(MetaTypeTest, EscapedQuoteArgumentShortName)
+{
+    using nested_type = TextArg<"x">::Nested<"a\"(">;
+    // GCC 16 writes a quote inside a string unescaped, which no scan can tell from the closing one.
+    if (::scl::type_name<nested_type>().find("\\\"") == ::std::string_view::npos)
+        GTEST_SKIP() << "The name holds no escaped quote";
+    EXPECT_EQ(::scl::type_short_name<nested_type>(), "Nested");
+}
+
+/**
+ * @test Verify that the symbol of an enclosing operator does not hide the last scope operator.
+ */
+TEST(MetaTypeTest, TypeInOperatorShortName)
+{
+    using closure_type = decltype(Ordered{} < Ordered{});
+    EXPECT_FALSE(::scl::type_short_name<closure_type>().empty());
+    EXPECT_TRUE(::scl::type_name<closure_type>().ends_with(::scl::type_short_name<closure_type>()));
+    EXPECT_EQ(::scl::type_short_name<closure_type>().find("::"), ::std::string_view::npos);
+    EXPECT_EQ(::scl::type_short_name<decltype(Ordered{} <= Ordered{})>(), "Local");
+}
+
+/**
+ * @test Verify that the symbol of an operator in a template argument does not hide the last scope
+ *       operator.
+ */
+TEST(MetaTypeTest, OperatorInTemplateArgumentShortName)
+{
+    EXPECT_EQ(::scl::type_short_name<Holder<(&operator<)>>(), "Holder");
+    EXPECT_EQ(::scl::type_short_name<Holder<(&operator-)>>(), "Holder");
+    EXPECT_EQ(::scl::type_short_name<Holder<(&operator<=)>>(), "Holder");
+    EXPECT_EQ(::scl::type_short_name<Holder<(&operator>)>>(), "Holder");
+    EXPECT_EQ(::scl::type_short_name<Box<decltype(Ordered{} < Ordered{})>>(), "Box");
+    EXPECT_EQ(::scl::type_short_name<Box<decltype(Ordered{} <= Ordered{})>>(), "Box");
+    EXPECT_EQ(::scl::type_short_name<Box<cooperator<int>>>(), "Box");
 }
 
 /**

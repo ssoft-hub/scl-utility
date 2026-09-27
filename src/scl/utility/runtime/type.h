@@ -107,7 +107,8 @@ namespace scl
  *
  * @tparam T Static type of the object, deduced.
  * @param obj Object whose type is named.
- * @return The unqualified identifier of that type.
+ * @return The unqualified identifier of that type; for a closure type or an unnamed class or
+ *         enumeration, the name the compiler generates for it.
  *
  * @note Declared only where the macro `SCL_HAS_RTTI` is `1`.
  */

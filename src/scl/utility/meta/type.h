@@ -17,7 +17,8 @@
  * - ::scl::type_short_name<T>:
  *     Extracts only the unqualified identifier of the type T.
  *     Strips all leading namespace and class scope qualifiers, the MSVC
- *     'class'/'struct'/'union'/'enum' prefix, and the template arguments.
+ *     'class'/'struct'/'union'/'enum' prefix, and the template arguments; the name the
+ *     compiler generates for a closure type or an unnamed class or enumeration is kept whole.
  */
 
 struct p8qim3n2a_t
@@ -25,23 +26,127 @@ struct p8qim3n2a_t
 
 namespace scl::detail
 {
+    constexpr char char_or_null_at(::std::string_view str, ::std::size_t index) noexcept
+    {
+        return index < str.size() ? str.substr(index, 1).front() : '\0';
+    }
+
+    constexpr bool identifier_char(char ch) noexcept
+    {
+        return ch == '_' || (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+    }
+
+    constexpr bool operator_symbol_char(char ch) noexcept
+    {
+        return ch != '\0' && ::std::string_view{"<>=!+-*/%^&|~"}.find(ch) != ::std::string_view::npos;
+    }
+
+    constexpr bool escaped_at(::std::string_view str, ::std::size_t index) noexcept
+    {
+        auto const before = str.substr(0, index);
+        auto const last_other = before.find_last_not_of('\\');
+        auto const backslashes =
+            last_other == ::std::string_view::npos ? before.size() : before.size() - last_other - 1;
+        return backslashes % 2 != 0;
+    }
+
+    // Where a literal of a template argument that ends at an index opens, such as the first quote
+    // of '(' or of "a(b"; the index itself where no literal ends there.
+    constexpr ::std::size_t literal_start(::std::string_view str, ::std::size_t index) noexcept
+    {
+        char const ch = ::scl::detail::char_or_null_at(str, index);
+        if (ch == '\'' && index >= 2 && ::scl::detail::char_or_null_at(str, index - 2) == '\'')
+            return index - 2;
+        if (ch != '"')
+            return index;
+        for (auto open = index; open > 0;)
+        {
+            open = str.rfind('"', open - 1);
+            if (open == ::std::string_view::npos)
+                return index;
+            if (!::scl::detail::escaped_at(str, open))
+                return open;
+        }
+        return index;
+    }
+
+    // The length of the operator symbol holding an angle bracket that opens a string, such as 2
+    // for the <= of "<=(int)"; 0 where no such symbol opens it.
+    constexpr ::std::size_t angle_operator_length(::std::string_view str) noexcept
+    {
+        if (str.starts_with("<=>") || str.starts_with("<<=") || str.starts_with(">>=") ||
+            str.starts_with("->*"))
+            return 3;
+        auto const pair = str.substr(0, 2);
+        if (pair == "<<" || pair == ">>" || pair == "<=" || pair == ">=" || pair == "->")
+            return 2;
+        return str.starts_with('<') || str.starts_with('>') ? 1 : 0;
+    }
+
+    // Where the keyword operator opens when the character at an index belongs to an angle-bracket
+    // symbol after it, such as the < of operator<; the index itself otherwise.
+    constexpr ::std::size_t
+    operator_start(::std::string_view str, ::std::size_t index, bool shorter) noexcept
+    {
+        if (!::scl::detail::operator_symbol_char(::scl::detail::char_or_null_at(str, index)))
+            return index;
+        auto symbol = index;
+        while (symbol > 0 &&
+            ::scl::detail::operator_symbol_char(::scl::detail::char_or_null_at(str, symbol - 1)))
+            --symbol;
+        auto length = ::scl::detail::angle_operator_length(str.substr(symbol));
+        // The shorter reading leaves the last > of ->, <=> or >> to a template argument list, as in
+        // Holder<&operator->, where a pointer to operator- closes it.
+        if (shorter && length > 1 && ::scl::detail::char_or_null_at(str, symbol + length - 1) == '>')
+            --length;
+        constexpr ::std::string_view keyword = "operator";
+        auto const head = str.substr(0, str.substr(0, symbol).find_last_not_of(' ') + 1);
+        if (!head.ends_with(keyword) || index >= symbol + length)
+            return index;
+        auto const start = head.size() - keyword.size();
+        return start > 0 && ::scl::detail::identifier_char(::scl::detail::char_or_null_at(str, start - 1)) ? index : start;
+    }
+
+    struct scope_scan
+    {
+        ::std::size_t position;
+        int bracket_depth;
+    };
+
+    // The scan runs from the end, so the bare symbol MSVC writes for an operator scope, as in
+    // <=::Local, lies before the last '::' and cannot hide it.
+    constexpr scope_scan scan_scopes(::std::string_view str, bool shorter) noexcept
+    {
+        scope_scan result{.position = ::std::string_view::npos, .bracket_depth = 0};
+        for (auto index = str.size(); index > 0;)
+        {
+            index = ::scl::detail::operator_start(str, ::scl::detail::literal_start(str, index - 1), shorter);
+            char const ch = ::scl::detail::char_or_null_at(str, index);
+            if (ch == '>' || ch == ')' || ch == '}')
+            {
+                ++result.bracket_depth;
+            }
+            else if (ch == '<' || ch == '(' || ch == '{')
+            {
+                --result.bracket_depth;
+            }
+            else if (result.position == ::std::string_view::npos && result.bracket_depth == 0 &&
+                ch == ':' && ::scl::detail::char_or_null_at(str, index - 1) == ':')
+            {
+                result.position = index - 1;
+            }
+        }
+        return result;
+    }
+
+    // Only a name whose brackets fail to balance under the longest reading takes the shorter one.
     constexpr auto find_last_scope_operator(::std::string_view str) noexcept
     {
-        auto last_pos = ::std::string_view::npos;
-        int bracket_depth = 0;
-        ::std::size_t i = 0;
-
-        for (char const ch : str)
-        {
-            if (ch == '<')
-                ++bracket_depth;
-            else if (ch == '>')
-                --bracket_depth;
-            else if (bracket_depth == 0 && ch == ':' && i + 1 < str.size() && str.substr(i + 1).front() == ':')
-                last_pos = i;
-            ++i;
-        }
-        return last_pos;
+        auto const longest = ::scl::detail::scan_scopes(str, false);
+        if (longest.bracket_depth == 0)
+            return longest.position;
+        auto const shorter = ::scl::detail::scan_scopes(str, true);
+        return shorter.bracket_depth == 0 ? shorter.position : longest.position;
     }
 
     constexpr ::std::string_view short_name_from(::std::string_view full) noexcept
@@ -54,7 +159,10 @@ namespace scl::detail
             : after.starts_with("enum ")
             ? after.substr(5)
             : after;
-        auto const tmpl = stripped.find('<');
+        // A compiler-generated name carries no template argument list of its own.
+        auto const generated = stripped.starts_with('<') || stripped.starts_with('{') ||
+            stripped.starts_with('(');
+        auto const tmpl = generated ? ::std::string_view::npos : stripped.find('<');
         return (tmpl != ::std::string_view::npos) ? stripped.substr(0, tmpl) : stripped;
     }
 
@@ -157,11 +265,14 @@ namespace scl
      * @ingroup scl_utility_meta
      *
      * @tparam T The type whose name needs to be extracted.
-     * @return A ::std::string_view containing the name of the type without namespaces, class qualifiers, or template arguments.
+     * @return A ::std::string_view containing the name of the type without namespaces, class qualifiers, or template arguments;
+     *         for a closure type or an unnamed class or enumeration, the name the compiler generates.
      *
      * @details This function first extracts the full name using ::scl::type_name<T>(),
-     * then strips all leading namespace and class scopes by finding the last '::' delimiter,
-     * and finally removes template arguments by cutting off everything from '<' onwards.
+     * then strips all leading namespace and class scopes by finding the last '::' delimiter
+     * outside brackets, and finally removes template arguments by cutting off everything from '<'
+     * onwards. A name that opens with a bracket, which a compiler generates for a closure type or
+     * an unnamed class or enumeration, is kept whole.
      *
      * @code
      * namespace app::core {

@@ -30,7 +30,8 @@ template <typename T>
   with a prefix such as `class` or `struct` where that name carries one. Where demangling fails,
   the name is returned unchanged.
 - **Short name:** for the type `app::Task<int>` the function template `type_short_name(obj)`
-  returns `Task`.
+  returns `Task`. For a closure type or an unnamed class or enumeration it returns the name the
+  compiler generates, such as `<lambda_1>` with MSVC.
 
 ## Examples
 
