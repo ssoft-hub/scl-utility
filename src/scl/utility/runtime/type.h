@@ -93,6 +93,12 @@ namespace scl
  * @param obj Object whose type is named.
  * @return The name of the type described above.
  *
+ * @warning The result is for display, not for identity: two distinct types, such as classes of one
+ * name in the unnamed namespaces of two translation units, can have one name. Its spelling differs
+ * between compilers and standard libraries and may change in a later version of the module, so it
+ * must not be compared against a literal, parsed, or persisted. `std::type_index(typeid(obj))`
+ * identifies the type the function template names.
+ *
  * @note Declared only where the macro `SCL_HAS_RTTI` is `1`.
  */
 
@@ -109,6 +115,9 @@ namespace scl
  * @param obj Object whose type is named.
  * @return The unqualified identifier of that type; for a closure type or an unnamed class or
  *         enumeration, the name the compiler generates for it.
+ *
+ * @warning The result is for display, as the result of ::scl::type_name(obj) is: its spelling
+ * differs between compilers and may change in a later version of the module.
  *
  * @note Declared only where the macro `SCL_HAS_RTTI` is `1`.
  */

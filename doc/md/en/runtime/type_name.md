@@ -29,6 +29,12 @@ template <typename T>
   MSVC and with Clang on the MSVC library, the result of `typeid().name()` is returned unchanged,
   with a prefix such as `class` or `struct` where that name carries one. Where demangling fails,
   the name is returned unchanged.
+- **What the results are for:** the results of both function templates are for display, such as a
+  log line or an error message, not for identity: two distinct types, such as classes of one name
+  in the unnamed namespaces of two translation units, can have one name. The spelling differs
+  between compilers and standard libraries and may change in a later version of the module, so
+  nothing should compare a result against a literal, parse it, or persist it.
+  `std::type_index(typeid(obj))` identifies the type the function templates name.
 - **Short name:** for the type `app::Task<int>` the function template `type_short_name(obj)`
   returns `Task`. For a closure type or an unnamed class or enumeration it returns the name the
   compiler generates, such as `<lambda_1>` with MSVC.

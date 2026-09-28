@@ -136,11 +136,12 @@ namespace scl
  * @brief Returns @p value spelled as `Type::N`, where `N` is its number in decimal.
  *
  * The part `Type` is the short name the function template ::scl::type_short_name<E>() returns at
- * compile time, so no RTTI is needed. The part `N` is the number @p value holds in its underlying
- * type, with the sign of that type. For a character or `bool` underlying type, `N` is a number as
- * well. A value no enumeration constant has is spelled the same way as the value of a constant. The
- * digits are the same whether or not the standard library provides the function template
- * `std::format`.
+ * compile time, so no RTTI is needed. For an enumeration type with no name, `Type` is the name the
+ * compiler generates, which differs between compilers and may change in a later version of the
+ * module. The part `N` is the number @p value holds in its underlying type, with the sign of that
+ * type. For a character or `bool` underlying type, `N` is a number as well. A value no enumeration
+ * constant has is spelled the same way as the value of a constant. The digits are the same whether
+ * or not the standard library provides the function template `std::format`.
  *
  * @snippet runtime/enum_string/runtime_enum_string_example.cpp named
  * @snippet runtime/enum_string/runtime_enum_string_example.cpp unnamed
