@@ -196,7 +196,7 @@ and `example/quick_start/<group>/` holds the programs `README.md` quotes.
 | `benchmark/` | `<group>/<subject>[_<aspect>]_<tool>.cpp` | `utility_<group>_<tool>` |
 
 `<subject>` is the header the file covers, `<aspect>` tells apart several files of one
-header: `type_key_cross_tu_gtest.cpp`, `enum_fallback_gtest.cpp`.
+header: `type_key_cross_tu_gtest.cpp`, `type_key_boundary_gtest.cpp`.
 
 | Suffix | Framework | Linked with | Where `main` is defined |
 |---|---|---|---|

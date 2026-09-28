@@ -32,8 +32,7 @@ template <::scl::concepts::enum_type E, typename Format>
   version of the module.
 - **Number:** the part `N` is the value in its underlying type, in decimal and with the sign of
   that type. For a character or `bool` underlying type, `N` is a number as well: the value `'P'` is
-  spelled as `80`. The digits are the same whether or not the standard library provides the
-  function template `std::format`.
+  spelled as `80`.
 - **Any value:** a value no enumeration constant has is spelled the same way as the value of a
   constant.
 

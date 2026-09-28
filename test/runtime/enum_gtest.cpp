@@ -233,6 +233,28 @@ TEST(EnumStringTest, ExtremeValues)
     EXPECT_EQ(::scl::enum_string(Unsigned64::Max), "Unsigned64::18446744073709551615");
 }
 
+// std::to_chars takes a 128-bit integer in libstdc++ with the GNU extensions on.
+#if defined(__SIZEOF_INT128__) && defined(__GLIBCXX__) && !defined(__STRICT_ANSI__)
+enum class Signed128 : __int128
+{
+    Min = ::std::numeric_limits<__int128>::min(),
+};
+
+enum class Unsigned128 : unsigned __int128
+{
+    Max = ::std::numeric_limits<unsigned __int128>::max(),
+};
+
+/**
+ * @test Verify that enum_string spells the extreme values of a 128-bit underlying type in full.
+ */
+TEST(EnumStringTest, ExtremeValues128)
+{
+    EXPECT_EQ(::scl::enum_string(Signed128::Min), "Signed128::-170141183460469231731687303715884105728");
+    EXPECT_EQ(::scl::enum_string(Unsigned128::Max), "Unsigned128::340282366920938463463374607431768211455");
+}
+#endif
+
 /**
  * @test Verify that a function object spells the number in the base it chooses.
  */
