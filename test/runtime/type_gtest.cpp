@@ -216,6 +216,19 @@ namespace
     template <typename T>
     struct cooperator
     {};
+
+    struct Pointing
+    {
+        Pointing const * operator->() const { return this; }
+    };
+
+    template <auto Function>
+    struct Enclosing
+    {
+        template <auto Other>
+        struct Member
+        {};
+    };
 } // namespace
 
 /**
@@ -242,9 +255,12 @@ TEST(TypeShortNameTest, OperatorInTemplateArgument)
     EXPECT_EQ(::scl::type_short_name(Holder<(&operator-)>{}), "Holder");
     EXPECT_EQ(::scl::type_short_name(Holder<(&operator<=)>{}), "Holder");
     EXPECT_EQ(::scl::type_short_name(Holder<(&operator>)>{}), "Holder");
+    EXPECT_EQ(::scl::type_short_name(Box<Holder<(&operator-)>>{}), "Box");
     EXPECT_EQ(::scl::type_short_name(Box<decltype(Ordered{} < Ordered{})>{}), "Box");
     EXPECT_EQ(::scl::type_short_name(Box<decltype(Ordered{} <= Ordered{})>{}), "Box");
     EXPECT_EQ(::scl::type_short_name(Box<cooperator<int>>{}), "Box");
+    EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >{}),
+        "Member");
 }
 
 /**

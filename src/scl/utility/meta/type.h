@@ -38,7 +38,25 @@ namespace scl::detail
 
     constexpr bool operator_symbol_char(char ch) noexcept
     {
-        return ch != '\0' && ::std::string_view{"<>=!+-*/%^&|~"}.find(ch) != ::std::string_view::npos;
+        switch (ch)
+        {
+        case '<':
+        case '>':
+        case '=':
+        case '!':
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+        case '%':
+        case '^':
+        case '&':
+        case '|':
+        case '~':
+            return true;
+        default:
+            return false;
+        }
     }
 
     constexpr bool escaped_at(::std::string_view str, ::std::size_t index) noexcept
@@ -107,33 +125,71 @@ namespace scl::detail
         return start > 0 && ::scl::detail::identifier_char(::scl::detail::char_or_null_at(str, start - 1)) ? index : start;
     }
 
+    // Whether the operator at an index is ->, <=> or >>, whose last > may close a template
+    // argument list instead.
+    constexpr bool glued_angle_symbol(::std::string_view str, ::std::size_t keyword) noexcept
+    {
+        auto const rest = str.substr(keyword + ::std::string_view{"operator"}.size());
+        auto const start = rest.find_first_not_of(' ');
+        auto const symbol = start == ::std::string_view::npos ? ::std::string_view{} : rest.substr(start);
+        auto const length = ::scl::detail::angle_operator_length(symbol);
+        return length > 1 && symbol.substr(0, length).ends_with('>');
+    }
+
     struct scope_scan
     {
         ::std::size_t position;
         int bracket_depth;
+        bool glued;
     };
 
     // The scan runs from the end, so the bare symbol MSVC writes for an operator scope, as in
     // <=::Local, lies before the last '::' and cannot hide it.
     constexpr scope_scan scan_scopes(::std::string_view str, bool shorter) noexcept
     {
-        scope_scan result{.position = ::std::string_view::npos, .bracket_depth = 0};
+        scope_scan result{.position = ::std::string_view::npos, .bracket_depth = 0, .glued = false};
         for (auto index = str.size(); index > 0;)
         {
-            index = ::scl::detail::operator_start(str, ::scl::detail::literal_start(str, index - 1), shorter);
-            char const ch = ::scl::detail::char_or_null_at(str, index);
-            if (ch == '>' || ch == ')' || ch == '}')
+            --index;
+            switch (char const ch = ::scl::detail::char_or_null_at(str, index))
             {
+            case '\'':
+            case '"':
+                index = ::scl::detail::literal_start(str, index);
+                break;
+            case '<':
+            case '>':
+                if (auto const keyword = ::scl::detail::operator_start(str, index, shorter); keyword != index)
+                {
+                    result.glued = result.glued ||
+                        (!shorter && ::scl::detail::glued_angle_symbol(str, keyword));
+                    index = keyword;
+                }
+                else
+                {
+                    result.bracket_depth += ch == '>' ? 1 : -1;
+                }
+                break;
+            case ')':
+            case '}':
                 ++result.bracket_depth;
-            }
-            else if (ch == '<' || ch == '(' || ch == '{')
-            {
+                break;
+            case '(':
+            case '{':
                 --result.bracket_depth;
-            }
-            else if (result.position == ::std::string_view::npos && result.bracket_depth == 0 &&
-                ch == ':' && ::scl::detail::char_or_null_at(str, index - 1) == ':')
-            {
-                result.position = index - 1;
+                break;
+            case ':':
+                if (result.position == ::std::string_view::npos && result.bracket_depth == 0 &&
+                    ::scl::detail::char_or_null_at(str, index - 1) == ':')
+                {
+                    result.position = index - 1;
+                    // Only a glued symbol makes the whole name worth reading for its balance.
+                    if (!result.glued)
+                        return result;
+                }
+                break;
+            default:
+                break;
             }
         }
         return result;
@@ -143,7 +199,7 @@ namespace scl::detail
     constexpr auto find_last_scope_operator(::std::string_view str) noexcept
     {
         auto const longest = ::scl::detail::scan_scopes(str, false);
-        if (longest.bracket_depth == 0)
+        if (!longest.glued || longest.bracket_depth == 0)
             return longest.position;
         auto const shorter = ::scl::detail::scan_scopes(str, true);
         return shorter.bracket_depth == 0 ? shorter.position : longest.position;
