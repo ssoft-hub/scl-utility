@@ -92,8 +92,8 @@ namespace scl
     {
         auto const numeric = static_cast<::scl::detail::enum_number_t<E>>(value);
         auto && spelled = ::std::invoke(::std::forward<Format>(format), numeric);
-        return ::scl::detail::enum_spelling(::scl::type_short_name<E>(),
-            ::std::forward<decltype(spelled)>(spelled));
+        constexpr auto type = ::scl::type_short_name<E>();
+        return ::scl::detail::enum_spelling(type, ::std::forward<decltype(spelled)>(spelled));
     }
 
     template <::scl::concepts::enum_type E>
@@ -106,7 +106,8 @@ namespace scl
             ::std::to_chars(digits.data(),
                 ::std::next(digits.data(), static_cast<::std::ptrdiff_t>(digits.size())), static_cast<number>(value))
                 .ptr;
-        return ::scl::detail::enum_spelling(::scl::type_short_name<E>(),
+        constexpr auto type = ::scl::type_short_name<E>();
+        return ::scl::detail::enum_spelling(type,
             ::std::string_view{digits.data(), static_cast<::std::size_t>(::std::distance(digits.data(), end))});
     }
 
