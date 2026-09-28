@@ -100,8 +100,10 @@ Retrieves only the terminal identifier of the type `T`, stripping all namespace 
 ### Description
 
 This function processes the result of `type_name<T>()` and removes everything up to the last `::`
-delimiter. Additionally, `struct`/`class`/`union`/`enum` prefixes (present on MSVC) and template
-arguments are stripped, so the result is always the bare identifier.
+delimiter outside brackets. Additionally, `struct`/`class`/`union`/`enum` prefixes (present on MSVC)
+and template arguments are stripped, so the result is the bare identifier. For a closure type or an
+unnamed class or enumeration the result is the name the compiler generates, such as `<lambda_1>`
+with MSVC.
 
 ### Example
 

@@ -62,11 +62,8 @@ namespace
         return ::std::to_string(number);
     }
 
-    [[nodiscard]]
-    ::std::string spell_narrow(::std::uint8_t number)
-    {
-        return ::std::to_string(number);
-    }
+    // The type of a function whose parameter is narrower than a char16_t number.
+    using narrow_function = ::std::string(::std::uint8_t);
 } // namespace
 
 enum class Color : int
@@ -332,8 +329,8 @@ TEST(EnumStringTest, FormatParameterOutsideRuleRefused)
     STATIC_EXPECT_FALSE((accepts_format<Char16Enum, decltype(unsigned_8)>));
     STATIC_EXPECT_FALSE((accepts_format<Char16Enum, decltype(signed_32)>));
     STATIC_EXPECT_FALSE((accepts_format<Char32Enum, decltype(narrow_character)>));
-    STATIC_EXPECT_FALSE((accepts_format<Char16Enum, decltype(&spell_narrow)>));
-    STATIC_EXPECT_FALSE((accepts_format<Char16Enum, decltype(spell_narrow) &>));
+    STATIC_EXPECT_FALSE((accepts_format<Char16Enum, narrow_function *>));
+    STATIC_EXPECT_FALSE((accepts_format<Char16Enum, narrow_function &>));
     STATIC_EXPECT_FALSE((accepts_format<Char16Enum, decltype(mutable_reference)>));
     STATIC_EXPECT_FALSE((accepts_format<Char16Enum, decltype(narrow_mutable) &>));
     STATIC_EXPECT_FALSE((accepts_format<ByteEnum, decltype(boolean)>));

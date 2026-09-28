@@ -50,6 +50,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [hash] Accepted a view that cannot be read through a `const` reference
 - [hash] Accepted `std::byte` and other single-byte trivially copyable elements
 - [meta] Documented that MSVC keeps the class key in `type_name`, a name to show, not compare
+- [meta] Returned the generated name of a closure or an unnamed type from `type_short_name<T>()`
+- [meta] Stopped `type_short_name<T>()` returning `operator` for a name that holds `operator<`
 - Included `hash.h` in `<scl/utility.h>`, which left the hash group out
 - Fixed the installation steps, which added a directory with no `CMakeLists.txt`
 
