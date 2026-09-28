@@ -27,7 +27,9 @@ template <::scl::concepts::enum_type E, typename Format>
 
 - **Type:** the part `Type` is the short name the function template `scl::type_short_name<E>()`
   returns at compile time, so an enumeration type declared in a namespace or a class is spelled
-  without the name of the namespace or the class.
+  without the name of the namespace or the class. For an enumeration type with no name, `Type` is
+  the name the compiler generates, which differs between compilers and may change in a later
+  version of the module.
 - **Number:** the part `N` is the value in its underlying type, in decimal and with the sign of
   that type. For a character or `bool` underlying type, `N` is a number as well: the value `'P'` is
   spelled as `80`. The digits are the same whether or not the standard library provides the
