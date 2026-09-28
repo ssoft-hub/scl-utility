@@ -20,5 +20,6 @@
 #include <scl/utility/preprocessor/exceptions.h>
 #include <scl/utility/preprocessor/forward.h>
 #include <scl/utility/preprocessor/rtti.h>
+#include <scl/utility/preprocessor/threads.h>
 
 /** @} */ // end of group scl_utility_preprocessor

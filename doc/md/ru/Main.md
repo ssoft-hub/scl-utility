@@ -130,6 +130,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [SCL_COUNTER](preprocessor/counter.md) | `<scl/utility/preprocessor/counter.h>` | Счётчик времени компиляции через ADL |
 | [SCL_HAS_RTTI](preprocessor/rtti.md) | `<scl/utility/preprocessor/rtti.h>` | Есть ли в единице трансляции RTTI и что от этого зависит |
 | [SCL_HAS_EXCEPTIONS](preprocessor/exceptions.md) | `<scl/utility/preprocessor/exceptions.h>` | Есть ли в единице трансляции исключения и что от этого зависит |
+| [SCL_HAS_THREADS](preprocessor/threads.md) | `<scl/utility/preprocessor/threads.h>` | Поддерживает ли стандартная библиотека потоки |
 
 ### Type traits — расширенные свойства типов
 

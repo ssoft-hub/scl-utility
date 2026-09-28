@@ -39,8 +39,8 @@ Header-only library of compile-time and low-level utilities for C++20 and later.
 - Standard library only, no other dependency
 - C++20 baseline; a feature beyond C++20 sits behind `__has_include`, `__has_cpp_attribute`
   or a `__cpp_*` macro
-- Headers compile with exceptions and RTTI off: `SCL_HAS_EXCEPTIONS`, `SCL_HAS_RTTI` from
-  `preprocessor/`
+- Headers compile with exceptions and RTTI off and against a standard library built without
+  threads: `SCL_HAS_EXCEPTIONS`, `SCL_HAS_RTTI`, `SCL_HAS_THREADS` from `preprocessor/`
 - Groups by logical layer, from the most basic:
 
 | Layer | Groups |
