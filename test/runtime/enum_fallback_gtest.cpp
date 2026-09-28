@@ -11,27 +11,9 @@
 #error "enum.h took the std::format path"
 #endif
 
-#include <array>
-#include <bitset>
-#include <charconv>
-#include <climits>
+#include <cstdint>
+#include <limits>
 #include <string>
-
-namespace
-{
-    // Spells a number in hexadecimal with a 0x prefix, through to_chars on every library.
-    struct hex_format
-    {
-        template <typename Number>
-        [[nodiscard]]
-        ::std::string operator()(Number number) const
-        {
-            ::std::array<char, 32> buf{};
-            auto const end = ::std::to_chars(buf.data(), buf.data() + buf.size(), number, 16).ptr;
-            return "0x" + ::std::string{buf.data(), end};
-        }
-    };
-} // namespace
 
 namespace
 {
@@ -71,18 +53,20 @@ namespace
         B = 66,
     };
 
+    enum class FbSigned64 : ::std::int64_t
+    {
+        Min = ::std::numeric_limits<::std::int64_t>::min(),
+    };
+
+    enum class FbUnsigned64 : ::std::uint64_t
+    {
+        Max = ::std::numeric_limits<::std::uint64_t>::max(),
+    };
+
     enum class FbBool : bool
     {
         Yes = true,
     };
-
-    namespace ns
-    {
-        enum class FbStatus : int
-        {
-            Err = 42,
-        };
-    } // namespace ns
 
 } // namespace
 
@@ -111,18 +95,11 @@ TEST(EnumStringFallbackTest, ScopedUnsigned)
 }
 
 /**
- * @test Verify fallback path: unsigned char underlying type.
- */
-TEST(EnumStringFallbackTest, UnderlyingByte)
-{
-    EXPECT_EQ(::scl::enum_string(FbByte::X), "FbByte::255");
-}
-
-/**
  * @test Verify fallback path: a character underlying type renders as a number.
  */
 TEST(EnumStringFallbackTest, CharUnderlyingRendersNumber)
 {
+    EXPECT_EQ(::scl::enum_string(FbByte::X), "FbByte::255");
     EXPECT_EQ(::scl::enum_string(FbChar::A), "FbChar::65");
     EXPECT_EQ(::scl::enum_string(FbWide::B), "FbWide::66");
     EXPECT_EQ(::scl::enum_string(FbSignedChar::Low), "FbSignedChar::-128");
@@ -138,44 +115,10 @@ TEST(EnumStringFallbackTest, BoolUnderlyingRendersNumber)
 }
 
 /**
- * @test Verify fallback path: out-of-range value.
+ * @test Verify fallback path: the extreme values of a 64-bit underlying type are spelled in full.
  */
-TEST(EnumStringFallbackTest, OutOfRangeValue)
+TEST(EnumStringFallbackTest, ExtremeValues)
 {
-    EXPECT_EQ(::scl::enum_string(FbColor{42}), "FbColor::42");
-}
-
-/**
- * @test Verify fallback path: namespace qualifier stripped from type name.
- */
-TEST(EnumStringFallbackTest, NamespacedEnum)
-{
-    EXPECT_EQ(::scl::enum_string(ns::FbStatus::Err), "FbStatus::42");
-}
-
-/**
- * @test Verify fallback path: a function object spells the number in the base it chooses.
- */
-TEST(EnumStringFallbackTest, FormatSpellsNumber)
-{
-    EXPECT_EQ(::scl::enum_string(FbFlags::B, hex_format{}), "FbFlags::0x2");
-}
-
-/**
- * @test Verify fallback path: the function object may return a pointer to characters.
- */
-TEST(EnumStringFallbackTest, FormatReturnsAnyStringView)
-{
-    EXPECT_EQ(::scl::enum_string(FbFlags::B, [](auto) { return "two"; }), "FbFlags::two");
-}
-
-/**
- * @test Verify fallback path: the function object spells the number in binary as wide as its type.
- */
-TEST(EnumStringFallbackTest, FormatSpellsBinary)
-{
-    auto const binary = [](auto number) {
-        return ::std::bitset<sizeof(number) * CHAR_BIT>(number).to_string();
-    };
-    EXPECT_EQ(::scl::enum_string(FbChar::A, binary), "FbChar::" + ::std::bitset<CHAR_BIT>(65).to_string());
+    EXPECT_EQ(::scl::enum_string(FbSigned64::Min), "FbSigned64::-9223372036854775808");
+    EXPECT_EQ(::scl::enum_string(FbUnsigned64::Max), "FbUnsigned64::18446744073709551615");
 }

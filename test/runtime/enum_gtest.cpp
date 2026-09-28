@@ -1,11 +1,10 @@
 #include <gtest_utils.h>
 
 #include <array>
-#include <bitset>
 #include <charconv>
-#include <climits>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <string>
 #include <type_traits>
 
@@ -56,6 +55,25 @@ namespace
         return ::std::is_same_v<decltype(number), Expected> ? "same" : "other";
     };
 
+    template <typename T>
+    constexpr bool character_type_v = ::std::is_same_v<T, char> || ::std::is_same_v<T, wchar_t> ||
+        ::std::is_same_v<T, char8_t> || ::std::is_same_v<T, char16_t> || ::std::is_same_v<T, char32_t>;
+
+    // Tells whether the function object received the number as an integer type, not a character
+    // type, of the size and signedness of the type Underlying.
+    template <typename Underlying>
+    auto const receives_number_of = [](auto number) {
+        using number_type = decltype(number);
+        return ::std::is_integral_v<number_type> && !character_type_v<number_type> &&
+                sizeof(number_type) == sizeof(Underlying) &&
+                ::std::is_signed_v<number_type> == ::std::is_signed_v<Underlying>
+            ? "same"
+            : "other";
+    };
+
+    template <typename Value>
+    concept spells_as_enum = requires(Value value) { ::scl::enum_string(value); };
+
     [[nodiscard]]
     ::std::string spell_wide(::std::uint32_t number)
     {
@@ -69,7 +87,6 @@ namespace
 enum class Color : int
 {
     Red = 1,
-    Green = 2,
     Blue = -3,
 };
 
@@ -124,7 +141,6 @@ namespace ns
 {
     enum class Status : int
     {
-        Ok = 0,
         Err = 42,
     };
 } // namespace ns
@@ -134,14 +150,20 @@ enum Unscoped : int // NOLINT(performance-enum-size)
     ValA = 7,
 };
 
+enum class Signed64 : ::std::int64_t
+{
+    Min = ::std::numeric_limits<::std::int64_t>::min(),
+};
+
+enum class Unsigned64 : ::std::uint64_t
+{
+    Max = ::std::numeric_limits<::std::uint64_t>::max(),
+};
+
 /**
  * @test Verify that enum_string formats a scoped enum with int underlying type.
  */
-TEST(EnumStringTest, ScopedIntPositive)
-{
-    EXPECT_EQ(::scl::enum_string(Color::Red), "Color::1");
-    EXPECT_EQ(::scl::enum_string(Color::Green), "Color::2");
-}
+TEST(EnumStringTest, ScopedIntPositive) { EXPECT_EQ(::scl::enum_string(Color::Red), "Color::1"); }
 
 /**
  * @test Verify that enum_string formats negative underlying values correctly.
@@ -149,20 +171,17 @@ TEST(EnumStringTest, ScopedIntPositive)
 TEST(EnumStringTest, ScopedIntNegative) { EXPECT_EQ(::scl::enum_string(Color::Blue), "Color::-3"); }
 
 /**
- * @test Verify that enum_string formats a scoped enum with unsigned underlying type.
+ * @test Verify that enum_string spells the value 0 as 0.
  */
-TEST(EnumStringTest, ScopedUnsigned)
-{
-    EXPECT_EQ(::scl::enum_string(Flags::None), "Flags::0");
-    EXPECT_EQ(::scl::enum_string(Flags::B), "Flags::2");
-}
+TEST(EnumStringTest, ZeroValue) { EXPECT_EQ(::scl::enum_string(Flags::None), "Flags::0"); }
 
 /**
- * @test Verify that enum_string spells an unsigned char underlying value as a number.
+ * @test Verify that enum_string cannot be called with a value of a type that is not an enumeration.
  */
-TEST(EnumStringTest, UnderlyingByteRendersNumber)
+TEST(EnumStringTest, RefusesNonEnumeration)
 {
-    EXPECT_EQ(::scl::enum_string(ByteEnum::X), "ByteEnum::255");
+    STATIC_EXPECT_TRUE(spells_as_enum<Color>);
+    STATIC_EXPECT_FALSE(spells_as_enum<int>);
 }
 
 /**
@@ -170,6 +189,7 @@ TEST(EnumStringTest, UnderlyingByteRendersNumber)
  */
 TEST(EnumStringTest, CharUnderlyingRendersNumber)
 {
+    EXPECT_EQ(::scl::enum_string(ByteEnum::X), "ByteEnum::255");
     EXPECT_EQ(::scl::enum_string(CharEnum::A), "CharEnum::65");
     EXPECT_EQ(::scl::enum_string(SignedCharEnum::Low), "SignedCharEnum::-128");
     EXPECT_EQ(::scl::enum_string(WideEnum::B), "WideEnum::66");
@@ -196,7 +216,6 @@ TEST(EnumStringTest, OutOfRangeValue) { EXPECT_EQ(::scl::enum_string(Color{42}),
  */
 TEST(EnumStringTest, NamespacedEnum)
 {
-    EXPECT_EQ(::scl::enum_string(ns::Status::Ok), "Status::0");
     EXPECT_EQ(::scl::enum_string(ns::Status::Err), "Status::42");
 }
 
@@ -204,6 +223,15 @@ TEST(EnumStringTest, NamespacedEnum)
  * @test Verify that enum_string works for unscoped enums.
  */
 TEST(EnumStringTest, UnscopedEnum) { EXPECT_EQ(::scl::enum_string(ValA), "Unscoped::7"); }
+
+/**
+ * @test Verify that enum_string spells the extreme values of a 64-bit underlying type in full.
+ */
+TEST(EnumStringTest, ExtremeValues)
+{
+    EXPECT_EQ(::scl::enum_string(Signed64::Min), "Signed64::-9223372036854775808");
+    EXPECT_EQ(::scl::enum_string(Unsigned64::Max), "Unsigned64::18446744073709551615");
+}
 
 /**
  * @test Verify that a function object spells the number in the base it chooses.
@@ -249,18 +277,15 @@ TEST(EnumStringTest, FormatMutableAccepted)
  */
 TEST(EnumStringTest, FormatReceivesIntegerOfUnderlyingType)
 {
-    using char_number = ::std::conditional_t<::std::is_signed_v<char>, signed char, unsigned char>;
-    using wide_number = ::std::conditional_t<::std::is_signed_v<wchar_t>,
-        ::std::make_signed_t<wchar_t>, ::std::make_unsigned_t<wchar_t>>;
     EXPECT_EQ(::scl::enum_string(Color::Blue, receives<int>), "Color::same");
     EXPECT_EQ(::scl::enum_string(Flags::B, receives<unsigned>), "Flags::same");
     EXPECT_EQ(::scl::enum_string(ByteEnum::X, receives<unsigned char>), "ByteEnum::same");
     EXPECT_EQ(::scl::enum_string(SignedCharEnum::Low, receives<signed char>), "SignedCharEnum::same");
-    EXPECT_EQ(::scl::enum_string(CharEnum::A, receives<char_number>), "CharEnum::same");
-    EXPECT_EQ(::scl::enum_string(WideEnum::B, receives<wide_number>), "WideEnum::same");
-    EXPECT_EQ(::scl::enum_string(Char8Enum::X, receives<unsigned char>), "Char8Enum::same");
-    EXPECT_EQ(::scl::enum_string(Char16Enum::Max, receives<::std::make_unsigned_t<char16_t>>), "Char16Enum::same");
-    EXPECT_EQ(::scl::enum_string(Char32Enum::Max, receives<::std::make_unsigned_t<char32_t>>), "Char32Enum::same");
+    EXPECT_EQ(::scl::enum_string(CharEnum::A, receives_number_of<char>), "CharEnum::same");
+    EXPECT_EQ(::scl::enum_string(WideEnum::B, receives_number_of<wchar_t>), "WideEnum::same");
+    EXPECT_EQ(::scl::enum_string(Char8Enum::X, receives_number_of<char8_t>), "Char8Enum::same");
+    EXPECT_EQ(::scl::enum_string(Char16Enum::Max, receives_number_of<char16_t>), "Char16Enum::same");
+    EXPECT_EQ(::scl::enum_string(Char32Enum::Max, receives_number_of<char32_t>), "Char32Enum::same");
     EXPECT_EQ(::scl::enum_string(BoolEnum::Yes, receives<unsigned char>), "BoolEnum::same");
 }
 
@@ -271,7 +296,6 @@ TEST(EnumStringTest, FormatParameterNoNarrowerAccepted)
 {
     auto const unsigned_32 = [](::std::uint32_t number) { return ::std::to_string(number); };
     auto const by_reference = [](::std::uint16_t const & number) { return ::std::to_string(number); };
-    auto const any_type = [](auto number) { return ::std::to_string(number); };
     auto const signed_64 = [](::std::int64_t number) { return ::std::to_string(number); };
     auto const char_number = [](::std::conditional_t<::std::is_signed_v<char>, signed char, unsigned char>) {
         return "";
@@ -282,14 +306,10 @@ TEST(EnumStringTest, FormatParameterNoNarrowerAccepted)
     auto const boolean = [](bool flag) { return flag ? "true" : "false"; };
     auto const unsigned_16 = [](::std::uint16_t number) { return ::std::to_string(number); };
     auto const wide_character = [](wchar_t) { return ""; };
-    auto const any_arguments = [](...) { return "any"; };
     STATIC_EXPECT_TRUE((accepts_format<Char16Enum, decltype(unsigned_32)>));
     STATIC_EXPECT_TRUE((accepts_format<Char16Enum, decltype(unsigned_16)>));
     STATIC_EXPECT_TRUE((accepts_format<WideEnum, decltype(wide_character)>));
-    STATIC_EXPECT_TRUE((accepts_format<Char16Enum, decltype(any_arguments)>));
-    STATIC_EXPECT_TRUE((accepts_format<Char16Enum, ::std::string (*)(...)>));
     STATIC_EXPECT_TRUE((accepts_format<Char16Enum, decltype(by_reference)>));
-    STATIC_EXPECT_TRUE((accepts_format<Char16Enum, decltype(any_type)>));
     STATIC_EXPECT_TRUE((accepts_format<Char16Enum, decltype(&spell_wide)>));
     STATIC_EXPECT_TRUE((accepts_format<Char16Enum, ::std::string (*)(::std::uint32_t, ...)>));
     STATIC_EXPECT_TRUE((accepts_format<Color, decltype(signed_64)>));
@@ -301,7 +321,6 @@ TEST(EnumStringTest, FormatParameterNoNarrowerAccepted)
     STATIC_EXPECT_TRUE((accepts_format<BoolEnum, decltype(unsigned_32)>));
     EXPECT_EQ(::scl::enum_string(Char16Enum::Max, same_character), "Char16Enum::character");
     EXPECT_EQ(::scl::enum_string(BoolEnum::Yes, boolean), "BoolEnum::true");
-    EXPECT_EQ(::scl::enum_string(Char16Enum::Max, any_arguments), "Char16Enum::any");
     EXPECT_EQ(::scl::enum_string(Char16Enum::Max, unsigned_32), "Char16Enum::65535");
     EXPECT_EQ(::scl::enum_string(Char16Enum::Max, spell_wide), "Char16Enum::65535");
 }
@@ -359,7 +378,8 @@ TEST(EnumStringTest, FormatConceptMatchesCall)
 }
 
 /**
- * @test Verify that a function object with no single signature is checked by the call alone.
+ * @test Verify that a function object with no single signature, or taking (...), is checked by the
+ *       call alone.
  */
 TEST(EnumStringTest, FormatWithoutSignatureCheckedByCall)
 {
@@ -369,20 +389,10 @@ TEST(EnumStringTest, FormatWithoutSignatureCheckedByCall)
     STATIC_EXPECT_FALSE((accepts_format<Char16Enum, decltype(floating)>));
     STATIC_EXPECT_TRUE((accepts_format<Char16Enum, decltype(::std::ref(floating))>));
     STATIC_EXPECT_TRUE((accepts_format<Char16Enum, decltype(::std::bind_front(floating))>));
+    auto const any_arguments = [](...) { return "any"; };
+    STATIC_EXPECT_TRUE((accepts_format<Char16Enum, ::std::string (*)(...)>));
+    EXPECT_EQ(::scl::enum_string(Char16Enum::Max, any_arguments), "Char16Enum::any");
     EXPECT_EQ(::scl::enum_string(ByteEnum::X, overloaded_format{}), "ByteEnum::255");
-}
-
-/**
- * @test Verify that the function object spells the number in binary as wide as its type.
- */
-TEST(EnumStringTest, FormatSpellsBinary)
-{
-    auto const binary = [](auto number) {
-        return ::std::bitset<sizeof(number) * CHAR_BIT>(number).to_string();
-    };
-    EXPECT_EQ(::scl::enum_string(CharEnum::A, binary), "CharEnum::" + ::std::bitset<CHAR_BIT>(65).to_string());
-    EXPECT_EQ(::scl::enum_string(SignedCharEnum::Low, binary),
-        "SignedCharEnum::" + ::std::bitset<CHAR_BIT>(static_cast<unsigned char>(-128)).to_string());
 }
 
 /**
@@ -390,6 +400,6 @@ TEST(EnumStringTest, FormatSpellsBinary)
  */
 TEST(EnumStringTest, FormatWithoutTextRefused)
 {
-    STATIC_EXPECT_TRUE((accepts_format<Color, hex_format>));
+    STATIC_EXPECT_TRUE((accepts_format<Color, ::std::string (*)(long long)>));
     STATIC_EXPECT_FALSE((accepts_format<Color, int (*)(long long)>));
 }

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <typeinfo>
 
 // Declares ::scl without RTTI, where the concepts below would otherwise name nothing.
 #include <scl/utility/meta/type.h>
@@ -28,13 +29,16 @@ TEST(RuntimeTypeTest, DeclaredWithRtti)
     STATIC_EXPECT_TRUE(runtime_type_short_name_declared<int>);
 }
 
-struct SimpleStruct
-{};
-
 namespace ns
 {
     struct NamespacedType
     {};
+
+    struct Outer
+    {
+        struct Inner
+        {};
+    };
 
     template <typename T>
     struct TemplateType
@@ -52,25 +56,11 @@ struct PolymorphicDerived : PolymorphicBase
 struct FurtherDerived : PolymorphicDerived
 {};
 
-/**
- * @test Verify that type_name returns a name containing the expected identifier for fundamental types.
- */
-TEST(TypeNameTest, FundamentalType)
-{
-    int i = 0;
-    double d = 0.0;
-    EXPECT_NE(::scl::type_name(i).find("int"), ::std::string::npos);
-    EXPECT_NE(::scl::type_name(d).find("double"), ::std::string::npos);
-}
+struct PlainBase
+{};
 
-/**
- * @test Verify that type_name returns a name containing the type identifier for user-defined types.
- */
-TEST(TypeNameTest, UserDefinedType)
-{
-    SimpleStruct s;
-    EXPECT_NE(::scl::type_name(s).find("SimpleStruct"), ::std::string::npos);
-}
+struct PlainDerived : PlainBase
+{};
 
 /**
  * @test Verify that type_name returns the dynamic type name when called through a base pointer.
@@ -78,26 +68,60 @@ TEST(TypeNameTest, UserDefinedType)
 TEST(TypeNameTest, Polymorphism)
 {
     ::std::unique_ptr<PolymorphicBase> p = ::std::make_unique<PolymorphicDerived>();
-    EXPECT_NE(::scl::type_name(*p).find("PolymorphicDerived"), ::std::string::npos);
+    EXPECT_EQ(::scl::type_name(*p), ::scl::type_name(PolymorphicDerived{}));
 }
 
 /**
- * @test Verify that type_name includes both the type name and template argument for template types.
+ * @test Verify that type_name names a base class with no virtual function, not the object's class.
  */
-TEST(TypeNameTest, TemplateType)
+TEST(TypeNameTest, NonPolymorphicBase)
 {
-    ns::TemplateType<int> t;
-    EXPECT_NE(::scl::type_name(t).find("TemplateType"), ::std::string::npos);
-    EXPECT_NE(::scl::type_name(t).find("int"), ::std::string::npos);
+    PlainDerived const derived;
+    PlainBase const & base = derived;
+    EXPECT_EQ(::scl::type_name(base), ::scl::type_name(PlainBase{}));
 }
 
 /**
- * @test Verify that type_short_name strips namespace qualifiers.
+ * @test Verify that type_name demangles where <cxxabi.h> exists and returns typeid's name elsewhere.
  */
-TEST(TypeShortNameTest, Namespaced)
+TEST(TypeNameTest, Spelling)
 {
-    ns::NamespacedType t;
-    EXPECT_EQ(::scl::type_short_name(t), "NamespacedType");
+#if __has_include(<cxxabi.h>)
+    EXPECT_EQ(::scl::type_name(0), "int");
+    EXPECT_EQ(::scl::type_name(ns::NamespacedType{}), "ns::NamespacedType");
+    EXPECT_EQ(::scl::type_name(ns::TemplateType<int>{}), "ns::TemplateType<int>");
+#else
+    EXPECT_EQ(::scl::type_name(0), typeid(int).name());
+    EXPECT_EQ(::scl::type_name(ns::NamespacedType{}), typeid(ns::NamespacedType).name());
+    EXPECT_EQ(::scl::type_name(ns::TemplateType<int>{}), typeid(ns::TemplateType<int>).name());
+#endif
+}
+
+/**
+ * @test Verify that scl::detail::demangle returns a name it cannot demangle unchanged.
+ */
+TEST(TypeNameTest, UndemangledNameUnchanged)
+{
+    EXPECT_EQ(::scl::detail::demangle("not a mangled name"), "not a mangled name");
+}
+
+/**
+ * @test Verify that type_short_name strips the qualifiers of namespaces and classes.
+ */
+TEST(TypeShortNameTest, QualifiersStripped)
+{
+    EXPECT_EQ(::scl::type_short_name(ns::NamespacedType{}), "NamespacedType");
+    EXPECT_EQ(::scl::type_short_name(ns::Outer::Inner{}), "Inner");
+}
+
+/**
+ * @test Verify that type_short_name names a base class with no virtual function, not the object's class.
+ */
+TEST(TypeShortNameTest, NonPolymorphicBase)
+{
+    PlainDerived const derived;
+    PlainBase const & base = derived;
+    EXPECT_EQ(::scl::type_short_name(base), "PlainBase");
 }
 
 /**
@@ -224,14 +248,30 @@ TEST(TypeShortNameTest, OperatorInTemplateArgument)
 }
 
 /**
- * @test Verify that a qualified parameter type of a closure does not cut its short name.
+ * @test Verify that a qualified parameter type in the name of a closure stays in its short name.
  */
 TEST(TypeShortNameTest, ClosureWithQualifiedParameter)
 {
     auto const closure = [](::std::string const & text) { return text.size(); };
+    auto const holds_parameter = [](::std::string const & name) {
+        return name.find("basic_string") != ::std::string::npos;
+    };
+    auto const balanced = [](::std::string const & name) {
+        int depth = 0;
+        for (char const ch : name)
+        {
+            depth += (ch == '(' || ch == '<' || ch == '{') ? 1
+                : (ch == ')' || ch == '>' || ch == '}')
+                ? -1
+                : 0;
+            if (depth < 0)
+                return false;
+        }
+        return depth == 0;
+    };
     auto const name = ::scl::type_short_name(closure);
-    EXPECT_FALSE(name.empty());
-    EXPECT_TRUE(::scl::type_name(closure).ends_with(name));
+    EXPECT_EQ(holds_parameter(name), holds_parameter(::scl::type_name(closure)));
+    EXPECT_TRUE(balanced(name));
 }
 
 #else
