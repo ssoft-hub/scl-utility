@@ -7,6 +7,7 @@
  */
 
 #include <scl/utility/attribute/indeterminate.h>
+#include <scl/utility/attribute/inline.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/meta/type.h>
 #include <scl/utility/type_traits/signature.h>
@@ -21,6 +22,19 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+
+/**
+ * @internal
+ * @def SCL_DETAIL_ENUM_JOIN_INLINE
+ * @ingroup scl_utility_runtime
+ * @brief How the join of the type and the number in ::scl::enum_string is inlined.
+ */
+// MSVC runs enum_string slower when the join is forced inline.
+#if defined(_MSC_VER) && !defined(__clang__)
+#define SCL_DETAIL_ENUM_JOIN_INLINE inline
+#else
+#define SCL_DETAIL_ENUM_JOIN_INLINE SCL_FORCE_INLINE
+#endif
 
 namespace scl::detail
 {
@@ -44,7 +58,8 @@ namespace scl::detail
     using enum_number_t = ::scl::detail::enum_number<::std::underlying_type_t<Enum>>::type;
 
     [[nodiscard]]
-    inline ::std::string enum_spelling(::std::string_view type, ::std::string_view number)
+    SCL_DETAIL_ENUM_JOIN_INLINE ::std::string
+    enum_spelling(::std::string_view type, ::std::string_view number)
     {
         ::std::string result;
         result.reserve(type.size() + 2 + number.size());
