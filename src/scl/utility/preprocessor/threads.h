@@ -38,7 +38,8 @@
  * Always defined, so interrogate it with `#if`: a misspelled name is then caught by `-Wundef`
  * instead of quietly evaluating to false, as it would under `#ifdef`.
  *
- * Code that has to build with a standard library built without threads branches on it:
+ * The cache of demangled names behind ::scl::type_name(obj) takes a lock only where it is `1`, so
+ * code that has to build with a single-thread library branches on the same macro:
  * @code
  * #include <scl/utility/preprocessor/threads.h>
  *

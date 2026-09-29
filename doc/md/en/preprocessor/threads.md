@@ -1,6 +1,7 @@
 # Thread support
 
-Reports whether the standard library supports threads.
+Reports whether the standard library supports threads, and gates the ScL code that takes a
+lock.
 
 - Header: `#include <scl/utility/preprocessor/threads.h>`
 
@@ -28,6 +29,9 @@ Expands to `1` when the standard library supports threads, `0` otherwise.
   macro exists.
 - **A report, not a switch:** defining it by hand does not add threads or take them away. It
   states how the standard library was built.
+- **What it gates in ScL:** the cache of demangled names behind `type_name(obj)` and
+  `type_short_name(obj)` takes a `std::mutex` only where it is `1`, and takes no lock where it is
+  `0` - see [`type_name`](../runtime/type_name.md).
 
 ### Examples
 

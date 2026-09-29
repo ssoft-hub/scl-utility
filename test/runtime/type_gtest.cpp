@@ -1,8 +1,11 @@
 #include <gtest_utils.h>
 
+#include <array>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <typeinfo>
+#include <vector>
 
 // Declares ::scl without RTTI, where the concepts below would otherwise name nothing.
 #include <scl/utility/meta/type.h>
@@ -96,6 +99,59 @@ TEST(TypeNameTest, Spelling)
     EXPECT_EQ(::scl::type_name(ns::TemplateType<int>{}), typeid(ns::TemplateType<int>).name());
 #endif
 }
+
+#if SCL_HAS_THREADS
+#include <thread>
+
+/**
+ * @test Verify that type_name gives one name in every thread, while threads start and end.
+ */
+TEST(TypeNameTest, SameNameInEveryThread)
+{
+    ns::NamespacedType const object{};
+    ::std::string const expected = ::scl::type_name(object);
+    for (int round = 0; round < 50; ++round)
+    {
+        ::std::array<::std::string, 4> names;
+        ::std::vector<::std::thread> threads;
+        for (auto & name : names)
+            threads.emplace_back([&name, &object] {
+                for (int call = 0; call < 100; ++call)
+                    name = ::scl::type_name(object);
+            });
+        for (auto & thread : threads)
+            thread.join();
+        for (auto const & name : names)
+            EXPECT_EQ(name, expected);
+    }
+}
+
+// MinGW can run the destructor of a thread_local object after the join of its thread returns.
+#ifndef __MINGW32__
+namespace
+{
+    struct NameAtThreadExit
+    {
+        ::std::string * name;
+
+        ~NameAtThreadExit() { *name = ::scl::type_name(ns::NamespacedType{}); }
+    };
+} // namespace
+
+/**
+ * @test Verify that type_name gives the name in a destructor that runs as its thread ends.
+ */
+TEST(TypeNameTest, NameAtThreadExit)
+{
+    ::std::string name;
+    ::std::thread{[&name] {
+        thread_local NameAtThreadExit const late{&name};
+        ::std::ignore = ::scl::type_name(0);
+    }}.join();
+    EXPECT_EQ(name, ::scl::type_name(ns::NamespacedType{}));
+}
+#endif
+#endif
 
 /**
  * @test Verify that scl::detail::demangle returns a name it cannot demangle unchanged.
