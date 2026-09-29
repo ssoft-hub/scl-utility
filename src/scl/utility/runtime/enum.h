@@ -6,6 +6,7 @@
  * @ingroup scl_utility_runtime
  */
 
+#include <scl/utility/attribute/indeterminate.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/meta/type.h>
 #include <scl/utility/type_traits/signature.h>
@@ -101,7 +102,7 @@ namespace scl
     ::std::string enum_string(E value)
     {
         using number = ::scl::detail::enum_number_t<E>;
-        ::std::array<char, ::std::numeric_limits<number>::digits10 + 2> digits{};
+        SCL_INDETERMINATE ::std::array<char, ::std::numeric_limits<number>::digits10 + 2> digits; // NOLINT(cppcoreguidelines-pro-type-member-init)
         auto const end =
             ::std::to_chars(digits.data(),
                 ::std::next(digits.data(), static_cast<::std::ptrdiff_t>(digits.size())), static_cast<number>(value))
