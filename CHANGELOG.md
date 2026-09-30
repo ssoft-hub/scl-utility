@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [hash] Refused a range of elements wider than a byte, a breaking change
 - [hash] Took the range of every hash function as a forwarding reference, so `fnv1a<T>(lvalue)` breaks
 - [hash] Made `noexcept` of every hash function, hasher and `key` follow the range it reads
+- [meta] Broke `type_short_name<T>()` for a pointer, an array, a function or a member pointer
 - Marked the entry points of `hash`, `meta`, `forward_like` and `overload_cast` `[[nodiscard]]`
 - Documented every public member in the reference, each with a detailed entry
 - Moved the Markdown guides from `doc/<language>/` to `doc/md/<language>/`
@@ -53,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [meta] Documented that MSVC keeps the class key in `type_name`, a name to show, not compare
 - [meta] Returned the generated name of a closure or an unnamed type from `type_short_name<T>()`
 - [meta] Stopped `type_short_name<T>()` returning `operator` for a name that holds `operator<`
+- [meta] Dropped `const`, `volatile` and a reference from the type `type_short_name<T>()` names
 - Included `hash.h` in `<scl/utility.h>`, which left the hash group out
 - Fixed the installation steps, which added a directory with no `CMakeLists.txt`
 

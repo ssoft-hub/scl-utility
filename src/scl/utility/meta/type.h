@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string_view>
+#include <type_traits>
 
 /**
  * @file
@@ -15,7 +16,8 @@
  *     types spell themselves. It is meant for display, not for identity - ::scl::type_key
  *     is what compares.
  * - ::scl::type_short_name<T>:
- *     Extracts only the unqualified identifier of the type T.
+ *     Extracts only the unqualified identifier of a class, union, enumeration or fundamental
+ *     type T, with const, volatile and a reference dropped.
  *     Strips all leading namespace and class scope qualifiers, the MSVC
  *     'class'/'struct'/'union'/'enum' prefix, and the template arguments; the name the
  *     compiler generates for a closure type or an unnamed class or enumeration is kept whole.
@@ -222,6 +224,12 @@ namespace scl::detail
         return (tmpl != ::std::string_view::npos) ? stripped.substr(0, tmpl) : stripped;
     }
 
+    // A pointer, an array, a function or a pointer to a member spells a declarator around the
+    // name, which short_name_from does not take apart.
+    template <typename T>
+    concept short_named = ::std::is_class_v<T> || ::std::is_union_v<T> || ::std::is_enum_v<T> ||
+        ::std::is_fundamental_v<T>;
+
     template <typename T>
     constexpr ::std::string_view type_name_pattern_text() noexcept
     {
@@ -320,15 +328,18 @@ namespace scl
      * @brief Retrieves the short name of the template type T at compile-time.
      * @ingroup scl_utility_meta
      *
-     * @tparam T The type whose name needs to be extracted.
-     * @return A ::std::string_view containing the name of the type without namespaces, class qualifiers, or template arguments;
-     *         for a closure type or an unnamed class or enumeration, the name the compiler generates.
+     * @tparam T The type whose name needs to be extracted: a class, a union, an enumeration or a
+     *         fundamental type, with or without const, volatile and a reference. A pointer, an
+     *         array, a function or a pointer to a member does not satisfy the constraint.
+     * @return A ::std::string_view containing the name of the type without const, volatile, a
+     *         reference, namespaces, class qualifiers, or template arguments; for a closure type or
+     *         an unnamed class or enumeration, the name the compiler generates.
      *
-     * @details This function first extracts the full name using ::scl::type_name<T>(),
-     * then strips all leading namespace and class scopes by finding the last '::' delimiter
-     * outside brackets, and finally removes template arguments by cutting off everything from '<'
-     * onwards. A name that opens with a bracket, which a compiler generates for a closure type or
-     * an unnamed class or enumeration, is kept whole.
+     * @details This function first extracts the full name using ::scl::type_name<T>() of the type
+     * with const, volatile and a reference removed, then strips all leading namespace and class
+     * scopes by finding the last '::' delimiter outside brackets, and finally removes template
+     * arguments by cutting off everything from '<' onwards. A name that opens with a bracket, which
+     * a compiler generates for a closure type or an unnamed class or enumeration, is kept whole.
      *
      * @code
      * namespace app::core {
@@ -341,8 +352,9 @@ namespace scl
     template <typename T>
     [[nodiscard]]
     constexpr auto type_short_name() noexcept
+        requires(detail::short_named<::std::remove_cvref_t<T>>)
     {
-        return detail::short_name_from(type_name<T>());
+        return detail::short_name_from(type_name<::std::remove_cvref_t<T>>());
     }
 
 } // namespace scl
