@@ -107,9 +107,9 @@ a name its slot does not hold. The slots against the lock alone:
 
 Two other forms of the cache are not used:
 
-- A map of each thread in `thread_local` storage is destroyed before every object the thread
-  created before its first call, and before every static object, so a destructor of such an object
-  cannot ask for a name. With GCC on MinGW, a process whose threads end while holding a
+- A `std::unordered_map` of each thread, declared `thread_local`, is destroyed before every object
+  the thread created before its first call, and before every static object, so a destructor of such
+  an object cannot ask for a name. With GCC on MinGW, a process whose threads end while holding a
   `thread_local` object with a destructor also crashes.
 - `std::shared_mutex` in place of `std::mutex` makes a call 8-25% slower on Linux and 1.9 to 2.4
   times as slow with GCC 13.1: a shared lock costs more than a plain one for a lookup this short.
