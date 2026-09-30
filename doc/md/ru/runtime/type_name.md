@@ -7,18 +7,21 @@
 
 - Заголовок: `#include <scl/utility/runtime/type.h>`
 - Оба шаблона функций объявлены только там, где макрос
-  [`SCL_HAS_RTTI`](../preprocessor/rtti.md) равен `1`.
+  [`SCL_HAS_RTTI`](../preprocessor/rtti.md) равен `1`. Код для случая, когда он равен `0`,
+  приведён в разделе [Без RTTI](index.md#без-rtti) страницы группы.
 - Там, где макрос [`SCL_HAS_THREADS`](../preprocessor/threads.md) равен `1`, оба шаблона функций
   можно вызывать из нескольких потоков одновременно.
-- Код для остальных случаев приведён в разделе [Без RTTI](index.md#без-rtti) страницы группы.
 
 ```cpp
-template <typename T>
-[[nodiscard]] ::std::string type_name(T const & obj);
+namespace scl
+{
+    template <typename T>
+    [[nodiscard]] ::std::string type_name(T const & obj);
 
-template <typename T>
-[[nodiscard]] ::std::string type_short_name(T const & obj)
-    requires(::scl::detail::short_named<T>);
+    template <typename T>
+    [[nodiscard]] ::std::string type_short_name(T const & obj)
+        requires(::scl::detail::short_named<T>);
+}
 ```
 
 ## Семантика
@@ -81,7 +84,7 @@ namespace app
     auto const dynamic_name = scl::type_name(*pointer);   // app::Derived, or struct app::Derived
 ```
 
-Полное и короткое имя объекта специализации шаблона класса во время выполнения:
+Полное и короткое имя типа объекта специализации шаблона класса во время выполнения:
 
 <!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp short -->
 ```cpp

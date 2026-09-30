@@ -7,19 +7,21 @@ classes, without template arguments, and without a prefix such as `class` or `st
 
 - Header: `#include <scl/utility/runtime/type.h>`
 - Both function templates are declared only where the macro
-  [`SCL_HAS_RTTI`](../preprocessor/rtti.md) is `1`.
+  [`SCL_HAS_RTTI`](../preprocessor/rtti.md) is `1`. The code a caller writes where it is `0` is
+  given in the section [Without RTTI](index.md#without-rtti) of the group page.
 - Where the macro [`SCL_HAS_THREADS`](../preprocessor/threads.md) is `1`, both function templates
   may be called from several threads at once.
-- The code a caller writes otherwise is given in the section [Without RTTI](index.md#without-rtti)
-  of the group page.
 
 ```cpp
-template <typename T>
-[[nodiscard]] ::std::string type_name(T const & obj);
+namespace scl
+{
+    template <typename T>
+    [[nodiscard]] ::std::string type_name(T const & obj);
 
-template <typename T>
-[[nodiscard]] ::std::string type_short_name(T const & obj)
-    requires(::scl::detail::short_named<T>);
+    template <typename T>
+    [[nodiscard]] ::std::string type_short_name(T const & obj)
+        requires(::scl::detail::short_named<T>);
+}
 ```
 
 ## Semantics
@@ -80,7 +82,8 @@ name at run time is that of the dynamic type:
     auto const dynamic_name = scl::type_name(*pointer);   // app::Derived, or struct app::Derived
 ```
 
-The full and the short name at run time of an object of a specialization of a class template:
+The full and the short name at run time of the type of an object of a specialization of a class
+template:
 
 <!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp short -->
 ```cpp

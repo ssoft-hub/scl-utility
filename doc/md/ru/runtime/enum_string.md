@@ -9,18 +9,21 @@
 - Заголовок: `#include <scl/utility/runtime/enum.h>`
 
 ```cpp
-template <::scl::concepts::enum_type E>
-[[nodiscard]] ::std::string enum_string(E value);
-
 namespace scl::concepts
 {
     template <typename Format, typename Enum>
     concept enum_string_format = /* см. раздел "Функциональный объект" ниже */;
 }
 
-template <::scl::concepts::enum_type E, typename Format>
-[[nodiscard]] ::std::string enum_string(E value, Format && format)
-    requires ::scl::concepts::enum_string_format<Format, E>;
+namespace scl
+{
+    template <::scl::concepts::enum_type E>
+    [[nodiscard]] ::std::string enum_string(E value);
+
+    template <::scl::concepts::enum_type E, typename Format>
+    [[nodiscard]] ::std::string enum_string(E value, Format && format)
+        requires ::scl::concepts::enum_string_format<Format, E>;
+}
 ```
 
 ## Семантика
@@ -51,8 +54,8 @@ template <::scl::concepts::enum_type E, typename Format>
 Если у функционального объекта есть единственная сигнатура, тип его первого параметра определяется
 с помощью шаблонного типа `scl::signature::parameter_t`. Этот тип без ссылки и cv-квалификаторов
 должен быть целым типом той же знаковости, что и базовый тип, с шириной не меньше ширины базового
-типа. Тип `bool` и символьные типы считаются целыми. Ширина равна числу битов значения, поэтому
-ширина типа `bool` равна одному биту.
+типа. Тип `bool` и символьные типы считаются целыми. Ширина равна числу битов значения,
+поэтому ширина типа `bool` равна одному биту.
 
 | Базовый тип | Тип параметра | Вызов |
 |---|---|---|
@@ -68,8 +71,8 @@ template <::scl::concepts::enum_type E, typename Format>
 Для такого функционального объекта, а также для функции со списком параметров `(...)`, у которой нет
 первого параметра, проверяются только вызов и тип его результата.
 
-Все эти условия собраны в концепте `scl::concepts::enum_string_format<Format, E>`, поэтому
-функциональный объект можно проверить до передачи в шаблон функции `scl::enum_string`.
+Все эти условия собраны в концепте `scl::concepts::enum_string_format<Format, E>`,
+поэтому функциональный объект можно проверить до передачи в шаблон функции `scl::enum_string`.
 
 ## Примеры
 
