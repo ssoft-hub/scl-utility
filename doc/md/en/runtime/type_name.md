@@ -6,9 +6,10 @@ template `type_short_name(obj)` returns the same name without the qualifiers of 
 classes, without template arguments, and without a prefix such as `class` or `struct`.
 
 - Header: `#include <scl/utility/runtime/type.h>`
-- Both function templates are declared only where the macro `SCL_HAS_RTTI` is `1`.
-- Where the macro `SCL_HAS_THREADS` is `1`, both function templates may be called from several
-  threads at once.
+- Both function templates are declared only where the macro
+  [`SCL_HAS_RTTI`](../preprocessor/rtti.md) is `1`.
+- Where the macro [`SCL_HAS_THREADS`](../preprocessor/threads.md) is `1`, both function templates
+  may be called from several threads at once.
 - The code a caller writes otherwise is given in the section [Without RTTI](index.md#without-rtti)
   of the group page.
 
@@ -97,5 +98,9 @@ The full and the short name at run time of an object of a specialization of a cl
 
 ## See also
 
-- [Runtime](index.md)
+- [`scl::type_name<T>()`](../meta/type_name.md), the name at compile time
 - [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp)
+
+---
+
+Previous: [Runtime](index.md) | Next: [`enum_string(value)`](enum_string.md)

@@ -6,9 +6,10 @@
 без аргументов шаблона и без префикса, например `class` или `struct`.
 
 - Заголовок: `#include <scl/utility/runtime/type.h>`
-- Оба шаблона функций объявлены только там, где макрос `SCL_HAS_RTTI` равен `1`.
-- Там, где макрос `SCL_HAS_THREADS` равен `1`, оба шаблона функций можно вызывать из нескольких
-  потоков одновременно.
+- Оба шаблона функций объявлены только там, где макрос
+  [`SCL_HAS_RTTI`](../preprocessor/rtti.md) равен `1`.
+- Там, где макрос [`SCL_HAS_THREADS`](../preprocessor/threads.md) равен `1`, оба шаблона функций
+  можно вызывать из нескольких потоков одновременно.
 - Код для остальных случаев приведён в разделе [Без RTTI](index.md#без-rtti) страницы группы.
 
 ```cpp
@@ -97,5 +98,9 @@ namespace app
 
 ## Смотрите также
 
-- [Runtime](index.md)
+- [`scl::type_name<T>()`](../meta/type_name.md), имя на этапе компиляции
 - [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp)
+
+---
+
+Назад: [Runtime](index.md) | Далее: [`enum_string(value)`](enum_string.md)
