@@ -334,4 +334,7 @@ The forced helper of the join trades 28 bytes for each call site of `enum_string
 for its time. A build that counts bytes before nanoseconds should predefine `SCL_FORCE_INLINE` as
 `inline`, which gives the bytes back for every function the module forces inline.
 
-[Back to the group](index.md)
+---
+
+Previous: [`enum_string(value)`](enum_string.md) | [Back to the group](index.md) |
+[Russian documentation](../../ru/runtime/benchmark.md)
