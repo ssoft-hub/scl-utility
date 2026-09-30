@@ -33,4 +33,9 @@ std::string name_of([[maybe_unused]] T const & object)
 }
 ```
 
+## Performance
+
+What one call costs, and which optimisation attribute the group carries:
+[Runtime Benchmarks](benchmark.md).
+
 [Back to the overview](../Main.md)

@@ -7,6 +7,8 @@ classes, without template arguments, and without a prefix such as `class` or `st
 
 - Header: `#include <scl/utility/runtime/type.h>`
 - Both function templates are declared only where the macro `SCL_HAS_RTTI` is `1`.
+- Where the macro `SCL_HAS_THREADS` is `1`, both function templates may be called from several
+  threads at once.
 - The code a caller writes otherwise is given in the section [Without RTTI](index.md#without-rtti)
   of the group page.
 
@@ -28,7 +30,9 @@ template <typename T>
   and MinGW, the name is demangled with the function `abi::__cxa_demangle`. Elsewhere, as with
   MSVC and with Clang on the MSVC library, the result of `typeid().name()` is returned unchanged,
   with a prefix such as `class` or `struct` where that name carries one. Where demangling fails,
-  the name is returned unchanged.
+  the name is returned unchanged. Where the name is demangled, each type is demangled once, and its
+  name is kept until the program ends, so a destructor that runs after `main` returns can call the
+  function templates as well.
 - **What the results are for:** the results of both function templates are for display, such as a
   log line or an error message, not for identity: two distinct types, such as classes of one name
   in the unnamed namespaces of two translation units, can have one name. The spelling differs

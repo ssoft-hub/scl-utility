@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [meta] Added `scl::type_key`, an identity of a type that needs no RTTI
 - [meta] Added `scl::is_tu_local`, telling a type declared in an anonymous namespace
 - [preprocessor] Added `SCL_HAS_RTTI` and `SCL_HAS_EXCEPTIONS`, telling what a build enables
+- [preprocessor] Added `SCL_HAS_THREADS`, telling whether the standard library supports threads
 - [runtime] Added `scl::type_name(object)` and `type_short_name(object)` for a dynamic type
 - [runtime] Added `scl::enum_string`, spelling an enumeration value as `Type::N`, `N` in any form
 - [runtime] Added `scl::concepts::enum_string_format`, stating the format `scl::enum_string` takes

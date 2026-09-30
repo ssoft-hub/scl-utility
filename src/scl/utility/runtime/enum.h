@@ -6,25 +6,34 @@
  * @ingroup scl_utility_runtime
  */
 
+#include <scl/utility/attribute/indeterminate.h>
+#include <scl/utility/attribute/inline.h>
 #include <scl/utility/concepts/type_category.h>
 #include <scl/utility/meta/type.h>
 #include <scl/utility/type_traits/signature.h>
 
+#include <array>
+#include <charconv>
 #include <concepts>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <version>
 
-#ifdef __cpp_lib_format
-#include <format>
+/**
+ * @internal
+ * @def SCL_DETAIL_ENUM_JOIN_INLINE
+ * @ingroup scl_utility_runtime
+ * @brief How the join of the type and the number in ::scl::enum_string is inlined.
+ */
+// MSVC runs enum_string slower when the join is forced inline.
+#if defined(_MSC_VER) && !defined(__clang__)
+#define SCL_DETAIL_ENUM_JOIN_INLINE inline
 #else
-#include <array>
-#include <charconv>
-#include <iterator>
+#define SCL_DETAIL_ENUM_JOIN_INLINE SCL_FORCE_INLINE
 #endif
 
 namespace scl::detail
@@ -48,25 +57,17 @@ namespace scl::detail
     template <typename Enum>
     using enum_number_t = ::scl::detail::enum_number<::std::underlying_type_t<Enum>>::type;
 
-    // A template on the enumeration type, so that a unit taking the other path of the standard
-    // library with an enumeration type of its own instantiates a function of its own rather than
-    // one sharing a name with this one.
-    template <typename Enum>
-    struct enum_decimal
+    [[nodiscard]]
+    SCL_DETAIL_ENUM_JOIN_INLINE ::std::string
+    enum_spelling(::std::string_view type, ::std::string_view number)
     {
-        [[nodiscard]]
-        ::std::string operator()(::scl::detail::enum_number_t<Enum> number) const
-        {
-#ifdef __cpp_lib_format
-            return ::std::format("{}", number);
-#else
-            ::std::array<char, 32> buf{};
-            ::std::to_chars(buf.data(),
-                ::std::next(buf.data(), static_cast<::std::ptrdiff_t>(buf.size())), number);
-            return ::std::string{buf.data()};
-#endif
-        }
-    };
+        ::std::string result;
+        result.reserve(type.size() + 2 + number.size());
+        result += type;
+        result += "::";
+        result += number;
+        return result;
+    }
 
 } // namespace scl::detail
 
@@ -105,23 +106,25 @@ namespace scl
     ::std::string enum_string(E value, Format && format)
         requires ::scl::concepts::enum_string_format<Format, E>
     {
-        auto const type = ::scl::type_short_name<E>();
         auto const numeric = static_cast<::scl::detail::enum_number_t<E>>(value);
         auto && spelled = ::std::invoke(::std::forward<Format>(format), numeric);
-        ::std::string_view const number = ::std::forward<decltype(spelled)>(spelled);
-        ::std::string result;
-        result.reserve(type.size() + 2 + number.size());
-        result += type;
-        result += "::";
-        result += number;
-        return result;
+        constexpr auto type = ::scl::type_short_name<E>();
+        return ::scl::detail::enum_spelling(type, ::std::forward<decltype(spelled)>(spelled));
     }
 
     template <::scl::concepts::enum_type E>
     [[nodiscard]]
     ::std::string enum_string(E value)
     {
-        return ::scl::enum_string(value, ::scl::detail::enum_decimal<E>{});
+        using number = ::scl::detail::enum_number_t<E>;
+        SCL_INDETERMINATE ::std::array<char, ::std::numeric_limits<number>::digits10 + 2> digits; // NOLINT(cppcoreguidelines-pro-type-member-init)
+        auto const end =
+            ::std::to_chars(digits.data(),
+                ::std::next(digits.data(), static_cast<::std::ptrdiff_t>(digits.size())), static_cast<number>(value))
+                .ptr;
+        constexpr auto type = ::scl::type_short_name<E>();
+        return ::scl::detail::enum_spelling(type,
+            ::std::string_view{digits.data(), static_cast<::std::size_t>(::std::distance(digits.data(), end))});
     }
 
 } // namespace scl
@@ -140,8 +143,7 @@ namespace scl
  * compiler generates, which differs between compilers and may change in a later version of the
  * module. The part `N` is the number @p value holds in its underlying type, with the sign of that
  * type. For a character or `bool` underlying type, `N` is a number as well. A value no enumeration
- * constant has is spelled the same way as the value of a constant. The digits are the same whether
- * or not the standard library provides the function template `std::format`.
+ * constant has is spelled the same way as the value of a constant.
  *
  * @snippet runtime/enum_string/runtime_enum_string_example.cpp named
  * @snippet runtime/enum_string/runtime_enum_string_example.cpp unnamed
