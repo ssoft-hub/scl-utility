@@ -191,8 +191,12 @@ namespace scl
  *
  * @tparam T Static type of the object, deduced.
  * @param obj Object whose type is named.
- * @return The unqualified identifier of that type; for a closure type or an unnamed class or
- *         enumeration, the name the compiler generates for it.
+ * @return For a class or an enumeration type, the unqualified identifier of that type; for a
+ *         closure type or an unnamed class or enumeration, the name the compiler generates for it.
+ *         For any other type, its name with everything through the last `::` outside brackets,
+ *         a leading `class` or `struct` and everything from the first `<` removed, which need not
+ *         be an identifier: `Derived*` with GCC for `app::Derived *`, but `Task` for
+ *         `app::Task<int> *`.
  *
  * @warning The result is for display, as the result of ::scl::type_name(obj) is: its spelling
  * differs between compilers and may change in a later version of the module.

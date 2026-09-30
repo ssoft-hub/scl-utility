@@ -42,7 +42,10 @@ template <typename T>
   `std::type_index(typeid(obj))` identifies the type the function templates name.
 - **Short name:** for the type `app::Task<int>` the function template `type_short_name(obj)`
   returns `Task`. For a closure type or an unnamed class or enumeration it returns the name the
-  compiler generates, such as `<lambda_1>` with MSVC.
+  compiler generates, such as `<lambda_1>` with MSVC. For any other type the result is its name
+  with everything through the last `::` outside brackets, a leading `class` or `struct` and
+  everything from the first `<` removed, which need not be an identifier: `Derived*` with GCC for
+  `app::Derived *`, but `Task` for `app::Task<int> *`.
 
 ## Examples
 
