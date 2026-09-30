@@ -136,6 +136,7 @@ namespace scl
     template <typename T>
     [[nodiscard]]
     ::std::string type_short_name(T const & obj)
+        requires(::scl::detail::short_named<T>)
     {
         return ::std::string{
             ::scl::detail::short_name_from(::scl::detail::demangled_type_name(typeid(obj)))};
@@ -189,10 +190,14 @@ namespace scl
  *
  * @snippet runtime/type_name/runtime_type_name_example.cpp short
  *
- * @tparam T Static type of the object, deduced.
+ * @tparam T Static type of the object, deduced: a class, a union, an enumeration or a fundamental
+ *         type. A pointer, an array, a function or a pointer to a member does not satisfy the
+ *         constraint.
  * @param obj Object whose type is named.
- * @return The unqualified identifier of that type; for a closure type or an unnamed class or
- *         enumeration, the name the compiler generates for it.
+ * @return For a class, a union or an enumeration type, the unqualified identifier of that type; for
+ *         a closure type or an unnamed class or enumeration, the name the compiler generates for it;
+ *         for a fundamental type, the name the compiler spells it with, without a namespace
+ *         qualifier, such as `int`.
  *
  * @warning The result is for display, as the result of ::scl::type_name(obj) is: its spelling
  * differs between compilers and may change in a later version of the module.

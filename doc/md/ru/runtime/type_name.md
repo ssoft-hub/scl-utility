@@ -17,7 +17,8 @@ template <typename T>
 [[nodiscard]] ::std::string type_name(T const & obj);
 
 template <typename T>
-[[nodiscard]] ::std::string type_short_name(T const & obj);
+[[nodiscard]] ::std::string type_short_name(T const & obj)
+    requires(::scl::detail::short_named<T>);
 ```
 
 ## Семантика
@@ -42,7 +43,10 @@ template <typename T>
   однозначно определяется значением `std::type_index(typeid(obj))`.
 - **Короткое имя:** для типа `app::Task<int>` шаблон функции `type_short_name(obj)` возвращает
   `Task`. Для типа замыкания, безымянного класса или перечисления шаблон функции возвращает имя,
-  которое создаёт компилятор, например `<lambda_1>` у MSVC.
+  которое создаёт компилятор, например `<lambda_1>` у MSVC, а для фундаментального типа
+  возвращает имя, которым его записывает компилятор, без квалификатора пространства имён,
+  например `int`. Не компилируется вызов, аргумент которого является указателем, массивом,
+  функцией или указателем на член.
 
 ## Примеры
 

@@ -46,6 +46,17 @@ namespace ns
     template <typename T>
     struct TemplateType
     {};
+
+    union Number
+    {
+        int whole;
+        float fraction;
+    };
+
+    enum class Shade
+    {
+        dark,
+    };
 } // namespace ns
 
 struct PolymorphicBase
@@ -168,6 +179,42 @@ TEST(TypeShortNameTest, QualifiersStripped)
 {
     EXPECT_EQ(::scl::type_short_name(ns::NamespacedType{}), "NamespacedType");
     EXPECT_EQ(::scl::type_short_name(ns::Outer::Inner{}), "Inner");
+}
+
+/**
+ * @test Verify that type_short_name takes an object of a class, a union, an enumeration or a
+ *       fundamental type.
+ */
+TEST(TypeShortNameTest, TakesClassUnionEnumerationOrFundamental)
+{
+    STATIC_EXPECT_TRUE(runtime_type_short_name_declared<ns::NamespacedType>);
+    STATIC_EXPECT_TRUE(runtime_type_short_name_declared<ns::Number>);
+    STATIC_EXPECT_TRUE(runtime_type_short_name_declared<ns::Shade>);
+    STATIC_EXPECT_TRUE(runtime_type_short_name_declared<int>);
+    STATIC_EXPECT_TRUE(runtime_type_short_name_declared<ns::NamespacedType volatile>);
+}
+
+/**
+ * @test Verify that type_short_name names an object of a union, an enumeration or a fundamental
+ *       type by its identifier.
+ */
+TEST(TypeShortNameTest, UnionEnumerationAndFundamental)
+{
+    EXPECT_EQ(::scl::type_short_name(ns::Number{}), "Number");
+    EXPECT_EQ(::scl::type_short_name(ns::Shade::dark), "Shade");
+    EXPECT_EQ(::scl::type_short_name(1), "int");
+}
+
+/**
+ * @test Verify that type_short_name refuses an object whose type is spelled with a declarator
+ *       around a name.
+ */
+TEST(TypeShortNameTest, RefusesDeclarator)
+{
+    STATIC_EXPECT_FALSE(runtime_type_short_name_declared<ns::NamespacedType *>);
+    STATIC_EXPECT_FALSE(runtime_type_short_name_declared<ns::NamespacedType[2]>);
+    STATIC_EXPECT_FALSE(runtime_type_short_name_declared<void(ns::NamespacedType)>);
+    STATIC_EXPECT_FALSE(runtime_type_short_name_declared<int ns::NamespacedType::*>);
 }
 
 /**
