@@ -107,6 +107,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 | Компонент | Заголовок | Описание |
 |-----------|-----------|----------|
+| [Runtime](runtime/index.md) | `<scl/utility/runtime.h>` | Какой шаблон функции отвечает на какой вопрос, код без RTTI и замеры |
 | [type_name(obj)](runtime/type_name.md) | `<scl/utility/runtime/type.h>` | Имя типа через RTTI с поддержкой полиморфизма |
 | [enum_string(v)](runtime/enum_string.md) | `<scl/utility/runtime/enum.h>` | Значение перечисления как `"Type::N"`; RTTI не требуется |
 

@@ -177,6 +177,7 @@ namespace scl
  * identifies the type the function template names.
  *
  * @note Declared only where the macro `SCL_HAS_RTTI` is `1`.
+ * @note Where the macro `SCL_HAS_THREADS` is `1`, it may be called from several threads at once.
  */
 
 /**
@@ -197,6 +198,7 @@ namespace scl
  * differs between compilers and may change in a later version of the module.
  *
  * @note Declared only where the macro `SCL_HAS_RTTI` is `1`.
+ * @note Where the macro `SCL_HAS_THREADS` is `1`, it may be called from several threads at once.
  */
 
 #endif // SCL_HAS_RTTI || DOXYGEN
