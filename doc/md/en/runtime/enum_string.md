@@ -9,18 +9,21 @@ place of `N` unchanged.
 - Header: `#include <scl/utility/runtime/enum.h>`
 
 ```cpp
-template <::scl::concepts::enum_type E>
-[[nodiscard]] ::std::string enum_string(E value);
-
 namespace scl::concepts
 {
     template <typename Format, typename Enum>
     concept enum_string_format = /* see Function object below */;
 }
 
-template <::scl::concepts::enum_type E, typename Format>
-[[nodiscard]] ::std::string enum_string(E value, Format && format)
-    requires ::scl::concepts::enum_string_format<Format, E>;
+namespace scl
+{
+    template <::scl::concepts::enum_type E>
+    [[nodiscard]] ::std::string enum_string(E value);
+
+    template <::scl::concepts::enum_type E, typename Format>
+    [[nodiscard]] ::std::string enum_string(E value, Format && format)
+        requires ::scl::concepts::enum_string_format<Format, E>;
+}
 ```
 
 ## Semantics
