@@ -46,9 +46,9 @@ lambda declared with the specifier `mutable` is accepted too. The overload passe
 constant lvalue of an integer type of the size and signedness of the underlying type, or of the
 type `unsigned char` for the underlying type `bool`.
 
-The function object must return a value of any type implicitly convertible to `std::string_view`:
-an object of the type `std::string` or `std::string_view`, a reference to one, or a pointer to a
-null-terminated string.
+The function object must return a value of any type implicitly convertible to `std::string_view`,
+such as an object of the type `std::string` or `std::string_view`, a reference to one, or a pointer
+to a null-terminated string.
 
 Where the function object has a single signature, the type of its first parameter is determined
 with the alias template `scl::signature::parameter_t`. That type, with the reference and the
@@ -152,7 +152,7 @@ static_assert(!scl::concepts::enum_string_format<decltype(narrow), net::Status>)
 | Evaluated | at compile time | at run time |
 | Returns | `std::string_view` | `std::string` |
 | Result holds | the constant, `Color::Red` | the number, `Color::1` |
-| Takes | a constant named at compile time | any value |
+| Takes | a constant known at compile time | any value |
 
 ## See also
 

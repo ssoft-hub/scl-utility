@@ -99,7 +99,7 @@ template:
 |---|---|---|
 | Evaluated | at compile time | at run time |
 | Returns | `std::string_view` | `std::string` |
-| Names | the type written at the call site | the dynamic type of a polymorphic object |
+| Which type | the one written at the call site | the dynamic type of a polymorphic object, the static type of any other |
 | RTTI | not required | required |
 
 ## See also

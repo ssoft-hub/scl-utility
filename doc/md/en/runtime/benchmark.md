@@ -5,11 +5,11 @@
 - Timing target: `utility_runtime_gbench`
 - Size target: `utility_runtime_size`
 
-## What this page answers
+## Scope
 
-What one call of each function template of the group costs, what the cost rests on, and which
-optimisation attribute earns a place in the code of the group. An attribute that speeds a call up
-can grow the code, so the size of the part of the group a bare-metal build admits is measured
+What one call of each function template of the group costs, what sets the cost, and which
+optimisation attribute is worth applying in the code of the group. An attribute that speeds a call
+up can grow the code, so the size of the part of the group a bare-metal build admits is measured
 beside the time.
 
 ## Method
@@ -73,7 +73,7 @@ The median time of one call, in nanoseconds:
 MSVC and Clang on the MSVC library have no `<cxxabi.h>`, so there `type_name(obj)` returns the
 name `typeid` gives and demangles nothing.
 
-## What the cost rests on
+## What sets the cost
 
 | Property | The alternative, measured |
 |---|---|
@@ -235,7 +235,7 @@ On every function of the group at once, the helper of the join included:
 | `type_short_name_template` | **+5.1%** | **-8.3%** | **-2.4%** |
 
 On the scan, Clang and MSVC gain 5-14% on `type_short_name(obj)` and GCC nothing, for about 330
-bytes of x86-64 code at each call site past the first, and each type a caller names is a call site
+bytes of x86-64 code at each call site past the first, and each type a caller passes is a call site
 of its own; the size is measured over 1 to 8 call sites with GCC 13.1 at `-Os`. That is not
 a trade the library makes on the caller's behalf: a caller who wants the gain for one hot site
 forces a wrapper of their own inline.
