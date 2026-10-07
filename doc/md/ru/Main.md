@@ -360,4 +360,4 @@ int main()
 
 ## См. также
 
-- [English documentation](../en/Main.md)
+- [English](../en/Main.md)

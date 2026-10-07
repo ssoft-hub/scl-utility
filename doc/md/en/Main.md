@@ -359,4 +359,4 @@ int main()
 
 ## See also
 
-- [Russian documentation](../ru/Main.md)
+- [Русский](../ru/Main.md)
