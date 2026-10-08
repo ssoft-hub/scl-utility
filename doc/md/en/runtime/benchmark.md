@@ -58,7 +58,8 @@ demangled names.
 
 ## Cost per call
 
-The median time of one call, in nanoseconds:
+The median time of one call of the code as shipped, with every attribute it applies and the cache
+of names, in nanoseconds:
 
 | Case | GCC 13.1 | Clang 22.1 | MSVC 19.44 | GCC 16.0.1, Linux | Clang 22.1, Linux |
 |---|---|---|---|---|---|
