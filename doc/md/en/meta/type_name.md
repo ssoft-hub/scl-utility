@@ -95,15 +95,21 @@ to be recognized rather than shown, [`type_key`](type_key.md) is the facility fo
 Retrieves only the terminal identifier of the type `T`, stripping all namespace and class qualifiers.
 
 - Header: `#include <scl/utility/meta/type.h>`
-- Declaration: `template <typename T> constexpr std::string_view type_short_name() noexcept;`
+- Declaration: `template <typename T> constexpr std::string_view type_short_name() noexcept`,
+  constrained as the description states
 
 ### Description
 
-This function processes the result of `type_name<T>()` and removes everything up to the last `::`
-delimiter outside brackets. Additionally, `struct`/`class`/`union`/`enum` prefixes (present on MSVC)
-and template arguments are stripped, so the result is the bare identifier. For a closure type or an
-unnamed class or enumeration the result is the name the compiler generates, such as `<lambda_1>`
-with MSVC.
+The type `T`, with `const`, `volatile` and a reference dropped, is a class, a union, an
+enumeration or a fundamental type. A pointer, an array, a function or a pointer to a member does
+not satisfy the constraint of the declaration. The name is taken from the type without `const`,
+`volatile` and a reference, so `type_short_name<app::Task const &>()` is `Task`.
+
+This function processes the result of `type_name` for that type and removes everything up to the
+last `::` delimiter outside brackets. Additionally, `struct`/`class`/`union`/`enum` prefixes
+(present on MSVC) and template arguments are stripped, so the result is the bare identifier. For a
+closure type or an unnamed class or enumeration the result is the name the compiler generates, such
+as `<lambda_1>` with MSVC.
 
 ### Example
 

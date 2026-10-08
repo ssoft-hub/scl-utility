@@ -8,17 +8,17 @@ type holds.
 
 | Question | Group and function template | RTTI |
 |---|---|---|
-| What is the name of the type `T` written here? | meta: `scl::type_name<T>()` | not required |
+| What is the name of the type `T` written here? | meta: [`scl::type_name<T>()`](../meta/type_name.md) | not required |
 | What is the name of the type this polymorphic object was created as? | runtime: [`scl::type_name(obj)`](type_name.md) | required |
-| What is the name of the enumeration constant `V`? | meta: `scl::enum_name<V>()` | not required |
+| What is the name of the enumeration constant `V`? | meta: [`scl::enum_name<V>()`](../meta/enum_name.md) | not required |
 | Which value does a variable of an enumeration type hold? | runtime: [`scl::enum_string(value)`](enum_string.md) | not required |
 
 ## Without RTTI
 
 The function templates `type_name(obj)` and `type_short_name(obj)` are declared only where the
-macro `SCL_HAS_RTTI` is `1`. The function template `enum_string` is declared with RTTI and without
-it. A caller whose code is built both ways should test the macro, which is always defined, and take
-the name of the static type where RTTI is disabled:
+macro [`SCL_HAS_RTTI`](../preprocessor/rtti.md) is `1`. The function template `enum_string` is
+declared with RTTI and without it. A caller whose code is built both ways should test the macro,
+which is always defined, and take the name of the static type where RTTI is disabled:
 
 <!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp no_rtti -->
 ```cpp
@@ -33,9 +33,22 @@ std::string name_of([[maybe_unused]] T const & object)
 }
 ```
 
-## Performance
+## Documentation of the group
 
-What one call costs, and which optimisation attribute the group carries:
-[Runtime Benchmarks](benchmark.md).
+### Function templates
 
-[Back to the overview](../Main.md)
+- [`enum_string(value)`](enum_string.md) - a value of an enumeration type as `Type::N`
+- [`type_name(obj)`](type_name.md) - the full and the short name of the type of an object
+
+### Benchmarks
+
+- [Runtime Benchmarks](benchmark.md) - the cost of a call and the optimisation attributes applied
+
+### Examples
+
+- [`example/runtime/enum_string`](../../../../example/runtime/enum_string/runtime_enum_string_example.cpp)
+- [`example/runtime/type_name`](../../../../example/runtime/type_name/runtime_type_name_example.cpp)
+
+---
+
+Next: [`enum_string(value)`](enum_string.md) | [Back to the main page](../Main.md)

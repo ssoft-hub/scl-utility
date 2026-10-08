@@ -5,11 +5,11 @@
 - Timing target: `utility_runtime_gbench`
 - Size target: `utility_runtime_size`
 
-## What this page answers
+## Scope
 
-What one call of each function template of the group costs, what the cost rests on, and which
-optimisation attribute earns a place in the code of the group. An attribute that speeds a call up
-can grow the code, so the size of the part of the group a bare-metal build admits is measured
+What one call of each function template of the group costs, what sets the cost, and which
+optimisation attribute is worth applying in the code of the group. An attribute that speeds a call
+up can grow the code, so the size of the part of the group a bare-metal build admits is measured
 beside the time.
 
 ## Method
@@ -58,7 +58,8 @@ demangled names.
 
 ## Cost per call
 
-The median time of one call, in nanoseconds:
+The median time of one call of the code as shipped, with every attribute it applies and the cache
+of names, in nanoseconds:
 
 | Case | GCC 13.1 | Clang 22.1 | MSVC 19.44 | GCC 16.0.1, Linux | Clang 22.1, Linux |
 |---|---|---|---|---|---|
@@ -73,7 +74,7 @@ The median time of one call, in nanoseconds:
 MSVC and Clang on the MSVC library have no `<cxxabi.h>`, so there `type_name(obj)` returns the
 name `typeid` gives and demangles nothing.
 
-## What the cost rests on
+## What sets the cost
 
 | Property | The alternative, measured |
 |---|---|
@@ -107,9 +108,9 @@ a name its slot does not hold. The slots against the lock alone:
 
 Two other forms of the cache are not used:
 
-- A map of each thread in `thread_local` storage is destroyed before every object the thread
-  created before its first call, and before every static object, so a destructor of such an object
-  cannot ask for a name. With GCC on MinGW, a process whose threads end while holding a
+- A `std::unordered_map` of each thread, declared `thread_local`, is destroyed before every object
+  the thread created before its first call, and before every static object, so a destructor of such
+  an object cannot ask for a name. With GCC on MinGW, a process whose threads end while holding a
   `thread_local` object with a destructor also crashes.
 - `std::shared_mutex` in place of `std::mutex` makes a call 8-25% slower on Linux and 1.9 to 2.4
   times as slow with GCC 13.1: a shared lock costs more than a plain one for a lookup this short.
@@ -235,7 +236,7 @@ On every function of the group at once, the helper of the join included:
 | `type_short_name_template` | **+5.1%** | **-8.3%** | **-2.4%** |
 
 On the scan, Clang and MSVC gain 5-14% on `type_short_name(obj)` and GCC nothing, for about 330
-bytes of x86-64 code at each call site past the first, and each type a caller names is a call site
+bytes of x86-64 code at each call site past the first, and each type a caller passes is a call site
 of its own; the size is measured over 1 to 8 call sites with GCC 13.1 at `-Os`. That is not
 a trade the library makes on the caller's behalf: a caller who wants the gain for one hot site
 forces a wrapper of their own inline.
@@ -334,4 +335,7 @@ The forced helper of the join trades 28 bytes for each call site of `enum_string
 for its time. A build that counts bytes before nanoseconds should predefine `SCL_FORCE_INLINE` as
 `inline`, which gives the bytes back for every function the module forces inline.
 
-[Back to the group](index.md)
+---
+
+Previous: [`type_name(obj)`](type_name.md) | [Back to the group](index.md) |
+[Back to the main page](../Main.md)

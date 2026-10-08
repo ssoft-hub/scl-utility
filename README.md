@@ -399,7 +399,7 @@ source of the snippets in the Quick start above:
 ## Documentation
 
 - [English](doc/md/en/Main.md)
-- [Russian](doc/md/ru/Main.md)
+- [Русский](doc/md/ru/Main.md)
 
 ## See also
 

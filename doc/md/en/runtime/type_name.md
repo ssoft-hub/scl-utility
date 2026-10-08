@@ -6,18 +6,22 @@ template `type_short_name(obj)` returns the same name without the qualifiers of 
 classes, without template arguments, and without a prefix such as `class` or `struct`.
 
 - Header: `#include <scl/utility/runtime/type.h>`
-- Both function templates are declared only where the macro `SCL_HAS_RTTI` is `1`.
-- Where the macro `SCL_HAS_THREADS` is `1`, both function templates may be called from several
-  threads at once.
-- The code a caller writes otherwise is given in the section [Without RTTI](index.md#without-rtti)
-  of the group page.
+- Both function templates are declared only where the macro
+  [`SCL_HAS_RTTI`](../preprocessor/rtti.md) is `1`. The code a caller writes where it is `0` is
+  given in the section [Without RTTI](index.md#without-rtti) of the group page.
+- Where the macro [`SCL_HAS_THREADS`](../preprocessor/threads.md) is `1`, both function templates
+  may be called from several threads at once.
 
 ```cpp
-template <typename T>
-[[nodiscard]] ::std::string type_name(T const & obj);
+namespace scl
+{
+    template <typename T>
+    [[nodiscard]] ::std::string type_name(T const & obj);
 
-template <typename T>
-[[nodiscard]] ::std::string type_short_name(T const & obj);
+    template <typename T>
+    [[nodiscard]] ::std::string type_short_name(T const & obj)
+        requires(::scl::detail::short_named<T>);
+}
 ```
 
 ## Semantics
@@ -41,7 +45,9 @@ template <typename T>
   `std::type_index(typeid(obj))` identifies the type the function templates name.
 - **Short name:** for the type `app::Task<int>` the function template `type_short_name(obj)`
   returns `Task`. For a closure type or an unnamed class or enumeration it returns the name the
-  compiler generates, such as `<lambda_1>` with MSVC.
+  compiler generates, such as `<lambda_1>` with MSVC, and for a fundamental type the name the
+  compiler spells it with, without a namespace qualifier, such as `int`. A call whose argument is
+  a pointer, an array, a function or a pointer to a member does not compile.
 
 ## Examples
 
@@ -76,7 +82,8 @@ name at run time is that of the dynamic type:
     auto const dynamic_name = scl::type_name(*pointer);   // app::Derived, or struct app::Derived
 ```
 
-The full and the short name at run time of an object of a specialization of a class template:
+The full and the short name at run time of the type of an object of a specialization of a class
+template:
 
 <!-- snippet: example/runtime/type_name/runtime_type_name_example.cpp short -->
 ```cpp
@@ -92,10 +99,15 @@ The full and the short name at run time of an object of a specialization of a cl
 |---|---|---|
 | Evaluated | at compile time | at run time |
 | Returns | `std::string_view` | `std::string` |
-| Names | the type written at the call site | the dynamic type of a polymorphic object |
+| Which type | the one written at the call site | the dynamic type of a polymorphic object, the static type of any other |
 | RTTI | not required | required |
 
 ## See also
 
-- [Runtime](index.md)
+- [`scl::type_name<T>()`](../meta/type_name.md), the name at compile time
 - [`example/runtime/type_name/runtime_type_name_example.cpp`](../../../../example/runtime/type_name/runtime_type_name_example.cpp)
+
+---
+
+Previous: [`enum_string(value)`](enum_string.md) | Next: [Runtime Benchmarks](benchmark.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

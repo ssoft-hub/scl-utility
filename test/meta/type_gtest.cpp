@@ -54,6 +54,21 @@ enum class Color
 };
 
 /**
+ * @brief Union for testing the MSVC 'union ' prefix.
+ */
+union Number
+{
+    int whole;
+    float fraction;
+};
+
+namespace
+{
+    template <typename T>
+    concept meta_type_short_name_declared = requires { ::scl::type_short_name<T>(); };
+} // namespace
+
+/**
  * @test Verify fundamental types extraction.
  */
 TEST(MetaTypeTest, FundamentalTypes)
@@ -124,6 +139,70 @@ TEST(MetaTypeTest, TemplateTypes)
 
     EXPECT_EQ(::scl::type_short_name<T>(), "TemplateStruct");
     EXPECT_EQ(::scl::type_short_name<TT>(), "TemplateClass");
+}
+
+/**
+ * @test Verify that type_short_name takes a class, a union, an enumeration or a fundamental type,
+ *       qualified or referred to.
+ */
+TEST(MetaTypeTest, ShortNameTakesClassUnionEnumerationOrFundamental)
+{
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<SimpleClass>);
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<Number>);
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<Color>);
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<int>);
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<void>);
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<::std::nullptr_t>);
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<SimpleClass const volatile>);
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<SimpleClass &>);
+    STATIC_EXPECT_TRUE(meta_type_short_name_declared<SimpleClass const &&>);
+}
+
+/**
+ * @test Verify that type_short_name refuses a type spelled with a declarator around a name.
+ */
+TEST(MetaTypeTest, ShortNameRefusesDeclarator)
+{
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<SimpleClass *>);
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<SimpleClass * const>);
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<SimpleClass *&>);
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<SimpleClass[2]>);
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<SimpleClass[]>);
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<SimpleClass(SimpleClass)>);
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<SimpleClass (*)(SimpleClass)>);
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<int SimpleClass::*>);
+    STATIC_EXPECT_FALSE(meta_type_short_name_declared<void (SimpleClass::*)()>);
+}
+
+/**
+ * @test Verify that type_short_name names a union by its identifier.
+ */
+TEST(MetaTypeTest, ShortNameOfUnion)
+{
+    STATIC_EXPECT_EQ(::scl::type_short_name<Number>(), "Number");
+}
+
+/**
+ * @test Verify that type_short_name drops const, volatile and a reference from the type it names.
+ */
+TEST(MetaTypeTest, ShortNameDropsQualifiersAndReference)
+{
+    STATIC_EXPECT_EQ(::scl::type_short_name<SimpleClass const>(), "SimpleClass");
+    STATIC_EXPECT_EQ(::scl::type_short_name<SimpleClass volatile>(), "SimpleClass");
+    STATIC_EXPECT_EQ(::scl::type_short_name<SimpleClass &>(), "SimpleClass");
+    STATIC_EXPECT_EQ(::scl::type_short_name<SimpleClass const &&>(), "SimpleClass");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Color const>(), "Color");
+    STATIC_EXPECT_EQ(::scl::type_short_name<int const>(), "int");
+}
+
+/**
+ * @test Verify that type_short_name names a fundamental type as type_name does.
+ */
+TEST(MetaTypeTest, ShortNameOfFundamental)
+{
+    STATIC_EXPECT_EQ(::scl::type_short_name<int>(), ::scl::type_name<int>());
+    STATIC_EXPECT_EQ(::scl::type_short_name<unsigned long>(), ::scl::type_name<unsigned long>());
+    STATIC_EXPECT_EQ(::scl::type_short_name<void>(), "void");
 }
 
 /**

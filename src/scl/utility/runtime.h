@@ -14,7 +14,8 @@
  * of an object of a polymorphic class and the name of the static type of any other object. The
  * function template ::scl::type_short_name(obj) returns that name without qualifiers and template
  * arguments. Both are declared only where the macro `SCL_HAS_RTTI` is `1`. The function template
- * ::scl::enum_string spells the value a variable of an enumeration type holds and needs no RTTI.
+ * ::scl::enum_string spells the value a variable of an enumeration type holds and needs no RTTI;
+ * the concept ::scl::concepts::enum_string_format states the function object it takes.
  * The names a type has at compile time are returned by the function templates of the group @ref
  * scl_utility_meta.
  *

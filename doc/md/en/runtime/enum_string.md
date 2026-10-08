@@ -9,27 +9,30 @@ place of `N` unchanged.
 - Header: `#include <scl/utility/runtime/enum.h>`
 
 ```cpp
-template <::scl::concepts::enum_type E>
-[[nodiscard]] ::std::string enum_string(E value);
-
 namespace scl::concepts
 {
     template <typename Format, typename Enum>
     concept enum_string_format = /* see Function object below */;
 }
 
-template <::scl::concepts::enum_type E, typename Format>
-[[nodiscard]] ::std::string enum_string(E value, Format && format)
-    requires ::scl::concepts::enum_string_format<Format, E>;
+namespace scl
+{
+    template <::scl::concepts::enum_type E>
+    [[nodiscard]] ::std::string enum_string(E value);
+
+    template <::scl::concepts::enum_type E, typename Format>
+    [[nodiscard]] ::std::string enum_string(E value, Format && format)
+        requires ::scl::concepts::enum_string_format<Format, E>;
+}
 ```
 
 ## Semantics
 
-- **Type:** the part `Type` is the short name the function template `scl::type_short_name<E>()`
-  returns at compile time, so an enumeration type declared in a namespace or a class is spelled
-  without the name of the namespace or the class. For an enumeration type with no name, `Type` is
-  the name the compiler generates, which differs between compilers and may change in a later
-  version of the module.
+- **Type:** the part `Type` is the short name the function template
+  [`scl::type_short_name<E>()`](../meta/type_name.md#type_short_name) returns at compile time, so
+  an enumeration type declared in a namespace or a class is spelled without the name of the
+  namespace or the class. For an enumeration type with no name, `Type` is the name the compiler
+  generates, which differs between compilers and may change in a later version of the module.
 - **Number:** the part `N` is the value in its underlying type, in decimal and with the sign of
   that type. For a character or `bool` underlying type, `N` is a number as well: the value `'P'` is
   spelled as `80`.
@@ -43,9 +46,9 @@ lambda declared with the specifier `mutable` is accepted too. The overload passe
 constant lvalue of an integer type of the size and signedness of the underlying type, or of the
 type `unsigned char` for the underlying type `bool`.
 
-The function object must return a value of any type implicitly convertible to `std::string_view`:
-an object of the type `std::string` or `std::string_view`, a reference to one, or a pointer to a
-null-terminated string.
+The function object must return a value of any type implicitly convertible to `std::string_view`,
+such as an object of the type `std::string` or `std::string_view`, a reference to one, or a pointer
+to a null-terminated string.
 
 Where the function object has a single signature, the type of its first parameter is determined
 with the alias template `scl::signature::parameter_t`. That type, with the reference and the
@@ -149,10 +152,15 @@ static_assert(!scl::concepts::enum_string_format<decltype(narrow), net::Status>)
 | Evaluated | at compile time | at run time |
 | Returns | `std::string_view` | `std::string` |
 | Result holds | the constant, `Color::Red` | the number, `Color::1` |
-| Takes | a constant named at compile time | any value |
+| Takes | a constant known at compile time | any value |
 
 ## See also
 
-- [Runtime](index.md)
+- [`scl::enum_name<V>()`](../meta/enum_name.md), the name of a constant at compile time
 - [`scl::signature`](../type_traits/signature.md)
 - [`example/runtime/enum_string/runtime_enum_string_example.cpp`](../../../../example/runtime/enum_string/runtime_enum_string_example.cpp)
+
+---
+
+Previous: [Runtime](index.md) | Next: [`type_name(obj)`](type_name.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)
