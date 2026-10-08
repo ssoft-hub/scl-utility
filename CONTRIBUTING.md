@@ -1,5 +1,33 @@
 # Contributing to ScL Utility
 
+## Taking part
+
+A person should ask a question about the module in the Telegram group
+[scl_kit](https://t.me/scl_kit), not in an issue.
+
+A person should report a defect or suggest an enhancement in an
+[issue of the project](https://gitlab.com/ssoft-scl/scl-utility/-/issues): a defect in an issue of
+type `Fix`, an enhancement in an issue of the type the table of the Issues section gives it. A merge
+request should implement an enhancement only once the maintainers have agreed to it in the issue.
+A person without an account on GitLab may send a report or a suggestion by mail to
+`contact-project+ssoft-scl-scl-utility-32906655-issue-@incoming.gitlab.com`: the mail becomes an
+issue, and the answers come back by mail.
+
+## Conduct
+
+Every participant of the project must follow the
+[Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/) in
+issues, merge requests and every other space of the project. A participant should report a
+violation in a private message on Telegram to [@te_ssoft](https://t.me/te_ssoft). The maintainers
+must enforce the Covenant as its Enforcement Guidelines state.
+
+## Joining the team
+
+A contributor whose merge requests have been merged may ask to join the team with
+`Request access` in the actions menu at the upper right of the page of the project. The
+maintainers should decide on the request by the merged requests of the contributor, and should
+grant the role `Developer` to a request they accept.
+
 ## Issues
 
 A reporter should open an issue for one concern, where no open issue carries that concern
@@ -44,6 +72,29 @@ Fix(hash): Refuse a range the hash bodies cannot iterate
 | Merge | must | the request is merged into `dev` once its checks have passed, its approvals are given and every acceptance criterion of its issue is checked |
 | Close | must | the issue closes after the merge of the request that meets its criteria |
 
+### From a clone to a merge request
+
+The steps below carry a change from its issue to its merge request; the Workflow table above
+binds the issue, the branch name, the changelog and the request itself.
+
+| Step | Force | Rule |
+|---|---|---|
+| Clone | must | a member clones the project: `git clone https://gitlab.com/ssoft-scl/scl-utility.git`; a person who is not a member forks it on GitLab, clones the fork and adds the project as the remote `upstream`: `git remote add upstream https://gitlab.com/ssoft-scl/scl-utility.git` |
+| Branch | must | from the current branch `dev` of the project: `git fetch origin` and `git switch -c <branch> origin/dev` in a clone of the project, `git fetch upstream` and `git switch -c <branch> upstream/dev` in a clone of a fork |
+| Build and test | must | the tests build and pass in a host project, as the Building section states |
+| Commits | must | as the Commits and branches section states |
+| Push | must | `git push -u origin <branch>` |
+| Merge request | must | into [ssoft-scl/scl-utility](https://gitlab.com/ssoft-scl/scl-utility), also from a fork |
+
+### Merge requests from a fork
+
+The author of a merge request from a fork should allow commits from members who can merge to the
+target branch, so a maintainer can rebase the branch onto the branch `dev`.
+
+The pipeline of such a request runs in the fork, and the author must start its checks there and
+see them pass. A maintainer should then read the request and run its pipeline in this project; the
+merge waits for the checks of that pipeline.
+
 ## Licence
 
 By opening a merge request, a contributor affirms the right to contribute the content of the
@@ -66,6 +117,39 @@ presets.
 The CMake lists under `project/cmake/test` and `project/cmake/benchmark` read `GTEST_FOUND`,
 `DOCTEST_FOUND`, `CATCH2_FOUND` and `BENCHMARK_FOUND`, which the host project sets, and create
 no target for a framework that is not found; `utility_<group>_size` needs no framework.
+
+The host below, in a directory `host`, builds the GoogleTest tests of the clone that the variable
+`SCL_UTILITY_DIR` names, against an installed GoogleTest:
+
+```cmake
+cmake_minimum_required(VERSION 3.23)
+project(scl_utility_host LANGUAGES CXX)
+
+set(SCL_UTILITY_DIR "" CACHE PATH "Clone of scl-utility")
+find_package(GTest REQUIRED)
+
+enable_testing()
+add_subdirectory(${SCL_UTILITY_DIR}/project/cmake scl-utility)
+add_subdirectory(${SCL_UTILITY_DIR}/project/cmake/test scl-utility-test)
+```
+
+Without an installed GoogleTest, the lines below fetch it, in place of
+`find_package(GTest REQUIRED)`:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(googletest
+    URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+set(GTEST_FOUND TRUE)
+```
+
+```sh
+cmake -S host -B build -DSCL_UTILITY_DIR=<path to the clone>
+cmake --build build --config Debug
+ctest --test-dir build -C Debug
+```
 
 ## Rules that reject a change
 
@@ -92,13 +176,27 @@ qualifier order, include order and pointer alignment from `.clang-format`.
 | `CamelCase` for template parameters | must | `template <typename ValueArgument>` |
 | `UPPER_CASE` for macros, prefixed `SCL_` under `src/` | must | `SCL_HAS_EXCEPTIONS` |
 | `m_` before the name of a private non-static data member | should | `m_parent` |
-| A namespace-qualified name starts from the global namespace | must | `::std::size_t`, `::std::is_object_v<Type>`, `::scl::detail::any_holder_base` |
+| A namespace-qualified name in a header under `src/` starts from the global namespace | must | `::std::size_t`, `::std::is_object_v<Type>`, `::scl::detail::any_holder_base` |
+| A header under `src/` calls a function of the library by a qualified name | must | `::scl::enum_string(value)`, not `enum_string(value)` |
+| A program under `example/` writes names the way a caller of the module usually does, without the leading `::` | should | `scl::enum_string(value)`, `std::size_t` |
 | Every header opens with `#pragma once` | must | |
 | Root namespace `scl`; a group's own namespace where it has one; internals in a nested `detail` | must | `::scl::hash`, `::scl::hierarchy`, `::scl::concepts`, `::scl::detail` |
+| A concept is declared in a namespace named `concepts`, nested in the namespace it belongs to | must | `::scl::concepts::enum_type`, `::scl::hash::concepts::hashable_range`, `::scl::detail::concepts::takes_number` |
 | A new header joins the umbrella of its group | must | `src/scl/utility/meta/type.h` in `src/scl/utility/meta.h` |
 | `typename` for a type parameter, `class` for a template template parameter | should | `template <typename...> class Operation` |
 | A standard attribute is spelled as itself inside the library | should | `[[nodiscard]]`, not `SCL_NODISCARD` |
 | `constexpr` and `noexcept` wherever the declaration admits them | should | |
+
+The leading `::` and the qualified call protect a header from the names of the code that
+includes it. An unqualified call finds, through argument-dependent lookup, a function of the
+namespace of an argument's type as well (for an argument of a caller's type, the caller's own
+namespace), and the program runs that function with no diagnostic where it fits the argument
+better. Tests, examples and benchmarks are such code: no header includes them, and
+the two rules do not bind them.
+
+Declared in the namespace of its types, a concept would stand beside them, and at the point of
+use `::scl::detail::format<F>` reads the same whether `format` is a class template or a concept.
+In the namespace `concepts` a reader tells the two apart: `::scl::detail::concepts::format<F>`.
 
 A contributor should use an `SCL_*` macro from `attribute/` for an annotation whose spelling or
 availability differs by toolchain or standard level, such as `SCL_NO_UNIQUE_ADDRESS`.
@@ -277,11 +375,14 @@ version in every language.
 ### Out-of-line blocks
 
 A contributor must place a block in the `Documentation` section at the end of the header,
-except where the table below says to document in place, and must name its target with
-`@class`, `@fn`, `@typedef` or `@var`. A contributor must spell the target the way Doxygen
-renders it, parameter names included: `node(Arguments &&... arguments)`, not
-`node(Arguments &&...)`. Attribute macros are expanded before matching, so a contributor must
-spell an `@fn` without them.
+except where the table below says to document in place. A contributor must name the target with
+the command `@class`, `@fn`, `@typedef` or `@var`, a concept with the command `@concept`, and a
+macro with the command `@def`, parameters included: `@def SCL_ASSUME(expr)`. A contributor must
+write one block for a macro, describing every branch that defines it: Doxygen reads only the
+branch active where the macro `DOXYGEN` is defined, and merges a second block for the same macro
+into the first with no report. A contributor must spell the target the way Doxygen renders it,
+parameter names included: `node(Arguments &&... arguments)`, not `node(Arguments &&...)`.
+Attribute macros are expanded before matching, so a contributor must spell an `@fn` without them.
 
 | Shape | Failure | Fix, should |
 |---|---|---|
@@ -303,6 +404,49 @@ namespace scl
     public:
         constexpr bool has_value() const noexcept;
     };
+} // namespace scl
+#endif
+```
+
+### Names of `detail`
+
+The reference excludes the entities of the `detail` namespaces, yet prints the name of one
+wherever a public declaration refers to it: in a `requires` clause or a `noexcept` expression, in
+the definition of an alias template, in the type of a variable template, in the body of a concept,
+in the list of base classes and in a `friend` function declaration. A contributor must keep such a
+name out of the declaration Doxygen reads, where the macro `DOXYGEN` is defined, and must state in
+the block what the hidden part states.
+
+| Where the name stands | Fix, must |
+|---|---|
+| A `requires` clause, a `noexcept` expression, a base class, a `friend` function declaration | the clause, the base or the `friend` declaration under `#ifndef DOXYGEN`; for a `noexcept` expression, the whole `noexcept(...)`, since a bare `noexcept` left behind reads as a promise without condition |
+| The definition of an alias template, the type of a variable template, the body of a concept | the declaration under `#ifndef DOXYGEN`, and a declaration without the name in the `Documentation-only declarations` block: `auto` for the type of a variable template, `unspecified` for the definition of an alias template or the body of a concept |
+
+Two overloads whose `requires` clauses are hidden can render the same; the first row of the table
+of the Out-of-line blocks section gives the fix.
+
+```cpp
+template <typename Type>
+constexpr any_view(Type & object) noexcept
+#ifndef DOXYGEN
+    requires(!::scl::detail::is_std_any_v<::std::remove_cvref_t<Type>>)
+#endif
+    : base_type{::std::addressof(object), &::scl::detail::any_type_descriptor_of<Type &>}
+{}
+
+// Documentation-only declarations
+
+#ifdef DOXYGEN
+namespace scl
+{
+    template <typename... Args>
+    inline constexpr auto overload_cast;
+
+    namespace concepts
+    {
+        template <typename Format, typename Enum>
+        concept enum_string_format = unspecified;
+    } // namespace concepts
 } // namespace scl
 #endif
 ```
