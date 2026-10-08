@@ -33,11 +33,22 @@ std::string name_of([[maybe_unused]] T const & object)
 }
 ```
 
-## Производительность
+## Документация группы
 
-Стоимость одного вызова и применённые в группе атрибуты оптимизации описаны на странице [Замеры
-группы Runtime](benchmark.md).
+### Шаблоны функций
+
+- [`enum_string(value)`](enum_string.md) - значение перечисляемого типа в виде `Type::N`
+- [`type_name(obj)`](type_name.md) - полное и короткое имя типа объекта
+
+### Замеры
+
+- [Замеры группы Runtime](benchmark.md) - стоимость вызова и применённые атрибуты оптимизации
+
+### Примеры
+
+- [`example/runtime/enum_string`](../../../../example/runtime/enum_string/runtime_enum_string_example.cpp)
+- [`example/runtime/type_name`](../../../../example/runtime/type_name/runtime_type_name_example.cpp)
 
 ---
 
-Далее: [`type_name(obj)`](type_name.md) | [К обзору](../Main.md)
+Далее: [`enum_string(value)`](enum_string.md) | [К главной странице](../Main.md)

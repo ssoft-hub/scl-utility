@@ -105,11 +105,10 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 ### Runtime - утилиты для времени выполнения
 
-| Компонент | Заголовок | Описание |
-|-----------|-----------|----------|
-| [Runtime](runtime/index.md) | `<scl/utility/runtime.h>` | Выбор шаблона функции, код без RTTI и замеры |
-| [type_name(obj)](runtime/type_name.md) | `<scl/utility/runtime/type.h>` | Имя типа через RTTI с поддержкой полиморфизма |
-| [enum_string(v)](runtime/enum_string.md) | `<scl/utility/runtime/enum.h>` | Значение перечисления как `"Type::N"`; RTTI не требуется |
+Шаблоны функций, которые во время выполнения возвращают имя типа объекта с учётом полиморфизма
+и значение перечисляемого типа в виде `Type::N`.
+
+[К группе](runtime/index.md)
 
 ### Hash — некриптографические хеш-утилиты
 

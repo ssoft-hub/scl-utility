@@ -164,5 +164,5 @@ static_assert(!scl::concepts::enum_string_format<decltype(narrow), net::Status>)
 
 ---
 
-Назад: [`type_name(obj)`](type_name.md) | Далее: [Замеры группы Runtime](benchmark.md) |
-[К группе](index.md)
+Назад: [Runtime](index.md) | Далее: [`type_name(obj)`](type_name.md) | [К группе](index.md) |
+[К главной странице](../Main.md)

@@ -110,4 +110,5 @@ namespace app
 
 ---
 
-Назад: [Runtime](index.md) | Далее: [`enum_string(value)`](enum_string.md)
+Назад: [`enum_string(value)`](enum_string.md) | Далее: [Замеры группы Runtime](benchmark.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

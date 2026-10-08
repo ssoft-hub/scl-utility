@@ -162,5 +162,5 @@ static_assert(!scl::concepts::enum_string_format<decltype(narrow), net::Status>)
 
 ---
 
-Previous: [`type_name(obj)`](type_name.md) | Next: [Runtime Benchmarks](benchmark.md) |
-[Back to the group](index.md)
+Previous: [Runtime](index.md) | Next: [`type_name(obj)`](type_name.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

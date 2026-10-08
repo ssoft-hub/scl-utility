@@ -104,11 +104,10 @@ Then include the umbrella header or individual component headers:
 
 ### Runtime - runtime type and enum utilities
 
-| Component | Header | Description |
-|-----------|--------|-------------|
-| [Runtime](runtime/index.md) | `<scl/utility/runtime.h>` | Choice of a function template, the code without RTTI, and the benchmarks |
-| [type_name(obj)](runtime/type_name.md) | `<scl/utility/runtime/type.h>` | Runtime type name via RTTI; supports polymorphism |
-| [enum_string(v)](runtime/enum_string.md) | `<scl/utility/runtime/enum.h>` | Enum value as `"Type::N"`; no RTTI required |
+Function templates that return at run time the name of the type of an object, polymorphism
+included, and a value of an enumeration type as `Type::N`.
+
+[To the group](runtime/index.md)
 
 ### Hash — non-cryptographic hash utilities
 

@@ -109,4 +109,5 @@ template:
 
 ---
 
-Previous: [Runtime](index.md) | Next: [`enum_string(value)`](enum_string.md)
+Previous: [`enum_string(value)`](enum_string.md) | Next: [Runtime Benchmarks](benchmark.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

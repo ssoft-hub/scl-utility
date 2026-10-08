@@ -343,4 +343,4 @@ Clang и GCC 16.0.1 сами эту функцию не встраивают, а
 
 ---
 
-Назад: [`enum_string(value)`](enum_string.md) | [К группе](index.md)
+Назад: [`type_name(obj)`](type_name.md) | [К группе](index.md) | [К главной странице](../Main.md)

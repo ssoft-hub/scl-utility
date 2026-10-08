@@ -33,11 +33,22 @@ std::string name_of([[maybe_unused]] T const & object)
 }
 ```
 
-## Performance
+## Documentation of the group
 
-What one call costs, and which optimisation attribute the group carries:
-[Runtime Benchmarks](benchmark.md).
+### Function templates
+
+- [`enum_string(value)`](enum_string.md) - a value of an enumeration type as `Type::N`
+- [`type_name(obj)`](type_name.md) - the full and the short name of the type of an object
+
+### Benchmarks
+
+- [Runtime Benchmarks](benchmark.md) - the cost of a call and the optimisation attributes applied
+
+### Examples
+
+- [`example/runtime/enum_string`](../../../../example/runtime/enum_string/runtime_enum_string_example.cpp)
+- [`example/runtime/type_name`](../../../../example/runtime/type_name/runtime_type_name_example.cpp)
 
 ---
 
-Next: [`type_name(obj)`](type_name.md) | [Back to the overview](../Main.md)
+Next: [`enum_string(value)`](enum_string.md) | [Back to the main page](../Main.md)

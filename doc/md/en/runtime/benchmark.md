@@ -336,4 +336,5 @@ for its time. A build that counts bytes before nanoseconds should predefine `SCL
 
 ---
 
-Previous: [`enum_string(value)`](enum_string.md) | [Back to the group](index.md)
+Previous: [`type_name(obj)`](type_name.md) | [Back to the group](index.md) |
+[Back to the main page](../Main.md)
