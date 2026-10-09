@@ -129,7 +129,7 @@ namespace scl
         friend class ::scl::any_view;
     };
 
-#ifndef DOXYGEN
+#ifndef SCL_DOXYGEN
     template <typename Type>
     any_anchor(Type & object) -> any_anchor<Type>;
 #endif

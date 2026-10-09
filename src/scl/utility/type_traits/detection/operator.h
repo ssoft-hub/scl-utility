@@ -50,7 +50,7 @@
 #include <scl/utility/type_traits/detection.h>
 #include <scl/utility/type_traits/member_like.h>
 
-#ifndef DOXYGEN
+#ifndef SCL_DOXYGEN
 
 #define SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION(op, name)                                                                \
     namespace scl                                                                                                        \
@@ -227,7 +227,7 @@ SCL_DETAIL_BINARY_OPERATOR_DETECTION(^=, bitwise_xor_assign)
 #undef SCL_DETAIL_ARROW_OPERATOR_DETECTION
 #undef SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION
 
-#elif defined(DOXYGEN)
+#elif defined(SCL_DOXYGEN)
 
 namespace scl
 {
@@ -3801,4 +3801,4 @@ namespace scl
 
 } // namespace scl
 
-#endif // DOXYGEN
+#endif // SCL_DOXYGEN

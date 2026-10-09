@@ -213,7 +213,7 @@ namespace scl::detail
 
 namespace scl
 {
-#ifndef DOXYGEN
+#ifndef SCL_DOXYGEN
     template <typename... Args>
     inline constexpr detail::overload_cast<Args...> overload_cast{};
 #endif
@@ -226,7 +226,7 @@ namespace scl
 
 // The real declaration names its type in `scl::detail`, which the reference excludes: a
 // reader would be given a type they cannot reach. Doxygen sees the type unspecified instead.
-#ifdef DOXYGEN
+#ifdef SCL_DOXYGEN
 namespace scl
 {
     /**

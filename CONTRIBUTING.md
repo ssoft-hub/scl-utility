@@ -176,12 +176,12 @@ qualifier order, include order and pointer alignment from `.clang-format`.
 | `CamelCase` for template parameters | must | `template <typename ValueArgument>` |
 | `UPPER_CASE` for macros, prefixed `SCL_` under `src/` | must | `SCL_HAS_EXCEPTIONS` |
 | `m_` before the name of a private non-static data member | should | `m_parent` |
-| A namespace-qualified name in a header under `src/` starts from the global namespace | must | `::std::size_t`, `::std::is_object_v<Type>`, `::scl::detail::any_holder_base` |
+| A namespace-qualified name in a header under `src/` starts from the global namespace | must | `::std::size_t`, `::std::is_object_v<Type>`, `::scl::detail::holder_base` |
 | A header under `src/` calls a function of the library by a qualified name | must | `::scl::enum_string(value)`, not `enum_string(value)` |
 | A program under `example/` writes names the way a caller of the module usually does, without the leading `::` | should | `scl::enum_string(value)`, `std::size_t` |
 | Every header opens with `#pragma once` | must | |
-| Root namespace `scl`; a group's own namespace where it has one; internals in a nested `detail` | must | `::scl::hash`, `::scl::hierarchy`, `::scl::concepts`, `::scl::detail` |
-| A concept is declared in a namespace named `concepts`, nested in the namespace it belongs to | must | `::scl::concepts::enum_type`, `::scl::hash::concepts::hashable_range`, `::scl::detail::concepts::takes_number` |
+| Root namespace `scl`; a group's own namespace where it has one; every namespace-scope entity that is not part of the interface in a nested `detail`, a macro under the prefix `SCL_DETAIL_`, except an entity no means can place in `detail` | must | `::scl::hash`, `::scl::hierarchy`, `::scl::concepts`, `::scl::detail`, `SCL_DETAIL_<NAME>` |
+| A concept is declared in a namespace named `concepts`, nested in the namespace it belongs to: outside it, a concept reads as a class template | must | `::scl::concepts::enum_type`, `::scl::hash::concepts::hashable_range`, `::scl::detail::concepts::number_like` |
 | A new header joins the umbrella of its group | must | `src/scl/utility/meta/type.h` in `src/scl/utility/meta.h` |
 | `typename` for a type parameter, `class` for a template template parameter | should | `template <typename...> class Operation` |
 | A standard attribute is spelled as itself inside the library | should | `[[nodiscard]]`, not `SCL_NODISCARD` |
@@ -193,10 +193,6 @@ namespace of an argument's type as well (for an argument of a caller's type, the
 namespace), and the program runs that function with no diagnostic where it fits the argument
 better. Tests, examples and benchmarks are such code: no header includes them, and
 the two rules do not bind them.
-
-Declared in the namespace of its types, a concept would stand beside them, and at the point of
-use `::scl::detail::format<F>` reads the same whether `format` is a class template or a concept.
-In the namespace `concepts` a reader tells the two apart: `::scl::detail::concepts::format<F>`.
 
 A contributor should use an `SCL_*` macro from `attribute/` for an annotation whose spelling or
 availability differs by toolchain or standard level, such as `SCL_NO_UNIQUE_ADDRESS`.
@@ -293,18 +289,19 @@ and `example/quick_start/<group>/` holds the programs `README.md` quotes.
 | `test/` | `<group>/<subject>[_<aspect>]_<framework>.cpp` | `utility_<group>_<framework>` |
 | `benchmark/` | `<group>/<subject>[_<aspect>]_<tool>.cpp` | `utility_<group>_<tool>` |
 
-`<subject>` is the header the file covers, `<aspect>` tells apart several files of one
-header: `type_key_cross_tu_gtest.cpp`, `type_key_boundary_gtest.cpp`.
+`<subject>` is what the file covers, an entity, an operation or a property of the group, and
+`<aspect>` tells apart several files of one subject: `type_key_cross_tu_gtest.cpp`,
+`type_key_boundary_gtest.cpp`.
 
-| Suffix | Framework | Linked with | Where `main` is defined |
-|---|---|---|---|
-| `*_gtest.cpp` | GoogleTest | `GTest::gtest_main` | the library |
-| `*_doctest.cpp` | doctest | `doctest::doctest` | the test source |
-| `*_catch2.cpp` | Catch2 v3 | `Catch2::Catch2WithMain` | the library |
-| `*_catch2.cpp` | Catch2 v2, target `utility_<group>_catch2_v2` | `Catch2::Catch2` | the test source |
-| `*_shared.cpp` | - | a shared library linked into every test of the directory | - |
-| `*_gbench.cpp` | Google Benchmark | `benchmark::benchmark_main` | the library |
-| `*_size.cpp` | - | nothing, see Benchmarks | - |
+| Suffix | Framework | Where `main` is defined |
+|---|---|---|
+| `*_gtest.cpp` | GoogleTest | the framework |
+| `*_doctest.cpp` | doctest | the test source |
+| `*_catch2.cpp` | Catch2 v3 | the framework |
+| `*_catch2.cpp` | Catch2 v2, target `utility_<group>_catch2_v2` | the test source |
+| `*_shared.cpp` | none, a shared library for the tests of its directory | - |
+| `*_gbench.cpp` | Google Benchmark | the framework |
+| `*_size.cpp` | none, see Benchmarks | - |
 
 - A test or benchmark source without its suffix joins no target and is never compiled, with no
   diagnostic from the build.
@@ -350,53 +347,64 @@ of the images the CI uses: another version of clang-format formats differently.
 
 - Benchmarks are not CTest tests.
 - A contributor must quote a figure in an issue or a merge request only from a Release build.
-- A `*_size.cpp` source is compiled into a static library and never linked or run, so a
-  bare-metal cross compiler builds it; `size` reads the `.text` section of the library.
+- A contributor must define no `main` in a `*_size.cpp` source: it builds with a bare-metal cross
+  compiler and is never linked or run.
 
 ## Documentation
 
-A contributor must document every public entity with a Doxygen block. The documentation build
-reports an undocumented entity, an undescribed parameter or return value, a stale `@param`, a
-block reaching no target and an unknown `@ingroup`. The rules below are the ones it does not
-report.
+A contributor must document every entity of the public interface, a public or protected member of a
+type included, with a Doxygen block. A private member, an entity of the namespace `detail` and a
+macro under the prefix `SCL_DETAIL_` need no block and may carry one; an entity the Code style
+section leaves outside `detail` needs a block as an entity of the interface does. For such an entity
+the documentation build reports an undocumented entity, an undescribed parameter or return value, a
+stale `@param`, a block reaching no target and an unknown `@ingroup`. The rules below are the ones
+it does not report, and they bind every block alike.
 
 | Rule | Force | Detail |
 |---|---|---|
-| The description of a block opens with `@brief` in one line | must | a one-line block is `///`, a trailing one `///<`, a longer one `/** */` |
+| The description of a block opens with `@brief` in one line | must | a one-line block is `///`, a longer one `/** */` |
 | `@tparam` describes every template parameter | must | |
 | `@ingroup scl_utility_<group>`, or a subgroup nested under it, stands on every documented entity at namespace scope, or a `@{ @}` block of that group encloses it | must | an umbrella header that only includes others carries none; `@defgroup` stands in the umbrella or a header of its own |
-| A `= default` member carries a block written by hand | must | without one Doxygen drops the member from the class page and reports nothing |
-| A private or protected member stays out of the reference | must | its block carries `@internal` |
-| An internal entity in public scope takes `@internal` and an `EXCLUDE_SYMBOLS` entry | must | `SCL_DETAIL_*` probes, pattern anchors |
+| A `= default` or `= delete` member of the interface carries a block written by hand | must | without one Doxygen drops the member from the class page and reports nothing |
+| The block of an entity that is not part of the interface carries the tag `@internal` | must | |
+| An example of use in a block comes through the command `@snippet` from a program under `example/`; a `@code` block may illustrate the declaration itself | must | the build compiles the program and Doxygen reports a marker it does not find in a block the reference shows, while a `@code` example of use goes stale with no report |
 
 Pages live under `doc/md/<language>/`. A contributor must carry an edit of a page into its
 version in every language.
 
+### Where a block stands
+
+| Entity | Force | Where its block stands |
+|---|---|---|
+| A free-standing entity defined outside a type, such as a type, a free function, a variable, a concept or a macro | may | whole above its definition |
+| A member of a type, a hidden friend included | must | apart from the declaration of the type, except an overload the Out-of-line blocks table documents in place |
+| A type, inside its braces | must | none, the exception of the row above aside; a comment there follows the Writing section |
+
 ### Out-of-line blocks
 
-A contributor must place a block in the `Documentation` section at the end of the header,
-except where the table below says to document in place. A contributor must name the target with
-the command `@class`, `@fn`, `@typedef` or `@var`, a concept with the command `@concept`, and a
-macro with the command `@def`, parameters included: `@def SCL_ASSUME(expr)`. A contributor must
-write one block for a macro, describing every branch that defines it: Doxygen reads only the
-branch active where the macro `DOXYGEN` is defined, and merges a second block for the same macro
-into the first with no report. A contributor must spell the target the way Doxygen renders it,
-parameter names included: `node(Arguments &&... arguments)`, not `node(Arguments &&...)`.
-Attribute macros are expanded before matching, so a contributor must spell an `@fn` without them.
+A contributor must place a block that stands apart from its declaration in the `Documentation`
+section at the end of the header. A contributor must name the target with the command `@class`,
+`@fn`, `@typedef` or `@var`, a concept with the command `@concept`, and a macro with the command
+`@def`, parameters included: `@def SCL_ASSUME(expr)`. A contributor must write one block for a
+macro, describing every branch that defines it: Doxygen reads only the branch active where the macro
+`SCL_DOXYGEN` is defined, and merges a second block for the same macro into the first with no
+report. A contributor must spell the target the way Doxygen renders it, parameter names included:
+`node(Arguments &&... arguments)`, not `node(Arguments &&...)`. Attribute macros are expanded before
+matching, so a contributor must spell an `@fn` without them.
 
 | Shape | Failure | Fix, should |
 |---|---|---|
 | Two overloads whose parameter lists render the same | one block dropped, no warning | distinct template parameter names by role: `ValueArgument`, `WriteArgument`, `ReadArgument` |
 | `requires A && B` | the leading `::` after `&&` is dropped, no match | `requires(A) && (B)` |
 | A dependent east-const pointer return, declared and defined | the two render differently, no pairing | drop the namespace-scope declaration; the `friend` one suffices |
-| Overloads told apart only by the template parameter list | no `@fn` spelling separates them | document in place, above the declaration |
-| A member re-exported from a private base with `using` | left off the class page | declare it once more in a `Documentation-only declarations` block under `#ifdef DOXYGEN`, as the example below shows |
+| Overloads no `@fn` spelling separates, told apart only by the template parameter list or only by their `requires` clauses | both blocks attach to one overload, and the build reports the other as undocumented | rewrite the overloads so an `@fn` spelling separates them, the template parameter names of the first row first; where no rewrite does, document in place, above the declaration, inside the body of the type for a member |
+| A member re-exported from a private base with `using` | left off the class page | declare it once more in a `Documentation-only declarations` block under `#ifdef SCL_DOXYGEN`, as the example below shows |
 | An unqualified befriended class sharing a member's name | it captures that member's block, no report | name it from the root: `friend class ::scl::hierarchy::tree<...>;` |
 
 ```cpp
 // Documentation-only declarations
 
-#ifdef DOXYGEN
+#ifdef SCL_DOXYGEN
 namespace scl
 {
     class any_view
@@ -410,33 +418,32 @@ namespace scl
 
 ### Names of `detail`
 
-The reference excludes the entities of the `detail` namespaces, yet prints the name of one
-wherever a public declaration refers to it: in a `requires` clause or a `noexcept` expression, in
-the definition of an alias template, in the type of a variable template, in the body of a concept,
-in the list of base classes and in a `friend` function declaration. A contributor must keep such a
-name out of the declaration Doxygen reads, where the macro `DOXYGEN` is defined, and must state in
-the block what the hidden part states.
+A public declaration must name no entity of `detail` in the declaration Doxygen reads, where the
+macro `SCL_DOXYGEN` is defined, and its block must state what a hidden part states.
 
 | Where the name stands | Fix, must |
 |---|---|
-| A `requires` clause, a `noexcept` expression, a base class, a `friend` function declaration | the clause, the base or the `friend` declaration under `#ifndef DOXYGEN`; for a `noexcept` expression, the whole `noexcept(...)`, since a bare `noexcept` left behind reads as a promise without condition |
-| The definition of an alias template, the type of a variable template, the body of a concept | the declaration under `#ifndef DOXYGEN`, and a declaration without the name in the `Documentation-only declarations` block: `auto` for the type of a variable template, `unspecified` for the definition of an alias template or the body of a concept |
-
-Two overloads whose `requires` clauses are hidden can render the same; the first row of the table
-of the Out-of-line blocks section gives the fix.
+| A constraint a caller needs to name in its own code | a concept of the interface |
+| Any other `requires` clause | `requires(see below <case>)` under `#ifdef SCL_DOXYGEN`, the clause itself under `#else`; `<case>` names the case the clause admits, so overloads told apart by their constraints read apart |
+| A `noexcept` expression | `noexcept(see below)` under `#ifdef SCL_DOXYGEN`, the expression itself under `#else` |
+| A base class, a `friend` function declaration | the base or the `friend` declaration under `#ifndef SCL_DOXYGEN` |
+| The definition of an alias template, the type of a variable template, the body of a concept | the declaration under `#ifndef SCL_DOXYGEN`, and a declaration without the name in the `Documentation-only declarations` block: `auto` for the type of a variable template, `unspecified` for the definition of an alias template or the body of a concept |
 
 ```cpp
 template <typename Type>
-constexpr any_view(Type & object) noexcept
-#ifndef DOXYGEN
-    requires(!::scl::detail::is_std_any_v<::std::remove_cvref_t<Type>>)
+constexpr Type * view_of(Type & object)
+#ifdef SCL_DOXYGEN
+    noexcept(see below)
+    requires(see below viewable)
+#else
+    noexcept(::scl::detail::nothrow_viewable_v<Type>)
+    requires(::scl::detail::viewable_v<Type>)
 #endif
-    : base_type{::std::addressof(object), &::scl::detail::any_type_descriptor_of<Type &>}
-{}
+{ ... }
 
 // Documentation-only declarations
 
-#ifdef DOXYGEN
+#ifdef SCL_DOXYGEN
 namespace scl
 {
     template <typename... Args>
