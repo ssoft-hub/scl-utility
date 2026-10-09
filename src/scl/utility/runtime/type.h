@@ -9,7 +9,7 @@
 #include <scl/utility/preprocessor/rtti.h>
 #include <scl/utility/preprocessor/threads.h>
 
-#if SCL_HAS_RTTI || defined(DOXYGEN)
+#if SCL_HAS_RTTI || defined(SCL_DOXYGEN)
 
 #include <string>
 #include <string_view>
@@ -206,4 +206,4 @@ namespace scl
  * @note Where the macro `SCL_HAS_THREADS` is `1`, it may be called from several threads at once.
  */
 
-#endif // SCL_HAS_RTTI || DOXYGEN
+#endif // SCL_HAS_RTTI || SCL_DOXYGEN

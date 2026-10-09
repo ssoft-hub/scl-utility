@@ -2,12 +2,12 @@
 #
 # Usage (headers):
 #   cppcheck --enable=all --std=c++20 --language=c++ \
-#     --suppressions-list=.cppcheck -I./src -UDOXYGEN \
+#     --suppressions-list=.cppcheck -I./src -USCL_DOXYGEN \
 #     src/scl/utility/*.h
 #
 # Usage (tests):
 #   find test -name "*.cpp" | xargs cppcheck --enable=all --std=c++20 \
-#     --language=c++ --suppressions-list=.cppcheck -I./src -UDOXYGEN
+#     --language=c++ --suppressions-list=.cppcheck -I./src -USCL_DOXYGEN
 
 # Suppress missing system includes
 missingIncludeSystem

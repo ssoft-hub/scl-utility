@@ -20,7 +20,7 @@
 #include <memory>
 #include <type_traits>
 
-#if SCL_HAS_RTTI || defined(DOXYGEN)
+#if SCL_HAS_RTTI || defined(SCL_DOXYGEN)
 #include <any>
 #endif
 
@@ -52,7 +52,7 @@ namespace scl
         any_argument & operator=(any_argument &&) = delete;
         constexpr ~any_argument() = default;
 
-#if SCL_HAS_RTTI || defined(DOXYGEN)
+#if SCL_HAS_RTTI || defined(SCL_DOXYGEN)
         // std::any has no volatile-qualified members, so a volatile std::any is excluded
         // rather than bound as one nothing could later reach.
         template <typename Any>
@@ -120,7 +120,7 @@ namespace scl
         // cppcheck-suppress noExplicitConstructor
         // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
         constexpr any_argument(Type && object SCL_LIFETIMEBOUND
-#ifndef DOXYGEN
+#ifndef SCL_DOXYGEN
             // The anchor is a caller's temporary, so it cannot be created inside this
             // constructor; a default argument is what puts it in the caller's frame. It is
             // an implementation detail of constant evaluation, never something to pass.
@@ -198,7 +198,7 @@ namespace scl
         return detail::erased_cast<Type>(reached);
     }
 
-#if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
+#if SCL_HAS_EXCEPTIONS || defined(SCL_DOXYGEN)
     // Constrained to the argument itself, not to any_base: a view converts to one
     // implicitly, and admitting that conversion would hand it write access.
     template <::scl::concepts::lvalue_reference Type, typename WriteArgument>
@@ -249,7 +249,7 @@ namespace scl
 // Documentation-only declarations
 // =============================================================================
 
-#ifdef DOXYGEN
+#ifdef SCL_DOXYGEN
 namespace scl
 {
     class any_argument

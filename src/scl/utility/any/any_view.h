@@ -17,7 +17,7 @@
 #include <memory>
 #include <type_traits>
 
-#if SCL_HAS_RTTI || defined(DOXYGEN)
+#if SCL_HAS_RTTI || defined(SCL_DOXYGEN)
 #include <any>
 #endif
 #include <typeinfo>
@@ -46,7 +46,7 @@ namespace scl
         constexpr any_view & operator=(any_view &&) = default;
         constexpr ~any_view() = default;
 
-#if SCL_HAS_RTTI || defined(DOXYGEN)
+#if SCL_HAS_RTTI || defined(SCL_DOXYGEN)
         // cppcheck-suppress noExplicitConstructor
         constexpr any_view(::std::any const & value SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
             : base_type{::std::addressof(value), &detail::any_type_descriptor_of<::std::any const &>}
@@ -165,7 +165,7 @@ namespace scl
         return nullptr;
     }
 
-#if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
+#if SCL_HAS_EXCEPTIONS || defined(SCL_DOXYGEN)
     // Not deduced: this form must keep admitting an implicit conversion, which template
     // deduction does not consider. A volatile handle cannot bind here — use the pointer form.
     template <typename Type>
@@ -187,7 +187,7 @@ namespace scl
 // Documentation-only declarations
 // =============================================================================
 
-#ifdef DOXYGEN
+#ifdef SCL_DOXYGEN
 namespace scl
 {
     class any_view

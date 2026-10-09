@@ -83,7 +83,7 @@ namespace scl::concepts
      * static_assert(!scl::concepts::scoped_enum<int>);
      * @endcode
      */
-#if (defined(__cpp_lib_is_scoped_enum) && __cpp_lib_is_scoped_enum >= 202011L) || defined(DOXYGEN)
+#if (defined(__cpp_lib_is_scoped_enum) && __cpp_lib_is_scoped_enum >= 202011L) || defined(SCL_DOXYGEN)
     template <typename T>
     concept scoped_enum = enum_type<T> && ::std::is_scoped_enum_v<T>;
 #else

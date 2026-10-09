@@ -635,7 +635,7 @@ namespace scl
         return detail::any_holder_object<bare>(any->held());
     }
 
-#if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
+#if SCL_HAS_EXCEPTIONS || defined(SCL_DOXYGEN)
     // Not deduced: this form must admit an implicit conversion, which deduction ignores.
     template <typename ValueType, typename AnyType>
     [[nodiscard]]

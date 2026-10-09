@@ -30,5 +30,5 @@ find "$SCL_SRC_DIR" \( -name '*.h' -o -name '*.hpp' \) -exec "$CPPCHECK" \
     --error-exitcode=1 \
     --suppressions-list="$SUPP_LIST" \
     -I"$SCL_SRC_DIR" \
-    -UDOXYGEN \
+    -USCL_DOXYGEN \
     {} +

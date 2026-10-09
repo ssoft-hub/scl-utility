@@ -379,7 +379,7 @@ except where the table below says to document in place. A contributor must name 
 the command `@class`, `@fn`, `@typedef` or `@var`, a concept with the command `@concept`, and a
 macro with the command `@def`, parameters included: `@def SCL_ASSUME(expr)`. A contributor must
 write one block for a macro, describing every branch that defines it: Doxygen reads only the
-branch active where the macro `DOXYGEN` is defined, and merges a second block for the same macro
+branch active where the macro `SCL_DOXYGEN` is defined, and merges a second block for the same macro
 into the first with no report. A contributor must spell the target the way Doxygen renders it,
 parameter names included: `node(Arguments &&... arguments)`, not `node(Arguments &&...)`.
 Attribute macros are expanded before matching, so a contributor must spell an `@fn` without them.
@@ -390,13 +390,13 @@ Attribute macros are expanded before matching, so a contributor must spell an `@
 | `requires A && B` | the leading `::` after `&&` is dropped, no match | `requires(A) && (B)` |
 | A dependent east-const pointer return, declared and defined | the two render differently, no pairing | drop the namespace-scope declaration; the `friend` one suffices |
 | Overloads told apart only by the template parameter list | no `@fn` spelling separates them | document in place, above the declaration |
-| A member re-exported from a private base with `using` | left off the class page | declare it once more in a `Documentation-only declarations` block under `#ifdef DOXYGEN`, as the example below shows |
+| A member re-exported from a private base with `using` | left off the class page | declare it once more in a `Documentation-only declarations` block under `#ifdef SCL_DOXYGEN`, as the example below shows |
 | An unqualified befriended class sharing a member's name | it captures that member's block, no report | name it from the root: `friend class ::scl::hierarchy::tree<...>;` |
 
 ```cpp
 // Documentation-only declarations
 
-#ifdef DOXYGEN
+#ifdef SCL_DOXYGEN
 namespace scl
 {
     class any_view
@@ -410,17 +410,17 @@ namespace scl
 
 ### Names of `detail`
 
-The reference excludes the entities of the `detail` namespaces, yet prints the name of one
-wherever a public declaration refers to it: in a `requires` clause or a `noexcept` expression, in
-the definition of an alias template, in the type of a variable template, in the body of a concept,
-in the list of base classes and in a `friend` function declaration. A contributor must keep such a
-name out of the declaration Doxygen reads, where the macro `DOXYGEN` is defined, and must state in
+The reference excludes the entities of the `detail` namespaces, yet prints the name of one wherever
+a public declaration refers to it: in a `requires` clause or a `noexcept` expression, in the
+definition of an alias template, in the type of a variable template, in the body of a concept, in
+the list of base classes and in a `friend` function declaration. A contributor must keep such a name
+out of the declaration Doxygen reads, where the macro `SCL_DOXYGEN` is defined, and must state in
 the block what the hidden part states.
 
 | Where the name stands | Fix, must |
 |---|---|
-| A `requires` clause, a `noexcept` expression, a base class, a `friend` function declaration | the clause, the base or the `friend` declaration under `#ifndef DOXYGEN`; for a `noexcept` expression, the whole `noexcept(...)`, since a bare `noexcept` left behind reads as a promise without condition |
-| The definition of an alias template, the type of a variable template, the body of a concept | the declaration under `#ifndef DOXYGEN`, and a declaration without the name in the `Documentation-only declarations` block: `auto` for the type of a variable template, `unspecified` for the definition of an alias template or the body of a concept |
+| A `requires` clause, a `noexcept` expression, a base class, a `friend` function declaration | the clause, the base or the `friend` declaration under `#ifndef SCL_DOXYGEN`; for a `noexcept` expression, the whole `noexcept(...)`, since a bare `noexcept` left behind reads as a promise without condition |
+| The definition of an alias template, the type of a variable template, the body of a concept | the declaration under `#ifndef SCL_DOXYGEN`, and a declaration without the name in the `Documentation-only declarations` block: `auto` for the type of a variable template, `unspecified` for the definition of an alias template or the body of a concept |
 
 Two overloads whose `requires` clauses are hidden can render the same; the first row of the table
 of the Out-of-line blocks section gives the fix.
@@ -428,7 +428,7 @@ of the Out-of-line blocks section gives the fix.
 ```cpp
 template <typename Type>
 constexpr any_view(Type & object) noexcept
-#ifndef DOXYGEN
+#ifndef SCL_DOXYGEN
     requires(!::scl::detail::is_std_any_v<::std::remove_cvref_t<Type>>)
 #endif
     : base_type{::std::addressof(object), &::scl::detail::any_type_descriptor_of<Type &>}
@@ -436,7 +436,7 @@ constexpr any_view(Type & object) noexcept
 
 // Documentation-only declarations
 
-#ifdef DOXYGEN
+#ifdef SCL_DOXYGEN
 namespace scl
 {
     template <typename... Args>

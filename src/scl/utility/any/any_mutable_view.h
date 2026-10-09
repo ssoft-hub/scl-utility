@@ -20,7 +20,7 @@
 #include <memory>
 #include <type_traits>
 
-#if SCL_HAS_RTTI || defined(DOXYGEN)
+#if SCL_HAS_RTTI || defined(SCL_DOXYGEN)
 #include <any>
 #endif
 
@@ -51,7 +51,7 @@ namespace scl
         constexpr any_mutable_view & operator=(any_mutable_view &&) = default;
         constexpr ~any_mutable_view() = default;
 
-#if SCL_HAS_RTTI || defined(DOXYGEN)
+#if SCL_HAS_RTTI || defined(SCL_DOXYGEN)
         // cppcheck-suppress noExplicitConstructor
         constexpr any_mutable_view(::std::any & value SCL_LIFETIMEBOUND) noexcept // NOLINT(*-explicit-*)
             : base_type{::std::addressof(value), &detail::any_type_descriptor_of<::std::any &>}
@@ -160,7 +160,7 @@ namespace scl
         return detail::erased_cast<Type>(reached);
     }
 
-#if SCL_HAS_EXCEPTIONS || defined(DOXYGEN)
+#if SCL_HAS_EXCEPTIONS || defined(SCL_DOXYGEN)
     // Pinned to this class by deduction: a plain parameter would admit the conversion from
     // a reading handle, and with it a write that handle never promised.
     template <::scl::concepts::lvalue_reference Type, typename WriteView>
@@ -206,7 +206,7 @@ namespace scl
 // Documentation-only declarations
 // =============================================================================
 
-#ifdef DOXYGEN
+#ifdef SCL_DOXYGEN
 namespace scl
 {
     class any_mutable_view
