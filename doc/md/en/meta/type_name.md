@@ -36,11 +36,11 @@ extract the exact type representation.
   MSVC               class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
   ```
 - **What the result is for:**
-  Display - a log line, an error message, a name shown to a human. It is not a stable
-  identifier: no part of it is guaranteed to agree between compilers, so nothing should
-  compare it against a literal, parse it, or persist it. For type identity use
-  [`type_key`](type_key.md), which is designed for comparison; for the bare identifier of a
-  namespace-scope type use `type_short_name<T>()`.
+  The result is for display to a human, such as in a log line or an error message. No compiler
+  guarantees that any part of the name agrees with the name another compiler gives, so nothing
+  should store the result, parse it or compare it against a literal. Its spelling may also change in
+  a later version of the module. Types are compared by [`type_key`](type_key.md), and
+  `type_short_name<T>()` returns the identifier of a type declared at namespace scope.
 - **Qualified Names:**
   The result includes all namespace and class scope qualifiers (e.g., `std::vector<int>`).
 - **Compile-time Evaluation:**
@@ -110,6 +110,9 @@ last `::` delimiter outside brackets. Additionally, `struct`/`class`/`union`/`en
 (present on MSVC) and template arguments are stripped, so the result is the bare identifier. For a
 closure type or an unnamed class or enumeration the result is the name the compiler generates, such
 as `<lambda_1>` with MSVC.
+
+The result is for display, as the result of `type_name<T>()` is: its spelling differs between
+compilers and may change in a later version of the module.
 
 ### Example
 
