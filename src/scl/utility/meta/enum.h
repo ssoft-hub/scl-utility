@@ -34,7 +34,7 @@ enum we5r256sg_e // NOLINT(cppcoreguidelines-use-enum-class, performance-enum-si
 
 namespace scl::detail
 {
-    template <concepts::enum_type auto V>
+    template <::scl::concepts::enum_type auto V>
     constexpr ::std::string_view enum_name_pattern_text() noexcept
     {
 #ifdef _MSC_VER

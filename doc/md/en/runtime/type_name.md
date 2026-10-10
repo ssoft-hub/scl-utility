@@ -20,7 +20,7 @@ namespace scl
 
     template <typename T>
     [[nodiscard]] ::std::string type_short_name(T const & obj)
-        requires(::scl::detail::short_named<T>);
+        requires(see below class_enum_or_fundamental);
 }
 ```
 
@@ -46,8 +46,11 @@ namespace scl
 - **Short name:** for the type `app::Task<int>` the function template `type_short_name(obj)`
   returns `Task`. For a closure type or an unnamed class or enumeration it returns the name the
   compiler generates, such as `<lambda_1>` with MSVC, and for a fundamental type the name the
-  compiler spells it with, without a namespace qualifier, such as `int`. A call whose argument is
-  a pointer, an array, a function or a pointer to a member does not compile.
+  compiler spells it with, without a namespace qualifier, such as `int`.
+- **Constraint:** in the declaration of `type_short_name(obj)`, the constraint
+  `class_enum_or_fundamental` is satisfied by a class, a union, an enumeration and a fundamental
+  type. A pointer, an array, a function and a pointer to a member do not satisfy it, and a call
+  with an argument of such a type does not compile.
 
 ## Examples
 

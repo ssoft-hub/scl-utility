@@ -224,11 +224,14 @@ namespace scl::detail
         return (tmpl != ::std::string_view::npos) ? stripped.substr(0, tmpl) : stripped;
     }
 
-    // A pointer, an array, a function or a pointer to a member spells a declarator around the
-    // name, which short_name_from does not take apart.
-    template <typename T>
-    concept short_named = ::std::is_class_v<T> || ::std::is_union_v<T> || ::std::is_enum_v<T> ||
-        ::std::is_fundamental_v<T>;
+    namespace concepts
+    {
+        // A pointer, an array, a function or a pointer to a member spells a declarator around the
+        // name, which short_name_from does not take apart.
+        template <typename T>
+        concept short_named = ::std::is_class_v<T> || ::std::is_union_v<T> || ::std::is_enum_v<T> ||
+            ::std::is_fundamental_v<T>;
+    } // namespace concepts
 
     template <typename T>
     constexpr ::std::string_view type_name_pattern_text() noexcept
@@ -352,7 +355,7 @@ namespace scl
     template <typename T>
     [[nodiscard]]
     constexpr auto type_short_name() noexcept
-        requires(detail::short_named<::std::remove_cvref_t<T>>)
+        requires(::scl::detail::concepts::short_named<::std::remove_cvref_t<T>>)
     {
         return detail::short_name_from(type_name<::std::remove_cvref_t<T>>());
     }

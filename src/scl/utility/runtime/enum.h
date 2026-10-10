@@ -88,6 +88,7 @@ namespace scl::detail::concepts
 
 } // namespace scl::detail::concepts
 
+#ifndef SCL_DOXYGEN
 namespace scl::concepts
 {
     template <typename Format, typename Enum>
@@ -98,6 +99,7 @@ namespace scl::concepts
         ::scl::detail::concepts::enum_format_parameter<Format, ::std::underlying_type_t<Enum>>;
 
 } // namespace scl::concepts
+#endif
 
 namespace scl
 {
@@ -128,6 +130,18 @@ namespace scl
     }
 
 } // namespace scl
+
+// -----------------------------------------------------------------------------
+// Documentation-only declarations
+// -----------------------------------------------------------------------------
+
+#ifdef SCL_DOXYGEN
+namespace scl::concepts
+{
+    template <typename Format, typename Enum>
+    concept enum_string_format = unspecified;
+} // namespace scl::concepts
+#endif
 
 // -----------------------------------------------------------------------------
 // Documentation

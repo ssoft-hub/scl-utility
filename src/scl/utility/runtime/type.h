@@ -136,7 +136,11 @@ namespace scl
     template <typename T>
     [[nodiscard]]
     ::std::string type_short_name(T const & obj)
-        requires(::scl::detail::short_named<T>)
+#ifdef SCL_DOXYGEN
+        requires(see below class_enum_or_fundamental)
+#else
+        requires(::scl::detail::concepts::short_named<T>)
+#endif
     {
         return ::std::string{
             ::scl::detail::short_name_from(::scl::detail::demangled_type_name(typeid(obj)))};
@@ -188,11 +192,13 @@ namespace scl
  *
  * For the type `app::Task<int>` the result is `Task`.
  *
+ * In the declaration, the constraint `class_enum_or_fundamental` is satisfied by a class, a union,
+ * an enumeration and a fundamental type. A pointer, an array, a function and a pointer to a member
+ * do not satisfy it, and a call with an argument of such a type does not compile.
+ *
  * @snippet runtime/type_name/runtime_type_name_example.cpp short
  *
- * @tparam T Static type of the object, deduced: a class, a union, an enumeration or a fundamental
- *         type. A pointer, an array, a function or a pointer to a member does not satisfy the
- *         constraint.
+ * @tparam T Static type of the object, deduced.
  * @param obj Object whose type is named.
  * @return For a class, a union or an enumeration type, the unqualified identifier of that type; for
  *         a closure type or an unnamed class or enumeration, the name the compiler generates for it;
