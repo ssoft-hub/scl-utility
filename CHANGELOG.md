@@ -52,6 +52,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [hash] Accepted a view that cannot be read through a `const` reference
 - [hash] Accepted `std::byte` and other single-byte trivially copyable elements
 - [meta] Documented that MSVC keeps the class key in `type_name`, a name to show, not compare
+- [meta] Returned an empty name from `enum_name<V>()` for a value no constant of its type has
 - [meta] Returned the generated name of a closure or an unnamed type from `type_short_name<T>()`
 - [meta] Stopped `type_short_name<T>()` returning `operator` for a name that holds `operator<`
 - [meta] Dropped `const`, `volatile` and a reference from the type `type_short_name<T>()` names

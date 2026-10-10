@@ -25,6 +25,8 @@ Retrieves the qualified string representation of an enumeration member `V` at co
 - **Qualified Result:**
   Depending on the compiler and enum type (scoped vs. unscoped), the result typically includes
   the type name (e.g., `Color::Red`).
+- **Value without a constant:**
+  For a value no constant of its type has, such as `Color{42}`, the result is an empty string.
 
 ### Examples
 
@@ -46,6 +48,7 @@ static_assert(scl::enum_name<Active>() == "Active");
 ## `enum_short_name<V>`
 
 Retrieves only the identifier of the enum member `V`, stripping any type or namespace qualifiers.
+For a value no constant of its type has the result is an empty string.
 
 - Header: `#include <scl/utility/meta/enum.h>`
 - Declaration: `template <auto V> requires std::is_enum_v<decltype(V)> constexpr std::string_view enum_short_name() noexcept;`
