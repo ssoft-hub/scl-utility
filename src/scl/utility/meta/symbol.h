@@ -94,6 +94,9 @@ namespace scl
      * 
      * @tparam S Pointer to the symbol (global function, class method, or data member).
      * @return A ::std::string_view containing the qualified name of the symbol.
+     *
+     * @warning The result is for display: its spelling differs between compilers and may change
+     * in a later version of the module.
      * 
      * @details This function extracts the symbol name from the decorated signature 
      * and performs aggressive cleanup of compiler-specific artifacts such as:
@@ -141,6 +144,9 @@ namespace scl
      * 
      * @tparam S Pointer to the symbol.
      * @return A ::std::string_view containing only the symbol identifier (e.g., "run").
+     *
+     * @warning The result is for display: its spelling may change in a later version of the
+     * module.
      * 
      * @details Strips all namespace and class qualifiers from the result of ::scl::symbol_name<S>().
      * Ideal for reflection-like tasks where only the member name is required.

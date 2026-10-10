@@ -30,6 +30,9 @@ non-type template parameters.
 - **Member Support:**
   Works for both pointer-to-member-functions (`&Class::Method`) and
   pointer-to-data-members (`&Class::Field`).
+- **What the result is for:**
+  Display. Its spelling differs between compilers and may change in a later version of the
+  module.
 
 ### Examples
 
@@ -63,7 +66,8 @@ where the string name of a class field or function is required at compile-time.
 
 ## `symbol_short_name<S>`
 
-Retrieves only the terminal identifier of the symbol `S`.
+Retrieves only the terminal identifier of the symbol `S`. The result is for display, and its
+spelling may change in a later version of the module.
 
 - Header: `#include <scl/utility/meta/symbol.h>`
 - Declaration: `template <auto S> constexpr std::string_view symbol_short_name() noexcept;`

@@ -301,9 +301,9 @@ namespace scl
      *
      * @warning The result is for display, not for identity. No part of it is
      * guaranteed to agree between compilers or standard libraries, so it must not
-     * be compared against a literal, parsed, or persisted. ::scl::type_key is the
-     * comparable type identity; ::scl::type_short_name is the bare identifier of a
-     * namespace-scope type.
+     * be compared against a literal, parsed, or persisted, and its spelling may change in a
+     * later version of the module. ::scl::type_key is the comparable type identity;
+     * ::scl::type_short_name is the bare identifier of a namespace-scope type.
      *
      * @code
      * struct MyType {};
@@ -343,6 +343,9 @@ namespace scl
      * scopes by finding the last '::' delimiter outside brackets, and finally removes template
      * arguments by cutting off everything from '<' onwards. A name that opens with a bracket, which
      * a compiler generates for a closure type or an unnamed class or enumeration, is kept whole.
+     *
+     * @warning The result is for display, as the result of ::scl::type_name<T>() is: its
+     * spelling differs between compilers and may change in a later version of the module.
      *
      * @code
      * namespace app::core {

@@ -38,7 +38,8 @@ extract the exact type representation.
 - **What the result is for:**
   Display - a log line, an error message, a name shown to a human. It is not a stable
   identifier: no part of it is guaranteed to agree between compilers, so nothing should
-  compare it against a literal, parse it, or persist it. For type identity use
+  compare it against a literal, parse it, or persist it, and its spelling may change in a later
+  version of the module. For type identity use
   [`type_key`](type_key.md), which is designed for comparison; for the bare identifier of a
   namespace-scope type use `type_short_name<T>()`.
 - **Qualified Names:**
@@ -110,6 +111,9 @@ last `::` delimiter outside brackets. Additionally, `struct`/`class`/`union`/`en
 (present on MSVC) and template arguments are stripped, so the result is the bare identifier. For a
 closure type or an unnamed class or enumeration the result is the name the compiler generates, such
 as `<lambda_1>` with MSVC.
+
+The result is for display, as the result of `type_name<T>()` is: its spelling differs between
+compilers and may change in a later version of the module.
 
 ### Example
 

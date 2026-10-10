@@ -107,6 +107,9 @@ namespace scl
      * 
      * @note The result usually includes the enum type name (e.g., "Color::Red") 
      * depending on how the enum was defined and the compiler used.
+     *
+     * @warning The result is for display: its spelling differs between compilers and may change
+     * in a later version of the module.
      * 
      * @code
      * enum class Color { Red };
@@ -139,6 +142,9 @@ namespace scl
      * @tparam V The enum value.
      * @return A ::std::string_view containing only the member name (e.g., "Red"), or an empty
      *         ::std::string_view where no constant of the type of @p V has the value @p V.
+     *
+     * @warning The result is for display: its spelling may change in a later version of the
+     * module.
      * 
      * @details This is a convenience wrapper that takes the result of ::scl::enum_name<V>() 
      * and strips all type and namespace qualifiers.
