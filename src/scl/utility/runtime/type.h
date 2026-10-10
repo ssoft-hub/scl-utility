@@ -139,7 +139,7 @@ namespace scl
 #ifdef SCL_DOXYGEN
         requires(see below class_enum_or_fundamental)
 #else
-        requires(::scl::detail::short_named<T>)
+        requires(::scl::detail::concepts::short_named<T>)
 #endif
     {
         return ::std::string{
