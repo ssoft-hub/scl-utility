@@ -2,6 +2,7 @@
 
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 /**
  * @file
@@ -105,8 +106,7 @@ namespace scl::detail
 
     // Where the keyword operator opens when the character at an index belongs to an angle-bracket
     // symbol after it, such as the < of operator<; the index itself otherwise.
-    constexpr ::std::size_t
-    operator_start(::std::string_view str, ::std::size_t index, bool shorter) noexcept
+    constexpr ::std::size_t operator_start(::std::string_view str, ::std::size_t index) noexcept
     {
         if (!::scl::detail::operator_symbol_char(::scl::detail::char_or_null_at(str, index)))
             return index;
@@ -114,11 +114,7 @@ namespace scl::detail
         while (symbol > 0 &&
             ::scl::detail::operator_symbol_char(::scl::detail::char_or_null_at(str, symbol - 1)))
             --symbol;
-        auto length = ::scl::detail::angle_operator_length(str.substr(symbol));
-        // The shorter reading leaves the last > of ->, <=> or >> to a template argument list, as in
-        // Holder<&operator->, where a pointer to operator- closes it.
-        if (shorter && length > 1 && ::scl::detail::char_or_null_at(str, symbol + length - 1) == '>')
-            --length;
+        auto const length = ::scl::detail::angle_operator_length(str.substr(symbol));
         constexpr ::std::string_view keyword = "operator";
         auto const head = str.substr(0, str.substr(0, symbol).find_last_not_of(' ') + 1);
         if (!head.ends_with(keyword) || index >= symbol + length)
@@ -127,7 +123,7 @@ namespace scl::detail
         return start > 0 && ::scl::detail::identifier_char(::scl::detail::char_or_null_at(str, start - 1)) ? index : start;
     }
 
-    // Whether the operator at an index is ->, <=> or >>, whose last > may close a template
+    // Whether the operator at an index is ->, ->*, <=> or >>, whose last > may close a template
     // argument list instead.
     constexpr bool glued_angle_symbol(::std::string_view str, ::std::size_t keyword) noexcept
     {
@@ -135,25 +131,47 @@ namespace scl::detail
         auto const start = rest.find_first_not_of(' ');
         auto const symbol = start == ::std::string_view::npos ? ::std::string_view{} : rest.substr(start);
         auto const length = ::scl::detail::angle_operator_length(symbol);
-        return length > 1 && symbol.substr(0, length).ends_with('>');
+        auto const spelled = symbol.substr(0, length);
+        return length > 1 && (spelled.ends_with('>') || spelled == "->*");
     }
 
     struct scope_scan
     {
         ::std::size_t position;
         int bracket_depth;
-        bool glued;
+        unsigned glued_count;
     };
+
+    // Where the scan from the end goes on after the angle bracket at an index.
+    constexpr ::std::size_t
+    scan_angle(::std::string_view str, ::std::size_t index, scope_scan & result, unsigned shorter_from_end) noexcept
+    {
+        auto const keyword = ::scl::detail::operator_start(str, index);
+        if (keyword == index)
+        {
+            result.bracket_depth += ::scl::detail::char_or_null_at(str, index) == '>' ? 1 : -1;
+            return index;
+        }
+        if (!::scl::detail::glued_angle_symbol(str, keyword))
+            return keyword;
+        // No compiler writes :: right after the keyword operator and its symbol, so the > of
+        // operator->:: closes an argument list.
+        auto const shorter = str.substr(index + 1).starts_with("::") || result.glued_count++ < shorter_from_end;
+        if (!shorter)
+            return keyword;
+        ++result.bracket_depth;
+        return keyword;
+    }
 
     // The scan runs from the end, so the bare symbol MSVC writes for an operator scope, as in
     // <=::Local, lies before the last '::' and cannot hide it.
-    constexpr scope_scan scan_scopes(::std::string_view str, bool shorter) noexcept
+    constexpr scope_scan scan_scopes(::std::string_view str, unsigned shorter_from_end) noexcept
     {
-        scope_scan result{.position = ::std::string_view::npos, .bracket_depth = 0, .glued = false};
+        scope_scan result{.position = ::std::string_view::npos, .bracket_depth = 0, .glued_count = 0};
         for (auto index = str.size(); index > 0;)
         {
             --index;
-            switch (char const ch = ::scl::detail::char_or_null_at(str, index))
+            switch (::scl::detail::char_or_null_at(str, index))
             {
             case '\'':
             case '"':
@@ -161,16 +179,7 @@ namespace scl::detail
                 break;
             case '<':
             case '>':
-                if (auto const keyword = ::scl::detail::operator_start(str, index, shorter); keyword != index)
-                {
-                    result.glued = result.glued ||
-                        (!shorter && ::scl::detail::glued_angle_symbol(str, keyword));
-                    index = keyword;
-                }
-                else
-                {
-                    result.bracket_depth += ch == '>' ? 1 : -1;
-                }
+                index = ::scl::detail::scan_angle(str, index, result, shorter_from_end);
                 break;
             case ')':
             case '}':
@@ -186,7 +195,7 @@ namespace scl::detail
                 {
                     result.position = index - 1;
                     // Only a glued symbol makes the whole name worth reading for its balance.
-                    if (!result.glued)
+                    if (result.glued_count == 0)
                         return result;
                 }
                 break;
@@ -197,19 +206,21 @@ namespace scl::detail
         return result;
     }
 
-    // Only a name whose brackets fail to balance under the longest reading takes the shorter one.
     constexpr auto find_last_scope_operator(::std::string_view str) noexcept
     {
-        auto const longest = ::scl::detail::scan_scopes(str, false);
-        if (!longest.glued || longest.bracket_depth == 0)
+        auto const longest = ::scl::detail::scan_scopes(str, 0U);
+        // Each shorter reading counts one more >.
+        auto const missing = -longest.bracket_depth;
+        if (missing <= 0 || ::std::cmp_greater(missing, longest.glued_count))
             return longest.position;
-        auto const shorter = ::scl::detail::scan_scopes(str, true);
-        return shorter.bracket_depth == 0 ? shorter.position : longest.position;
+        // Given to the glued symbols nearest the end, the shorter readings keep the depth highest at
+        // every point, so no other reading balances where this one fails.
+        return ::scl::detail::scan_scopes(str, static_cast<unsigned>(missing)).position;
     }
 
     constexpr ::std::string_view short_name_from(::std::string_view full) noexcept
     {
-        auto const last_pos = find_last_scope_operator(full);
+        auto const last_pos = ::scl::detail::find_last_scope_operator(full);
         auto const after = (last_pos != ::std::string_view::npos) ? full.substr(last_pos + 2) : full;
         auto const stripped = after.starts_with("struct ") ? after.substr(7)
             : after.starts_with("class ")                  ? after.substr(6)
@@ -347,6 +358,14 @@ namespace scl
      * @warning The result is for display, as the result of ::scl::type_name<T>() is: its
      * spelling differs between compilers and may change in a later version of the module.
      *
+     * @note GCC and Clang spell a pointer to the member `operator-` before a closing `>` as
+     * `operator->`, so two types can get one name. Take a class `P` with both operators and class
+     * templates `Holder` and `Wrap`, each with a member template `Inner`. Clang names both
+     * `Wrap<Holder<&P::operator- >>::Inner<&P::operator-> >` and
+     * `Wrap<Holder<&P::operator-> >::Inner<&P::operator- >>` as
+     * `Wrap<Holder<&P::operator->>::Inner<&P::operator->>`, and the short name of both is `Wrap`,
+     * which is wrong for the first of them.
+     *
      * @code
      * namespace app::core {
      *     template<typename T> struct Task {};
@@ -360,7 +379,7 @@ namespace scl
     constexpr auto type_short_name() noexcept
         requires(::scl::detail::concepts::short_named<::std::remove_cvref_t<T>>)
     {
-        return detail::short_name_from(type_name<::std::remove_cvref_t<T>>());
+        return ::scl::detail::short_name_from(::scl::type_name<::std::remove_cvref_t<T>>());
     }
 
 } // namespace scl

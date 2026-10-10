@@ -293,7 +293,11 @@ namespace
 
     template <auto Function>
     struct Holder
-    {};
+    {
+        template <auto Other>
+        struct Inner
+        {};
+    };
 
     template <typename T>
     struct Box
@@ -306,6 +310,10 @@ namespace
     struct Pointing
     {
         Pointing const * operator->() const { return this; }
+
+        int operator-(Pointing) const { return 0; }
+
+        int operator->*(int) const { return 0; }
     };
 
     template <auto Function>
@@ -313,6 +321,14 @@ namespace
     {
         template <auto Other>
         struct Member
+        {};
+    };
+
+    template <typename T>
+    struct Wrap
+    {
+        template <auto Other>
+        struct Inner
         {};
     };
 } // namespace
@@ -377,6 +393,41 @@ TEST(MetaTypeTest, OperatorInTemplateArgumentShortName)
     EXPECT_EQ(::scl::type_short_name<Box<cooperator<int>>>(), "Box");
     EXPECT_EQ(::scl::type_short_name<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>(),
         "Member");
+}
+
+/**
+ * @test Verify that the operators ->, ->* and - in template arguments do not move the short name to
+ *       another scope.
+ */
+TEST(MetaTypeTest, ArrowAndMinusInTemplateArgumentShortName)
+{
+    EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator-> >>>(), "Box");
+    EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator- >>>(), "Box");
+    EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator- > *>>(), "Box");
+    EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator->* >>>(), "Box");
+    EXPECT_EQ(
+        ::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>>(), "Box");
+    EXPECT_EQ(::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>>(),
+        "Box");
+    EXPECT_EQ(
+        ::scl::type_short_name<Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>>(), "Box");
+    EXPECT_EQ(::scl::type_short_name<Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>>(),
+        "Box");
+    EXPECT_EQ(::scl::type_short_name<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>(), "Member");
+    EXPECT_EQ(::scl::type_short_name<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>(), "Member");
+    EXPECT_EQ(::scl::type_short_name<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>(), "Member");
+}
+
+/**
+ * @test Verify the short names the documentation states for two types GCC and Clang give one name.
+ */
+TEST(MetaTypeTest, SharedNameShortName)
+{
+    using first_type = Wrap<Holder<&Pointing::operator- >>::Inner<&Pointing::operator-> >;
+    using second_type = Wrap<Holder<&Pointing::operator-> >::Inner<&Pointing::operator- >>;
+    auto const shared = ::scl::type_name<first_type>() == ::scl::type_name<second_type>();
+    EXPECT_EQ(::scl::type_short_name<first_type>(), shared ? "Wrap" : "Inner");
+    EXPECT_EQ(::scl::type_short_name<second_type>(), "Wrap");
 }
 
 /**

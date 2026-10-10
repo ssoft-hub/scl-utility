@@ -323,6 +323,10 @@ namespace
     struct Pointing
     {
         Pointing const * operator->() const { return this; }
+
+        int operator-(Pointing) const { return 0; }
+
+        int operator->*(int) const { return 0; }
     };
 
     template <auto Function>
@@ -364,6 +368,29 @@ TEST(TypeShortNameTest, OperatorInTemplateArgument)
     EXPECT_EQ(::scl::type_short_name(Box<cooperator<int>>{}), "Box");
     EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >{}),
         "Member");
+}
+
+/**
+ * @test Verify that the operators ->, ->* and - in template arguments do not move the short name to
+ *       another scope.
+ */
+TEST(TypeShortNameTest, ArrowAndMinusInTemplateArgument)
+{
+    EXPECT_EQ(::scl::type_short_name(Box<Holder<&Pointing::operator-> >>{}), "Box");
+    EXPECT_EQ(::scl::type_short_name(Box<Holder<&Pointing::operator- >>{}), "Box");
+    EXPECT_EQ(::scl::type_short_name(Box<Holder<&Pointing::operator- > *>{}), "Box");
+    EXPECT_EQ(::scl::type_short_name(Box<Holder<&Pointing::operator->* >>{}), "Box");
+    EXPECT_EQ(
+        ::scl::type_short_name(Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>{}), "Box");
+    EXPECT_EQ(::scl::type_short_name(Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>{}),
+        "Box");
+    EXPECT_EQ(
+        ::scl::type_short_name(Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>{}), "Box");
+    EXPECT_EQ(::scl::type_short_name(Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>{}),
+        "Box");
+    EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >{}), "Member");
+    EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >{}), "Member");
+    EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >{}), "Member");
 }
 
 /**

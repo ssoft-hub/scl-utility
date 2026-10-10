@@ -115,6 +115,14 @@ as `<lambda_1>` with MSVC.
 The result is for display, as the result of `type_name<T>()` is: its spelling differs between
 compilers and may change in a later version of the module.
 
+GCC and Clang spell a pointer to the member `operator-` before a closing `>` as `operator->`, so
+two types can get one name. Take a class `P` with both operators and class templates `Holder` and
+`Wrap`, each with a member template `Inner`. Clang names both
+`Wrap<Holder<&P::operator- >>::Inner<&P::operator-> >` and
+`Wrap<Holder<&P::operator-> >::Inner<&P::operator- >>` as
+`Wrap<Holder<&P::operator->>::Inner<&P::operator->>`, and the short name of both is `Wrap`, which
+is wrong for the first of them.
+
 ### Example
 
 <!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_short_name -->
