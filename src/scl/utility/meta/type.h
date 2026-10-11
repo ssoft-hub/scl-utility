@@ -6,22 +6,8 @@
 
 /**
  * @file
- * @brief Traits for compile-time type name extraction (C++20).
+ * @brief Names of types at compile time.
  * @ingroup scl_utility_meta
- * @details
- * - ::scl::type_name<T>:
- *     Extracts the fully qualified name of the template type T.
- *     The rendering is compiler-specific and is not normalized: MSVC keeps the
- *     'class'/'struct'/'union'/'enum' prefix, at the top level and inside template arguments
- *     alike, where GCC and Clang omit it, and the standard library decides how its own
- *     types spell themselves. It is meant for display, not for identity - ::scl::type_key
- *     is what compares.
- * - ::scl::type_short_name<T>:
- *     Extracts only the unqualified identifier of a class, union, enumeration or fundamental
- *     type T, with const, volatile and a reference dropped.
- *     Strips all leading namespace and class scope qualifiers, the MSVC
- *     'class'/'struct'/'union'/'enum' prefix, and the template arguments; the name the
- *     compiler generates for a closure type or an unnamed class or enumeration is kept whole.
  */
 
 namespace scl::detail
@@ -255,8 +241,8 @@ namespace scl::detail
 
     namespace concepts
     {
-        // A pointer, an array, a function or a pointer to a member spells a declarator around the
-        // name, which short_name_from does not take apart.
+        // A pointer, an array, a function or a pointer to a member spells a declarator around
+        // the name, which short_name_from does not take apart.
         template <typename T>
         concept short_named = ::std::is_class_v<T> || ::std::is_union_v<T> || ::std::is_enum_v<T> ||
             ::std::is_fundamental_v<T>;
@@ -311,38 +297,31 @@ namespace scl::detail
 namespace scl
 {
     /**
-     * @brief Retrieves the string name of the template type T at compile-time.
+     * @brief Returns the name of the type T as the compiler spells it.
      * @ingroup scl_utility_meta
      *
-     * @tparam T The type whose name needs to be extracted.
-     * @return A ::std::string_view containing the human-readable name of the type.
+     * @tparam T The type to name.
+     * @return The name with the namespaces, the classes, `const`, `volatile` and the reference
+     *         the type has, such as `const app::Item &` for `app::Item const &` with Clang.
      *
-     * @details This function uses compiler-specific macros (`__FUNCSIG__` on MSVC
-     * and `__PRETTY_FUNCTION__` on GCC/Clang) to extract the type name from
-     * the decorated function signature. The result is evaluated at compile-time.
+     * The name is taken at compile time from the signature the compiler gives a function template:
+     * `__FUNCSIG__` with MSVC, `__PRETTY_FUNCTION__` with GCC and Clang. MSVC writes the key
+     * `class`, `struct`, `union` or `enum` before the name of a class, a union or an enumeration,
+     * at the top level and in template arguments alike, and GCC and Clang write none. GCC spells
+     * a type of the standard library with every namespace its library declares it in, an inline one
+     * included, such as `std::__cxx11` with libstdc++, and Clang leaves an inline namespace out.
+     * MSVC writes the default arguments of the template of such a type, which GCC and Clang leave
+     * out.
      *
-     * @note On MSVC, the output includes the 'struct ', 'class ', 'union ' and
-     * 'enum ' keywords as part of the type name (e.g., "struct MyType" instead of
-     * "MyType", "enum Color" instead of "Color"), inside template arguments as well
-     * as at the top level. This differs from GCC/Clang which omit these keywords.
+     * @warning The result is for display, not for identity: it differs between compilers and
+     * standard libraries, and its spelling may change in a later version of the module.
+     * Types are compared by the keys ::scl::type_key_of returns.
      *
-     * @warning The result is for display, not for identity. No part of it is
-     * guaranteed to agree between compilers or standard libraries, so it must not
-     * be compared against a literal, parsed, or persisted, and its spelling may change in
-     * a later version of the module. ::scl::type_key is the comparable type identity;
-     * ::scl::type_short_name is the bare identifier of a namespace-scope type.
-     *
-     * @code
-     * struct MyType {};
-     * constexpr auto name = ::scl::type_name<MyType>();
-     * // MSVC: Returns "struct MyType"
-     * // GCC/Clang: Returns "MyType"
-     * constexpr auto int_name = ::scl::type_name<int>(); // Returns "int" on all compilers
-     * @endcode
+     * @snippet meta/type_name/meta_type_name_example.cpp type_name
      */
     template <typename T>
     [[nodiscard]]
-    constexpr auto type_name() noexcept
+    constexpr ::std::string_view type_name() noexcept
     {
         constexpr auto pattern_text = ::scl::detail::type_name_pattern_text<T>();
         constexpr auto prefix_length = ::scl::detail::type_name_pattern_prefix_length();
@@ -355,45 +334,42 @@ namespace scl
     }
 
     /**
-     * @brief Retrieves the short name of the template type T at compile-time.
+     * @brief Returns the name of the type T without qualifiers and template arguments.
      * @ingroup scl_utility_meta
      *
-     * @tparam T The type whose name needs to be extracted: a class, a union, an enumeration or a
-     *         fundamental type, with or without const, volatile and a reference. A pointer, an
-     *         array, a function or a pointer to a member does not satisfy the constraint.
-     * @return A ::std::string_view containing the name of the type without const, volatile, a
-     *         reference, namespaces, class qualifiers, or template arguments; for a closure type or
-     *         an unnamed class or enumeration, the name the compiler generates.
+     * @tparam T The type to name: a class, a union, an enumeration or a fundamental type, with or
+     *         without `const`, `volatile` and a reference.
+     * @return For a class, a union or an enumeration, its identifier, such as `Task` for
+     *         `app::Task<int> const &`; for a closure type or an unnamed class or enumeration,
+     *         the name the compiler generates, such as `<lambda()>` with GCC; for a fundamental
+     *         type, the name the compiler spells it with, without its namespace, such as `int`, or
+     *         `nullptr_t` for `std::nullptr_t` with GCC and Clang and `nullptr` with MSVC.
      *
-     * @details This function first extracts the full name using ::scl::type_name<T>() of the type
-     * with const, volatile and a reference removed, then strips all leading namespace and class
-     * scopes by finding the last '::' delimiter outside brackets, and finally removes template
-     * arguments by cutting off everything from '<' onwards. A name that opens with a bracket, which
-     * a compiler generates for a closure type or an unnamed class or enumeration, is kept whole.
+     * In the declaration, the constraint `class_enum_or_fundamental` is satisfied by a class,
+     * a union, an enumeration and a fundamental type, with or without `const`, `volatile` and
+     * a reference. A pointer, an array, a function and a pointer to a member do not satisfy it.
      *
      * @warning The result is for display, as the result of ::scl::type_name<T>() is: its
      * spelling differs between compilers and may change in a later version of the module.
      *
-     * @note GCC and Clang spell a pointer to the member `operator-` before a closing `>` as
-     * `operator->`, so two types can get one name. Take a class `P` with both operators and class
-     * templates `Holder` and `Wrap`, each with a member template `Inner`. Clang names both
+     * @note GCC and Clang spell a pointer to `operator-` before a closing `>` as `operator->`, so
+     * two types can get one name. Take a class `P` with both operators and class templates `Holder`
+     * and `Wrap`, each with a member template `Inner`. Clang names both
      * `Wrap<Holder<&P::operator- >>::Inner<&P::operator-> >` and
      * `Wrap<Holder<&P::operator-> >::Inner<&P::operator- >>` as
-     * `Wrap<Holder<&P::operator->>::Inner<&P::operator->>`, and the short name of both is `Wrap`,
-     * which is wrong for the first of them.
+     * `Wrap<Holder<&P::operator->>::Inner<&P::operator->>`, so the function cannot tell the two
+     * apart and returns `Wrap` for both, while the first is a specialization of `Inner`.
      *
-     * @code
-     * namespace app::core {
-     *     template<typename T> struct Task {};
-     * }
-     * constexpr auto full = ::scl::type_name<app::core::Task<int>>();  // "app::core::Task<int>"
-     * constexpr auto name = ::scl::type_short_name<app::core::Task<int>>(); // "Task"
-     * @endcode
+     * @snippet meta/type_name/meta_type_name_example.cpp type_short_name
      */
     template <typename T>
     [[nodiscard]]
-    constexpr auto type_short_name() noexcept
+    constexpr ::std::string_view type_short_name() noexcept
+#ifdef SCL_DOXYGEN
+        requires(see below class_enum_or_fundamental)
+#else
         requires(::scl::detail::concepts::short_named<::std::remove_cvref_t<T>>)
+#endif
     {
         return ::scl::detail::short_name_from(::scl::type_name<::std::remove_cvref_t<T>>());
     }

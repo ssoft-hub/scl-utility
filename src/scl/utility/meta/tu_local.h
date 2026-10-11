@@ -8,13 +8,8 @@
 
 /**
  * @file
- * @brief Trait detecting translation-unit-local (internal linkage) types (C++20).
+ * @brief Whether a type is local to its translation unit.
  * @ingroup scl_utility_meta
- * @details
- * - ::scl::is_tu_local<T> / ::scl::is_tu_local_v<T>:
- *     Detects whether T is declared in an anonymous namespace (directly or as a
- *     component of a compound type), i.e. whether same-named declarations in
- *     other translation units denote distinct types.
  */
 
 namespace scl::detail
@@ -70,7 +65,7 @@ namespace scl::detail
             ::scl::detail::materialize_marker<marker_nested_text.size()>(marker_nested_text);
     } // namespace
 
-    // ODR: the marker is passed by value on purpose — binding a reference to
+    // ODR: the marker is passed by value on purpose; binding a reference to
     // the internal-linkage marker object inside these inline functions would
     // odr-use it and void the [basic.def.odr] carve-out relied on above.
     // cppcheck-suppress-begin passedByValue
@@ -193,57 +188,41 @@ namespace scl::detail
 namespace scl
 {
     /**
-     * @brief Detects whether the type T is local to the current translation unit.
+     * @brief Tells whether the type T is local to its translation unit.
      * @ingroup scl_utility_meta
      *
-     * @tparam T The type to classify.
+     * @tparam T The type to classify: neither a local class nor a closure type, nor a type built
+     *         of one.
      *
-     * @details A type is TU-local when it is declared in an anonymous namespace,
-     * or when any component of a compound type is (e.g. a pointer to, reference
-     * to, or template specialization over an anonymous-namespace type). Such a
-     * type has internal linkage: a same-named declaration in another translation
-     * unit denotes a different type.
+     * The class template derives from ::std::true_type where `T`, with `const` and `volatile`
+     * dropped, is declared in an unnamed namespace or is built of such a type: a pointer,
+     * a reference or an array of it, a function type or a pointer to a member whose types include
+     * it, or a specialization of a class template with type parameters over it. It derives from
+     * ::std::false_type otherwise. A type declared in an unnamed namespace has internal linkage,
+     * and a declaration of the same name in another translation unit declares another type.
      *
-     * A compound type is decomposed structurally: a pointer, a reference, an
-     * array, a function type and a template specialization answer from what
-     * they are built from, and a pointer to member from either its class or
-     * its member type. A rendering carries no contract, and a release that
-     * prints a component unqualified would otherwise classify it as external.
+     * A specialization of a class template with a parameter that is not a type, and a function
+     * type with a cv-qualifier, a ref-qualifier or an ellipsis, are classified by the name
+     * the compiler spells for them. A string or a character that a template argument holds is not
+     * read as part of that name.
      *
-     * What remains, a class type, is classified by searching its rendered name
-     * for the compiler's anonymous-namespace marker, derived at compile time by
-     * diffing the ::scl::type_name<T>() rendering of a TU-local probe type
-     * against an external probe of the same shape. Two markers are derived,
-     * because MSVC spells the marker differently for top-level types and for
-     * types nested inside template arguments. A marker is accepted anywhere
-     * outside string and character literals, so a string non-type template
-     * parameter spelling the marker inside its quoted value does not
-     * misclassify an external type.
+     * @note A local class and a closure type are outside the contract: compilers spell them
+     * without a reliable mark of locality.
      *
-     * @note Local classes and closure types are outside the contract of this
-     * trait: compilers render them without a reliable marker (Clang prints a
-     * bare name). Only namespace-scope types are classified.
-     *
-     * @note A template taking a non-type parameter, and a function type with
-     * a cv-qualifier, a ref-qualifier or a C-style ellipsis, are classified
-     * from the rendering rather than decomposed.
-     *
-     * @code
-     * namespace { struct duck {}; }
-     * struct goose {};
-     * static_assert(::scl::is_tu_local_v<duck>);
-     * static_assert(::scl::is_tu_local_v<std::vector<duck>>);
-     * static_assert(!::scl::is_tu_local_v<goose>);
-     * @endcode
+     * @snippet meta/is_tu_local/meta_is_tu_local_example.cpp is_tu_local
      */
     template <typename T>
-    struct is_tu_local : ::scl::detail::tu_local_impl<::std::remove_cv_t<T>>
+    struct is_tu_local
+#ifndef SCL_DOXYGEN
+        : ::scl::detail::tu_local_impl<::std::remove_cv_t<T>>
+#endif
     {};
 
     /**
-     * @brief Convenience variable template for ::scl::is_tu_local.
+     * @brief Whether the type T is local to its translation unit, as ::scl::is_tu_local tells.
      * @ingroup scl_utility_meta
-     * @tparam T The type to classify.
+     * @tparam T The type to classify: neither a local class nor a closure type, nor a type built
+     *         of one.
      */
     template <typename T>
     inline constexpr bool is_tu_local_v = is_tu_local<T>::value;

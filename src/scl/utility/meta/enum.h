@@ -7,17 +7,8 @@
 
 /**
  * @file
- * @brief Compile-time enumeration introspection utilities (C++20).
+ * @brief Names of the constants of enumerations at compile time.
  * @ingroup scl_utility_meta
- * @details
- * - ::scl::enum_name<V>:
- *     Retrieves the qualified string name of the enum member V, or an empty string where no
- *     constant of its type has the value V.
- * - ::scl::enum_short_name<V>:
- *     Retrieves only the identifier of the enum member V without type or namespace qualifiers,
- *     or an empty string where no constant of its type has the value V.
- * - ::scl::concepts::enum_type:
- *     Concept satisfied by any enumeration type (scoped or unscoped).
  */
 
 namespace scl::detail
@@ -80,23 +71,19 @@ namespace scl::detail
 namespace scl
 {
     /**
-     * @brief Retrieves the qualified string name of an enum member at compile-time.
+     * @brief Returns the full name of the constant V of an enumeration.
      * @ingroup scl_utility_meta
-     * 
-     * @tparam V The enum value whose name needs to be extracted.
-     * @return A ::std::string_view containing the qualified name of the enum member, or an empty
-     *         ::std::string_view where no constant of the type of @p V has the value @p V.
-     * 
-     * @note The result usually includes the enum type name (e.g., "Color::Red") 
-     * depending on how the enum was defined and the compiler used.
+     *
+     * @tparam V A value of an enumeration type.
+     * @return The name of the constant of the type of @p V that has the value @p V, such as
+     *         `app::Color::Red` for a constant of a scoped enumeration and `app::Active` for one
+     *         of an unscoped enumeration; an empty view where no constant of that type has
+     *         the value @p V.
      *
      * @warning The result is for display: its spelling can differ between compilers, as for a type
      * in an unnamed namespace, and may change in a later version of the module.
-     * 
-     * @code
-     * enum class Color { Red };
-     * constexpr auto name = ::scl::enum_name<Color::Red>(); // Returns "Color::Red"
-     * @endcode
+     *
+     * @snippet meta/enum_name/meta_enum_name_example.cpp enum_name
      */
     template <::scl::concepts::enum_type auto V>
     [[nodiscard]]
@@ -115,23 +102,17 @@ namespace scl
     }
 
     /**
-     * @brief Retrieves the short string name of an enum member at compile-time.
+     * @brief Returns the name of the constant V of an enumeration alone.
      * @ingroup scl_utility_meta
-     * 
-     * @tparam V The enum value.
-     * @return A ::std::string_view containing only the member name (e.g., "Red"), or an empty
-     *         ::std::string_view where no constant of the type of @p V has the value @p V.
+     *
+     * @tparam V A value of an enumeration type.
+     * @return The name of the constant of the type of @p V that has the value @p V alone, such
+     *         as `Red`; an empty view where no constant of that type has the value @p V.
      *
      * @warning The result is for display: its spelling may change in a later version of
      * the module.
-     * 
-     * @details This is a convenience wrapper that takes the result of ::scl::enum_name<V>() 
-     * and strips all type and namespace qualifiers.
-     * 
-     * @code
-     * namespace gfx { enum class Mode { Fast }; }
-     * constexpr auto name = ::scl::enum_short_name<gfx::Mode::Fast>(); // Returns "Fast"
-     * @endcode
+     *
+     * @snippet meta/enum_name/meta_enum_name_example.cpp enum_short_name
      */
     template <::scl::concepts::enum_type auto V>
     [[nodiscard]]
