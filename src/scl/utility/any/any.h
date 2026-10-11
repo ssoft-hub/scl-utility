@@ -1026,11 +1026,13 @@ namespace scl
  * @return Pointer to the stored object on a type match; `nullptr` on mismatch or
  *         for a null pointer or an empty any. Never throws.
  *
- * @warning A match compares @ref scl::type_key values, which stays exact across
- *          module boundaries and tells same-named anonymous-namespace types from
- *          different translation units apart. Two limits of the key carry over: a
- *          type declared at block scope is outside its contract, and a key must
- *          not outlive the module that produced it.
+ * @warning The function matches types by their @ref scl::type_key values, which
+ *          tell same-named types from anonymous namespaces of different translation
+ *          units apart across module boundaries as well. Three limits of the key
+ *          carry over: a type declared at block scope is outside its contract,
+ *          the key of a type whose name holds `operator->`, `operator->*`,
+ *          `operator<=>` or `operator>>` can differ, with GCC or Clang, from its key
+ *          in another module, and a key must not outlive the module that produced it.
  */
 
 /**

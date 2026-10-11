@@ -458,9 +458,14 @@ scl::any stored{std::in_place_type<scl::any_view>, view};   // stores the view
 
 ### Identity across module boundaries
 
-A cast compares [`scl::type_key`](../meta/type_key.md) values and obeys the same two limits
-as a view does. A type declared inside a block is outside the contract of the key. The key
-itself must not outlive the module that created it.
+The function template `scl::any_cast` matches types by their
+[`scl::type_key`](../meta/type_key.md) values, so the three limits of the key that apply to a view
+apply to it as well:
+
+- A type declared inside a block is outside the contract of the key.
+- The key of a type whose name holds `operator->`, `operator->*`, `operator<=>` or `operator>>` can
+  differ, with GCC or Clang, from the key of that type in another module, such as a DLL on Windows.
+- The key must not outlive the module that created it.
 
 ## See also
 

@@ -434,13 +434,16 @@ namespace scl
  *         mismatch, a qualifier the request does not cover, a null pointer, or an
  *         empty view. Never throws.
  *
- * @warning A raw-backed match compares @ref scl::type_key values, which stays exact
- *          across module boundaries and tells same-named anonymous-namespace types
- *          from different translation units apart. Two limits of the key carry over
- *          unchanged: a type declared at block scope (a local class or a closure
- *          type) is outside its contract and may falsely match a same-named
- *          namespace-scope type, and a key must not outlive the module that produced
- *          it — drop views built inside a shared library before unloading it.
+ * @warning For a view that references an object directly, the function matches
+ *          types by their @ref scl::type_key values, which tell same-named types
+ *          from anonymous namespaces of different translation units apart across
+ *          module boundaries as well. Three limits of the key carry over: a type
+ *          declared at block scope (a local class or a closure type) is outside its
+ *          contract and may falsely match a same-named namespace-scope type, the key
+ *          of a type whose name holds `operator->`, `operator->*`, `operator<=>` or
+ *          `operator>>` can differ, with GCC or Clang, from its key in another module,
+ *          and a key must not outlive the module that produced it - drop views built
+ *          inside a shared library before unloading it.
  */
 
 /**

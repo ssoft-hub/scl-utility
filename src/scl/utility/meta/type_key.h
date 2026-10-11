@@ -37,7 +37,7 @@ namespace scl
     {
     private:
         ::std::string_view m_name;
-        void const * m_tu = nullptr;
+        void const * m_anchor = nullptr;
 
     public:
         constexpr type_key() = default;
@@ -54,9 +54,9 @@ namespace scl
         }
 
     private:
-        constexpr type_key(::std::string_view name, void const * tu) noexcept
+        constexpr type_key(::std::string_view name, void const * anchor) noexcept
             : m_name{name}
-            , m_tu{tu}
+            , m_anchor{anchor}
         {}
 
         [[nodiscard]]
@@ -64,7 +64,7 @@ namespace scl
         {
             if (&left == &right)
                 return true;
-            return left.m_tu == right.m_tu && left.m_name == right.m_name;
+            return left.m_anchor == right.m_anchor && left.m_name == right.m_name;
         }
 
         template <typename T>
@@ -83,13 +83,37 @@ namespace scl::detail
         constexpr ::std::byte tu_anchor{};
     } // namespace
 
+    // GCC and Clang glue operator- and operator<= to a closing >, and Clang glues operator> to it
+    // as well, so a name holding such a glued symbol may stand for two types.
+    constexpr bool name_reads_two_ways([[maybe_unused]] ::std::string_view name) noexcept
+    {
+#if defined(_MSC_VER) && !defined(__clang__)
+        return false;
+#else
+        constexpr ::std::string_view keyword = "operator";
+        for (auto at = name.find(keyword); at != ::std::string_view::npos; at = name.find(keyword, at + 1))
+        {
+            bool const whole = at == 0 ||
+                !::scl::detail::identifier_char(::scl::detail::char_or_null_at(name, at - 1));
+            if (whole && ::scl::detail::glued_angle_symbol(name, at))
+                return true;
+        }
+        return false;
+#endif
+    }
+
+    template <typename T>
+    inline constexpr ::std::byte type_anchor{};
+
     template <typename T>
     constexpr type_key make_type_key() noexcept
     {
-        void const * tu = nullptr;
-        if constexpr (is_tu_local_v<T>)
-            tu = &tu_anchor;
-        return type_key{type_name<T>(), tu};
+        void const * anchor = nullptr;
+        if constexpr (::scl::detail::name_reads_two_ways(::scl::type_name<T>()))
+            anchor = &::scl::detail::type_anchor<T>;
+        else if constexpr (is_tu_local_v<T>)
+            anchor = &tu_anchor;
+        return type_key{type_name<T>(), anchor};
     }
 
     template <typename T>
@@ -117,19 +141,30 @@ namespace scl
  * @ingroup scl_utility_meta
  * @brief Equality-comparable, RTTI-free identity key of a type.
  *
- * Identity is the pair `{name, tu}`:
+ * Identity is the pair `{name, anchor}`:
  * - `name` — the compile-time ::scl::type_name<T>() string;
- * - `tu` — a per-translation-unit discriminator: `nullptr` for external
+ * - `anchor` — a discriminator: `nullptr` for external
  *   types, the address of a TU-private anchor for TU-local types
- *   (see ::scl::is_tu_local).
+ *   (see ::scl::is_tu_local), apart from a type whose name holds
+ *   one of the symbols described below.
  *
  * For types declared at namespace scope the two components together
  * eliminate both failure modes of simpler schemes:
  * - **No false match:** same-named anonymous-namespace types from different
  *   TUs share the `name` string but carry different anchor addresses.
  * - **No false reject:** an external type used across a shared-library
- *   boundary compares by `name` with `tu == nullptr` on both sides, so
- *   unmerged inline instantiations (Windows DLLs) cannot break equality.
+ *   boundary compares by `name` with `anchor == nullptr` on both sides, so
+ *   unmerged inline instantiations (Windows DLLs) cannot break equality,
+ *   apart from a type whose name holds one of the symbols described below.
+ *
+ * With GCC and Clang one name may stand for two types, as ::scl::type_short_name states: both
+ * write a pointer to `operator-` before a closing `>` as `operator->` and a pointer to `operator<=`
+ * before it as `operator<=>`, and Clang writes a pointer to `operator>` before it as `operator>>`.
+ * GCC also writes a pointer to such a specialization, `Tagged<&P::operator- > *`, as
+ * `Tagged<&P::operator->*`. With GCC and Clang, a type whose name holds `operator->`, `operator->*`, `operator<=>` or
+ * `operator>>` carries the address of an anchor of its own as `anchor`. The keys of two such types
+ * differ, and the key of such a type from another module may compare unequal to its key from this
+ * one.
  *
  * Keys are exposed by ::scl::type_key_of<T>() as references to per-type
  * constants and are fully usable in constant expressions. Only `type_key_of`
@@ -152,7 +187,7 @@ namespace scl
  *
  * @warning A key is a view into the module (executable or shared library)
  * that produced it: `name` points into that module's signature literal and
- * `tu` into that module's anchor. A key must not outlive its producing
+ * `anchor` into that module's anchor object. A key must not outlive its producing
  * module — after `FreeLibrary`/`dlclose` the pointers dangle, and a module
  * later mapped at the same base address can even resurrect a stale TU-local
  * key into falsely matching a fresh unrelated one. Drop stored keys when
@@ -210,7 +245,7 @@ namespace scl
  * Short-circuits on address identity first: `type_key_of<T>()` returns a
  * reference to a per-type inline variable, unique within a module, so
  * comparing stored references against it costs one pointer comparison.
- * Otherwise falls back to content: `a.name == b.name && a.tu == b.tu` —
+ * Otherwise falls back to content: `a.name == b.name && a.anchor == b.anchor` —
  * the path taken by keys that crossed a module boundary.
  * @return `true` when both keys denote the same type; `!=` is synthesised
  *         from this.
@@ -229,10 +264,13 @@ namespace scl
  * by content.
  *
  * For an external type the key is `{type_name<T>(), nullptr}` — identical in
- * every translation unit and across shared-library boundaries. For a TU-local
- * type (::scl::is_tu_local_v<T> is `true`) the key additionally carries the
- * address of an anchor object private to the including translation unit, so
- * same-named TU-local types from different TUs compare unequal.
+ * every translation unit and across shared-library boundaries. With GCC and
+ * Clang, a type whose name holds one of the symbols the class describes carries
+ * an anchor of its own instead, identical in every translation unit of one
+ * module. For a TU-local type (::scl::is_tu_local_v<T> is `true`) the key
+ * additionally carries the address of an anchor object private to the including
+ * translation unit, so same-named TU-local types from different TUs compare
+ * unequal.
  *
  * @pre T must be declared at namespace scope. Local classes and closure
  * types are outside the contract: compilers render them without a reliable
