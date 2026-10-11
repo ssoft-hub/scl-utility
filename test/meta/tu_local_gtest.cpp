@@ -1,5 +1,6 @@
 #include <gtest_utils.h>
 
+#include <type_traits>
 #include <vector>
 
 #include <scl/utility/meta/tu_local.h>
@@ -62,12 +63,24 @@ namespace TuLocalNs
 } // namespace TuLocalNs
 
 /**
- * @test Verify a type declared in an anonymous namespace is detected as TU-local.
+ * @test Verify a type declared in an anonymous namespace is detected as TU-local, and that the
+ *       variable template is a bool const.
  */
 TEST(TuLocalTest, AnonymousNamespaceType)
 {
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local<AnonDuck>::value);
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::is_tu_local_v<AnonDuck>), bool const>));
+}
+
+/**
+ * @test Verify the class template derives from std::true_type for a local type and from
+ *       std::false_type for any other.
+ */
+TEST(TuLocalTest, BaseClass)
+{
+    STATIC_EXPECT_TRUE((::std::is_base_of_v<::std::true_type, ::scl::is_tu_local<AnonDuck>>));
+    STATIC_EXPECT_TRUE((::std::is_base_of_v<::std::false_type, ::scl::is_tu_local<GlobalDuck>>));
 }
 
 /**
@@ -88,12 +101,17 @@ TEST(TuLocalTest, CompoundTypes)
 {
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck *>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck &>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck &&>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck const>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck volatile>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<::std::vector<AnonDuck>>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<TuLocalNs::Box<AnonDuck>>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck (*)(int)>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void (*)(AnonDuck)>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck[3]>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<AnonDuck[]>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void(AnonDuck)>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void(AnonDuck) noexcept>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::*>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::* const>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<int AnonDuck::**>);
@@ -105,6 +123,22 @@ TEST(TuLocalTest, CompoundTypes)
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void (*)(int AnonDuck::*)>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<TuLocalNs::Box<int AnonDuck::*>>);
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<::std::vector<int AnonDuck::*>>);
+}
+
+/**
+ * @test Verify a function type with an ellipsis, a cv-qualifier or a ref-qualifier is classified by
+ *       the name the compiler spells.
+ */
+TEST(TuLocalTest, FunctionTypeClassifiedByName)
+{
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void(AnonDuck, ...)>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void(AnonDuck) const>);
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<void(AnonDuck) &>);
+    using qualified_function = void(AnonDuck) const && noexcept;
+    STATIC_EXPECT_TRUE(::scl::is_tu_local_v<qualified_function>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<void(GlobalDuck, ...)>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<void(GlobalDuck) const>);
+    STATIC_EXPECT_FALSE(::scl::is_tu_local_v<void(GlobalDuck) &>);
 }
 
 /**
@@ -129,7 +163,8 @@ TEST(TuLocalTest, ExternalCompoundTypes)
  */
 TEST(TuLocalTest, StringNttpDoesNotInjectMarker)
 {
-    using namespace TuLocalNs;
+    using ::TuLocalNs::FixedString;
+    using ::TuLocalNs::StringTag;
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<StringTag<FixedString{"{anonymous}"}>>);
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<StringTag<FixedString{"(anonymous namespace)"}>>);
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<StringTag<FixedString{"`anonymous-namespace'"}>>);
@@ -143,7 +178,7 @@ TEST(TuLocalTest, StringNttpDoesNotInjectMarker)
  */
 TEST(TuLocalTest, CharNttpDoesNotInjectMarker)
 {
-    using namespace TuLocalNs;
+    using ::TuLocalNs::CharTag;
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<CharTag<'{'>>);
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<CharTag<'\''>>);
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<CharTag<'\\'>>);
@@ -155,7 +190,8 @@ TEST(TuLocalTest, CharNttpDoesNotInjectMarker)
  */
 TEST(TuLocalTest, TuLocalTypeWithStringNttpStaysLocal)
 {
-    using namespace TuLocalNs;
+    using ::TuLocalNs::FixedString;
+    using ::TuLocalNs::MixedTag;
     using MixedGccToken = MixedTag<AnonDuck, FixedString{"{anonymous}"}>;
     using MixedClangToken = MixedTag<AnonDuck, FixedString{"(anonymous namespace)"}>;
     STATIC_EXPECT_TRUE(::scl::is_tu_local_v<MixedGccToken>);

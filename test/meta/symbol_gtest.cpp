@@ -7,6 +7,12 @@
 #include <string_view>
 #include <type_traits>
 
+namespace Outside
+{
+    struct Item
+    {};
+} // namespace Outside
+
 namespace Namespace
 {
     void initialize() {}
@@ -285,8 +291,7 @@ TEST(MetaSymbolTest, ShortNames)
     STATIC_EXPECT_EQ(::scl::symbol_short_name<&Namespace::Processor::property>(), "property");
     STATIC_EXPECT_EQ(::scl::symbol_short_name<&Namespace::Processor::count>(), "count");
     STATIC_EXPECT_EQ(::scl::symbol_short_name<&Namespace::variable>(), "variable");
-    STATIC_EXPECT_TRUE(
-        ::scl::symbol_short_name<&Namespace::generic<Namespace::Processor>>().starts_with("generic"));
+    STATIC_EXPECT_TRUE(::scl::symbol_short_name<&Namespace::generic<Outside::Item>>().starts_with("generic"));
 }
 
 /**
