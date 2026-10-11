@@ -17,18 +17,11 @@
  *     Useful for reflection-like tasks where only the member or function name is required.
  */
 
-/**
- * @internal
- * @brief Pattern anchor: a symbol of a known name, so the shape the compiler
- *        gives `__PRETTY_FUNCTION__` can be measured against it.
- *
- * The name is deliberately unpronounceable, so that it cannot occur inside a
- * symbol name being extracted.
- */
-inline void lah4l4tjla6_f() {}
-
 namespace scl::detail
 {
+    // Its name occurs in the signature of its pattern function only at the template argument.
+    constexpr void lah4l4tjla6_f() noexcept {}
+
     template <auto S>
     constexpr ::std::string_view symbol_pattern_text() noexcept
     {
@@ -74,7 +67,7 @@ namespace scl::detail
     // MSVC-specific: use bracket extraction like type_name
     constexpr ::std::size_t symbol_prefix_length() noexcept
     {
-        constexpr auto text = symbol_pattern_text<lah4l4tjla6_f>();
+        constexpr auto text = ::scl::detail::symbol_pattern_text<lah4l4tjla6_f>();
         constexpr auto close_pattern = text.rfind(">(");
         if constexpr (close_pattern == ::std::string_view::npos)
             return 0;
@@ -85,7 +78,7 @@ namespace scl::detail
 
     constexpr auto symbol_suffix_length() noexcept
     {
-        constexpr auto text = symbol_pattern_text<lah4l4tjla6_f>();
+        constexpr auto text = ::scl::detail::symbol_pattern_text<lah4l4tjla6_f>();
         constexpr auto close_pattern = text.rfind(">(");
         return (close_pattern != ::std::string_view::npos) ? text.length() - close_pattern : 0;
     }
@@ -284,13 +277,15 @@ namespace scl::detail
     // GCC/Clang: use marker search
     constexpr auto symbol_prefix_length() noexcept
     {
-        return symbol_pattern_text<lah4l4tjla6_f>().find("lah4l4tjla6_f");
+        constexpr auto text = ::scl::detail::symbol_pattern_text<lah4l4tjla6_f>();
+        return ::scl::detail::find_anchor(text, "scl::detail::lah4l4tjla6_f").position;
     }
 
     constexpr auto symbol_suffix_length() noexcept
     {
-        constexpr auto text = symbol_pattern_text<lah4l4tjla6_f>();
-        return text.length() - symbol_prefix_length() - ::std::string_view("lah4l4tjla6_f").length();
+        constexpr auto text = ::scl::detail::symbol_pattern_text<lah4l4tjla6_f>();
+        constexpr auto anchor = ::scl::detail::find_anchor(text, "scl::detail::lah4l4tjla6_f");
+        return text.length() - anchor.position - anchor.length;
     }
 #endif
 
@@ -330,9 +325,9 @@ namespace scl
     [[nodiscard]]
     constexpr ::std::string_view symbol_name() noexcept
     {
-        constexpr auto text = detail::symbol_pattern_text<S>();
-        constexpr auto prefix_length = detail::symbol_prefix_length();
-        constexpr auto suffix_length = detail::symbol_suffix_length();
+        constexpr auto text = ::scl::detail::symbol_pattern_text<S>();
+        constexpr auto prefix_length = ::scl::detail::symbol_prefix_length();
+        constexpr auto suffix_length = ::scl::detail::symbol_suffix_length();
 
         constexpr auto result = text.substr(prefix_length, text.length() - prefix_length - suffix_length);
 

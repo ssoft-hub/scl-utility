@@ -24,11 +24,29 @@
  *     compiler generates for a closure type or an unnamed class or enumeration is kept whole.
  */
 
-struct p8qim3n2a_t
-{};
-
 namespace scl::detail
 {
+    // Its name occurs in the signature of its pattern function only at the template argument.
+    struct p8qim3n2a_t
+    {};
+
+    struct anchor_span
+    {
+        ::std::size_t position;
+        ::std::size_t length;
+    };
+
+    // GCC spells a type or a function of the namespace its enclosing function stands in without
+    // that namespace, where Clang and MSVC spell the namespace too.
+    constexpr ::scl::detail::anchor_span
+    find_anchor(::std::string_view text, ::std::string_view qualified) noexcept
+    {
+        if (auto const position = text.find(qualified); position != ::std::string_view::npos)
+            return {.position = position, .length = qualified.size()};
+        auto const bare = qualified.substr(qualified.rfind(':') + 1);
+        return {.position = text.find(bare), .length = bare.size()};
+    }
+
     constexpr char char_or_null_at(::std::string_view str, ::std::size_t index) noexcept
     {
         return index < str.size() ? str.substr(index, 1).front() : '\0';
@@ -258,7 +276,7 @@ namespace scl::detail
     // MSVC renders the signature as "ReturnType __cdecl FunctionName<TYPE>(void)".
     constexpr ::std::size_t type_name_pattern_prefix_length() noexcept
     {
-        constexpr auto text = type_name_pattern_text<p8qim3n2a_t>();
+        constexpr auto text = ::scl::detail::type_name_pattern_text<p8qim3n2a_t>();
         constexpr auto close_pattern = text.rfind(">(");
         if constexpr (close_pattern == ::std::string_view::npos)
             return 0;
@@ -269,7 +287,7 @@ namespace scl::detail
 
     constexpr ::std::size_t type_name_pattern_suffix_length() noexcept
     {
-        constexpr auto text = type_name_pattern_text<p8qim3n2a_t>();
+        constexpr auto text = ::scl::detail::type_name_pattern_text<p8qim3n2a_t>();
         // Find the closing > followed by (void) pattern
         constexpr auto close_pattern = text.rfind(">(");
         return (close_pattern != ::std::string_view::npos) ? text.length() - close_pattern : 0;
@@ -278,15 +296,15 @@ namespace scl::detail
     // GCC/Clang/Clang-on-MSVC: use marker search
     constexpr auto type_name_pattern_prefix_length() noexcept
     {
-        constexpr auto prefix_length = type_name_pattern_text<p8qim3n2a_t>().find("p8qim3n2a_t");
-        return prefix_length;
+        constexpr auto text = ::scl::detail::type_name_pattern_text<p8qim3n2a_t>();
+        return ::scl::detail::find_anchor(text, "scl::detail::p8qim3n2a_t").position;
     }
 
     constexpr auto type_name_pattern_suffix_length() noexcept
     {
-        constexpr auto suffix = type_name_pattern_text<p8qim3n2a_t>().length() -
-            type_name_pattern_prefix_length() - ::std::string_view("p8qim3n2a_t").length();
-        return suffix;
+        constexpr auto text = ::scl::detail::type_name_pattern_text<p8qim3n2a_t>();
+        constexpr auto anchor = ::scl::detail::find_anchor(text, "scl::detail::p8qim3n2a_t");
+        return text.length() - anchor.position - anchor.length;
     }
 #endif
 
@@ -328,9 +346,9 @@ namespace scl
     [[nodiscard]]
     constexpr auto type_name() noexcept
     {
-        constexpr auto pattern_text = detail::type_name_pattern_text<T>();
-        constexpr auto prefix_length = detail::type_name_pattern_prefix_length();
-        constexpr auto suffix_length = detail::type_name_pattern_suffix_length();
+        constexpr auto pattern_text = ::scl::detail::type_name_pattern_text<T>();
+        constexpr auto prefix_length = ::scl::detail::type_name_pattern_prefix_length();
+        constexpr auto suffix_length = ::scl::detail::type_name_pattern_suffix_length();
 
         static_assert(!pattern_text.empty());
 
