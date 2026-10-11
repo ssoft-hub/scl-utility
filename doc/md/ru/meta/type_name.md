@@ -55,35 +55,16 @@
 
 <!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_name -->
 ```cpp
-#include <scl/utility/meta/type.h>
+// Every compiler spells int alike.
+static_assert(scl::type_name<int>() == "int");
 
-#include <string>
-#include <vector>
+// MSVC writes the class key before the name of a class: app::Item, or struct app::Item.
+static_assert(scl::type_name<app::Item>().ends_with("app::Item"));
 
-struct MyStruct
-{};
-
-constexpr auto npos = ::std::string_view::npos;
-
-// Fundamental types render identically on every compiler.
-static_assert(::scl::type_name<int>() == "int");
-
-// A standard library type spells itself the way the toolchain does. std::string:
-// GCC:              "std::__cxx11::basic_string<char>"
-// Clang, libstdc++: "std::basic_string<char>"
-// Clang, libc++:    "std::string"
-// MSVC:             "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
-static_assert(::scl::type_name<::std::string>().find("string") != npos);
-
-// A user-defined type carries the MSVC prefix.
-// GCC/Clang: "MyStruct"  |  MSVC: "struct MyStruct"
-static_assert(::scl::type_name<MyStruct>().find("MyStruct") != npos);
-
-// The prefix reaches template arguments as well, so a rendered template name has no
-// spelling common to all three compilers.
-// GCC/Clang: "std::vector<MyStruct>"
-// MSVC:      "class std::vector<struct MyStruct,class std::allocator<struct MyStruct> >"
-static_assert(::scl::type_name<::std::vector<MyStruct>>().find("MyStruct") != npos);
+// GCC spells a type of the standard library with an inline namespace of its library, such as
+// std::__cxx11::basic_string<char>, and Clang leaves that namespace out, as in
+// std::basic_string<char>.
+static_assert(scl::type_name<std::string>().find("string") != std::string_view::npos);
 ```
 
 ### Типичные сценарии использования
@@ -133,16 +114,9 @@ GCC и Clang записывают указатель на член `operator-` �
 
 <!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_short_name -->
 ```cpp
-namespace app::core
-{
-    struct Task
-    {};
-} // namespace app::core
-
-// The short name is the bare identifier on every compiler: namespace qualifiers, the
-// MSVC prefix and the template arguments are all stripped.
-static_assert(::scl::type_short_name<app::core::Task>() == "Task");
-static_assert(::scl::type_short_name<::std::vector<MyStruct>>() == "vector");
+static_assert(scl::type_short_name<app::Task<int>>() == "Task");
+static_assert(scl::type_short_name<app::Item const &>() == "Item");
+static_assert(scl::type_short_name<std::vector<app::Item>>() == "vector");
 ```
 
 ## Смотрите также

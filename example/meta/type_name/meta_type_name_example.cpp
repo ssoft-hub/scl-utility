@@ -1,68 +1,51 @@
 /**
  * @example meta_type_name_example.cpp
- * @brief Demonstrates scl::type_name and scl::type_short_name, and the part of a
- * rendered name that depends on the compiler.
+ * @brief Names a type at compile time, in full and in short.
  *
- * The rendering is taken from the compiler's own signature macro and is not
- * normalized: MSVC keeps the 'class'/'struct'/'union' prefix where GCC and Clang
- * omit it, and the standard library decides how its own types spell themselves.
- * A name is therefore something to show, not something to compare - scl::type_key
- * is what compares, and scl::type_short_name is the bare identifier.
- *
- * The assertions below are how this program checks itself on every compiler, not a
- * recommended way to use the API: each one states the little that is true everywhere,
- * with the diverging renderings named in a comment beside it.
+ * scl::type_name<T>() spells a type the way the compiler spells it, so the program checks only
+ * the part every compiler agrees on. scl::type_short_name<T>() keeps the bare identifier.
  */
 
-#include <iostream>
-
-//! [type_name]
 #include <scl/utility/meta/type.h>
 
+#include <iostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
-struct MyStruct
-{};
+//! [types]
+namespace app
+{
+    struct Item
+    {};
 
-constexpr auto npos = ::std::string_view::npos;
+    template <typename T>
+    struct Task
+    {};
+} // namespace app
+//! [types]
 
-// Fundamental types render identically on every compiler.
-static_assert(::scl::type_name<int>() == "int");
+//! [type_name]
+// Every compiler spells int alike.
+static_assert(scl::type_name<int>() == "int");
 
-// A standard library type spells itself the way the toolchain does. std::string:
-// GCC:              "std::__cxx11::basic_string<char>"
-// Clang, libstdc++: "std::basic_string<char>"
-// Clang, libc++:    "std::string"
-// MSVC:             "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
-static_assert(::scl::type_name<::std::string>().find("string") != npos);
+// MSVC writes the class key before the name of a class: app::Item, or struct app::Item.
+static_assert(scl::type_name<app::Item>().ends_with("app::Item"));
 
-// A user-defined type carries the MSVC prefix.
-// GCC/Clang: "MyStruct"  |  MSVC: "struct MyStruct"
-static_assert(::scl::type_name<MyStruct>().find("MyStruct") != npos);
-
-// The prefix reaches template arguments as well, so a rendered template name has no
-// spelling common to all three compilers.
-// GCC/Clang: "std::vector<MyStruct>"
-// MSVC:      "class std::vector<struct MyStruct,class std::allocator<struct MyStruct> >"
-static_assert(::scl::type_name<::std::vector<MyStruct>>().find("MyStruct") != npos);
+// GCC spells a type of the standard library with an inline namespace of its library, such as
+// std::__cxx11::basic_string<char>, and Clang leaves that namespace out, as in
+// std::basic_string<char>.
+static_assert(scl::type_name<std::string>().find("string") != std::string_view::npos);
 //! [type_name]
 
 //! [type_short_name]
-namespace app::core
-{
-    struct Task
-    {};
-} // namespace app::core
-
-// The short name is the bare identifier on every compiler: namespace qualifiers, the
-// MSVC prefix and the template arguments are all stripped.
-static_assert(::scl::type_short_name<app::core::Task>() == "Task");
-static_assert(::scl::type_short_name<::std::vector<MyStruct>>() == "vector");
+static_assert(scl::type_short_name<app::Task<int>>() == "Task");
+static_assert(scl::type_short_name<app::Item const &>() == "Item");
+static_assert(scl::type_short_name<std::vector<app::Item>>() == "vector");
 //! [type_short_name]
 
 int main()
 {
-    ::std::cout << ::scl::type_name<::std::vector<MyStruct>>() << '\n';
-    ::std::cout << ::scl::type_short_name<::std::vector<MyStruct>>() << '\n';
+    std::cout << scl::type_name<std::vector<app::Item>>() << '\n';
+    std::cout << scl::type_short_name<std::vector<app::Item>>() << '\n';
 }
