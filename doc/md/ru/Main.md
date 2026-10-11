@@ -93,15 +93,13 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [observer_tuple](hierarchy/observer_tuple.md) | `<scl/utility/hierarchy/observer_tuple.h>` | Адаптер, объединяющий несколько наблюдателей в одного |
 | [algorithm](hierarchy/algorithm.md) | `<scl/utility/hierarchy/algorithm.h>` | `is_parent_of`, `is_ancestor_of`, `are_sibling` и другие; адаптируются через ADL |
 
-### Meta — рефлексия на этапе компиляции
+### Meta - имена и тождество типов на этапе компиляции
 
-| Компонент | Заголовок | Описание |
-|-----------|-----------|----------|
-| [type_name](meta/type_name.md) | `<scl/utility/meta/type.h>` | Извлечение имени типа на этапе компиляции |
-| [enum_name](meta/enum_name.md) | `<scl/utility/meta/enum.h>` | Извлечение имени члена перечисления на этапе компиляции |
-| [symbol_name](meta/symbol_name.md) | `<scl/utility/meta/symbol.h>` | Извлечение имени функции/члена на этапе компиляции |
-| [type_key](meta/type_key.md) | `<scl/utility/meta/type_key.h>` | Ключ идентичности типа без RTTI, различающий TU-локальные типы |
-| [is_tu_local](meta/type_key.md#is_tu_local) | `<scl/utility/meta/tu_local.h>` | Определение типов, объявленных в анонимном пространстве имён |
+В группу входят шаблоны функций, которые на этапе компиляции и без RTTI возвращают имя типа, имя
+константы перечисления и имя функции, переменной или члена класса; класс, объект которого
+идентифицирует тип; и шаблон класса, который определяет, локален ли тип в своей единице трансляции.
+
+[К группе](meta/index.md)
 
 ### Runtime - утилиты для времени выполнения
 

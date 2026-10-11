@@ -29,7 +29,7 @@ namespace scl
 ## Semantics
 
 - **Type:** the part `Type` is the short name the function template
-  [`scl::type_short_name<E>()`](../meta/type_name.md#type_short_name) returns at compile time, so
+  [`scl::type_short_name<E>()`](../meta/type_name.md) returns at compile time, so
   an enumeration type declared in a namespace or a class is spelled without the name of the
   namespace or the class. For an enumeration type with no name, `Type` is the name the compiler
   generates, which differs between compilers and may change in a later version of the module.

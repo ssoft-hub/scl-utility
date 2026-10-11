@@ -1,213 +1,186 @@
-# Type identity key
+# `type_key`
 
-RTTI-free type identity that distinguishes same-named types declared in anonymous namespaces of
-different translation units.
-
-- Header: `#include <scl/utility/meta/type_key.h>`
-
-Contents:
-- [`type_key`](#type_key)
-- [`type_key_of<T>`](#type_key_of)
-- [`is_tu_local<T>`](#is_tu_local)
-
----
-
-## type_key
-
-`scl::type_key` identifies one type. Two keys compare equal when they identify the same type.
-The key holds that type's name, obtained at compile time, beside a per-translation-unit
-discriminator.
+The class `type_key` identifies a type without RTTI, and the function template `type_key_of<T>()`
+returns a reference to the key of the type `T`. Types of one name declared in unnamed namespaces of
+two translation units get keys that compare unequal.
 
 - Header: `#include <scl/utility/meta/type_key.h>`
-- Declaration:
 
 ```cpp
-class type_key
+namespace scl
 {
-public:
-    constexpr type_key() = default;
-    constexpr type_key(type_key const &) = default;
-    constexpr type_key(type_key &&) = default;
-    constexpr type_key & operator=(type_key const &) = default;
-    constexpr type_key & operator=(type_key &&) = default;
-    constexpr ~type_key() = default;
+    class type_key
+    {
+    public:
+        constexpr type_key() noexcept = default;
+        constexpr type_key(type_key const &) = default;
+        constexpr type_key(type_key &&) = default;
+        constexpr type_key & operator=(type_key const &) = default;
+        constexpr type_key & operator=(type_key &&) = default;
+        constexpr ~type_key() = default;
 
-    constexpr std::string_view name() const noexcept;
+        [[nodiscard]] constexpr ::std::string_view name() const noexcept;
 
-    friend constexpr bool operator==(type_key const &, type_key const &) noexcept;
-    // != is synthesised from ==
-};
-```
+        [[nodiscard]] friend constexpr bool operator==(type_key const & left,
+            type_key const & right) noexcept;
+    };
 
-### Semantics
-
-`name()` answers the name of the identified type as a string - the one
-[`type_name<T>()`](type_name.md) produces.
-
-No member function of the key returns the discriminator. It is `nullptr` for a type with external
-linkage, apart from a type whose name holds one of the symbols described below; for a type from an
-anonymous namespace it holds the address of an anchor object, one per translation unit, so
-same-named types from different translation units carry different discriminators.
-
-Comparison starts with addresses. `type_key_of<T>()` answers a reference to a constant, one per
-type, so comparing two such references costs a single pointer comparison. Where the addresses
-differ, the contents are compared: name and discriminator. For a type declared at namespace scope
-this yields neither a false match nor a false reject, apart from a type whose name holds one of
-the symbols described below. Same-named types from anonymous namespaces differ by discriminator;
-an external type used from an executable and from a shared library compares by name with a null
-discriminator on both sides, and unmerged inline instantiations on Windows do not break it.
-
-With GCC and Clang one name may stand for two types, as the page of
-[`type_short_name<T>()`](type_name.md) states. Both write a pointer to `operator-` before a closing
-`>` as `operator->` and a pointer to `operator<=` before it as `operator<=>`, and Clang writes
-a pointer to `operator>` before it as `operator>>`. GCC also writes a pointer to such
-a specialization, `Tagged<&P::operator- > *`, as `Tagged<&P::operator->*`. With GCC and Clang,
-a type whose name holds `operator->`, `operator->*`, `operator<=>` or `operator>>` carries
-the address of an anchor of its own as the discriminator. The keys of two such types differ, and
-the key of such a type from another module may compare unequal to its key from this one.
-
-Only `type_key_of<T>()` hands out a key that identifies a type. Building one by hand, pairing
-one type's name with another type's discriminator, is impossible: the members are private and
-nothing modifies a key. The one key a caller writes for itself is the empty one,
-`scl::type_key{}`. It identifies no type and equals no key `type_key_of` produces.
-
-A key is a **value**: it copies, moves and assigns. A copy identifies the type its source
-identifies, and equals it.
-
-Keys carry no order: neither `operator<=>` nor `std::less`. Identity rests on object addresses,
-whose relative order between unrelated objects the standard leaves unspecified and constant
-expressions cannot read. Nor does a hash function come with the key; the example at the end of
-the page writes one and puts a key into an unordered container.
-
-### Key lifetime
-
-A key points into the module - executable or shared library - that produced it: `name()` at
-that module's string literal, the discriminator at its anchor. **A key must not outlive the
-module that produced it.** After `FreeLibrary` or `dlclose` both pointers dangle, and a module
-loaded afterwards at the same base address can make a stale key compare equal to a fresh,
-unrelated one. Destroy stored keys before unloading the module that produced them.
-
----
-
-## type_key_of<T>
-
-Returns a reference to the `type_key` that identifies `T`.
-
-- Header: `#include <scl/utility/meta/type_key.h>`
-- Declaration: `template <typename T, std::byte const * Unit = /* anchor of the translation unit or nullptr */> constexpr type_key const & type_key_of() noexcept;`
-
-A caller passes `T` alone. The default of `Unit` is the anchor of the translation unit for a local
-type and a null pointer for any other type. The anchor keeps the key of a local type in its
-translation unit, which GCC would otherwise merge with the key of a local type of the same name from
-another translation unit where `T` holds a pointer to a member of a type in an unnamed namespace.
-GCC merges in the same way the specialization of a caller's template that depends on `T` alone, such
-as a variable template holding `&type_key_of<T>()`, so for such a type that specialization holds
-the key of only one translation unit.
-
-The key sits in an `inline constexpr` variable, one per type. Inside one module every call to
-`type_key_of<T>()` for an external `T` reaches the same object, so comparing against a stored
-reference costs one address comparison. Code that keeps a key for long - a type-erasure wrapper,
-say - holds either that reference, which keeps the fast path, or a copy, which compares by
-content.
-
-### Precondition
-
-`T` must be declared at namespace scope. Local classes and closure types stay outside the
-contract: a compiler writes their name without a reliable marker of locality, and no check at
-compile time catches the violation. Clang writes a local class as its bare name, so its key is
-byte-identical to the key of a same-named type at namespace scope, and two genuinely different
-types compare equal:
-
-```cpp
-struct duck {};                     // namespace scope
-int main() {
-    struct duck {};                 // local class - outside the contract
-    // passes on Clang: a false match against the ordinary external type
-    static_assert(scl::type_key_of<::duck>() == scl::type_key_of<duck>());
+    template <typename T, ::std::byte const * Unit = /* anchor of the translation unit or nullptr */>
+    [[nodiscard]] constexpr type_key const & type_key_of() noexcept;
 }
 ```
 
-GCC writes `main()::duck` and MSVC `struct main::duck`, and those do not collide. To give such
-a type a well-defined key, move it into an anonymous namespace of the same translation unit:
+## Semantics
 
+- **What a key holds:** the name [`scl::type_name<T>()`](type_name.md) gives the type, which
+  the member function `name()` returns, beside a discriminator no member returns. The discriminator
+  is a null pointer for a type with external linkage, apart from a type whose name holds one of
+  the symbols described below. For a type local to its translation unit, as
+  [`scl::is_tu_local`](is_tu_local.md) tells, it is the address of an object private to that
+  translation unit, so types of one name from two translation units carry different discriminators.
+- **Comparison:** two keys compare equal when their names and their discriminators are equal, and
+  `!=` is the negation of `==`. Two references to one key compare equal at once, so comparing
+  a stored reference with the result of `type_key_of<T>()` costs one comparison of addresses when
+  the reference is to that key. Types of one name in unnamed namespaces of two translation units
+  differ by the discriminator, and a type with external linkage used from an executable and from
+  a shared library compares equal by its name, apart from a type whose name holds one of the symbols
+  described below.
+- **Two types of one name:** with GCC and Clang one name may stand for two types, as the page of
+  [`type_short_name<T>()`](type_name.md) states. Both write a pointer to `operator-` before
+  a closing `>` as `operator->` and a pointer to `operator<=` before it as `operator<=>`, and Clang
+  writes a pointer to `operator>` before it as `operator>>`. GCC also writes a pointer to such
+  a specialization, `Tagged<&P::operator- > *`, as `Tagged<&P::operator->*`. With GCC and Clang,
+  a type whose name holds `operator->`, `operator->*`, `operator<=>` or `operator>>` carries
+  the address of an object of its own as the discriminator. The keys of two such types differ, and
+  the key of such a type from another module may compare unequal to its key from this one.
+- **Where a key comes from:** only `type_key_of<T>()` returns a key that identifies a type. The data
+  members are private, and no member function changes a key apart from assignment. The one key
+  a caller writes is the empty one, `scl::type_key{}`, which identifies no type and compares unequal
+  to every key `type_key_of<T>()` returns.
+- **A key is a value:** it copies, moves and assigns, and a copy identifies the type its source
+  identifies.
+- **No order and no hash:** keys carry neither `operator<=>` nor `std::less`, since the identity of
+  a local type and of a type whose name holds one of the symbols above rests on an address, whose
+  relative order between unrelated objects the standard leaves unspecified and constant evaluation
+  cannot read. No hash comes with the key; one is written in the example below.
+- **One key per type:** the key of a type is an `inline constexpr` variable, so within one module
+  every call of `type_key_of<T>()` for a type with external linkage returns a reference to one
+  object. A caller that stores a key holds either that reference, which compares by address, or
+  a copy, which compares by content. A caller passes `T` alone. The default of `Unit` is the anchor
+  of the translation unit for a local type and a null pointer for any other type. The anchor keeps
+  the key of a local type in its translation unit, which GCC would otherwise merge with the key of
+  a local type of the same name from another translation unit where `T` holds a pointer to a member
+  of a type in an unnamed namespace. GCC merges in the same way the specialization of a caller's
+  template that depends on `T` alone, such as a variable template holding `&type_key_of<T>()`, so
+  for such a type that specialization holds the key of only one translation unit.
+- **Lifetime:** a key points into the module, an executable or a shared library, that produced it:
+  its name into the string of that module, and a discriminator that is not null into the object of
+  that module. A key must not outlive the module that produced it. After `FreeLibrary` or `dlclose`
+  the name dangles, and so does a discriminator that is not null, and a module loaded later at
+  the same address can make a stale key compare equal to the key of another type.
+- **Precondition:** `T` is neither a local class nor a closure type, nor a type built of one. No
+  check detects a violation: Clang spells a local class `duck` of a function as `duck`, whatever
+  namespace the function is in, the name of a class `duck` declared in the global namespace, so
+  the keys of the two classes compare equal. A class moved into an unnamed namespace of the same
+  translation unit gets a key of its own.
+
+## Examples
+
+Keys of a local type and of a type with external linkage:
+
+<!-- snippet: example/meta/type_key/meta_type_key_example.cpp type_key_of -->
 ```cpp
-namespace { struct duck {}; }             // well-defined key
+namespace
+{
+    struct duck
+    {};
+} // namespace
+
+struct goose
+{};
+
+constexpr auto & duck_key = scl::type_key_of<duck>();
+constexpr auto & goose_key = scl::type_key_of<goose>();
+
+static_assert(duck_key == scl::type_key_of<duck>());
+static_assert(duck_key != goose_key);
+static_assert(&scl::type_key_of<goose>() == &goose_key); // one object per type
+static_assert(scl::type_key{} != goose_key);             // the empty key identifies no type
 ```
 
-### Examples
+A handle of a key with a hash of its name, which keys an unordered container:
 
+<!-- snippet: example/meta/type_key/meta_type_key_example.cpp hash_key -->
 ```cpp
-#include <scl/utility/meta/type_key.h>
+// A handle of the key of a type with a hash value of its name, computed once.
+class hash_key
+{
+public:
+    explicit constexpr hash_key(scl::type_key const & key) noexcept
+        : m_key{&key}
+        , m_hash{static_cast<std::size_t>(scl::hash::fnv1a(key.name()))}
+    {}
 
-namespace { struct duck {}; }
-struct goose {};
+    template <typename T>
+    [[nodiscard]]
+    static constexpr hash_key of() noexcept
+    {
+        return hash_key{scl::type_key_of<T>()};
+    }
 
-constexpr auto & anon_key = scl::type_key_of<duck>();
-constexpr auto & ext_key  = scl::type_key_of<goose>();
+    [[nodiscard]]
+    constexpr scl::type_key const & key() const noexcept
+    {
+        return *m_key;
+    }
 
-static_assert(anon_key == scl::type_key_of<duck>());
-static_assert(anon_key != ext_key);
-static_assert(&scl::type_key_of<goose>() == &ext_key);  // one object per type
+    [[nodiscard]]
+    constexpr std::size_t hash() const noexcept
+    {
+        return m_hash;
+    }
+
+    // Types of one name in unnamed namespaces of two translation units share a hash value, so
+    // the keys decide a match.
+    friend constexpr bool operator==(hash_key const & left, hash_key const & right) noexcept
+    {
+        return left.key() == right.key();
+    }
+
+private:
+    scl::type_key const * m_key;
+    std::size_t m_hash;
+};
+
+template <>
+struct std::hash<hash_key>
+{
+    std::size_t operator()(hash_key const & key) const noexcept { return key.hash(); }
+};
 ```
 
-Same-named types from anonymous namespaces of different translation units produce keys with
-equal `name()` strings and different discriminators. The keys compare unequal, which is exactly
-what a type-erasure facility needs before casting back from an erased state.
-
-### Typical Use Cases
-
-Type-erased storage - `any`-like wrappers, views over a function argument - that has to recover
-the typed pointer by comparing a stored key. No RTTI, and none of the undefined behaviour a
-comparison by name alone would allow when two anonymous namespaces spell the same name.
-
----
-
-## is_tu_local<T>
-
-Answers whether `T` is local to the current translation unit, that is, declared in an anonymous
-namespace either directly or as part of a compound type.
-
-- Header: `#include <scl/utility/meta/tu_local.h>`
-- Declaration:
-
+<!-- snippet: example/meta/type_key/meta_type_key_example.cpp registry -->
 ```cpp
-template <typename T> struct is_tu_local;                    // : std::bool_constant<...>
-template <typename T> inline constexpr bool is_tu_local_v;   // = is_tu_local<T>::value
-```
+    std::unordered_map<hash_key, std::string> registry;
+    registry.emplace(hash_key::of<duck>(), "duck");
+    registry.emplace(hash_key::of<goose>(), "goose");
 
-### Semantics
+    auto const lookup = [&registry](hash_key const & key) -> std::string_view {
+        auto const found = registry.find(key);
+        return found == registry.end() ? "<unknown>" : std::string_view{found->second};
+    };
 
-The compiler's anonymous-namespace marker is derived at compile time: the name of a probe type
-local to the translation unit is compared against the name of an external probe of the same
-shape, and the marker that differs is then looked for in the name of `T`. Two markers are
-derived, because MSVC writes it one way for a top-level type and another for a type inside a
-template argument. Deriving it rather than listing it keeps the trait working on a compiler
-nobody has tested it against.
-
-A marker is accepted anywhere outside string and character literals, so compound types are
-covered: a pointer to a local type, a reference to one, and a template specialization over one
-are local themselves. A string or character template parameter is written inside a quoted
-literal, as character codes on MSVC, and literal contents are skipped - so a parameter that
-spells the marker cannot put an external type in the local class by mistake.
-
-### Example
-
-```cpp
-#include <scl/utility/meta/tu_local.h>
-#include <vector>
-
-namespace { struct duck {}; }
-struct goose {};
-
-static_assert(scl::is_tu_local_v<duck>);
-static_assert(scl::is_tu_local_v<duck *>);
-static_assert(scl::is_tu_local_v<std::vector<duck>>);
-static_assert(!scl::is_tu_local_v<goose>);
-static_assert(!scl::is_tu_local_v<int>);
+    std::cout << lookup(hash_key::of<duck>()) << '\n';  // duck
+    std::cout << lookup(hash_key::of<goose>()) << '\n'; // goose
+    std::cout << lookup(hash_key::of<int>()) << '\n';   // <unknown>
 ```
 
 ## See also
 
-- [`example/meta/type_key/meta_type_key_example.cpp`](../../../../example/meta/type_key/meta_type_key_example.cpp) -
-  runnable version: a hashable handle over `type_key`, kept consistent with the key's
-  identity and used directly as an unordered-container key.
+- [`scl::is_tu_local<T>`](is_tu_local.md), which tells whether a type is local to its translation unit
+- [`example/meta/type_key/meta_type_key_example.cpp`](../../../../example/meta/type_key/meta_type_key_example.cpp)
+
+---
+
+Previous: [`is_tu_local<T>`](is_tu_local.md) | [Back to the group](index.md) |
+[Back to the main page](../Main.md)
