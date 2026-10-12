@@ -40,8 +40,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [hash] Made `noexcept` of every hash function, hasher and `key` follow the range it reads
 - [meta] Broke `type_short_name<T>()` for a pointer, an array, a function or a member pointer
 - Marked the entry points of `hash`, `meta`, `forward_like` and `overload_cast` `[[nodiscard]]`
-- Documented every public member in the reference, each with a detailed entry
-- Moved the Markdown guides from `doc/<language>/` to `doc/md/<language>/`
 
 ### Fixed
 
@@ -51,7 +49,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [hash] Accepted in `djb2` and `sdbm` a range whose end is a sentinel of its own type
 - [hash] Accepted a view that cannot be read through a `const` reference
 - [hash] Accepted `std::byte` and other single-byte trivially copyable elements
-- [meta] Documented that MSVC keeps the class key in `type_name`, a name to show, not compare
 - [meta] Returned an empty name from `enum_name<V>()` and `enum_short_name<V>()` for a value no constant of its type has
 - [meta] Returned the generated name of a closure or an unnamed type from `type_short_name<T>()`
 - [meta] Stopped `type_short_name<T>()` returning `operator` for a name that holds `operator<`
