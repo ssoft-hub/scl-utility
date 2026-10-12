@@ -26,7 +26,7 @@ namespace scl
 
 namespace scl::detail
 {
-    template <typename T>
+    template <typename T, ::std::byte const * Unit>
     constexpr type_key make_type_key() noexcept;
 
 } // namespace scl::detail
@@ -67,7 +67,7 @@ namespace scl
             return left.m_anchor == right.m_anchor && left.m_name == right.m_name;
         }
 
-        template <typename T>
+        template <typename T, ::std::byte const * Unit>
         friend constexpr type_key detail::make_type_key() noexcept;
     };
 
@@ -102,32 +102,33 @@ namespace scl::detail
 #endif
     }
 
-    template <typename T>
+    template <typename T, ::std::byte const * Unit>
     inline constexpr ::std::byte type_anchor{};
 
-    template <typename T>
+    // Unit is the anchor of the translation unit for a local type and null otherwise.
+    template <typename T, ::std::byte const * Unit>
     constexpr type_key make_type_key() noexcept
     {
-        void const * anchor = nullptr;
+        void const * anchor = Unit;
         if constexpr (::scl::detail::name_reads_two_ways(::scl::type_name<T>()))
-            anchor = &::scl::detail::type_anchor<T>;
-        else if constexpr (is_tu_local_v<T>)
-            anchor = &tu_anchor;
+            anchor = &::scl::detail::type_anchor<T, Unit>;
         return type_key{type_name<T>(), anchor};
     }
 
-    template <typename T>
-    inline constexpr type_key type_key_v = make_type_key<T>();
+    template <typename T, ::std::byte const * Unit>
+    inline constexpr type_key type_key_v = make_type_key<T, Unit>();
 
 } // namespace scl::detail
 
 namespace scl
 {
-    template <typename T>
+    // GCC merges across translation units a specialization whose argument points to a member of
+    // a local type, unless another argument names the anchor of the translation unit.
+    template <typename T, ::std::byte const * Unit = is_tu_local_v<T> ? &detail::tu_anchor : nullptr>
     [[nodiscard]]
     constexpr type_key const & type_key_of() noexcept
     {
-        return detail::type_key_v<T>;
+        return detail::type_key_v<T, Unit>;
     }
 
 } // namespace scl
@@ -295,6 +296,14 @@ namespace scl
  * when searching for the anonymous-namespace marker.
  *
  * @tparam T The type to identify.
+ * @tparam Unit A caller does not pass it. Its default is the anchor of the translation unit for
+ *         a local type and a null pointer for any other type, and the anchor keeps the key of
+ *         a local type in that translation unit, which GCC would otherwise merge with the key of
+ *         a local type of the same name from another one where T holds a pointer to a member of
+ *         a type in an unnamed namespace. GCC merges in the same way the specialization of
+ *         a caller's template that depends on T alone, such as a variable template holding
+ *         `&type_key_of<T>()`, so for such a type that specialization holds the key of only one
+ *         translation unit.
  * @return Reference to the per-type ::scl::type_key of T.
  *
  * @code

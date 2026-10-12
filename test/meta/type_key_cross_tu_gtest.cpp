@@ -20,9 +20,12 @@ namespace
         CrossTuPointing const * operator->() const { return this; }
 
         int operator-(CrossTuPointing) const { return 0; }
+
+        int run() const { return 0; }
     };
 
     using cross_tu_arrow = TypeKeyShared::Wrap<TypeKeyShared::Holder<&CrossTuPointing::operator- >>;
+    using cross_tu_member = TypeKeyShared::Holder<&CrossTuPointing::run>;
 
     constexpr ::scl::type_key arrow_copy = ::scl::type_key_of<TypeKeyShared::arrow_type>();
 } // namespace
@@ -31,7 +34,20 @@ namespace
 ::scl::type_key const & cross_tu_provider_goose_key() noexcept;
 ::scl::type_key const & cross_tu_provider_arrow_copy() noexcept;
 ::scl::type_key const & cross_tu_provider_arrow_key() noexcept;
+::scl::type_key const & cross_tu_provider_member_key() noexcept;
 ::scl::type_key const & cross_tu_provider_nested_duck_key() noexcept;
+
+// A key read through a call in each translation unit, so that no evaluation at compile time hides
+// which definition of type_key_of the linker kept.
+::scl::type_key const & cross_tu_local_arrow_key() noexcept
+{
+    return ::scl::type_key_of<cross_tu_arrow>();
+}
+
+::scl::type_key const & cross_tu_local_member_key() noexcept
+{
+    return ::scl::type_key_of<cross_tu_member>();
+}
 
 /**
  * @test Verify same-named anonymous-namespace types from two translation
@@ -76,8 +92,24 @@ TEST(TypeKeyCrossTuTest, CopiesOfKeyOfOneSpellingMatch)
  */
 TEST(TypeKeyCrossTuTest, SameNamedTuLocalTypesOfOneSpellingDiffer)
 {
-    auto const & local_key = ::scl::type_key_of<cross_tu_arrow>();
+    auto const & local_key = cross_tu_local_arrow_key();
     auto const & provider_key = cross_tu_provider_arrow_key();
+
+#if !defined(_MSC_VER) || defined(__clang__)
+    // MSVC spells an unnamed namespace in a pointer to a member with a hash of its translation unit.
+    EXPECT_EQ(local_key.name(), provider_key.name());
+#endif
+    EXPECT_NE(local_key, provider_key);
+}
+
+/**
+ * @test Verify same-named types holding a pointer to a member of an anonymous-namespace class, one
+ *       from each of two translation units, produce unequal keys.
+ */
+TEST(TypeKeyCrossTuTest, SameNamedTypesOfLocalMemberDiffer)
+{
+    auto const & local_key = cross_tu_local_member_key();
+    auto const & provider_key = cross_tu_provider_member_key();
 
 #if !defined(_MSC_VER) || defined(__clang__)
     // MSVC spells an unnamed namespace in a pointer to a member with a hash of its translation unit.

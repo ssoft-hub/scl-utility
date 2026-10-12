@@ -94,7 +94,15 @@ unrelated one. Destroy stored keys before unloading the module that produced the
 Returns a reference to the `type_key` that identifies `T`.
 
 - Header: `#include <scl/utility/meta/type_key.h>`
-- Declaration: `template <typename T> constexpr type_key const & type_key_of() noexcept;`
+- Declaration: `template <typename T, std::byte const * Unit = /* anchor of the translation unit or nullptr */> constexpr type_key const & type_key_of() noexcept;`
+
+A caller passes `T` alone. The default of `Unit` is the anchor of the translation unit for a local
+type and a null pointer for any other type. The anchor keeps the key of a local type in its
+translation unit, which GCC would otherwise merge with the key of a local type of the same name from
+another translation unit where `T` holds a pointer to a member of a type in an unnamed namespace.
+GCC merges in the same way the specialization of a caller's template that depends on `T` alone, such
+as a variable template holding `&type_key_of<T>()`, so for such a type that specialization holds
+the key of only one translation unit.
 
 The key sits in an `inline constexpr` variable, one per type. Inside one module every call to
 `type_key_of<T>()` for an external `T` reaches the same object, so comparing against a stored

@@ -18,9 +18,12 @@ namespace
         CrossTuPointing const * operator->() const { return this; }
 
         int operator-(CrossTuPointing) const { return 0; }
+
+        int run() const { return 0; }
     };
 
     using cross_tu_arrow = TypeKeyShared::Wrap<TypeKeyShared::Holder<&CrossTuPointing::operator- >>;
+    using cross_tu_member = TypeKeyShared::Holder<&CrossTuPointing::run>;
 
     constexpr ::scl::type_key arrow_copy = ::scl::type_key_of<TypeKeyShared::arrow_type>();
 } // namespace
@@ -40,6 +43,11 @@ namespace
 ::scl::type_key const & cross_tu_provider_arrow_key() noexcept
 {
     return ::scl::type_key_of<cross_tu_arrow>();
+}
+
+::scl::type_key const & cross_tu_provider_member_key() noexcept
+{
+    return ::scl::type_key_of<cross_tu_member>();
 }
 
 ::scl::type_key const & cross_tu_provider_nested_duck_key() noexcept
