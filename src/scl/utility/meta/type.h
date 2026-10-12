@@ -288,12 +288,10 @@ namespace scl::detail
     constexpr ::std::size_t type_name_pattern_suffix_length() noexcept
     {
         constexpr auto text = ::scl::detail::type_name_pattern_text<p8qim3n2a_t>();
-        // Find the closing > followed by (void) pattern
         constexpr auto close_pattern = text.rfind(">(");
         return (close_pattern != ::std::string_view::npos) ? text.length() - close_pattern : 0;
     }
 #else
-    // GCC/Clang/Clang-on-MSVC: use marker search
     constexpr auto type_name_pattern_prefix_length() noexcept
     {
         constexpr auto text = ::scl::detail::type_name_pattern_text<p8qim3n2a_t>();

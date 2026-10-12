@@ -28,10 +28,6 @@ namespace scl::detail
 
     // The marker is what the anonymous probe's rendered name has and an
     // external probe of the same shape does not, up to the last "::".
-    // Deriving it instead of hardcoding per-compiler spellings keeps the
-    // trait working on an untested compiler; a rendering with no marker at
-    // all degenerates to an empty result, which never matches (pinned by the
-    // trait tests).
     constexpr ::std::string_view derive_marker(::std::string_view anon, ::std::string_view ext) noexcept
     {
         ::std::size_t i = 0;
@@ -122,10 +118,8 @@ namespace scl::detail
             char const ch = name.at(pos);
             if (ch == '"' || ch == '\'')
             {
-                // String and character NTTP values render inside quotes (with
-                // backslash escapes); a real marker sits in the qualification,
-                // outside any literal. Skipping literal contents keeps an NTTP
-                // from injecting a marker into an external type's name.
+                // A string or a character argument of a template could spell the
+                // marker inside the name of an external type.
                 pos = ::scl::detail::skip_quoted(name, pos, ch);
             }
             else if (ch == '`')

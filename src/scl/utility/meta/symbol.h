@@ -64,7 +64,6 @@ namespace scl::detail
     }
 
 #if defined(_MSC_VER) && !defined(__clang__)
-    // MSVC-specific: use bracket extraction like type_name
     constexpr ::std::size_t symbol_prefix_length() noexcept
     {
         constexpr auto text = ::scl::detail::symbol_pattern_text<lah4l4tjla6_f>();
@@ -274,7 +273,6 @@ namespace scl::detail
         return name;
     }
 #else
-    // GCC/Clang: use marker search
     constexpr auto symbol_prefix_length() noexcept
     {
         constexpr auto text = ::scl::detail::symbol_pattern_text<lah4l4tjla6_f>();
