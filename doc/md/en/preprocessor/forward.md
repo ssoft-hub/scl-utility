@@ -1,52 +1,52 @@
-# SCL_FORWARD
+# `SCL_FORWARD`
 
-Identity variadic macro that forwards tokens unchanged and can be used to
-encourage expansion in macro-chaining scenarios.
+The macro `SCL_FORWARD(...)` expands to its arguments unchanged, so a comma-separated list passes
+through one parameter of another macro.
 
 - Header: `#include <scl/utility/preprocessor/forward.h>`
-- Declaration: `#define SCL_FORWARD(...) __VA_ARGS__`
-
-## Purpose
-
-- Forward comma-separated tokens into another macro, function call, or template
-  parameter list without altering tokenization.
-- Encourage expansion when a macro produces comma-separated tokens that need to
-  be consumed by another macro.
-
-This macro introduces no runtime overhead; it operates purely at preprocessing
-time.
-
-## Usage
 
 ```cpp
-#include <scl/utility/preprocessor/forward.h>
-
-// Forwarding function arguments
-#define CALL(fn, ...) fn(__VA_ARGS__)
-int add(int a, int b) { return a + b; }
-int result = CALL(add, SCL_FORWARD(1, 2)); // -> add(1, 2)
-
-// Forcing expansion of a macro that yields a type list
-#define BASIC_TYPES int, long, double
-template <typename... Ts>
-struct type_list {};
-using TL = type_list<SCL_FORWARD(BASIC_TYPES)>; // -> type_list<int, long, double>
-
-// Chaining macros that produce comma-separated tokens
-#define MAKE_PAIR(a, b) a, b
-using P = std::pair<SCL_FORWARD(MAKE_PAIR(int, double))>; // -> std::pair<int, double>
-
-// Forwarding arguments through an intermediate macro
-#define FORWARD_TO_EMPLACE(obj, ...) obj.emplace_back(__VA_ARGS__)
-std::vector<std::pair<int, std::string>> v;
-FORWARD_TO_EMPLACE(v, SCL_FORWARD(42, "answer")); // -> emplace_back(42, "answer")
+#define SCL_FORWARD(...) __VA_ARGS__
 ```
 
-## Notes and pitfalls
+## Semantics
 
-- SCL_FORWARD does not add parentheses or change token grouping. If grouping is
-  required, parenthesize at call sites.
-- It does not turn multiple arguments into “one argument”; the preprocessor
-  still splits by commas at the outer macro level.
-- Useful in macro chains where an intermediate expansion is needed before the
-  next macro consumes the tokens.
+- **Expansion:** `SCL_FORWARD(a, b)` expands to `a, b`, with no parentheses added around
+  the list.
+- **An argument of another macro:** the preprocessor splits the arguments of a macro at every
+  comma outside parentheses, so `SCL_FORWARD(a, b)` written as an argument of another macro stays
+  one argument, and the parameter receives `a, b` once that argument is expanded.
+- **`#` and `##`:** a parameter that the other macro applies `#` or `##` to receives
+  the argument unexpanded, as `SCL_FORWARD(a, b)`.
+
+## Examples
+
+A list of arguments through one parameter:
+
+<!-- snippet: example/preprocessor/forward/preprocessor_forward_example.cpp apply -->
+```cpp
+#define APPLY(function, arguments) function(arguments)
+
+constexpr int add(int left, int right) noexcept { return left + right; }
+
+static_assert(APPLY(add, SCL_FORWARD(1, 2)) == 3);
+```
+
+A type whose name holds a comma through one parameter:
+
+<!-- snippet: example/preprocessor/forward/preprocessor_forward_example.cpp type_argument -->
+```cpp
+#define DECLARE_ALIAS(name, type) using name = type;
+
+DECLARE_ALIAS(phone_book, SCL_FORWARD(std::map<std::string, int>))
+```
+
+## See also
+
+- [`SCL_COUNTER_VALUE`](counter.md), which takes a tag through one parameter
+- [`example/preprocessor/forward/preprocessor_forward_example.cpp`](../../../../example/preprocessor/forward/preprocessor_forward_example.cpp)
+
+---
+
+Previous: [`SCL_COUNTER_VALUE`](counter.md) | Next: [`SCL_HAS_EXCEPTIONS`](exceptions.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

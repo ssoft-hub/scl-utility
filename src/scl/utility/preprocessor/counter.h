@@ -7,20 +7,13 @@
 
 /**
  * @file
- * @brief Implements a compile-time counter mechanism.
+ * @brief Compile-time counters, one per tag type.
  * @ingroup scl_utility_preprocessor
  * @details
- * This file provides a set of macros and templates to create and increment
- * counters that are evaluated at compile time. This technique is based on
- * function overloading and argument-dependent lookup (ADL).
- * It's useful for generating unique IDs or counting occurrences of something
- * within a translation unit during compilation.
- *
- * @warning Whether stateful metaprogramming of this kind is well-formed at all
- *          is an open core issue; a future resolution may outlaw the technique.
- *
- * @see https://stackoverflow.com/a/6174263/1190123
- * @see http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#2118
+ * @ref SCL_COUNTER_NEXT declares an overload of a helper function that encodes the next
+ * count, and @ref SCL_COUNTER_VALUE calls that function by its qualified name, so overload
+ * resolution over the overloads declared above the call assembles the count, and the count grows
+ * through the translation unit.
  */
 
 namespace scl::preprocessor::detail
@@ -36,17 +29,18 @@ namespace scl::preprocessor::detail
 
     /**
      * @internal
-     * @brief A fallback `crumb` function used to terminate the recursive lookup.
+     * @brief The `crumb` chosen for a bit that the count leaves clear.
      * @ingroup scl_utility_preprocessor
      * @details
-     * This function is chosen via overload resolution when no more specific `crumb`
-     * has been defined for a given `Tag` and `Rank`. It contributes `Acc` to
-     * the final sum. The initial call starts with `Acc = 0`.
+     * Overload resolution prefers an overload that @ref SCL_COUNTER_NEXT declared for the same
+     * `Tag`, `Rank` and `Acc`. Where none was declared, this one is chosen and returns `Acc`
+     * unchanged, so the bit `Rank` stays clear. @ref SCL_COUNTER_VALUE reads the bits from
+     * the highest down, starting with `Acc = 0`.
      *
      * @tparam Tag  The type used to identify a specific counter.
-     * @tparam Rank The bit-rank being tested.
-     * @tparam Acc  The accumulated value from lower-rank bits.
-     * @return A `counter` type holding the accumulated value `Acc`.
+     * @tparam Rank The value of the bit being read, a power of two.
+     * @tparam Acc  The bits of the count above `Rank`, read so far.
+     * @return A `counter` holding `Acc`.
      */
     template <typename Tag, ::std::uint_fast32_t Rank, ::std::uint_fast32_t Acc>
     constexpr counter<Acc>
@@ -63,8 +57,8 @@ namespace scl::preprocessor::detail
  * @ingroup scl_utility_preprocessor
  *
  * @param Tag The counter's identifier tag.
- * @param rank The bit-rank to check.
- * @param acc The currently accumulated value.
+ * @param rank The value of the bit to read, a power of two.
+ * @param acc The bits of the count above @p rank, read so far.
  */
 #define SCL_DETAIL_COUNTER_CRUMB(Tag, rank, acc)                                            \
     ::scl::preprocessor::detail::crumb(Tag{}, ::scl::preprocessor::detail::counter<rank>(), \
@@ -72,33 +66,17 @@ namespace scl::preprocessor::detail
 
 /**
  * @def SCL_COUNTER_VALUE(Tag)
- * @brief Reads the current value of a compile-time counter.
+ * @brief Reads the counter of a tag at the point of expansion.
  * @ingroup scl_utility_preprocessor
  * @details
- * The value is assembled one bit at a time, ranks 0 through 31, from the
- * declarations left behind by earlier @ref SCL_COUNTER_NEXT expansions in the same
- * translation unit. It is therefore a compile-time constant that reads differently
- * at different points in the file — the count at the point of expansion.
+ * Reads `0` before the first @ref SCL_COUNTER_NEXT of @p Tag in the translation unit, and one
+ * more after each of them. Each type is the tag of a counter of its own, and two specializations
+ * of one class template are two tags.
  *
- * @param Tag The unique identifier for the counter. Can be a template type.
- * @return A `constexpr` value of type `std::uint_fast32_t`.
- * 
- * @code{.cpp}
- * template <typename T>
- * struct TemplateTag {};
- *  
- * // The SCL_FORWARD macro is crucial here
- * constexpr auto tpl_val_0 = SCL_COUNTER_VALUE(TemplateTag<int>);
- * static_assert(tpl_val_0 == 0);
- * 
- * SCL_COUNTER_NEXT(TemplateTag<int>)
- * constexpr auto tpl_val_1 = SCL_COUNTER_VALUE(TemplateTag<int>);
- * static_assert(tpl_val_1 == 1);
- * 
- * // A different specialization of the same template tag should be a different counter
- * constexpr auto tpl_val_float_0 = SCL_COUNTER_VALUE(TemplateTag<float>);
- * static_assert(tpl_val_float_0 == 0);
- @endcode
+ * @param Tag The type whose counter is read.
+ * @return A constant expression of type `std::uint_fast32_t`.
+ *
+ * @snippet preprocessor/counter/preprocessor_counter_example.cpp count
  */
 #define SCL_COUNTER_VALUE(Tag)                                                                                                                                                        \
     (SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 0,                                                                                                                             \
@@ -138,31 +116,16 @@ namespace scl::preprocessor::detail
 
 /**
  * @def SCL_COUNTER_NEXT(Tag)
- * @brief Increments a compile-time counter.
+ * @brief Adds one to the counter of a tag for the rest of the translation unit.
  * @ingroup scl_utility_preprocessor
  * @details
- * Expands to a declaration that sets one bit of the counter, so every later
- * @ref SCL_COUNTER_VALUE for the same @p Tag reads one more than before. It is a
- * declaration, not a statement: expand it at namespace or class scope, not inside a
- * function body.
+ * Expands to a declaration, so every later @ref SCL_COUNTER_VALUE of @p Tag reads one more
+ * than before. Being a declaration rather than a statement, it stands at namespace or class
+ * scope, not in a function body.
  *
- * @param Tag The unique identifier for the counter to increment. Can be a template type.
- * 
- * @code{.cpp}
- * struct MyCounterTag1 {};
- * 
- * // The counter starts at 0 before any increments
- * constexpr auto val1_0 = SCL_COUNTER_VALUE(MyCounterTag1);
- * static_assert(val1_0, 0);
- * 
- * SCL_COUNTER_NEXT(MyCounterTag1)
- * constexpr auto val1_1 = SCL_COUNTER_VALUE(MyCounterTag1);
- * static_assert(val1_1, 1);
- * 
- * SCL_COUNTER_NEXT(MyCounterTag1)
- * constexpr auto val1_2 = SCL_COUNTER_VALUE(MyCounterTag1);
- * static_assert(val1_2, 2);
- * @endcode
+ * @param Tag The type whose counter advances.
+ *
+ * @snippet preprocessor/counter/preprocessor_counter_example.cpp template_tag
  */
 #define SCL_COUNTER_NEXT(Tag)                                                                          \
     namespace scl::preprocessor::detail                                                                \

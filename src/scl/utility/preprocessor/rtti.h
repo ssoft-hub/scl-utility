@@ -32,24 +32,17 @@
  * @ingroup scl_utility_preprocessor
  * @brief Whether the translation unit is compiled with RTTI enabled.
  *
- * Expands to `1` with RTTI and `0` without it, derived from whichever signal the
- * compiler offers: `_CPPRTTI` (MSVC), `__GXX_RTTI` (GCC and Clang in GNU mode) or
- * `__has_feature(cxx_rtti)` (Clang). The language offers no standard feature-test
- * macro for RTTI, which is why this one exists.
+ * Expands to `1` with RTTI and `0` without it, derived from whichever signal
+ * the compiler offers: `_CPPRTTI` (MSVC, clang-cl and Clang for the MSVC target), `__GXX_RTTI`
+ * (GCC and Clang for a GNU target) or `__has_feature(cxx_rtti)` (Clang). The language offers no
+ * standard feature-test macro for RTTI, which is why this one exists.
  *
- * Always defined, so interrogate it with `#if` — a misspelled name is then caught by
- * `-Wundef` instead of quietly evaluating to false, as it would under `#ifdef`.
+ * Always defined, so a caller tests it with `#if`: a misspelled name then reads as `0` and draws
+ * a `-Wundef` warning, while under `#ifdef` it reads as false with no warning.
  *
- * ScL declarations that need `typeid` are gated on it, so code portable across both
- * configurations branches on the same macro:
- * @code
- * #include <scl/utility/preprocessor/rtti.h>
+ * Code built both with RTTI and without it branches on the macro:
  *
- * #if SCL_HAS_RTTI
- * #include <scl/utility/runtime/type.h>
- * std::string name_of(auto const & object) { return ::scl::type_name(object); }
- * #else
- * std::string name_of(auto const &) { return "<unknown>"; }
- * #endif
- * @endcode
+ * @snippet preprocessor/rtti/preprocessor_rtti_example.cpp name_of
+ *
+ * @see SCL_HAS_EXCEPTIONS - the same macro for exceptions
  */

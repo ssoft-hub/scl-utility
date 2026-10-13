@@ -60,12 +60,14 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
   (`#include <scl/utility/runtime.h>`):
   - `type_name(obj)` / `type_short_name(obj)` - the dynamic type's name of a polymorphic object, via RTTI
   - `enum_string(v)` - any enum value as `"Type::N"`, named or not, without RTTI
-- **Preprocessor** — macro utilities:
-  - `SCL_FORWARD` — identity macro for token forwarding in macro chains
-  - `SCL_COUNTER_VALUE` / `SCL_COUNTER_NEXT` — compile-time counter via ADL
-  - `SCL_HAS_RTTI` / `SCL_HAS_EXCEPTIONS` — whether the translation unit has RTTI and
-    exceptions, and what the library declares without them
+- **Preprocessor** - macros of the build and of compile time
+  (`#include <scl/utility/preprocessor.h>`):
+  - `SCL_HAS_RTTI` / `SCL_HAS_EXCEPTIONS` - whether the translation unit is compiled with RTTI
+    and with exceptions
   - `SCL_HAS_THREADS` - whether the standard library supports threads
+  - `SCL_FORWARD` - a comma-separated list passed through one parameter of another macro
+  - `SCL_COUNTER_VALUE` / `SCL_COUNTER_NEXT` - a counter per tag type, read and advanced at
+    compile time
 - **Type traits** — extended helpers:
   - Detection idiom (`is_detected`, `detected_t`, `detected_or`)
   - `forward_like` — forward with value category of another type

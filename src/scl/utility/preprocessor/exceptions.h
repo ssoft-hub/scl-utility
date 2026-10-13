@@ -33,25 +33,16 @@
  * @brief Whether the translation unit is compiled with exceptions enabled.
  *
  * Expands to `1` with exceptions and `0` without them, derived from whichever signal
- * the compiler offers: `_CPPUNWIND` (MSVC), `__EXCEPTIONS` (GCC and Clang) or
- * `__has_feature(cxx_exceptions)` (Clang). The language offers no standard feature-test
- * macro for exceptions, which is why this one exists.
+ * the compiler offers: `_CPPUNWIND` (MSVC, clang-cl and Clang for the MSVC target),
+ * `__EXCEPTIONS` (GCC and Clang for a GNU target) or `__has_feature(cxx_exceptions)` (Clang).
+ * The language offers no standard feature-test macro for exceptions, which is why this one exists.
  *
- * Always defined, so interrogate it with `#if` — a misspelled name is then caught by
- * `-Wundef` instead of quietly evaluating to false, as it would under `#ifdef`.
+ * Always defined, so a caller tests it with `#if`: a misspelled name then reads as `0` and draws
+ * a `-Wundef` warning, while under `#ifdef` it reads as false with no warning.
  *
- * ScL declarations that answer a failed request by throwing are gated on it, so code
- * portable across both configurations branches on the same macro:
- * @code
- * #include <scl/utility/any.h>
- * #include <scl/utility/preprocessor/exceptions.h>
+ * Code built both with exceptions and without them branches on the macro:
  *
- * #if SCL_HAS_EXCEPTIONS
- * std::string const & text = scl::any_cast<std::string const &>(view);
- * #else
- * std::string const & text = *scl::any_cast<std::string>(&view);
- * #endif
- * @endcode
+ * @snippet preprocessor/exceptions/preprocessor_exceptions_example.cpp text_of
  *
- * @see SCL_HAS_RTTI — the same treatment for RTTI
+ * @see SCL_HAS_RTTI - the same macro for RTTI
  */

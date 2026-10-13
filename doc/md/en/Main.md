@@ -119,15 +119,13 @@ included, and a value of an enumeration type as `Type::N`.
 |-----------|--------|-------------|
 | [flags](flags/flags.md) | `<scl/utility/flags.h>` | Set of enumeration values: set algebra, set predicates, and a bidirectional range over the values held |
 
-### Preprocessor — macro utilities
+### Preprocessor - macros of the build and of compile time
 
-| Component | Header | Description |
-|-----------|--------|-------------|
-| [SCL_FORWARD](preprocessor/forward.md) | `<scl/utility/preprocessor/forward.h>` | Identity macro for token forwarding |
-| [SCL_COUNTER](preprocessor/counter.md) | `<scl/utility/preprocessor/counter.h>` | Compile-time counter via ADL |
-| [SCL_HAS_RTTI](preprocessor/rtti.md) | `<scl/utility/preprocessor/rtti.h>` | Whether the translation unit has RTTI, and what that gates |
-| [SCL_HAS_EXCEPTIONS](preprocessor/exceptions.md) | `<scl/utility/preprocessor/exceptions.h>` | Whether the translation unit has exceptions, and what that gates |
-| [SCL_HAS_THREADS](preprocessor/threads.md) | `<scl/utility/preprocessor/threads.h>` | Whether the standard library supports threads, and what that gates |
+Macros that expand to `1` or `0` as the translation unit has RTTI and exceptions or not and as
+the standard library supports threads or not, a macro that passes a comma-separated list through
+one parameter of another macro, and a counter per tag type read and advanced at compile time.
+
+[To the group](preprocessor/index.md)
 
 ### Type traits — extended traits and helpers
 
