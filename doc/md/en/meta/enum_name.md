@@ -19,12 +19,14 @@ Retrieves the qualified string representation of an enumeration member `V` at co
 
 ### Semantics
 
-- **Cross-platform Normalization:**
-  MSVC often includes the `enum ` prefix in its function signatures. This utility automatically
-  detects and removes it to ensure the result is consistent with GCC and Clang.
 - **Qualified Result:**
   Depending on the compiler and enum type (scoped vs. unscoped), the result typically includes
   the type name (e.g., `Color::Red`).
+- **Value without a constant:**
+  For a value no constant of its type has, such as `Color{42}`, the result is an empty string.
+- **What the result is for:**
+  The result is for display. Its spelling can differ between compilers, as for a type in an unnamed
+  namespace, and may change in a later version of the module.
 
 ### Examples
 
@@ -46,6 +48,8 @@ static_assert(scl::enum_name<Active>() == "Active");
 ## `enum_short_name<V>`
 
 Retrieves only the identifier of the enum member `V`, stripping any type or namespace qualifiers.
+For a value no constant of its type has the result is an empty string. The result is for display,
+and its spelling may change in a later version of the module.
 
 - Header: `#include <scl/utility/meta/enum.h>`
 - Declaration: `template <auto V> requires std::is_enum_v<decltype(V)> constexpr std::string_view enum_short_name() noexcept;`
