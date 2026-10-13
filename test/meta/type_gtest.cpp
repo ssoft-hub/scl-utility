@@ -1,7 +1,9 @@
 #include <gtest_utils.h>
 
 #include <cstddef>
+#include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 #include <scl/utility/meta/type.h>
@@ -24,7 +26,10 @@ class SimpleClass
 namespace Namespace
 {
     struct Struct
-    {};
+    {
+        struct Nested
+        {};
+    };
 
     template <typename T>
     struct TemplateStruct
@@ -69,14 +74,25 @@ namespace
 } // namespace
 
 /**
+ * @test Verify that both function templates return a std::string_view and throw nothing.
+ */
+TEST(MetaTypeTest, Declarations)
+{
+    STATIC_EXPECT_TRUE(noexcept(::scl::type_name<int>()));
+    STATIC_EXPECT_TRUE(noexcept(::scl::type_short_name<int>()));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::type_name<int>()), ::std::string_view>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::type_short_name<int>()), ::std::string_view>));
+}
+
+/**
  * @test Verify fundamental types extraction.
  */
 TEST(MetaTypeTest, FundamentalTypes)
 {
-    EXPECT_EQ(::scl::type_name<int>(), "int");
-    EXPECT_EQ(::scl::type_name<float>(), "float");
-    EXPECT_EQ(::scl::type_name<double>(), "double");
-    EXPECT_EQ(::scl::type_name<void>(), "void");
+    STATIC_EXPECT_EQ(::scl::type_name<int>(), "int");
+    STATIC_EXPECT_EQ(::scl::type_name<float>(), "float");
+    STATIC_EXPECT_EQ(::scl::type_name<double>(), "double");
+    STATIC_EXPECT_EQ(::scl::type_name<void>(), "void");
 }
 
 /**
@@ -86,18 +102,18 @@ TEST(MetaTypeTest, FundamentalTypes)
 TEST(MetaTypeTest, UserDefinedTypes)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
-    EXPECT_EQ(::scl::type_name<SimpleStruct>(), "struct SimpleStruct");
-    EXPECT_EQ(::scl::type_name<SimpleClass>(), "class SimpleClass");
+    STATIC_EXPECT_EQ(::scl::type_name<SimpleStruct>(), "struct SimpleStruct");
+    STATIC_EXPECT_EQ(::scl::type_name<SimpleClass>(), "class SimpleClass");
 #else
-    EXPECT_EQ(::scl::type_name<SimpleStruct>(), "SimpleStruct");
-    EXPECT_EQ(::scl::type_name<SimpleClass>(), "SimpleClass");
+    STATIC_EXPECT_EQ(::scl::type_name<SimpleStruct>(), "SimpleStruct");
+    STATIC_EXPECT_EQ(::scl::type_name<SimpleClass>(), "SimpleClass");
 #endif
 
     static constexpr auto simple_struct_name = ::scl::type_short_name<SimpleStruct>();
     static constexpr auto simple_class_name = ::scl::type_short_name<SimpleClass>();
 
-    EXPECT_EQ(simple_struct_name, "SimpleStruct");
-    EXPECT_EQ(simple_class_name, "SimpleClass");
+    STATIC_EXPECT_EQ(simple_struct_name, "SimpleStruct");
+    STATIC_EXPECT_EQ(simple_class_name, "SimpleClass");
 }
 
 /**
@@ -106,12 +122,17 @@ TEST(MetaTypeTest, UserDefinedTypes)
 TEST(MetaTypeTest, NamespacedTypes)
 {
 #if defined(_MSC_VER) && !defined(__clang__)
-    EXPECT_EQ(::scl::type_name<Namespace::Struct>(), "struct Namespace::Struct");
+    STATIC_EXPECT_EQ(::scl::type_name<Namespace::Struct>(), "struct Namespace::Struct");
 #else
-    EXPECT_EQ(::scl::type_name<Namespace::Struct>(), "Namespace::Struct");
+    STATIC_EXPECT_EQ(::scl::type_name<Namespace::Struct>(), "Namespace::Struct");
 #endif
 
-    EXPECT_EQ(::scl::type_short_name<Namespace::Struct>(), "Struct");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Namespace::Struct>(), "Struct");
+#if defined(_MSC_VER) && !defined(__clang__)
+    STATIC_EXPECT_EQ(::scl::type_name<Namespace::Struct::Nested>(), "struct Namespace::Struct::Nested");
+#else
+    STATIC_EXPECT_EQ(::scl::type_name<Namespace::Struct::Nested>(), "Namespace::Struct::Nested");
+#endif
 }
 
 /**
@@ -124,19 +145,21 @@ TEST(MetaTypeTest, TemplateTypes)
     using TT = Namespace::TemplateClass<T>;
 
 #if defined(_MSC_VER) && !defined(__clang__)
-    EXPECT_EQ(::scl::type_name<T>(), "struct Namespace::TemplateStruct<struct Namespace::Struct>");
-    EXPECT_EQ(::scl::type_name<TT>(),
+    STATIC_EXPECT_EQ(::scl::type_name<T>(), "struct Namespace::TemplateStruct<struct Namespace::Struct>");
+    STATIC_EXPECT_EQ(::scl::type_name<TT>(),
         "class Namespace::TemplateClass<struct Namespace::TemplateStruct<struct Namespace::Struct> >");
 #elif defined(__clang__)
-    EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
-    EXPECT_EQ(::scl::type_name<TT>(), "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct>>");
+    STATIC_EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
+    STATIC_EXPECT_EQ(::scl::type_name<TT>(),
+        "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct>>");
 #else
-    EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
-    EXPECT_EQ(::scl::type_name<TT>(), "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct> >");
+    STATIC_EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
+    STATIC_EXPECT_EQ(::scl::type_name<TT>(),
+        "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct> >");
 #endif
 
-    EXPECT_EQ(::scl::type_short_name<T>(), "TemplateStruct");
-    EXPECT_EQ(::scl::type_short_name<TT>(), "TemplateClass");
+    STATIC_EXPECT_EQ(::scl::type_short_name<T>(), "TemplateStruct");
+    STATIC_EXPECT_EQ(::scl::type_short_name<TT>(), "TemplateClass");
 }
 
 /**
@@ -194,13 +217,22 @@ TEST(MetaTypeTest, ShortNameDropsQualifiersAndReference)
 }
 
 /**
- * @test Verify that type_short_name names a fundamental type as type_name does.
+ * @test Verify that type_short_name names a fundamental type as type_name does, without its
+ *       namespace.
  */
 TEST(MetaTypeTest, ShortNameOfFundamental)
 {
-    STATIC_EXPECT_EQ(::scl::type_short_name<int>(), ::scl::type_name<int>());
-    STATIC_EXPECT_EQ(::scl::type_short_name<unsigned long>(), ::scl::type_name<unsigned long>());
+    STATIC_EXPECT_EQ(::scl::type_short_name<int>(), "int");
     STATIC_EXPECT_EQ(::scl::type_short_name<void>(), "void");
+#if defined(_MSC_VER) && !defined(__clang__)
+    STATIC_EXPECT_EQ(::scl::type_short_name<unsigned long long>(), "unsigned __int64");
+    STATIC_EXPECT_EQ(::scl::type_short_name<::std::nullptr_t>(), "nullptr");
+#else
+    STATIC_EXPECT_EQ(::scl::type_short_name<::std::nullptr_t>(), "nullptr_t");
+#endif
+#if defined(__GNUC__) && !defined(__clang__)
+    STATIC_EXPECT_EQ(::scl::type_short_name<unsigned long long>(), "long long unsigned int");
+#endif
 }
 
 /**
@@ -210,9 +242,13 @@ TEST(MetaTypeTest, ClosureShortName)
 {
     auto closure = [](int number) { return number; };
     using closure_type = decltype(closure);
-    EXPECT_FALSE(::scl::type_short_name<closure_type>().empty());
-    EXPECT_TRUE(::scl::type_name<closure_type>().ends_with(::scl::type_short_name<closure_type>()));
-    EXPECT_EQ(::scl::type_short_name<closure_type>().find("::"), ::std::string_view::npos);
+#if defined(__GNUC__) && !defined(__clang__)
+    auto empty_closure = [] {};
+    STATIC_EXPECT_EQ(::scl::type_short_name<decltype(empty_closure)>(), "<lambda()>");
+#endif
+    STATIC_EXPECT_FALSE(::scl::type_short_name<closure_type>().empty());
+    STATIC_EXPECT_TRUE(::scl::type_name<closure_type>().ends_with(::scl::type_short_name<closure_type>()));
+    STATIC_EXPECT_EQ(::scl::type_short_name<closure_type>().find("::"), ::std::string_view::npos);
 }
 
 namespace
@@ -233,12 +269,12 @@ TEST(MetaTypeTest, UnnamedTypeShortName)
 {
     using object_type = decltype(unnamed_object);
     using value_type = decltype(unnamed_value);
-    EXPECT_FALSE(::scl::type_short_name<object_type>().empty());
-    EXPECT_TRUE(::scl::type_name<object_type>().ends_with(::scl::type_short_name<object_type>()));
-    EXPECT_EQ(::scl::type_short_name<object_type>().find("::"), ::std::string_view::npos);
-    EXPECT_FALSE(::scl::type_short_name<value_type>().empty());
-    EXPECT_TRUE(::scl::type_name<value_type>().ends_with(::scl::type_short_name<value_type>()));
-    EXPECT_EQ(::scl::type_short_name<value_type>().find("::"), ::std::string_view::npos);
+    STATIC_EXPECT_FALSE(::scl::type_short_name<object_type>().empty());
+    STATIC_EXPECT_TRUE(::scl::type_name<object_type>().ends_with(::scl::type_short_name<object_type>()));
+    STATIC_EXPECT_EQ(::scl::type_short_name<object_type>().find("::"), ::std::string_view::npos);
+    STATIC_EXPECT_FALSE(::scl::type_short_name<value_type>().empty());
+    STATIC_EXPECT_TRUE(::scl::type_name<value_type>().ends_with(::scl::type_short_name<value_type>()));
+    STATIC_EXPECT_EQ(::scl::type_short_name<value_type>().find("::"), ::std::string_view::npos);
 }
 
 namespace
@@ -337,8 +373,8 @@ namespace
  */
 TEST(MetaTypeTest, CharacterLiteralArgumentShortName)
 {
-    EXPECT_EQ(::scl::type_short_name<CharArg<'('>>(), "CharArg");
-    EXPECT_EQ(::scl::type_short_name<CharArg<')'>>(), "CharArg");
+    STATIC_EXPECT_EQ(::scl::type_short_name<CharArg<'('>>(), "CharArg");
+    STATIC_EXPECT_EQ(::scl::type_short_name<CharArg<')'>>(), "CharArg");
 }
 
 /**
@@ -347,20 +383,36 @@ TEST(MetaTypeTest, CharacterLiteralArgumentShortName)
  */
 TEST(MetaTypeTest, StringArgumentShortName)
 {
-    EXPECT_EQ(::scl::type_short_name<TextArg<"a(b">::Inner>(), "Inner");
-    EXPECT_EQ(::scl::type_short_name<TextArg<"a(b">>(), "TextArg");
+    STATIC_EXPECT_EQ(::scl::type_short_name<TextArg<"a(b">::Inner>(), "Inner");
+    STATIC_EXPECT_EQ(::scl::type_short_name<TextArg<"a(b">>(), "TextArg");
 }
+
+namespace
+{
+    template <typename Nested>
+    void check_nested_short_name()
+    {
+        STATIC_EXPECT_EQ(::scl::type_short_name<Nested>(), "Nested");
+    }
+
+    // GCC 16 writes a quote inside a string unescaped and MSVC writes the string as character codes,
+    // so neither name holds an escaped quote.
+    template <typename Nested>
+    void check_escaped_quote_short_name()
+    {
+        if constexpr (::scl::type_name<Nested>().find("\\\"") == ::std::string_view::npos)
+            GTEST_SKIP() << "The name holds no escaped quote";
+        else
+            check_nested_short_name<Nested>();
+    }
+} // namespace
 
 /**
  * @test Verify that an escaped quote in a string of a template argument does not end the string.
  */
 TEST(MetaTypeTest, EscapedQuoteArgumentShortName)
 {
-    using nested_type = TextArg<"x">::Nested<"a\"(">;
-    // GCC 16 writes a quote inside a string unescaped, which no scan can tell from the closing one.
-    if (::scl::type_name<nested_type>().find("\\\"") == ::std::string_view::npos)
-        GTEST_SKIP() << "The name holds no escaped quote";
-    EXPECT_EQ(::scl::type_short_name<nested_type>(), "Nested");
+    check_escaped_quote_short_name<TextArg<"x">::Nested<"a\"(">>();
 }
 
 /**
@@ -369,10 +421,10 @@ TEST(MetaTypeTest, EscapedQuoteArgumentShortName)
 TEST(MetaTypeTest, TypeInOperatorShortName)
 {
     using closure_type = decltype(Ordered{} < Ordered{});
-    EXPECT_FALSE(::scl::type_short_name<closure_type>().empty());
-    EXPECT_TRUE(::scl::type_name<closure_type>().ends_with(::scl::type_short_name<closure_type>()));
-    EXPECT_EQ(::scl::type_short_name<closure_type>().find("::"), ::std::string_view::npos);
-    EXPECT_EQ(::scl::type_short_name<decltype(Ordered{} <= Ordered{})>(), "Local");
+    STATIC_EXPECT_FALSE(::scl::type_short_name<closure_type>().empty());
+    STATIC_EXPECT_TRUE(::scl::type_name<closure_type>().ends_with(::scl::type_short_name<closure_type>()));
+    STATIC_EXPECT_EQ(::scl::type_short_name<closure_type>().find("::"), ::std::string_view::npos);
+    STATIC_EXPECT_EQ(::scl::type_short_name<decltype(Ordered{} <= Ordered{})>(), "Local");
 }
 
 /**
@@ -381,16 +433,16 @@ TEST(MetaTypeTest, TypeInOperatorShortName)
  */
 TEST(MetaTypeTest, OperatorInTemplateArgumentShortName)
 {
-    EXPECT_EQ(::scl::type_short_name<Holder<(&operator<)>>(), "Holder");
-    EXPECT_EQ(::scl::type_short_name<Holder<(&operator-)>>(), "Holder");
-    EXPECT_EQ(::scl::type_short_name<Holder<(&operator<=)>>(), "Holder");
-    EXPECT_EQ(::scl::type_short_name<Holder<(&operator>)>>(), "Holder");
-    EXPECT_EQ(::scl::type_short_name<Box<Holder<(&operator-)>>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Box<decltype(Ordered{} < Ordered{})>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Box<decltype(Ordered{} <= Ordered{})>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Box<cooperator<int>>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>(),
-        "Member");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator<)>>(), "Holder");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator-)>>(), "Holder");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator<=)>>(), "Holder");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator>)>>(), "Holder");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<(&operator-)>>>(), "Box");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<decltype(Ordered{} < Ordered{})>>(), "Box");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<decltype(Ordered{} <= Ordered{})>>(), "Box");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<cooperator<int>>>(), "Box");
+    STATIC_EXPECT_EQ(
+        ::scl::type_short_name<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>(), "Member");
 }
 
 /**
@@ -399,21 +451,24 @@ TEST(MetaTypeTest, OperatorInTemplateArgumentShortName)
  */
 TEST(MetaTypeTest, ArrowAndMinusInTemplateArgumentShortName)
 {
-    EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator-> >>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator- >>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator- > *>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator->* >>>(), "Box");
-    EXPECT_EQ(
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator-> >>>(), "Box");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator- >>>(), "Box");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator- > *>>(), "Box");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator->* >>>(), "Box");
+    STATIC_EXPECT_EQ(
         ::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>>(),
-        "Box");
-    EXPECT_EQ(
+    STATIC_EXPECT_EQ(
+        ::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>>(), "Box");
+    STATIC_EXPECT_EQ(
         ::scl::type_short_name<Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>>(), "Box");
-    EXPECT_EQ(::scl::type_short_name<Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>>(),
-        "Box");
-    EXPECT_EQ(::scl::type_short_name<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>(), "Member");
-    EXPECT_EQ(::scl::type_short_name<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>(), "Member");
-    EXPECT_EQ(::scl::type_short_name<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>(), "Member");
+    STATIC_EXPECT_EQ(
+        ::scl::type_short_name<Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>>(), "Box");
+    STATIC_EXPECT_EQ(
+        ::scl::type_short_name<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>(), "Member");
+    STATIC_EXPECT_EQ(
+        ::scl::type_short_name<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>(), "Member");
+    STATIC_EXPECT_EQ(
+        ::scl::type_short_name<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>(), "Member");
 }
 
 /**
@@ -423,75 +478,78 @@ TEST(MetaTypeTest, SharedNameShortName)
 {
     using first_type = Wrap<Holder<&Pointing::operator- >>::Inner<&Pointing::operator-> >;
     using second_type = Wrap<Holder<&Pointing::operator-> >::Inner<&Pointing::operator- >>;
-    auto const shared = ::scl::type_name<first_type>() == ::scl::type_name<second_type>();
-    EXPECT_EQ(::scl::type_short_name<first_type>(), shared ? "Wrap" : "Inner");
-    EXPECT_EQ(::scl::type_short_name<second_type>(), "Wrap");
-}
-
-/**
- * @test Verify the rendering contract the documentation states.
- * @note The MSVC prefix reaches template arguments as well, so a rendered template name has
- * no spelling common to all compilers; the documented examples match on a substring.
- */
-TEST(MetaTypeTest, DocumentedRenderingContract)
-{
-    constexpr auto npos = ::std::string_view::npos;
-
-    static constexpr auto vector_name = ::scl::type_name<::std::vector<SimpleStruct>>();
-    static constexpr auto enum_vector_name = ::scl::type_name<::std::vector<Color>>();
-    static constexpr auto nested_name = ::scl::type_name<Namespace::Struct>();
-    static constexpr auto anon_name = ::scl::type_name<AnonStruct>();
-
-    STATIC_EXPECT_NE(vector_name.find("SimpleStruct"), npos);
-    STATIC_EXPECT_NE(enum_vector_name.find("Color"), npos);
-    STATIC_EXPECT_NE(nested_name.find("Namespace::Struct"), npos);
-
-    // The anonymous-namespace marker is spelled differently by each compiler, so only the
-    // identifier and the MSVC prefix are portable claims about the rendering.
-    STATIC_EXPECT_NE(anon_name.find("AnonStruct"), npos);
-
-    STATIC_EXPECT_EQ(::scl::type_short_name<Color>(), "Color");
-    STATIC_EXPECT_EQ(::scl::type_short_name<AnonStruct>(), "AnonStruct");
-    STATIC_EXPECT_EQ(::scl::type_short_name<::std::vector<SimpleStruct>>(), "vector");
-
+    STATIC_EXPECT_EQ(::scl::type_short_name<second_type>(), "Wrap");
 #if defined(_MSC_VER) && !defined(__clang__)
-    STATIC_EXPECT_EQ(::scl::type_name<SimpleStruct>(), "struct SimpleStruct");
-    STATIC_EXPECT_EQ(::scl::type_name<Color>(), "enum Color");
-    STATIC_EXPECT_NE(vector_name.find("struct SimpleStruct"), npos);
-    STATIC_EXPECT_NE(enum_vector_name.find("enum Color"), npos);
-    STATIC_EXPECT_TRUE(nested_name.starts_with("struct "));
-    STATIC_EXPECT_TRUE(anon_name.starts_with("struct "));
+    STATIC_EXPECT_NE(::scl::type_name<first_type>(), ::scl::type_name<second_type>());
+    STATIC_EXPECT_EQ(::scl::type_short_name<first_type>(), "Inner");
 #else
-    STATIC_EXPECT_EQ(::scl::type_name<SimpleStruct>(), "SimpleStruct");
-    STATIC_EXPECT_EQ(::scl::type_name<Color>(), "Color");
-    STATIC_EXPECT_EQ(vector_name.find("struct "), npos);
-    STATIC_EXPECT_EQ(enum_vector_name.find("enum "), npos);
-    STATIC_EXPECT_EQ(anon_name.find("struct "), npos);
+    STATIC_EXPECT_EQ(::scl::type_name<first_type>(), ::scl::type_name<second_type>());
+    STATIC_EXPECT_EQ(::scl::type_short_name<first_type>(), "Wrap");
+#endif
+#if defined(__clang__)
+    STATIC_EXPECT_TRUE(::scl::type_name<first_type>().ends_with(
+        "Wrap<(anonymous namespace)::Holder<&(anonymous namespace)::Pointing::operator->>::Inner<"
+        "&(anonymous namespace)::Pointing::operator->>"));
 #endif
 }
 
 /**
- * @test Verify standard library types.
- * @note STL implementations may vary in how they display default allocators.
+ * @test Verify that MSVC writes the key enum and union before such a type, where GCC and Clang
+ *       write none, and that the short name of the enumeration drops the key.
  */
-TEST(MetaTypeTest, StandardLibraryTypes)
+TEST(MetaTypeTest, KeyOfEnumerationAndUnion)
 {
-    static constexpr ::std::string_view name = ::scl::type_name<::std::vector<int>>();
-    // We check for substring because different compilers/STL versions
-    // may include or omit default allocator details.
-    EXPECT_TRUE(name.find("vector<int") != ::std::string_view::npos);
-    EXPECT_EQ(::scl::type_short_name<::std::vector<int>>(), "vector");
+#if defined(_MSC_VER) && !defined(__clang__)
+    STATIC_EXPECT_EQ(::scl::type_name<Color>(), "enum Color");
+    STATIC_EXPECT_EQ(::scl::type_name<Number>(), "union Number");
+#else
+    STATIC_EXPECT_EQ(::scl::type_name<Color>(), "Color");
+    STATIC_EXPECT_EQ(::scl::type_name<Number>(), "Number");
+#endif
+    STATIC_EXPECT_EQ(::scl::type_short_name<Color>(), "Color");
 }
 
 /**
- * @test Verify that qualifiers like const and references are preserved or handled.
+ * @test Verify that a type of an unnamed namespace keeps its identifier, and the short name drops
+ *       the namespace whatever the compiler spells for it.
+ */
+TEST(MetaTypeTest, AnonymousNamespaceType)
+{
+    STATIC_EXPECT_TRUE(::scl::type_name<AnonStruct>().ends_with("::AnonStruct"));
+    STATIC_EXPECT_EQ(::scl::type_short_name<AnonStruct>(), "AnonStruct");
+}
+
+/**
+ * @test Verify that a type of the standard library is spelled as the documentation states for
+ *       std::string on each measured toolchain.
+ */
+TEST(MetaTypeTest, StandardLibraryTypes)
+{
+    STATIC_EXPECT_TRUE(::scl::type_name<::std::vector<int>>().find("vector<int") != ::std::string_view::npos);
+    STATIC_EXPECT_EQ(::scl::type_short_name<::std::vector<int>>(), "vector");
+#if defined(_MSC_VER) && !defined(__clang__)
+    STATIC_EXPECT_EQ(::scl::type_name<::std::string>(),
+        "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >");
+#elif defined(__clang__) && (defined(_MSVC_STL_VERSION) || defined(__GLIBCXX__))
+    STATIC_EXPECT_EQ(::scl::type_name<::std::string>(), "std::basic_string<char>");
+#elif defined(__GNUC__) && !defined(__clang__) && _GLIBCXX_USE_CXX11_ABI
+    STATIC_EXPECT_EQ(::scl::type_name<::std::string>(), "std::__cxx11::basic_string<char>");
+#endif
+}
+
+/**
+ * @test Verify that the full name keeps const, volatile and the reference of the type.
  */
 TEST(MetaTypeTest, Qualifiers)
 {
-    // Current implementation preserves qualifiers as they are part of type T.
-    // We use find/contains logic because exact formatting of 'const' (before or after type)
-    // might differ between compilers.
-    auto const_name = ::scl::type_name<int const>();
-    EXPECT_TRUE(const_name.find("int") != ::std::string_view::npos);
-    EXPECT_TRUE(const_name.find("const") != ::std::string_view::npos);
+    constexpr auto npos = ::std::string_view::npos;
+    constexpr auto name = ::scl::type_name<SimpleClass const volatile &>();
+    STATIC_EXPECT_NE(name.find("SimpleClass"), npos);
+    STATIC_EXPECT_NE(name.find("const"), npos);
+    STATIC_EXPECT_NE(name.find("volatile"), npos);
+    STATIC_EXPECT_TRUE(name.ends_with("&"));
+    STATIC_EXPECT_TRUE(::scl::type_name<SimpleClass &&>().ends_with("&&"));
+#if defined(__clang__)
+    STATIC_EXPECT_EQ(::scl::type_name<SimpleClass const &>(), "const SimpleClass &");
+#endif
 }

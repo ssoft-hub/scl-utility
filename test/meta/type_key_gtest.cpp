@@ -1,5 +1,8 @@
 #include <gtest_utils.h>
 
+#include <compare>
+#include <functional>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -30,6 +33,51 @@ namespace TypeKeyNs
 
 } // namespace TypeKeyNs
 
+struct KeyTwin
+{};
+
+namespace
+{
+    struct KeyTwin
+    {};
+
+    using KeyMovedTwin = KeyTwin;
+} // namespace
+
+namespace
+{
+    template <typename Key>
+    concept meta_key_ordered = requires(Key const & left, Key const & right) { left < right; };
+} // namespace
+
+/**
+ * @test Verify the declarations: type_key_of, name, the comparison and the default constructor
+ *       throw nothing, type_key_of returns a reference to a const key, and name returns
+ *       a std::string_view.
+ */
+TEST(TypeKeyTest, Declarations)
+{
+    STATIC_EXPECT_TRUE(noexcept(::scl::type_key_of<int>()));
+    STATIC_EXPECT_TRUE(noexcept(::scl::type_key_of<int>().name()));
+    STATIC_EXPECT_TRUE(noexcept(::scl::type_key_of<int>() == ::scl::type_key_of<long>()));
+    STATIC_EXPECT_TRUE(noexcept(::scl::type_key{}));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::type_key_of<int>()), ::scl::type_key const &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::type_key_of<int>().name()), ::std::string_view>));
+}
+
+/**
+ * @test Verify that no key that identifies a type can be built apart from type_key_of, and that keys
+ *       carry neither an order nor a hash.
+ */
+TEST(TypeKeyTest, NoConstructionOrderOrHash)
+{
+    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::type_key, ::std::string_view, void const *>));
+    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::type_key, ::std::string_view>));
+    STATIC_EXPECT_FALSE(::std::three_way_comparable<::scl::type_key>);
+    STATIC_EXPECT_FALSE(meta_key_ordered<::scl::type_key>);
+    STATIC_EXPECT_FALSE(::std::is_default_constructible_v<::std::hash<::scl::type_key>>);
+}
+
 /**
  * @test Verify a key is an ordinary value: default-built, copied, moved and
  *       assigned, so a handle can answer one without handing out a pointer.
@@ -58,13 +106,21 @@ TEST(TypeKeyTest, EmptyKeyNamesNothing)
  */
 TEST(TypeKeyTest, ACopyNamesTheSameType)
 {
-    ::scl::type_key copy = ::scl::type_key_of<int>();
-
-    EXPECT_TRUE(copy == ::scl::type_key_of<int>());
-    EXPECT_FALSE(copy == ::scl::type_key_of<double>());
-
-    copy = ::scl::type_key_of<double>();
-    EXPECT_TRUE(copy == ::scl::type_key_of<double>());
+    constexpr auto copy_matches = [] {
+        ::scl::type_key copy = ::scl::type_key_of<int>();
+        bool const first = copy == ::scl::type_key_of<int>() && copy != ::scl::type_key_of<double>();
+        copy = ::scl::type_key_of<double>();
+        return first && copy == ::scl::type_key_of<double>();
+    };
+    constexpr auto move_matches = [] {
+        ::scl::type_key source = ::scl::type_key_of<int>();
+        ::scl::type_key moved = static_cast<::scl::type_key &&>(source);
+        ::scl::type_key assigned{};
+        assigned = static_cast<::scl::type_key &&>(moved);
+        return assigned == ::scl::type_key_of<int>();
+    };
+    STATIC_EXPECT_TRUE(copy_matches());
+    STATIC_EXPECT_TRUE(move_matches());
 }
 
 /**
@@ -84,6 +140,15 @@ TEST(TypeKeyTest, PerTypeAddressIdentity)
     STATIC_EXPECT_TRUE(&::scl::type_key_of<int>() == &::scl::type_key_of<int>());
     STATIC_EXPECT_TRUE(&::scl::type_key_of<KeyAnonDuck>() == &::scl::type_key_of<KeyAnonDuck>());
     STATIC_EXPECT_TRUE(&::scl::type_key_of<int>() != &::scl::type_key_of<long>());
+}
+
+/**
+ * @test Verify that a class moved into an unnamed namespace gets a key of its own beside a class of
+ *       the same name at namespace scope.
+ */
+TEST(TypeKeyTest, UnnamedNamespaceKeyOfItsOwn)
+{
+    STATIC_EXPECT_NE(::scl::type_key_of<KeyMovedTwin>(), ::scl::type_key_of<::KeyTwin>());
 }
 
 /**
