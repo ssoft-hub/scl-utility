@@ -58,7 +58,7 @@ namespace scl::preprocessor::detail
 
 /**
  * @internal
- * @def SCL_COUNTER_CRUMB(Tag, rank, acc)
+ * @def SCL_DETAIL_COUNTER_CRUMB(Tag, rank, acc)
  * @brief A helper macro to call the `crumb` function with the correct arguments.
  * @ingroup scl_utility_preprocessor
  *
@@ -66,7 +66,7 @@ namespace scl::preprocessor::detail
  * @param rank The bit-rank to check.
  * @param acc The currently accumulated value.
  */
-#define SCL_COUNTER_CRUMB(Tag, rank, acc)                                                   \
+#define SCL_DETAIL_COUNTER_CRUMB(Tag, rank, acc)                                            \
     ::scl::preprocessor::detail::crumb(Tag{}, ::scl::preprocessor::detail::counter<rank>(), \
         ::scl::preprocessor::detail::counter<acc>())
 
@@ -100,40 +100,40 @@ namespace scl::preprocessor::detail
  * static_assert(tpl_val_float_0 == 0);
  @endcode
  */
-#define SCL_COUNTER_VALUE(Tag)                                                                                                                                                 \
-    (SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 0,                                                                                                                             \
-        SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 1,                                                                                                                          \
-            SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 2,                                                                                                                      \
-                SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 3,                                                                                                                  \
-                    SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 4,                                                                                                              \
-                        SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 5,                                                                                                          \
-                            SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 6,                                                                                                      \
-                                SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 7,                                                                                                  \
-                                    SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 8,                                                                                              \
-                                        SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 9,                                                                                          \
-                                            SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 10,                                                                                     \
-                                                SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 11,                                                                                 \
-                                                    SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 12,                                                                             \
-                                                        SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 13,                                                                         \
-                                                            SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 14,                                                                     \
-                                                                SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 15,                                                                 \
-                                                                    SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 16,                                                             \
-                                                                        SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 17,                                                         \
-                                                                            SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 18,                                                     \
-                                                                                SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 19,                                                 \
-                                                                                    SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 20,                                             \
-                                                                                        SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 21,                                         \
-                                                                                            SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 22,                                     \
-                                                                                                SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 23,                                 \
-                                                                                                    SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 24,                             \
-                                                                                                        SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 25,                         \
-                                                                                                            SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 26,                     \
-                                                                                                                SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 27,                 \
-                                                                                                                    SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 28,             \
-                                                                                                                        SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 29,         \
-                                                                                                                            SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 30,     \
-                                                                                                                                SCL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 31, \
-                                                                                                                                    0))))))))))))))))))))))))))))))))          \
+#define SCL_COUNTER_VALUE(Tag)                                                                                                                                                        \
+    (SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 0,                                                                                                                             \
+        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 1,                                                                                                                          \
+            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 2,                                                                                                                      \
+                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 3,                                                                                                                  \
+                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 4,                                                                                                              \
+                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 5,                                                                                                          \
+                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 6,                                                                                                      \
+                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 7,                                                                                                  \
+                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 8,                                                                                              \
+                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 9,                                                                                          \
+                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 10,                                                                                     \
+                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 11,                                                                                 \
+                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 12,                                                                             \
+                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 13,                                                                         \
+                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 14,                                                                     \
+                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 15,                                                                 \
+                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 16,                                                             \
+                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 17,                                                         \
+                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 18,                                                     \
+                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 19,                                                 \
+                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 20,                                             \
+                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 21,                                         \
+                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 22,                                     \
+                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 23,                                 \
+                                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 24,                             \
+                                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 25,                         \
+                                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 26,                     \
+                                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 27,                 \
+                                                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 28,             \
+                                                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 29,         \
+                                                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 30,     \
+                                                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 31, \
+                                                                                                                                    0))))))))))))))))))))))))))))))))                 \
             .value)
 
 /**

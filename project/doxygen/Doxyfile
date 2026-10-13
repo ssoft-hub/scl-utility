@@ -1144,10 +1144,10 @@ EXCLUDE_PATTERNS       = */detail/*
 # ANamespace::AClass, ANamespace::*Test
 
 # Internal entities that sit in public scope, so nothing else keeps them out: the macro
-# spelling of the detail namespace, the counter's own helper, and the two anchors whose only
-# purpose is to give __PRETTY_FUNCTION__ a known shape. Each also carries @internal.
+# spelling of the detail namespace, and the two anchors whose only purpose is to give
+# __PRETTY_FUNCTION__ a known shape. Each also carries @internal.
 
-EXCLUDE_SYMBOLS        = *::detail *::detail::* SCL_DETAIL_* SCL_COUNTER_CRUMB \
+EXCLUDE_SYMBOLS        = *::detail *::detail::* SCL_DETAIL_* \
                          lah4l4tjla6_f we5r256sg_e
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
