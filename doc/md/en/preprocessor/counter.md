@@ -13,7 +13,10 @@ the macro `SCL_COUNTER_NEXT(Tag)` adds one to that counter for the rest of the t
 ## Semantics
 
 - **A counter per tag:** each type is the tag of a counter of its own, and two specializations
-  of one class template are two tags.
+  of one class template are two tags. A class without a default constructor, an incomplete
+  or abstract class, a function type, a reference and `void` are tags as well. A reference,
+  a `const` type and an array are tags apart from, respectively, the type referred to, the type
+  without `const` and a pointer to the element.
 - **Value:** `SCL_COUNTER_VALUE(Tag)` is a constant expression of type `std::uint_fast32_t`. It
   reads `0` before the first `SCL_COUNTER_NEXT(Tag)` of the translation unit and one more after
   each of them.
