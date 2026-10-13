@@ -235,17 +235,20 @@ so that code written against the C++20 baseline keeps compiling.
 
 ### Identity across module boundaries
 
-A cast through a direct reference to an object compares
-[`scl::type_key`](../meta/type_key.md) values. Within one module that is a pointer
-comparison. A view that arrived from another module is compared by the content of the key,
-and that comparison is exact: two same-named types from anonymous namespaces of different
-translation units differ by the discriminator the key carries.
+For a view that references an object directly, the function template `scl::any_cast` matches
+types by their [`scl::type_key`](../meta/type_key.md) values. Within one module the function
+compares pointers, and for a view from another module it compares the content of the key. Two
+same-named types from anonymous namespaces of different translation units differ by content as
+well, since their keys carry different discriminators.
 
-The two limits of the key apply here as well:
+The three limits of the key apply here as well:
 
 - A type declared inside a block - a local class or a closure type - falls outside the
   contract of the key and may match a same-named type from a namespace by mistake. Declare
   such a type at namespace scope.
+- The key of a type whose name holds `operator->`, `operator->*`, `operator<=>` or `operator>>` can
+  differ, with GCC or Clang, from the key of that type in another module, such as a DLL on Windows,
+  and `scl::any_cast` then returns `nullptr` for a view from that module.
 - The key must not outlive the module that created it. Destroy views created inside a shared
   library before unloading it.
 

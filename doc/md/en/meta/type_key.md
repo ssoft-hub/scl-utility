@@ -44,17 +44,27 @@ public:
 `name()` answers the name of the identified type as a string - the one
 [`type_name<T>()`](type_name.md) produces.
 
-The discriminator is never handed out. It is `nullptr` for a type with external linkage; for a
-type from an anonymous namespace it holds the address of an anchor object, one per translation
-unit, so same-named types from different translation units carry different discriminators.
+No member function of the key returns the discriminator. It is `nullptr` for a type with external
+linkage, apart from a type whose name holds one of the symbols described below; for a type from an
+anonymous namespace it holds the address of an anchor object, one per translation unit, so
+same-named types from different translation units carry different discriminators.
 
 Comparison starts with addresses. `type_key_of<T>()` answers a reference to a constant, one per
 type, so comparing two such references costs a single pointer comparison. Where the addresses
-differ, the contents are compared: name and discriminator. For a type declared at namespace
-scope this yields neither a false match nor a false reject. Same-named types from anonymous
-namespaces differ by discriminator; an external type used from an executable and from a shared
-library compares by name with a null discriminator on both sides, and unmerged inline
-instantiations on Windows do not break it.
+differ, the contents are compared: name and discriminator. For a type declared at namespace scope
+this yields neither a false match nor a false reject, apart from a type whose name holds one of
+the symbols described below. Same-named types from anonymous namespaces differ by discriminator;
+an external type used from an executable and from a shared library compares by name with a null
+discriminator on both sides, and unmerged inline instantiations on Windows do not break it.
+
+With GCC and Clang one name may stand for two types, as the page of
+[`type_short_name<T>()`](type_name.md) states. Both write a pointer to `operator-` before a closing
+`>` as `operator->` and a pointer to `operator<=` before it as `operator<=>`, and Clang writes
+a pointer to `operator>` before it as `operator>>`. GCC also writes a pointer to such
+a specialization, `Tagged<&P::operator- > *`, as `Tagged<&P::operator->*`. With GCC and Clang,
+a type whose name holds `operator->`, `operator->*`, `operator<=>` or `operator>>` carries
+the address of an anchor of its own as the discriminator. The keys of two such types differ, and
+the key of such a type from another module may compare unequal to its key from this one.
 
 Only `type_key_of<T>()` hands out a key that identifies a type. Building one by hand, pairing
 one type's name with another type's discriminator, is impossible: the members are private and
@@ -84,7 +94,15 @@ unrelated one. Destroy stored keys before unloading the module that produced the
 Returns a reference to the `type_key` that identifies `T`.
 
 - Header: `#include <scl/utility/meta/type_key.h>`
-- Declaration: `template <typename T> constexpr type_key const & type_key_of() noexcept;`
+- Declaration: `template <typename T, std::byte const * Unit = /* anchor of the translation unit or nullptr */> constexpr type_key const & type_key_of() noexcept;`
+
+A caller passes `T` alone. The default of `Unit` is the anchor of the translation unit for a local
+type and a null pointer for any other type. The anchor keeps the key of a local type in its
+translation unit, which GCC would otherwise merge with the key of a local type of the same name from
+another translation unit where `T` holds a pointer to a member of a type in an unnamed namespace.
+GCC merges in the same way the specialization of a caller's template that depends on `T` alone, such
+as a variable template holding `&type_key_of<T>()`, so for such a type that specialization holds
+the key of only one translation unit.
 
 The key sits in an `inline constexpr` variable, one per type. Inside one module every call to
 `type_key_of<T>()` for an external `T` reaches the same object, so comparing against a stored

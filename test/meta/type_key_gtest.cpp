@@ -100,3 +100,106 @@ TEST(TypeKeyTest, Equality)
     STATIC_EXPECT_NE(::scl::type_key_of<KeyAnonDuck>(), ::scl::type_key_of<KeyAnonDuck *>());
     STATIC_EXPECT_NE(::scl::type_key_of<KeyAnonDuck>(), ::scl::type_key_of<::std::vector<KeyAnonDuck>>());
 }
+
+namespace TypeKeySpelling
+{
+    struct Pointing
+    {
+        Pointing const * operator->() const { return this; }
+
+        int operator-(Pointing) const { return 0; }
+
+        bool operator>(Pointing) const { return true; }
+
+        bool operator>>(Pointing) const { return true; }
+
+        bool operator<=(Pointing) const { return true; }
+
+        int operator<=>(Pointing) const { return 0; }
+
+        int operator->*(int) const { return 0; }
+    };
+
+    template <auto Function>
+    struct Holder
+    {
+        template <auto Other>
+        struct Inner
+        {};
+    };
+
+    template <typename T>
+    struct Wrap
+    {
+        template <auto Other>
+        struct Inner
+        {};
+    };
+
+    template <auto Function, typename... Rest>
+    struct Tagged
+    {};
+
+    template <typename... Types>
+    struct Pack
+    {};
+
+    using arrow_first = Wrap<Holder<&Pointing::operator- >>::Inner<&Pointing::operator-> >;
+    using arrow_second = Wrap<Holder<&Pointing::operator-> >::Inner<&Pointing::operator- >>;
+    using order_first = Wrap<Holder<&Pointing::operator<= >>::Inner<&Pointing::operator<=> >;
+    using order_second = Wrap<Holder<&Pointing::operator<=> >::Inner<&Pointing::operator<= >>;
+#if defined(__clang__)
+    using shift_first = Wrap<Holder<&Pointing::operator> >>::Inner<&Pointing::operator>> >;
+    using shift_second = Wrap<Holder<&Pointing::operator>> >::Inner<&Pointing::operator> >>;
+#elif defined(__GNUC__)
+    using star_first = Pack<Tagged<&Pointing::operator- > *, Tagged<&Pointing::operator->* >>;
+    using star_second = Pack<Tagged<&Pointing::operator->*, Tagged<&Pointing::operator- > *>>;
+#endif
+} // namespace TypeKeySpelling
+
+namespace
+{
+    struct AnonPointing
+    {
+        AnonPointing const * operator->() const { return this; }
+
+        int operator-(AnonPointing) const { return 0; }
+    };
+
+    using anon_arrow_first = TypeKeySpelling::Wrap<
+        TypeKeySpelling::Holder<&AnonPointing::operator- >>::Inner<&AnonPointing::operator-> >;
+    using anon_arrow_second = TypeKeySpelling::Wrap<
+        TypeKeySpelling::Holder<&AnonPointing::operator-> >::Inner<&AnonPointing::operator- >>;
+} // namespace
+
+/**
+ * @test Verify that two types GCC and Clang spell with one name get keys of their own, with
+ *       external linkage and in an unnamed namespace alike.
+ */
+TEST(TypeKeyTest, TypesOfOneSpellingGetKeysOfTheirOwn)
+{
+    using ::TypeKeySpelling::arrow_first;
+    using ::TypeKeySpelling::arrow_second;
+    using ::TypeKeySpelling::order_first;
+    using ::TypeKeySpelling::order_second;
+#if !defined(_MSC_VER) || defined(__clang__)
+    STATIC_EXPECT_EQ(::scl::type_key_of<arrow_first>().name(), ::scl::type_key_of<arrow_second>().name());
+    STATIC_EXPECT_EQ(::scl::type_key_of<order_first>().name(), ::scl::type_key_of<order_second>().name());
+    STATIC_EXPECT_EQ(::scl::type_key_of<anon_arrow_first>().name(),
+        ::scl::type_key_of<anon_arrow_second>().name());
+#endif
+    STATIC_EXPECT_NE(::scl::type_key_of<arrow_first>(), ::scl::type_key_of<arrow_second>());
+    STATIC_EXPECT_NE(::scl::type_key_of<order_first>(), ::scl::type_key_of<order_second>());
+    STATIC_EXPECT_NE(::scl::type_key_of<anon_arrow_first>(), ::scl::type_key_of<anon_arrow_second>());
+#if defined(__clang__)
+    using ::TypeKeySpelling::shift_first;
+    using ::TypeKeySpelling::shift_second;
+    STATIC_EXPECT_EQ(::scl::type_key_of<shift_first>().name(), ::scl::type_key_of<shift_second>().name());
+    STATIC_EXPECT_NE(::scl::type_key_of<shift_first>(), ::scl::type_key_of<shift_second>());
+#elif defined(__GNUC__)
+    using ::TypeKeySpelling::star_first;
+    using ::TypeKeySpelling::star_second;
+    STATIC_EXPECT_EQ(::scl::type_key_of<star_first>().name(), ::scl::type_key_of<star_second>().name());
+    STATIC_EXPECT_NE(::scl::type_key_of<star_first>(), ::scl::type_key_of<star_second>());
+#endif
+}

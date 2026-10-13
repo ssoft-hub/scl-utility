@@ -1,5 +1,7 @@
 #pragma once
 
+#include <scl/utility/meta/type.h>
+
 #include <string_view>
 
 /**
@@ -37,6 +39,37 @@ namespace scl::detail
 #endif
     }
 
+    constexpr bool enclosed_whole(::std::string_view text) noexcept
+    {
+        int depth = 0;
+        for (::std::size_t index = 0; index < text.size(); ++index)
+        {
+            auto const character = ::scl::detail::char_or_null_at(text, index);
+            depth += character == '(' ? 1 : character == ')' ? -1 : 0;
+            if (depth == 0)
+                return index + 1 == text.size();
+        }
+        return false;
+    }
+
+    // Clang opens a name with (anonymous namespace), whose parentheses belong to the name.
+    constexpr ::std::string_view bare_symbol(::std::string_view text) noexcept
+    {
+        while (true)
+        {
+            auto const first = text.find_first_not_of(' ');
+            if (first == ::std::string_view::npos)
+                return {};
+            text = text.substr(first, text.find_last_not_of(' ') - first + 1);
+            if (text.starts_with('&'))
+                text.remove_prefix(1);
+            else if (text.starts_with('(') && ::scl::detail::enclosed_whole(text))
+                text = text.substr(1, text.size() - 2);
+            else
+                return text;
+        }
+    }
+
 #if defined(_MSC_VER) && !defined(__clang__)
     // MSVC-specific: use bracket extraction like type_name
     constexpr ::std::size_t symbol_prefix_length() noexcept
@@ -57,18 +90,194 @@ namespace scl::detail
         return (close_pattern != ::std::string_view::npos) ? text.length() - close_pattern : 0;
     }
 
-    // Helper to strip MSVC function signature decorations
-    // Format: "void __cdecl Namespace::func(args)" -> "Namespace::func"
-    constexpr ::std::string_view strip_msvc_function_decorations(::std::string_view name) noexcept
+    // Where the keyword operator, which ends a text, opens; npos where no such keyword ends it.
+    constexpr ::std::size_t msvc_operator_start(::std::string_view text) noexcept
     {
-        auto last_space = name.find_last_of(' ');
-        if (last_space != ::std::string_view::npos)
+        constexpr ::std::string_view keyword = "operator";
+        auto const end = text.find_last_not_of(' ');
+        if (end == ::std::string_view::npos || !text.substr(0, end + 1).ends_with(keyword))
+            return ::std::string_view::npos;
+        auto const start = end + 1 - keyword.size();
+        return start > 0 && ::scl::detail::identifier_char(::scl::detail::char_or_null_at(text, start - 1))
+            ? ::std::string_view::npos
+            : start;
+    }
+
+    // Where the symbol after the keyword operator at an index ends, () and spaces included.
+    constexpr ::std::size_t msvc_operator_symbol_end(::std::string_view text, ::std::size_t index) noexcept
+    {
+        index = text.find_first_not_of(' ', index);
+        if (index == ::std::string_view::npos)
+            return text.size();
+        if (text.substr(index).starts_with("()"))
+            return index + 2;
+        while (index < text.size() &&
+            ::scl::detail::operator_symbol_char(::scl::detail::char_or_null_at(text, index)))
+            ++index;
+        return index;
+    }
+
+    // Where the scan of a declarator goes on after an index: past the symbol of an operator whose
+    // keyword ends right before the index, or at the index itself.
+    constexpr ::std::size_t msvc_operator_skip(::std::string_view text, ::std::size_t index) noexcept
+    {
+        if (::scl::detail::msvc_operator_start(text.substr(0, index)) == ::std::string_view::npos)
+            return index;
+        auto const end = ::scl::detail::msvc_operator_symbol_end(text, index);
+        return end > index ? end : index;
+    }
+
+    // In an argument of a class template, MSVC writes a static data member of a pointer to function
+    // type as (__cdecl* name)(int).
+    constexpr ::std::string_view msvc_pointer_group(::std::string_view text, ::std::size_t open) noexcept
+    {
+        auto const inner = text.substr(open + 1);
+        auto const star = inner.find('*');
+        if (!inner.starts_with("__") || star == ::std::string_view::npos)
+            return {};
+        auto const name = inner.substr(star + 1);
+        return name.substr(0, name.find(')'));
+    }
+
+    // The part of a declarator MSVC writes that ends at the parameter list outside angle brackets.
+    constexpr ::std::string_view msvc_declarator_head(::std::string_view text) noexcept
+    {
+        int depth = 0;
+        bool quoted = false;
+        for (::std::size_t index = 0; index < text.size(); ++index)
         {
-            auto after_space = name.substr(last_space + 1);
-            auto paren = after_space.find('(');
-            if (paren != ::std::string_view::npos)
-                return after_space.substr(0, paren);
+            auto const character = ::scl::detail::char_or_null_at(text, index);
+            if (character == '`' || character == '\'')
+                quoted = character == '`';
+            else if (quoted)
+                continue;
+            else if (auto const skip = ::scl::detail::msvc_operator_skip(text, index); skip != index)
+                index = skip - 1;
+            else if (character == '<' || character == '>')
+                depth += character == '<' ? 1 : -1;
+            else if (character == '(' && depth == 0)
+                return ::scl::detail::msvc_pointer_group(text, index).empty()
+                    ? text.substr(0, index)
+                    : ::scl::detail::msvc_pointer_group(text, index);
         }
+        return text;
+    }
+
+    // Where the last keyword operator outside angle brackets opens; npos where there is none.
+    constexpr ::std::size_t msvc_operator_keyword(::std::string_view text) noexcept
+    {
+        auto found = ::std::string_view::npos;
+        int depth = 0;
+        bool quoted = false;
+        for (::std::size_t index = 0; index < text.size(); ++index)
+        {
+            auto const character = ::scl::detail::char_or_null_at(text, index);
+            if (character == '`' || character == '\'')
+                quoted = character == '`';
+            else if (quoted)
+                continue;
+            else if (auto const skip = ::scl::detail::msvc_operator_skip(text, index); skip != index)
+            {
+                if (depth == 0)
+                    found = ::scl::detail::msvc_operator_start(text.substr(0, index));
+                index = skip - 1;
+            }
+            else if (character == '<' || character == '>')
+                depth += character == '<' ? 1 : -1;
+        }
+        return found;
+    }
+
+    // The name a declarator head ends with: after the last space outside angle brackets and
+    // the quotation of `anonymous namespace', an operator kept whole from its keyword.
+    constexpr ::std::string_view msvc_entity_name(::std::string_view text) noexcept
+    {
+        auto const head = ::scl::detail::msvc_declarator_head(text);
+        auto const keyword = ::scl::detail::msvc_operator_keyword(head);
+        auto index = keyword != ::std::string_view::npos ? keyword : head.size();
+        int depth = 0;
+        bool quoted = false;
+        for (; index > 0; --index)
+        {
+            auto const character = ::scl::detail::char_or_null_at(head, index - 1);
+            if (character == '\'' || character == '`')
+                quoted = character == '\'';
+            else if (quoted)
+                continue;
+            else if (auto const start = ::scl::detail::operator_start(head, index - 1); start != index - 1)
+                index = start + 1;
+            else if (character == '<' || character == '>')
+                depth += character == '>' ? 1 : -1;
+            else if (character == ' ' && depth == 0)
+                break;
+        }
+        return head.substr(index);
+    }
+
+    // MSVC writes a pointer to a member function of a class with several bases or a virtual base
+    // as an aggregate of the pointer and one or two offsets, {&Class::name,0} or {&Class::name,0,0}.
+    constexpr ::std::string_view msvc_member_pointer_target(::std::string_view text) noexcept
+    {
+        if (!text.starts_with('{') || !text.ends_with('}'))
+            return text;
+        text = text.substr(1, text.size() - 2);
+        for (int field = 0; field < 2; ++field)
+        {
+            auto const comma = text.find_last_of(',');
+            if (comma == ::std::string_view::npos || comma + 1 == text.size() ||
+                text.find_first_not_of("-0123456789", comma + 1) != ::std::string_view::npos)
+                break;
+            text = text.substr(0, comma);
+        }
+        return text;
+    }
+
+    // The thunk of such an aggregate reads [thunk]: __cdecl Class::`vcall'{8,{flat}}' }', whose name
+    // ends at the quote after the brace closing the first brace following `vcall', or, for
+    // an operator, Class::operator~{8,{flat}}' }', whose name ends before its first brace.
+    constexpr ::std::string_view msvc_thunk_name(::std::string_view text) noexcept
+    {
+        constexpr ::std::string_view thunk = "[thunk]: ";
+        auto const at = text.find(thunk);
+        if (at == ::std::string_view::npos)
+            return text;
+        text = text.substr(at + thunk.size());
+        text = text.substr(text.find(' ') + 1);
+        auto const open = text.find("'{");
+        if (open == ::std::string_view::npos)
+            return text.substr(0, text.find('{'));
+        int depth = 0;
+        for (auto index = open + 1; index < text.size(); ++index)
+        {
+            auto const character = ::scl::detail::char_or_null_at(text, index);
+            depth += character == '{' ? 1 : character == '}' ? -1 : 0;
+            if (depth == 0)
+                return text.substr(0, index + 2);
+        }
+        return text;
+    }
+
+    template <auto S>
+    struct symbol_holder
+    {
+        static constexpr ::std::string_view text() noexcept { return __FUNCSIG__; }
+    };
+
+    // MSVC drops the namespaces and classes of a static data member from the signature of a function
+    // template, as in <&count>, and keeps them where the pointer is an argument of a class template.
+    template <auto S>
+    constexpr ::std::string_view msvc_qualified_symbol(::std::string_view name) noexcept
+    {
+        if (name.find(':') != ::std::string_view::npos)
+            return name;
+        constexpr auto text = ::scl::detail::symbol_holder<S>::text();
+        constexpr ::std::string_view open = "symbol_holder<";
+        constexpr auto begin = text.find(open) + open.size();
+        constexpr auto held = text.substr(begin, text.rfind(">::text(") - begin);
+        constexpr auto qualified = ::scl::detail::bare_symbol(::scl::detail::msvc_entity_name(held));
+        if (qualified.size() > name.size() + 2 && qualified.ends_with(name) &&
+            qualified.substr(0, qualified.size() - name.size()).ends_with("::"))
+            return qualified;
         return name;
     }
 #else
@@ -84,6 +293,7 @@ namespace scl::detail
         return text.length() - symbol_prefix_length() - ::std::string_view("lah4l4tjla6_f").length();
     }
 #endif
+
 } // namespace scl::detail
 
 namespace scl
@@ -97,11 +307,11 @@ namespace scl
      *
      * @warning The result is for display: its spelling differs between compilers and may change
      * in a later version of the module.
-     * 
+     *
      * @details This function extracts the symbol name from the decorated signature 
      * and performs aggressive cleanup of compiler-specific artifacts such as:
      * - Address operators ('&')
-     * - Parentheses used for grouping (common on MSVC for global variables)
+     * - Parentheses used for grouping (GCC writes them around the address of a variable)
      * - Leading and trailing whitespace
      * 
      * @code
@@ -111,6 +321,10 @@ namespace scl
      * int global_var = 0;
      * constexpr auto var_name = ::scl::symbol_name<&global_var>(); // "global_var"
      * @endcode
+     *
+     * @note GCC writes `__conv_op` in place of the name of a conversion operator, such as
+     * `app::Clock::__conv_op`, and MSVC writes the name of a stub the compiler generates in place of
+     * the name of a virtual member function, such as ``app::Clock::`vcall'{0}'``.
      */
     template <auto S>
     [[nodiscard]]
@@ -123,19 +337,14 @@ namespace scl
         constexpr auto result = text.substr(prefix_length, text.length() - prefix_length - suffix_length);
 
 #if defined(_MSC_VER) && !defined(__clang__)
-        // MSVC includes function signature like "void __cdecl Name(args)"
-        constexpr auto cleaned = detail::strip_msvc_function_decorations(result);
+        constexpr auto target =
+            ::scl::detail::msvc_thunk_name(::scl::detail::msvc_member_pointer_target(result));
+        constexpr auto name = ::scl::detail::msvc_qualified_symbol<S>(
+            ::scl::detail::bare_symbol(::scl::detail::msvc_entity_name(target)));
 #else
-        constexpr auto cleaned = result;
+        constexpr auto name = ::scl::detail::bare_symbol(result);
 #endif
-
-        // Clean up junk characters (spaces, parens, ampersands)
-        constexpr auto junk = " ()&";
-        constexpr auto begin_pos = cleaned.find_first_not_of(junk);
-        if constexpr (begin_pos == ::std::string_view::npos)
-            return {};
-        constexpr auto last_pos = cleaned.find_last_not_of(junk);
-        return cleaned.substr(begin_pos, last_pos - begin_pos + 1);
+        return name;
     }
 
     /**
@@ -160,10 +369,10 @@ namespace scl
     [[nodiscard]]
     constexpr ::std::string_view symbol_short_name() noexcept
     {
-        constexpr auto result = symbol_name<S>();
-        constexpr auto pos = result.find_last_of(':');
-        if constexpr (pos != ::std::string_view::npos)
-            return result.substr(pos + 1);
+        constexpr auto result = ::scl::symbol_name<S>();
+        constexpr auto scope = ::scl::detail::find_last_scope_operator(result);
+        if constexpr (scope != ::std::string_view::npos)
+            return result.substr(scope + 2);
         else
             return result;
     }

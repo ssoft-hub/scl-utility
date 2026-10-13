@@ -50,7 +50,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [hash] Accepted a view that cannot be read through a `const` reference
 - [hash] Accepted `std::byte` and other single-byte trivially copyable elements
 - [meta] Returned an empty name from `enum_name<V>()` and `enum_short_name<V>()` for a value no constant of its type has
-- [meta] Made `type_short_name<T>()` return the name of the type alone, without `const`, `volatile` and a reference, for a closure, an unnamed type and a name holding `operator<` as well
+- [meta] Made `type_short_name<T>()` return the name of the type alone, without `const`, `volatile` and a reference, for a closure, an unnamed type and a name holding an operator as well, apart from two types GCC or Clang spell with one name
+- [meta] Made `symbol_name<S>()` return the full name and `symbol_short_name<S>()` the name alone, apart from a conversion operator with GCC and a virtual member function with MSVC
 - Included `hash.h` in `<scl/utility.h>`, which left the hash group out
 - Fixed the installation steps, which added a directory with no `CMakeLists.txt`
 

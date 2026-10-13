@@ -30,6 +30,10 @@ non-type template parameters.
 - **Member Support:**
   Works for both pointer-to-member-functions (`&Class::Method`) and
   pointer-to-data-members (`&Class::Field`).
+- **A conversion operator and a virtual member function:** GCC writes `__conv_op` in place of the
+  name of a conversion operator, such as `app::Clock::__conv_op`, and MSVC writes the name of a stub
+  the compiler generates in place of the name of a virtual member function, such as
+  ``app::Clock::`vcall'{0}'``.
 - **What the result is for:**
   The result is for display. Its spelling differs between compilers and may change in a later
   version of the module.
