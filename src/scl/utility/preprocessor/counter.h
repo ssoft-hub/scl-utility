@@ -43,8 +43,9 @@ namespace scl::preprocessor::detail
      * @return A `counter` holding `Acc`.
      */
     template <typename Tag, ::std::uint_fast32_t Rank, ::std::uint_fast32_t Acc>
+    [[nodiscard]]
     constexpr counter<Acc>
-    crumb(Tag /*tag*/, counter<Rank> /*rank*/, counter<Acc> /*acc*/) // NOLINT(readability-named-parameter)
+    crumb(Tag /*tag*/, counter<Rank> /*rank*/, counter<Acc> /*acc*/) noexcept // NOLINT(readability-named-parameter)
     {
         return {};
     }
@@ -127,13 +128,14 @@ namespace scl::preprocessor::detail
  *
  * @snippet preprocessor/counter/preprocessor_counter_example.cpp template_tag
  */
-#define SCL_COUNTER_NEXT(Tag)                                                                          \
-    namespace scl::preprocessor::detail                                                                \
-    {                                                                                                  \
-        constexpr counter<SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1> crumb(Tag,                          \
-            counter<(SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1) & ~SCL_COUNTER_VALUE(SCL_FORWARD(Tag))>, \
-            counter<(SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1) & SCL_COUNTER_VALUE(SCL_FORWARD(Tag))>)  \
-        {                                                                                              \
-            return {};                                                                                 \
-        }                                                                                              \
+#define SCL_COUNTER_NEXT(Tag)                                                                                  \
+    namespace scl::preprocessor::detail                                                                        \
+    {                                                                                                          \
+        [[nodiscard]]                                                                                          \
+        constexpr counter<SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1> crumb(Tag,                                  \
+            counter<(SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1) & ~SCL_COUNTER_VALUE(SCL_FORWARD(Tag))>,         \
+            counter<(SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1) & SCL_COUNTER_VALUE(SCL_FORWARD(Tag))>) noexcept \
+        {                                                                                                      \
+            return {};                                                                                         \
+        }                                                                                                      \
     }
