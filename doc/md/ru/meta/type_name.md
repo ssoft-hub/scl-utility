@@ -1,152 +1,118 @@
-# Утилиты для получения имени типа
+# `type_name<T>()`
 
-Извлечение человекочитаемых имён типов на этапе компиляции без RTTI.
-
-- Заголовок: `#include <scl/utility/meta/type.h>`
-
-Содержание:
-- [`type_name<T>`](#type_name-method)
-- [`type_short_name<T>`](#type_short_name-method)
-
----
-
-## type_name<T>
-
-Возвращает полное квалифицированное имя шаблонного типа `T` на этапе компиляции в виде
-`std::string_view`.
-
-Утилита использует специфичные для компилятора макросы для захвата декорированной сигнатуры
-функции и извлечения точного представления типа.
+Шаблон функции `type_name<T>()` возвращает на этапе компиляции имя типа `T` в том виде, в каком его
+записывает компилятор. Шаблон функции `type_short_name<T>()` возвращает то же имя без квалификаторов
+пространств имён и классов, без аргументов шаблона, без `const`, `volatile`, ссылки и префикса,
+например `struct`.
 
 - Заголовок: `#include <scl/utility/meta/type.h>`
-- Объявление: `template <typename T> constexpr std::string_view type_name() noexcept;`
+- Оба шаблона функций работают без RTTI, и их можно вычислять в константном выражении.
 
-### Семантика
+```cpp
+namespace scl
+{
+    template <typename T>
+    [[nodiscard]] constexpr ::std::string_view type_name() noexcept;
 
-- **Зависимость от компилятора:**
-  На MSVC результат включает префиксы `struct `, `class `, `union ` и `enum ` для
-  пользовательских типов (`"struct MyStruct"`, `"enum Color"`) - как на верхнем уровне, так
-  и внутри аргументов шаблона. GCC и Clang эти ключевые слова не добавляют. Сверх того
-  расходятся встроенные пространства имён, аргументы шаблона, заданные по умолчанию, и
-  псевдоним, который libc++ отмечает как предпочтительное имя типа.
-  `std::string`, измерено на GCC 13.1, Clang 22.1 и MSVC 19.44:
+    template <typename T>
+    [[nodiscard]] constexpr ::std::string_view type_short_name() noexcept
+        requires(see below class_enum_or_fundamental);
+}
+```
+
+## Семантика
+
+- **Написание:** имя берётся из сигнатуры, которую компилятор даёт шаблону функции, у MSVC
+  из `__FUNCSIG__`, у GCC и Clang из `__PRETTY_FUNCTION__`, вместе с пространствами имён и классами
+  типа и с его `const`, `volatile` и ссылкой. Перед именем класса, объединения или перечисления MSVC
+  пишет ключ `class`, `struct`, `union` или `enum`, и на верхнем уровне, и в аргументах шаблона,
+  а GCC и Clang не пишут этот ключ. GCC записывает тип стандартной библиотеки со всеми
+  пространствами имён, в которых его объявляет библиотека, включая встроенные, например
+  `std::__cxx11` у libstdc++, а Clang опускает встроенное пространство имён. MSVC пишет и аргументы
+  по умолчанию шаблона такого типа, которые опускают GCC и Clang. Так записывается `std::string`
+  в GCC 13.1, в Clang 22.1 с библиотекой MSVC и в MSVC 19.44:
 
   ```text
-  GCC                std::__cxx11::basic_string<char>
-  Clang, libstdc++   std::basic_string<char>
-  Clang, libc++      std::string
-  MSVC               class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
+  GCC     std::__cxx11::basic_string<char>
+  Clang   std::basic_string<char>
+  MSVC    class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
   ```
-- **Для чего предназначен результат:**
-  Результат служит для показа человеку, например в строке журнала или в сообщении об ошибке. Ни один
-  компилятор не гарантирует, что хотя бы часть имени совпадёт с именем от другого компилятора,
-  поэтому не следует сохранять результат, разбирать его или сравнивать с литералом. Написание
-  результата может измениться и в более поздней версии модуля. Для сравнения типов служит
-  [`type_key`](type_key.md), а идентификатор типа, объявленного в области пространства имён,
-  возвращает `type_short_name<T>()`.
-- **Квалифицированные имена:**
-  Результат содержит все квалификаторы пространств имён и вложенных классов
-  (например, `std::vector<int>`).
-- **Вычисление на этапе компиляции:**
-  Вся логика извлечения является `constexpr`, что позволяет использовать результат
-  в статических утверждениях и других контекстах этапа компиляции.
+- **Для чего предназначены результаты:** результаты обоих шаблонов функций предназначены для показа
+  человеку, например в строке журнала или в сообщении об ошибке, а не для различения типов. Они
+  различаются у разных компиляторов и стандартных библиотек, а их написание может измениться в более
+  поздней версии модуля, поэтому не следует сохранять результат, разбирать его или сравнивать
+  с литералом. Для сравнения типов служат ключи, которые возвращает
+  [`scl::type_key_of<T>()`](type_key.md).
+- **Короткое имя:** для типа `app::Task<int> const &` шаблон функции `type_short_name<T>()`
+  возвращает `Task`. Для типа замыкания, безымянного класса или перечисления он возвращает имя,
+  которое создаёт компилятор, например `<lambda()>` у GCC, а для фундаментального типа возвращает
+  имя, которым его записывает компилятор, без пространства имён, например `int`,
+  а для `std::nullptr_t` возвращает `nullptr_t` у GCC и Clang и `nullptr` у MSVC.
+  Для `unsigned long long` GCC записывает `long long unsigned int`, а MSVC записывает
+  `unsigned __int64`.
+- **Ограничение:** в объявлении `type_short_name<T>()` ограничению `class_enum_or_fundamental`
+  удовлетворяют класс, объединение, перечисление и фундаментальный тип, с `const`, `volatile`
+  и ссылкой или без них. Ему не удовлетворяют указатель, массив, функция и указатель на член,
+  и компилятор отвергает вызов с таким типом.
+- **Два типа с одним именем:** GCC и Clang записывают указатель на `operator-` перед закрывающей
+  угловой скобкой `>` как `operator->`, поэтому два разных типа могут получить одно имя. Пусть
+  у класса `P` есть оба оператора, а у каждого из шаблонов классов `Holder` и `Wrap` есть вложенный
+  шаблон класса `Inner`. Тогда Clang даёт типам
+  `Wrap<Holder<&P::operator- >>::Inner<&P::operator-> >`
+  и `Wrap<Holder<&P::operator-> >::Inner<&P::operator- >>` одно имя
+  `Wrap<Holder<&P::operator->>::Inner<&P::operator->>`. Поэтому шаблон функции не может различить
+  эти типы и возвращает `Wrap` для обоих, хотя первый из них является специализацией шаблона
+  `Inner`.
 
-### Примеры
+## Примеры
+
+Типы примеров:
+
+<!-- snippet: example/meta/type_name/meta_type_name_example.cpp types -->
+```cpp
+namespace app
+{
+    struct Item
+    {};
+
+    template <typename T>
+    struct Task
+    {};
+} // namespace app
+```
+
+Полное имя, которое проверяется только в той части, которую все компиляторы записывают одинаково:
 
 <!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_name -->
 ```cpp
-#include <scl/utility/meta/type.h>
+// Every compiler spells int alike.
+static_assert(scl::type_name<int>() == "int");
 
-#include <string>
-#include <vector>
+// MSVC writes the class key before the name of a class: app::Item, or struct app::Item.
+static_assert(scl::type_name<app::Item>().ends_with("app::Item"));
 
-struct MyStruct
-{};
-
-constexpr auto npos = ::std::string_view::npos;
-
-// Fundamental types render identically on every compiler.
-static_assert(::scl::type_name<int>() == "int");
-
-// A standard library type spells itself the way the toolchain does. std::string:
-// GCC:              "std::__cxx11::basic_string<char>"
-// Clang, libstdc++: "std::basic_string<char>"
-// Clang, libc++:    "std::string"
-// MSVC:             "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
-static_assert(::scl::type_name<::std::string>().find("string") != npos);
-
-// A user-defined type carries the MSVC prefix.
-// GCC/Clang: "MyStruct"  |  MSVC: "struct MyStruct"
-static_assert(::scl::type_name<MyStruct>().find("MyStruct") != npos);
-
-// The prefix reaches template arguments as well, so a rendered template name has no
-// spelling common to all three compilers.
-// GCC/Clang: "std::vector<MyStruct>"
-// MSVC:      "class std::vector<struct MyStruct,class std::allocator<struct MyStruct> >"
-static_assert(::scl::type_name<::std::vector<MyStruct>>().find("MyStruct") != npos);
+// GCC spells a type of the standard library with an inline namespace of its library, such as
+// std::__cxx11::basic_string<char>, and Clang leaves that namespace out, as in
+// std::basic_string<char>.
+static_assert(scl::type_name<std::string>().find("string") != std::string_view::npos);
 ```
 
-### Типичные сценарии использования
-
-Генерация человекочитаемых журналов и сообщений об ошибках в обобщённом коде, а также
-обозначение типа в диагностике - без RTTI и без искажённого написания, которое даёт
-`typeid(T).name()`. Если тип нужно распознать, а не показать, для этого предназначен
-[`type_key`](type_key.md).
-
----
-
-## type_short_name<T>
-
-Возвращает только терминальный идентификатор типа `T`, удаляя все квалификаторы пространств
-имён и классов.
-
-- Заголовок: `#include <scl/utility/meta/type.h>`
-- Объявление: `template <typename T> constexpr std::string_view type_short_name() noexcept`,
-  ограничение которого описано ниже
-
-### Описание
-
-Тип `T`, из которого убраны `const`, `volatile` и ссылка, является классом, объединением,
-перечислением или фундаментальным типом. Ограничению объявления не удовлетворяют указатель,
-массив, функция и указатель на член. Имя берётся у типа без `const`, `volatile` и ссылки,
-поэтому `type_short_name<app::Task const &>()` возвращает `Task`.
-
-Функция обрабатывает результат `type_name` для этого типа и удаляет всё до последнего разделителя
-`::` вне скобок. Дополнительно срезаются префиксы `struct`/`class`/`union`/`enum`, которые оставляет
-MSVC, и аргументы шаблона, поэтому результатом является только идентификатор. Для типа замыкания,
-безымянного класса или перечисления результатом является имя, которое создаёт компилятор, например
-`<lambda_1>` у MSVC.
-
-Результат предназначен для показа, как и результат `type_name<T>()`: его написание различается
-у разных компиляторов и может измениться в более поздней версии модуля.
-
-GCC и Clang записывают указатель на член `operator-` перед закрывающей угловой скобкой `>`
-как `operator->`, поэтому два разных типа могут получить одно имя. Пусть у класса `P` есть оба
-оператора, а у каждого из шаблонов классов `Holder` и `Wrap` есть вложенный шаблон класса `Inner`.
-Тогда Clang даёт типам
-`Wrap<Holder<&P::operator- >>::Inner<&P::operator-> >`
-и `Wrap<Holder<&P::operator-> >::Inner<&P::operator- >>` одно имя
-`Wrap<Holder<&P::operator->>::Inner<&P::operator->>`. Для обоих типов шаблон функции возвращает
-`Wrap`, хотя первый из них является специализацией шаблона `Inner`.
-
-### Пример
+Короткое имя:
 
 <!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_short_name -->
 ```cpp
-namespace app::core
-{
-    struct Task
-    {};
-} // namespace app::core
-
-// The short name is the bare identifier on every compiler: namespace qualifiers, the
-// MSVC prefix and the template arguments are all stripped.
-static_assert(::scl::type_short_name<app::core::Task>() == "Task");
-static_assert(::scl::type_short_name<::std::vector<MyStruct>>() == "vector");
+static_assert(scl::type_short_name<app::Task<int>>() == "Task");
+static_assert(scl::type_short_name<app::Item const &>() == "Item");
+static_assert(scl::type_short_name<std::vector<app::Item>>() == "vector");
 ```
 
 ## Смотрите также
 
-- [`example/meta/type_name/meta_type_name_example.cpp`](../../../../example/meta/type_name/meta_type_name_example.cpp) —
-  запускаемая версия обоих примеров выше; CI собирает и запускает её на каждом
-  поддерживаемом компиляторе.
+- [`scl::type_name(obj)`](../runtime/type_name.md), имя типа объекта во время выполнения
+- [`scl::type_key_of<T>()`](type_key.md), ключ, который идентифицирует тип
+- [`example/meta/type_name/meta_type_name_example.cpp`](../../../../example/meta/type_name/meta_type_name_example.cpp)
+
+---
+
+Назад: [`symbol_name<S>()`](symbol_name.md) | Далее: [`is_tu_local<T>`](is_tu_local.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

@@ -92,15 +92,13 @@ Then include the umbrella header or individual component headers:
 | [observer_tuple](hierarchy/observer_tuple.md) | `<scl/utility/hierarchy/observer_tuple.h>` | Fan-out adapter composing several observers into one |
 | [algorithm](hierarchy/algorithm.md) | `<scl/utility/hierarchy/algorithm.h>` | `is_parent_of`, `is_ancestor_of`, `are_sibling` and friends, adaptable through ADL |
 
-### Meta — compile-time reflection
+### Meta - compile-time names and identity of types
 
-| Component | Header | Description |
-|-----------|--------|-------------|
-| [type_name](meta/type_name.md) | `<scl/utility/meta/type.h>` | Compile-time type name extraction |
-| [enum_name](meta/enum_name.md) | `<scl/utility/meta/enum.h>` | Compile-time enum member name extraction |
-| [symbol_name](meta/symbol_name.md) | `<scl/utility/meta/symbol.h>` | Compile-time function/member name extraction |
-| [type_key](meta/type_key.md) | `<scl/utility/meta/type_key.h>` | RTTI-free type identity key distinguishing TU-local types |
-| [is_tu_local](meta/type_key.md#is_tu_local) | `<scl/utility/meta/tu_local.h>` | Detects types declared in an anonymous namespace |
+Function templates that return at compile time, without RTTI, the name of a type, of a constant
+of an enumeration and of a function, a variable or a member; a class that identifies a type; and
+a class template that tells whether a type is local to its translation unit.
+
+[To the group](meta/index.md)
 
 ### Runtime - runtime type and enum utilities
 
@@ -164,11 +162,11 @@ enum class color
 
 int main()
 {
-    static_assert(::scl::type_name<int>() == "int");
-    static_assert(::scl::enum_short_name<color::green>() == "green");
+    static_assert(scl::type_name<int>() == "int");
+    static_assert(scl::enum_short_name<color::green>() == "green");
 
-    ::std::cout << ::scl::type_name<color>() << '\n';        // color; MSVC: enum color
-    ::std::cout << ::scl::enum_name<color::green>() << '\n'; // color::green
+    std::cout << scl::type_name<color>() << '\n';        // color; MSVC: enum color
+    std::cout << scl::enum_name<color::green>() << '\n'; // color::green
 }
 ```
 

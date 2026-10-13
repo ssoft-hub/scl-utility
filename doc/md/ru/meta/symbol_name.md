@@ -1,93 +1,82 @@
-# Утилиты для получения имени символа
+# `symbol_name<S>()`
 
-Извлечение имён функций, методов и членов данных класса на этапе компиляции.
-
-- Заголовок: `#include <scl/utility/meta/symbol.h>`
-
-Содержание:
-- [`symbol_name<S>`](#symbol_name-s)
-- [`symbol_short_name<S>`](#symbol_short_name-s)
-
----
-
-## `symbol_name<S>`
-
-Возвращает квалифицированное строковое имя символа (глобальная функция, метод класса или член данных).
-
-Утилита предоставляет единый способ извлечения идентификаторов для различных сущностей C++,
-переданных как нетиповые параметры шаблона.
+Шаблон функции `symbol_name<S>()` возвращает на этапе компиляции имя функции, переменной или члена
+класса, на которые указывает `S`, вместе с пространствами имён и классами. Шаблон функции
+`symbol_short_name<S>()` возвращает только это имя.
 
 - Заголовок: `#include <scl/utility/meta/symbol.h>`
-- Объявление: `template <auto S> constexpr std::string_view symbol_name() noexcept;`
+- Оба шаблона функций работают без RTTI, и их можно вычислять в константном выражении.
 
-### Семантика
+```cpp
+namespace scl
+{
+    template <auto S>
+    [[nodiscard]] constexpr ::std::string_view symbol_name() noexcept;
 
-- **Агрессивная очистка:**
-  Утилита автоматически удаляет специфичный для компилятора «шум», такой как:
-  - Операторы взятия адреса (`&`).
-  - Окружающие скобки и лишние пробелы (характерно для MSVC при глобальных переменных).
-  - Информацию о типе, встроенную MSVC в сигнатуру.
-- **Поддержка членов класса:**
-  Работает как с указателями на функции-члены (`&Class::Method`), так и с указателями
-  на члены данных (`&Class::Field`).
-- **Оператор преобразования и виртуальная функция-член:** GCC пишет `__conv_op` вместо имени
-  оператора преобразования, например `app::Clock::__conv_op`, а MSVC пишет вместо имени виртуальной
+    template <auto S>
+    [[nodiscard]] constexpr ::std::string_view symbol_short_name() noexcept;
+}
+```
+
+## Семантика
+
+- **Аргумент:** `S` является указателем на функцию, на переменную, на функцию-член или на член
+  данных. Имя функции в аргументе шаблона само преобразуется в указатель на неё, поэтому
+  `symbol_name<start>()` и `symbol_name<&start>()` являются одной специализацией шаблона
+  и возвращают `start`.
+- **Полное имя:** имя записывается вместе с пространствами имён и классами, например
+  `app::Clock::reset` для `&app::Clock::reset`, без оператора взятия адреса, скобок и сигнатуры,
+  которые компилятор пишет вокруг имени. GCC пишет `__conv_op` вместо имени оператора
+  преобразования, например `app::Clock::__conv_op`, а MSVC пишет вместо имени виртуальной
   функции-члена имя созданной компилятором промежуточной функции, например
   ``app::Clock::`vcall'{0}'``.
-- **Для чего предназначен результат:**
-  Результат служит для показа. Его написание различается у разных компиляторов и может измениться
-  в более поздней версии модуля.
+- **Короткое имя:** записывается только само имя, например `reset` для `&app::Clock::reset`.
+- **Для чего предназначены результаты:** результаты обоих шаблонов функций предназначены для показа.
+  Их написание различается у разных компиляторов и может измениться в более поздней версии модуля,
+  поэтому не следует сохранять результат, разбирать его или сравнивать с литералом. Примеры ниже
+  сравнивают результаты с литералами, чтобы показать написание этой версии.
 
-### Примеры
+## Примеры
 
+Функция и класс примеров:
+
+<!-- snippet: example/meta/symbol_name/meta_symbol_name_example.cpp types -->
 ```cpp
-#include <scl/utility/meta/symbol.h>
+void start() {}
 
-namespace sys {
-    void initialize() {}
-    struct Clock {
-        int ticks;
+namespace app
+{
+    struct Clock
+    {
+        int ticks = 0;
+
         void reset() {}
     };
-}
-
-// Глобальная функция / функция в пространстве имён
-static_assert(scl::symbol_name<sys::initialize>() == "sys::initialize");
-
-// Функция-член
-static_assert(scl::symbol_name<&sys::Clock::reset>() == "sys::Clock::reset");
-
-// Член данных (свойство)
-static_assert(scl::symbol_name<&sys::Clock::ticks>() == "sys::Clock::ticks");
+} // namespace app
 ```
 
-### Типичные сценарии использования
+Полное имя:
 
-Реализация фреймворков сериализации, автоматическое отображение аргументов командной строки
-или отладчики, где строковое имя поля класса или функции требуется на этапе компиляции.
+<!-- snippet: example/meta/symbol_name/meta_symbol_name_example.cpp symbol_name -->
+```cpp
+static_assert(scl::symbol_name<start>() == "start");
+static_assert(scl::symbol_name<&app::Clock::reset>() == "app::Clock::reset");
+static_assert(scl::symbol_name<&app::Clock::ticks>() == "app::Clock::ticks");
+```
+
+Короткое имя:
+
+<!-- snippet: example/meta/symbol_name/meta_symbol_name_example.cpp symbol_short_name -->
+```cpp
+static_assert(scl::symbol_short_name<&app::Clock::reset>() == "reset");
+static_assert(scl::symbol_short_name<&app::Clock::ticks>() == "ticks");
+```
+
+## Смотрите также
+
+- [`example/meta/symbol_name/meta_symbol_name_example.cpp`](../../../../example/meta/symbol_name/meta_symbol_name_example.cpp)
 
 ---
 
-## `symbol_short_name<S>`
-
-Шаблон функции `symbol_short_name<S>()` возвращает только идентификатор символа `S` без пространств
-имён и классов. Результат служит для показа, и его написание может измениться в более поздней версии
-модуля.
-
-- Заголовок: `#include <scl/utility/meta/symbol.h>`
-- Объявление: `template <auto S> constexpr std::string_view symbol_short_name() noexcept;`
-
-### Пример
-
-```cpp
-#include <scl/utility/meta/symbol.h>
-
-struct Processor {
-    void execute() {}
-};
-
-int main() {
-    // Возвращает "execute" вместо "Processor::execute"
-    constexpr auto name = scl::symbol_short_name<&Processor::execute>();
-}
-```
+Назад: [`enum_name<V>()`](enum_name.md) | Далее: [`type_name<T>()`](type_name.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

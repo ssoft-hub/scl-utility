@@ -1,145 +1,114 @@
-# Type name utilities
+# `type_name<T>()`
 
-Compile-time extraction of human-readable type names without RTTI.
-
-- Header: `#include <scl/utility/meta/type.h>`
-
-Contents:
-- [`type_name<T>`](#type_name-method)
-- [`type_short_name<T>`](#type_short_name-method)
-
----
-
-## type_name<T>
-
-Retrieves the fully qualified name of a template type `T` at compile-time as a `std::string_view`.
-
-This utility leverages compiler-specific macros to capture the decorated function signature and
-extract the exact type representation.
+The function template `type_name<T>()` returns at compile time the name of the type `T` as
+the compiler spells it. The function template `type_short_name<T>()` returns the same name without
+the qualifiers of namespaces and classes, without template arguments, and without `const`,
+`volatile`, a reference and a prefix such as `struct`.
 
 - Header: `#include <scl/utility/meta/type.h>`
-- Declaration: `template <typename T> constexpr std::string_view type_name() noexcept;`
+- Both function templates need no RTTI and can be evaluated in a constant expression.
 
-### Semantics
+```cpp
+namespace scl
+{
+    template <typename T>
+    [[nodiscard]] constexpr ::std::string_view type_name() noexcept;
 
-- **Compiler-specific output:**
-  On MSVC, the result includes the `struct `, `class `, `union ` and `enum ` prefixes for
-  user-defined types (`"struct MyStruct"`, `"enum Color"`), at the top level and inside
-  template arguments alike. GCC and Clang omit these keywords. Inline namespaces,
-  defaulted template arguments and the alias libc++ marks as a type's preferred name
-  diverge on top of that. `std::string` measured on GCC 13.1, Clang 22.1 and MSVC 19.44:
+    template <typename T>
+    [[nodiscard]] constexpr ::std::string_view type_short_name() noexcept
+        requires(see below class_enum_or_fundamental);
+}
+```
+
+## Semantics
+
+- **Spelling:** the name is taken from the signature the compiler gives a function template,
+  `__FUNCSIG__` with MSVC and `__PRETTY_FUNCTION__` with GCC and Clang, with the namespaces,
+  the classes, `const`, `volatile` and the reference the type has. MSVC writes the key `class`,
+  `struct`, `union` or `enum` before the name of a class, a union or an enumeration, at the top
+  level and in template arguments alike, and GCC and Clang write none. GCC spells a type of
+  the standard library with every namespace its library declares it in, an inline one included, such
+  as `std::__cxx11` with libstdc++, and Clang leaves an inline namespace out. MSVC writes
+  the default arguments of the template of such a type, which GCC and Clang leave out. This is how
+  `std::string` is spelled on GCC 13.1, on Clang 22.1 with the MSVC library and on MSVC 19.44:
 
   ```text
-  GCC                std::__cxx11::basic_string<char>
-  Clang, libstdc++   std::basic_string<char>
-  Clang, libc++      std::string
-  MSVC               class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
+  GCC     std::__cxx11::basic_string<char>
+  Clang   std::basic_string<char>
+  MSVC    class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >
   ```
-- **What the result is for:**
-  The result is for display to a human, such as in a log line or an error message. No compiler
-  guarantees that any part of the name agrees with the name another compiler gives, so nothing
-  should store the result, parse it or compare it against a literal. Its spelling may also change in
-  a later version of the module. Types are compared by [`type_key`](type_key.md), and
-  `type_short_name<T>()` returns the identifier of a type declared at namespace scope.
-- **Qualified Names:**
-  The result includes all namespace and class scope qualifiers (e.g., `std::vector<int>`).
-- **Compile-time Evaluation:**
-  The extraction logic is entirely `constexpr`, allowing the results to be used in static
-  assertions or other compile-time contexts.
+- **What the results are for:** the results of both function templates are for display, such as
+  a log line or an error message, not for identity. They differ between compilers and standard
+  libraries, and their spelling may change in a later version of the module, so nothing should
+  compare a result against a literal, parse it, or persist it. Types are compared by the keys
+  [`scl::type_key_of<T>()`](type_key.md) returns.
+- **Short name:** for the type `app::Task<int> const &` the function template `type_short_name<T>()`
+  returns `Task`. For a closure type or an unnamed class or enumeration it returns the name
+  the compiler generates, such as `<lambda()>` with GCC, and for a fundamental type the name
+  the compiler spells it with, without its namespace: `int` for `int`, `nullptr_t` with GCC and
+  Clang and `nullptr` with MSVC for `std::nullptr_t`, and `long long unsigned int` with GCC and
+  `unsigned __int64` with MSVC for `unsigned long long`.
+- **Constraint:** in the declaration of `type_short_name<T>()`, the constraint
+  `class_enum_or_fundamental` is satisfied by a class, a union, an enumeration and a fundamental
+  type, with or without `const`, `volatile` and a reference. A pointer, an array, a function and
+  a pointer to a member do not satisfy it, and a call with such a type does not compile.
+- **Two types of one name:** GCC and Clang spell a pointer to `operator-` before a closing `>` as
+  `operator->`, so two types can get one name. Take a class `P` with both operators and class
+  templates `Holder` and `Wrap`, each with a member template `Inner`. Clang names both
+  `Wrap<Holder<&P::operator- >>::Inner<&P::operator-> >` and
+  `Wrap<Holder<&P::operator-> >::Inner<&P::operator- >>` as
+  `Wrap<Holder<&P::operator->>::Inner<&P::operator->>`, so the function template cannot tell the two
+  apart and returns `Wrap` for both, while the first is a specialization of `Inner`.
 
-### Examples
+## Examples
+
+The types of the examples:
+
+<!-- snippet: example/meta/type_name/meta_type_name_example.cpp types -->
+```cpp
+namespace app
+{
+    struct Item
+    {};
+
+    template <typename T>
+    struct Task
+    {};
+} // namespace app
+```
+
+The full name, checked only in the part every compiler spells alike:
 
 <!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_name -->
 ```cpp
-#include <scl/utility/meta/type.h>
+// Every compiler spells int alike.
+static_assert(scl::type_name<int>() == "int");
 
-#include <string>
-#include <vector>
+// MSVC writes the class key before the name of a class: app::Item, or struct app::Item.
+static_assert(scl::type_name<app::Item>().ends_with("app::Item"));
 
-struct MyStruct
-{};
-
-constexpr auto npos = ::std::string_view::npos;
-
-// Fundamental types render identically on every compiler.
-static_assert(::scl::type_name<int>() == "int");
-
-// A standard library type spells itself the way the toolchain does. std::string:
-// GCC:              "std::__cxx11::basic_string<char>"
-// Clang, libstdc++: "std::basic_string<char>"
-// Clang, libc++:    "std::string"
-// MSVC:             "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"
-static_assert(::scl::type_name<::std::string>().find("string") != npos);
-
-// A user-defined type carries the MSVC prefix.
-// GCC/Clang: "MyStruct"  |  MSVC: "struct MyStruct"
-static_assert(::scl::type_name<MyStruct>().find("MyStruct") != npos);
-
-// The prefix reaches template arguments as well, so a rendered template name has no
-// spelling common to all three compilers.
-// GCC/Clang: "std::vector<MyStruct>"
-// MSVC:      "class std::vector<struct MyStruct,class std::allocator<struct MyStruct> >"
-static_assert(::scl::type_name<::std::vector<MyStruct>>().find("MyStruct") != npos);
+// GCC spells a type of the standard library with an inline namespace of its library, such as
+// std::__cxx11::basic_string<char>, and Clang leaves that namespace out, as in
+// std::basic_string<char>.
+static_assert(scl::type_name<std::string>().find("string") != std::string_view::npos);
 ```
 
-### Typical Use Cases
-
-Generating human-readable logs and error messages in generic code, and labelling a type in a
-diagnostic without RTTI and without the mangled spelling of `typeid(T).name()`. Where a type has
-to be recognized rather than shown, [`type_key`](type_key.md) is the facility for it.
-
----
-
-## type_short_name<T>
-
-Retrieves only the terminal identifier of the type `T`, stripping all namespace and class qualifiers.
-
-- Header: `#include <scl/utility/meta/type.h>`
-- Declaration: `template <typename T> constexpr std::string_view type_short_name() noexcept`,
-  constrained as the description states
-
-### Description
-
-The type `T`, with `const`, `volatile` and a reference dropped, is a class, a union, an
-enumeration or a fundamental type. A pointer, an array, a function or a pointer to a member does
-not satisfy the constraint of the declaration. The name is taken from the type without `const`,
-`volatile` and a reference, so `type_short_name<app::Task const &>()` is `Task`.
-
-This function processes the result of `type_name` for that type and removes everything up to the
-last `::` delimiter outside brackets. Additionally, `struct`/`class`/`union`/`enum` prefixes
-(present on MSVC) and template arguments are stripped, so the result is the bare identifier. For a
-closure type or an unnamed class or enumeration the result is the name the compiler generates, such
-as `<lambda_1>` with MSVC.
-
-The result is for display, as the result of `type_name<T>()` is: its spelling differs between
-compilers and may change in a later version of the module.
-
-GCC and Clang spell a pointer to the member `operator-` before a closing `>` as `operator->`, so
-two types can get one name. Take a class `P` with both operators and class templates `Holder` and
-`Wrap`, each with a member template `Inner`. Clang names both
-`Wrap<Holder<&P::operator- >>::Inner<&P::operator-> >` and
-`Wrap<Holder<&P::operator-> >::Inner<&P::operator- >>` as
-`Wrap<Holder<&P::operator->>::Inner<&P::operator->>`, and the short name of both is `Wrap`, which
-is wrong for the first of them.
-
-### Example
+The short name:
 
 <!-- snippet: example/meta/type_name/meta_type_name_example.cpp type_short_name -->
 ```cpp
-namespace app::core
-{
-    struct Task
-    {};
-} // namespace app::core
-
-// The short name is the bare identifier on every compiler: namespace qualifiers, the
-// MSVC prefix and the template arguments are all stripped.
-static_assert(::scl::type_short_name<app::core::Task>() == "Task");
-static_assert(::scl::type_short_name<::std::vector<MyStruct>>() == "vector");
+static_assert(scl::type_short_name<app::Task<int>>() == "Task");
+static_assert(scl::type_short_name<app::Item const &>() == "Item");
+static_assert(scl::type_short_name<std::vector<app::Item>>() == "vector");
 ```
 
 ## See also
 
-- [`example/meta/type_name/meta_type_name_example.cpp`](../../../../example/meta/type_name/meta_type_name_example.cpp) —
-  runnable version of both examples above, built and run by CI on every supported
-  compiler.
+- [`scl::type_name(obj)`](../runtime/type_name.md), the name of the type of an object at run time
+- [`scl::type_key_of<T>()`](type_key.md), the identity of a type
+- [`example/meta/type_name/meta_type_name_example.cpp`](../../../../example/meta/type_name/meta_type_name_example.cpp)
+
+---
+
+Previous: [`symbol_name<S>()`](symbol_name.md) | Next: [`is_tu_local<T>`](is_tu_local.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

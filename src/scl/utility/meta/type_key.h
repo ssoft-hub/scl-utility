@@ -8,14 +8,8 @@
 
 /**
  * @file
- * @brief RTTI-free type identity key distinguishing TU-local types (C++20).
+ * @brief Identity of a type without RTTI.
  * @ingroup scl_utility_meta
- * @details
- * - ::scl::type_key:
- *     Equality-comparable identity key of a type: the pair of its
- *     ::scl::type_name<T>() string and a per-translation-unit discriminator.
- * - ::scl::type_key_of<T>:
- *     Returns a reference to the per-type ::scl::type_key of T.
  */
 
 namespace scl
@@ -67,8 +61,10 @@ namespace scl
             return left.m_anchor == right.m_anchor && left.m_name == right.m_name;
         }
 
+#ifndef SCL_DOXYGEN
         template <typename T, ::std::byte const * Unit>
         friend constexpr auto ::scl::detail::make_type_key() noexcept -> ::scl::type_key;
+#endif
     };
 
 } // namespace scl
@@ -124,7 +120,11 @@ namespace scl
 {
     // GCC merges across translation units a specialization whose argument points to a member of
     // a local type, unless another argument names the anchor of the translation unit.
+#ifdef SCL_DOXYGEN
+    template <typename T, ::std::byte const * Unit = see below>
+#else
     template <typename T, ::std::byte const * Unit = ::scl::is_tu_local_v<T> ? &::scl::detail::tu_anchor : nullptr>
+#endif
     [[nodiscard]]
     constexpr type_key const & type_key_of() noexcept
     {
@@ -136,179 +136,123 @@ namespace scl
 /**
  * @class scl::type_key
  * @ingroup scl_utility_meta
- * @brief Equality-comparable, RTTI-free identity key of a type.
+ * @brief The identity of a type, compared without RTTI.
  *
- * Identity is the pair `{name, anchor}`:
- * - `name` — the compile-time ::scl::type_name<T>() string;
- * - `anchor` — a discriminator: `nullptr` for external
- *   types, the address of a TU-private anchor for TU-local types
- *   (see ::scl::is_tu_local), apart from a type whose name holds
- *   one of the symbols described below.
+ * A key holds the name ::scl::type_name<T>() gives the type beside a discriminator: a null pointer
+ * for a type with external linkage, apart from a type whose name holds one of the symbols described
+ * below, and for a type local to its translation unit, as ::scl::is_tu_local tells, the address of
+ * an object private to that translation unit. Two keys compare equal when their names and their
+ * discriminators are equal. Types of one name in unnamed namespaces of two translation units differ
+ * by the discriminator, and a type with external linkage used from an executable and from a shared
+ * library compares equal by its name, apart from a type whose name holds one of the symbols
+ * described below.
  *
- * For types declared at namespace scope the two components together
- * eliminate both failure modes of simpler schemes:
- * - **No false match:** same-named anonymous-namespace types from different
- *   TUs share the `name` string but carry different anchor addresses.
- * - **No false reject:** an external type used across a shared-library
- *   boundary compares by `name` with `anchor == nullptr` on both sides, so
- *   unmerged inline instantiations (Windows DLLs) cannot break equality,
- *   apart from a type whose name holds one of the symbols described below.
+ * Only ::scl::type_key_of produces a key that identifies a type: the data members are private, and
+ * no member function changes a key apart from assignment. The one key a caller writes is the empty
+ * one, `type_key{}`, which identifies no type.
  *
- * With GCC and Clang one name may stand for two types, as ::scl::type_short_name states: both
- * write a pointer to `operator-` before a closing `>` as `operator->` and a pointer to `operator<=`
+ * With GCC and Clang one name may stand for two types, as ::scl::type_short_name states: both write
+ * a pointer to `operator-` before a closing `>` as `operator->` and a pointer to `operator<=`
  * before it as `operator<=>`, and Clang writes a pointer to `operator>` before it as `operator>>`.
  * GCC also writes a pointer to such a specialization, `Tagged<&P::operator- > *`, as
- * `Tagged<&P::operator->*`. With GCC and Clang, a type whose name holds `operator->`, `operator->*`, `operator<=>` or
- * `operator>>` carries the address of an anchor of its own as `anchor`. The keys of two such types
- * differ, and the key of such a type from another module may compare unequal to its key from this
- * one.
+ * `Tagged<&P::operator->*`. With GCC and Clang, a type whose name holds `operator->`,
+ * `operator->*`, `operator<=>` or `operator>>` carries the address of an object of its own as the
+ * discriminator. The keys of two such types differ, and the key of such a type from another module
+ * may compare unequal to its key from this one.
  *
- * Keys are exposed by ::scl::type_key_of<T>() as references to per-type
- * constants and are fully usable in constant expressions. Only `type_key_of`
- * produces a key naming a type: the members are private and there is no
- * mutating API, so a hand-built key pairing one type's name with another
- * type's discriminator cannot exist. The one key a caller can spell is the
- * empty one, `type_key{}`, which names nothing.
+ * A key is a value: it copies, moves and assigns, and a copy identifies the type its source
+ * identifies. Keys carry no order, neither `operator<=>` nor ::std::less: the identity of a local
+ * type and of a type whose name holds one of the symbols above rests on an address, whose relative
+ * order between unrelated objects the standard leaves unspecified and constant evaluation cannot
+ * read. No hash comes with the key.
  *
- * The key is a value: a `std::string_view` beside a discriminator, copied the
- * way that view is copied, and a handle that has no type to report answers
- * an empty key rather than an absent one. Comparing against
- * `type_key_of<T>()` still short-circuits on address identity where the
- * caller kept a reference to the per-type constant.
- *
- * The key is intentionally not ordered (no `operator<=>`, no `std::less`
- * support): its identity involves object addresses, whose relative order is
- * unspecified between unrelated objects and unusable in constant
- * expressions. Hashing support is likewise deferred until a real consumer
- * exists.
- *
- * @warning A key is a view into the module (executable or shared library)
- * that produced it: `name` points into that module's signature literal and
- * `anchor` into that module's anchor object. A key must not outlive its producing
- * module — after `FreeLibrary`/`dlclose` the pointers dangle, and a module
- * later mapped at the same base address can even resurrect a stale TU-local
- * key into falsely matching a fresh unrelated one. Drop stored keys when
- * unloading the module that produced them.
+ * @warning A key points into the module, an executable or a shared library, that produced it:
+ * its name into the string of that module, and a discriminator that is not null into the object of
+ * that module. A key must not outlive the module that produced it. After `FreeLibrary` or `dlclose`
+ * the name dangles, and so does a discriminator that is not null, and a module loaded later at the
+ * same address can make a stale key compare equal to the key of another type.
  */
 
 /**
  * @fn scl::type_key::type_key()
- * @brief Constructs the key that names no type.
+ * @brief Constructs the empty key, which identifies no type.
  *
- * A key naming a type comes from @ref scl::type_key_of and from nowhere else,
- * so this is the one key a caller can spell.
+ * A key that identifies a type comes from ::scl::type_key_of alone, so this is the one key
+ * a caller writes.
  */
 
 /**
  * @fn scl::type_key::type_key(type_key const &)
- * @brief Copies the key; a key is a value, not a handle to one.
+ * @brief Copies a key; the copy identifies the type the source identifies.
  */
 
 /**
  * @fn scl::type_key::type_key(type_key &&)
- * @brief Same as the copy constructor: there is nothing to steal.
+ * @brief Copies a key, as the copy constructor does.
  */
 
 /**
  * @fn scl::type_key::operator=(type_key const &)
- * @brief Replaces which type this key names.
+ * @brief Makes this key identify the type the other key identifies.
  * @return This key.
  */
 
 /**
  * @fn scl::type_key::operator=(type_key &&)
- * @brief Same as copy assignment.
+ * @brief Makes this key identify the type the other key identifies, as copy assignment does.
  * @return This key.
  */
 
 /**
  * @fn scl::type_key::~type_key()
- * @brief Trivial: a key owns nothing, holding only a view of its module.
+ * @brief Destroys the key, which owns nothing.
  */
 
 /**
  * @fn scl::type_key::name()
- * @brief Fully qualified compile-time type name, as ::scl::type_name<T>()
- *        renders it for the current compiler.
- * @return A view of that name; an empty view for an empty key. The characters live in the
- *         module that produced the key, so a key that outlives its module is left pointing
- *         at nothing — see the warning on the class.
+ * @brief Returns the name of the identified type, as ::scl::type_name<T>() gives it.
+ * @return A view of the name; an empty view for the empty key. The characters lie in the module
+ *         that produced the key, as the warning on the class states.
  */
 
 /**
  * @fn scl::type_key::operator==(type_key const &, type_key const &)
- * @brief Compares two keys for type identity.
+ * @brief Compares two keys for the identity of their types.
  *
- * Short-circuits on address identity first: `type_key_of<T>()` returns a
- * reference to a per-type inline variable, unique within a module, so
- * comparing stored references against it costs one pointer comparison.
- * Otherwise falls back to content: `a.name == b.name && a.anchor == b.anchor` —
- * the path taken by keys that crossed a module boundary.
- * @return `true` when both keys denote the same type; `!=` is synthesised
- *         from this.
+ * Two references to one key compare equal at once, so comparing a stored reference with the result
+ * of ::scl::type_key_of costs one comparison of addresses when the reference is to that key. Other
+ * keys compare equal when their names and their discriminators are equal, which is how keys from
+ * two modules compare.
+ *
+ * @return `true` when both keys hold equal names and equal discriminators; `!=` is the negation
+ *         of this result.
  */
 
 /**
  * @fn scl::type_key_of()
  * @ingroup scl_utility_meta
- * @brief Returns a reference to the ::scl::type_key identifying T.
+ * @brief Returns a reference to the ::scl::type_key that identifies the type T.
  *
- * The key is a per-type `inline constexpr` variable: every use of
- * `type_key_of<T>()` for an external T inside one module refers to the same
- * object, which makes equality against a stored reference an address
- * comparison. A consumer storing keys long-term may hold either the
- * reference, which keeps that fast path, or a copy of the key, which compares
- * by content.
+ * The key is an `inline constexpr` variable, one per type, so within one module every call for
+ * a type with external linkage returns a reference to one object. A caller that stores a key holds
+ * either that reference, which compares by address, or a copy, which compares by content.
  *
- * For an external type the key is `{type_name<T>(), nullptr}` — identical in
- * every translation unit and across shared-library boundaries. With GCC and
- * Clang, a type whose name holds one of the symbols the class describes carries
- * an anchor of its own instead, identical in every translation unit of one
- * module. For a TU-local type (::scl::is_tu_local_v<T> is `true`) the key
- * additionally carries the address of an anchor object private to the including
- * translation unit, so same-named TU-local types from different TUs compare
- * unequal.
- *
- * @pre T must be declared at namespace scope. Local classes and closure
- * types are outside the contract: compilers render them without a reliable
- * TU-locality marker, and no compile-time guard can detect the violation.
- * On Clang a local class renders as its bare name, so its key is
- * byte-identical to the key of a same-named namespace-scope type — two
- * genuinely different types compare equal:
- * @code
- * struct duck {};                     // namespace scope
- * int main() {
- *     struct duck {};                 // local class — outside the contract
- *     // passes on Clang: a false match against the ordinary external type
- *     static_assert(::scl::type_key_of<::duck>() == ::scl::type_key_of<duck>());
- * }
- * @endcode
- * Move such a type into an anonymous namespace of the same translation unit
- * to give it a well-defined key.
- *
- * @note A string non-type template parameter cannot make an external type
- * TU-local: NTTP values render inside string/character literals (or as
- * character codes on MSVC), and ::scl::is_tu_local skips literal contents
- * when searching for the anonymous-namespace marker.
+ * @pre `T` is neither a local class nor a closure type, nor a type built of one. Nothing reports
+ * a violation: Clang spells a local class `duck` of a function as `duck`, whatever namespace
+ * the function is in, the name of a class `duck` declared in the global namespace, so the keys of
+ * the two classes compare equal. A class moved into an unnamed namespace of the same translation
+ * unit gets a key of its own.
  *
  * @tparam T The type to identify.
  * @tparam Unit A caller does not pass it. Its default is the anchor of the translation unit for
  *         a local type and a null pointer for any other type, and the anchor keeps the key of
  *         a local type in that translation unit, which GCC would otherwise merge with the key of
- *         a local type of the same name from another one where T holds a pointer to a member of
- *         a type in an unnamed namespace. GCC merges in the same way the specialization of
- *         a caller's template that depends on T alone, such as a variable template holding
+ *         a local type of the same name from another translation unit where `T` holds a pointer to
+ *         a member of a type in an unnamed namespace. GCC merges in the same way the specialization
+ *         of a caller's template that depends on `T` alone, such as a variable template holding
  *         `&type_key_of<T>()`, so for such a type that specialization holds the key of only one
  *         translation unit.
- * @return Reference to the per-type ::scl::type_key of T.
+ * @return A reference to the key of `T`.
  *
- * @code
- * namespace { struct duck {}; }
- * struct goose {};
- *
- * constexpr auto & anon_key = ::scl::type_key_of<duck>();
- * constexpr auto & ext_key  = ::scl::type_key_of<goose>();
- * static_assert(anon_key == ::scl::type_key_of<duck>());
- * static_assert(anon_key != ext_key);
- * @endcode
+ * @snippet meta/type_key/meta_type_key_example.cpp type_key_of
  */

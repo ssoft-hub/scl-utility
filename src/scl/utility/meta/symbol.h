@@ -6,15 +6,8 @@
 
 /**
  * @file
- * @brief Compile-time symbol (function, method, property) name extraction (C++20).
+ * @brief Names of functions, variables and members at compile time.
  * @ingroup scl_utility_meta
- * @details
- * - `::scl::symbol_name<S>`:
- *     Extracts the fully qualified name of the symbol S (global function, class method, or data member).
- *     Performs aggressive cleanup of compiler decorations, address operators (&), parentheses, and whitespace.
- * - `::scl::symbol_short_name<S>`:
- *     Extracts only the terminal identifier of the symbol S.
- *     Useful for reflection-like tasks where only the member or function name is required.
  */
 
 namespace scl::detail
@@ -292,32 +285,23 @@ namespace scl::detail
 namespace scl
 {
     /**
-     * @brief Retrieves the qualified string name of a symbol at compile-time.
+     * @brief Returns the name of the entity S points to, with its namespaces and classes.
      * @ingroup scl_utility_meta
-     * 
-     * @tparam S Pointer to the symbol (global function, class method, or data member).
-     * @return A ::std::string_view containing the qualified name of the symbol.
+     *
+     * @tparam S A pointer to a function, a variable, a member function or a data member; the name
+     *         of a function converts to a pointer to it.
+     * @return The name of the entity, such as `app::Clock::reset` for `&app::Clock::reset`,
+     *         without the address operator, the parentheses and the signature the compiler
+     *         writes around it.
      *
      * @warning The result is for display: its spelling differs between compilers and may change
      * in a later version of the module.
      *
-     * @details This function extracts the symbol name from the decorated signature 
-     * and performs aggressive cleanup of compiler-specific artifacts such as:
-     * - Address operators ('&')
-     * - Parentheses used for grouping (GCC writes them around the address of a variable)
-     * - Leading and trailing whitespace
-     * 
-     * @code
-     * struct Processor { void run() {} };
-     * constexpr auto name = ::scl::symbol_name<&Processor::run>(); // "Processor::run"
-     * 
-     * int global_var = 0;
-     * constexpr auto var_name = ::scl::symbol_name<&global_var>(); // "global_var"
-     * @endcode
-     *
      * @note GCC writes `__conv_op` in place of the name of a conversion operator, such as
      * `app::Clock::__conv_op`, and MSVC writes the name of a stub the compiler generates in place of
      * the name of a virtual member function, such as ``app::Clock::`vcall'{0}'``.
+     *
+     * @snippet meta/symbol_name/meta_symbol_name_example.cpp symbol_name
      */
     template <auto S>
     [[nodiscard]]
@@ -341,22 +325,17 @@ namespace scl
     }
 
     /**
-     * @brief Retrieves the short string name of a symbol at compile-time.
+     * @brief Returns the name of the entity S points to, without its namespaces and classes.
      * @ingroup scl_utility_meta
-     * 
-     * @tparam S Pointer to the symbol.
-     * @return A ::std::string_view containing only the symbol identifier (e.g., "run").
      *
-     * @warning The result is for display: its spelling may change in a later version of
-     * the module.
-     * 
-     * @details Strips all namespace and class qualifiers from the result of ::scl::symbol_name<S>().
-     * Ideal for reflection-like tasks where only the member name is required.
-     * 
-     * @code
-     * namespace sys { struct Clock { static void tick() {} }; }
-     * constexpr auto name = ::scl::symbol_short_name<sys::Clock::tick>(); // "tick"
-     * @endcode
+     * @tparam S A pointer to a function, a variable, a member function or a data member; the name
+     *         of a function converts to a pointer to it.
+     * @return The name of the entity alone, such as `reset` for `&app::Clock::reset`.
+     *
+     * @warning The result is for display: its spelling differs between compilers and may change
+     * in a later version of the module.
+     *
+     * @snippet meta/symbol_name/meta_symbol_name_example.cpp symbol_short_name
      */
     template <auto S>
     [[nodiscard]]
