@@ -2545,8 +2545,8 @@ INCLUDE_FILE_PATTERNS  =
 # uses them.
 
 PREDEFINED             = SCL_DOXYGEN \
-                         "SCL_COUNTER_VALUE(Tag)=0" \
-                         "SCL_COUNTER_NEXT(Tag)="
+                         "SCL_COUNTER_VALUE(...)=0" \
+                         "SCL_COUNTER_NEXT(...)="
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

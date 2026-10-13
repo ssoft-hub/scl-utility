@@ -6,8 +6,8 @@ the macro `SCL_COUNTER_NEXT(Tag)` adds one to that counter for the rest of the t
 - Header: `#include <scl/utility/preprocessor/counter.h>`
 
 ```cpp
-#define SCL_COUNTER_VALUE(Tag) /* constant expression of type std::uint_fast32_t */
-#define SCL_COUNTER_NEXT(Tag)  /* declaration */
+#define SCL_COUNTER_VALUE(...) /* constant expression of type std::uint_fast32_t */
+#define SCL_COUNTER_NEXT(...)  /* declaration */
 ```
 
 ## Semantics
@@ -17,6 +17,8 @@ the macro `SCL_COUNTER_NEXT(Tag)` adds one to that counter for the rest of the t
   or abstract class, a function type, a reference and `void` are tags as well. A reference,
   a `const` type and an array are tags apart from, respectively, the type referred to, the type
   without `const` and a pointer to the element.
+- **Spelling of the tag:** the tag is the whole argument list of the macro, so a name that holds
+  commas, such as `std::pair<int, char>`, is written as is.
 - **Value:** `SCL_COUNTER_VALUE(Tag)` is a constant expression of type `std::uint_fast32_t`. It
   reads `0` before the first `SCL_COUNTER_NEXT(Tag)` of the translation unit and one more after
   each of them.

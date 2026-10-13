@@ -42,7 +42,6 @@ DECLARE_ALIAS(phone_book, SCL_FORWARD(std::map<std::string, int>))
 
 ## Смотрите также
 
-- [`SCL_COUNTER_VALUE`](counter.md), который принимает тег через один параметр
 - [`example/preprocessor/forward/preprocessor_forward_example.cpp`](../../../../example/preprocessor/forward/preprocessor_forward_example.cpp)
 
 ---

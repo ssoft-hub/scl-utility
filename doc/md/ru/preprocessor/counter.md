@@ -6,8 +6,8 @@
 - Заголовок: `#include <scl/utility/preprocessor/counter.h>`
 
 ```cpp
-#define SCL_COUNTER_VALUE(Tag) /* constant expression of type std::uint_fast32_t */
-#define SCL_COUNTER_NEXT(Tag)  /* declaration */
+#define SCL_COUNTER_VALUE(...) /* constant expression of type std::uint_fast32_t */
+#define SCL_COUNTER_NEXT(...)  /* declaration */
 ```
 
 ## Семантика
@@ -17,6 +17,8 @@
   без конструктора по умолчанию, и неполный или абстрактный класс, и тип функции, и ссылка,
   и `void`. Ссылка, тип с `const` и массив служат тегами отдельно от типа, на который ссылается
   ссылка, от типа без `const` и от указателя на элемент массива.
+- **Запись тега:** тегом служит весь список аргументов макроса, поэтому имя с запятыми,
+  например `std::pair<int, char>`, записывается как есть.
 - **Значение:** `SCL_COUNTER_VALUE(Tag)` является константным выражением типа
   `std::uint_fast32_t`. До первого `SCL_COUNTER_NEXT(Tag)` единицы трансляции оно равно `0`
   и после каждого из них становится на единицу больше.
