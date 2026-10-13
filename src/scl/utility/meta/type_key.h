@@ -27,7 +27,7 @@ namespace scl
 namespace scl::detail
 {
     template <typename T, ::std::byte const * Unit>
-    constexpr type_key make_type_key() noexcept;
+    constexpr auto make_type_key() noexcept -> ::scl::type_key;
 
 } // namespace scl::detail
 
@@ -40,7 +40,7 @@ namespace scl
         void const * m_anchor = nullptr;
 
     public:
-        constexpr type_key() = default;
+        constexpr type_key() noexcept = default;
         constexpr type_key(type_key const &) = default;
         constexpr type_key(type_key &&) = default;
         constexpr type_key & operator=(type_key const &) = default;
@@ -68,7 +68,7 @@ namespace scl
         }
 
         template <typename T, ::std::byte const * Unit>
-        friend constexpr type_key detail::make_type_key() noexcept;
+        friend constexpr auto ::scl::detail::make_type_key() noexcept -> ::scl::type_key;
     };
 
 } // namespace scl
@@ -107,16 +107,16 @@ namespace scl::detail
 
     // Unit is the anchor of the translation unit for a local type and null otherwise.
     template <typename T, ::std::byte const * Unit>
-    constexpr type_key make_type_key() noexcept
+    constexpr auto make_type_key() noexcept -> ::scl::type_key
     {
         void const * anchor = Unit;
         if constexpr (::scl::detail::name_reads_two_ways(::scl::type_name<T>()))
             anchor = &::scl::detail::type_anchor<T, Unit>;
-        return type_key{type_name<T>(), anchor};
+        return ::scl::type_key{::scl::type_name<T>(), anchor};
     }
 
     template <typename T, ::std::byte const * Unit>
-    inline constexpr type_key type_key_v = make_type_key<T, Unit>();
+    inline constexpr ::scl::type_key type_key_v = ::scl::detail::make_type_key<T, Unit>();
 
 } // namespace scl::detail
 
@@ -124,18 +124,14 @@ namespace scl
 {
     // GCC merges across translation units a specialization whose argument points to a member of
     // a local type, unless another argument names the anchor of the translation unit.
-    template <typename T, ::std::byte const * Unit = is_tu_local_v<T> ? &detail::tu_anchor : nullptr>
+    template <typename T, ::std::byte const * Unit = ::scl::is_tu_local_v<T> ? &::scl::detail::tu_anchor : nullptr>
     [[nodiscard]]
     constexpr type_key const & type_key_of() noexcept
     {
-        return detail::type_key_v<T, Unit>;
+        return ::scl::detail::type_key_v<T, Unit>;
     }
 
 } // namespace scl
-
-// -----------------------------------------------------------------------------
-// Documentation
-// -----------------------------------------------------------------------------
 
 /**
  * @class scl::type_key

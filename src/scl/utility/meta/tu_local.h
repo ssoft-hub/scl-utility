@@ -28,10 +28,6 @@ namespace scl::detail
 
     // The marker is what the anonymous probe's rendered name has and an
     // external probe of the same shape does not, up to the last "::".
-    // Deriving it instead of hardcoding per-compiler spellings keeps the
-    // trait working on an untested compiler; a rendering with no marker at
-    // all degenerates to an empty result, which never matches (pinned by the
-    // trait tests).
     constexpr ::std::string_view derive_marker(::std::string_view anon, ::std::string_view ext) noexcept
     {
         ::std::size_t i = 0;
@@ -55,21 +51,23 @@ namespace scl::detail
         struct marker_anon_probe
         {};
 
-        constexpr auto marker_plain_text = derive_marker(type_name<marker_anon_probe>(),
-            type_name<marker_ext_probe>());
+        constexpr auto marker_plain_text = ::scl::detail::derive_marker(
+            ::scl::type_name<marker_anon_probe>(), ::scl::type_name<marker_ext_probe>());
 
         // MSVC spells the marker differently when the type is nested inside
         // template arguments, hence a second marker from box-wrapped probes.
-        constexpr auto marker_nested_text = derive_marker(type_name<marker_box<marker_anon_probe>>(),
-            type_name<marker_box<marker_ext_probe>>());
+        constexpr auto marker_nested_text = ::scl::detail::derive_marker(
+            ::scl::type_name<marker_box<marker_anon_probe>>(),
+            ::scl::type_name<marker_box<marker_ext_probe>>());
 
         // Materialized as arrays compared by content below: an inline entity
         // may name an internal-linkage const object only when the object is
         // not odr-used and has the same value in every TU ([basic.def.odr]).
         // A string_view pointing into the per-TU signature literal breaks the
         // same-value requirement; the character contents do not.
-        constexpr auto marker_plain = materialize_marker<marker_plain_text.size()>(marker_plain_text);
-        constexpr auto marker_nested = materialize_marker<marker_nested_text.size()>(marker_nested_text);
+        constexpr auto marker_plain = ::scl::detail::materialize_marker<marker_plain_text.size()>(marker_plain_text);
+        constexpr auto marker_nested =
+            ::scl::detail::materialize_marker<marker_nested_text.size()>(marker_nested_text);
     } // namespace
 
     // ODR: the marker is passed by value on purpose — binding a reference to
@@ -113,24 +111,23 @@ namespace scl::detail
     {
         for (::std::size_t pos = 0; pos < name.size();)
         {
-            if (marker_matches_at(name, pos, marker_plain) || marker_matches_at(name, pos, marker_nested))
+            if (::scl::detail::marker_matches_at(name, pos, marker_plain) ||
+                ::scl::detail::marker_matches_at(name, pos, marker_nested))
                 return true;
 
             char const ch = name.at(pos);
             if (ch == '"' || ch == '\'')
             {
-                // String and character NTTP values render inside quotes (with
-                // backslash escapes); a real marker sits in the qualification,
-                // outside any literal. Skipping literal contents keeps an NTTP
-                // from injecting a marker into an external type's name.
-                pos = skip_quoted(name, pos, ch);
+                // A string or a character argument of a template could spell the
+                // marker inside the name of an external type.
+                pos = ::scl::detail::skip_quoted(name, pos, ch);
             }
             else if (ch == '`')
             {
                 // An MSVC `...' quotation that is not the marker (checked
                 // above). Consume it whole so its closing quote is not
                 // mistaken for a character-literal opener.
-                pos = skip_quoted(name, pos, '\'');
+                pos = ::scl::detail::skip_quoted(name, pos, '\'');
             }
             else
             {
@@ -141,7 +138,8 @@ namespace scl::detail
     }
 
     template <typename T>
-    struct tu_local_impl : ::std::bool_constant<contains_anonymous_namespace_marker(type_name<T>())>
+    struct tu_local_impl
+        : ::std::bool_constant<::scl::detail::contains_anonymous_namespace_marker(::scl::type_name<T>())>
     {};
 
     template <typename T>
@@ -185,7 +183,8 @@ namespace scl::detail
 
     template <template <typename...> class Template, typename... Args>
     struct tu_local_impl<Template<Args...>>
-        : ::std::bool_constant<contains_anonymous_namespace_marker(type_name<Template<Args...>>()) ||
+        : ::std::bool_constant<
+              ::scl::detail::contains_anonymous_namespace_marker(::scl::type_name<Template<Args...>>()) ||
               (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
     {};
 
@@ -238,7 +237,7 @@ namespace scl
      * @endcode
      */
     template <typename T>
-    struct is_tu_local : detail::tu_local_impl<::std::remove_cv_t<T>>
+    struct is_tu_local : ::scl::detail::tu_local_impl<::std::remove_cv_t<T>>
     {};
 
     /**

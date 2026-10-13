@@ -125,14 +125,12 @@ TEST(MetaTypeTest, TemplateTypes)
 
 #if defined(_MSC_VER) && !defined(__clang__)
     EXPECT_EQ(::scl::type_name<T>(), "struct Namespace::TemplateStruct<struct Namespace::Struct>");
-    // MSVC adds space before > in nested templates: "> >" instead of ">>"
     EXPECT_EQ(::scl::type_name<TT>(),
         "class Namespace::TemplateClass<struct Namespace::TemplateStruct<struct Namespace::Struct> >");
 #elif defined(__clang__)
     EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
     EXPECT_EQ(::scl::type_name<TT>(), "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct>>");
 #else
-    // GCC adds space before > in nested templates
     EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
     EXPECT_EQ(::scl::type_name<TT>(), "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct> >");
 #endif

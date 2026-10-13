@@ -1,6 +1,7 @@
 #pragma once
 
 #include <scl/utility/concepts/type_category.h>
+#include <scl/utility/meta/type.h>
 
 #include <string_view>
 
@@ -19,22 +20,14 @@
  *     Concept satisfied by any enumeration type (scoped or unscoped).
  */
 
-/**
- * @internal
- * @brief Pattern anchor: an enumeration of a known name, so the shape the
- *        compiler gives `__PRETTY_FUNCTION__` can be measured against it.
- *
- * The name is deliberately unpronounceable, so that it cannot occur inside an
- * enumerator name being extracted. Unscoped on purpose: the pattern being
- * measured is the one an unscoped enumerator renders as.
- */
-enum we5r256sg_e // NOLINT(cppcoreguidelines-use-enum-class, performance-enum-size)
-{
-    we5r256sg_v
-};
-
 namespace scl::detail
 {
+    // Its name occurs in the signature of its pattern function only at the template argument.
+    enum we5r256sg_e // NOLINT(cppcoreguidelines-use-enum-class, performance-enum-size)
+    {
+        we5r256sg_v
+    };
+
     template <::scl::concepts::enum_type auto V>
     constexpr ::std::string_view enum_name_pattern_text() noexcept
     {
@@ -45,27 +38,17 @@ namespace scl::detail
 #endif
     }
 
-    constexpr auto enum_prefix_lenght() noexcept
+    constexpr auto enum_prefix_length() noexcept
     {
-        constexpr auto msvc_prefix_length =
-            enum_name_pattern_text<we5r256sg_e::we5r256sg_v>().find("enum we5r256sg_e::we5r256sg_v");
-        constexpr auto full_prefix_length =
-            enum_name_pattern_text<we5r256sg_e::we5r256sg_v>().find("we5r256sg_e::we5r256sg_v");
-        constexpr auto short_prefix_length = enum_name_pattern_text<we5r256sg_e::we5r256sg_v>().find("we5r256sg_v");
-        if constexpr (msvc_prefix_length != ::std::string_view::npos)
-            return msvc_prefix_length;
-        else if constexpr (full_prefix_length != ::std::string_view::npos)
-            return full_prefix_length;
-        else if constexpr (short_prefix_length != ::std::string_view::npos)
-            return short_prefix_length;
-        else
-            return 0;
+        constexpr auto text = ::scl::detail::enum_name_pattern_text<we5r256sg_v>();
+        return ::scl::detail::find_anchor(text, "scl::detail::we5r256sg_v").position;
     }
 
-    constexpr auto enum_suffix_lenght() noexcept
+    constexpr auto enum_suffix_length() noexcept
     {
-        constexpr auto text = enum_name_pattern_text<we5r256sg_v>(); // NOLINT(cppcoreguidelines-use-enum-class)
-        return text.length() - enum_prefix_lenght() - ::std::string_view("we5r256sg_v").length();
+        constexpr auto text = ::scl::detail::enum_name_pattern_text<we5r256sg_v>();
+        constexpr auto anchor = ::scl::detail::find_anchor(text, "scl::detail::we5r256sg_v");
+        return text.length() - anchor.position - anchor.length;
     }
 
     // A value no constant has is spelled as a cast, (Type)42 or (enum Type)0x2a: an opening
@@ -115,17 +98,17 @@ namespace scl
      * constexpr auto name = ::scl::enum_name<Color::Red>(); // Returns "Color::Red"
      * @endcode
      */
-    template <concepts::enum_type auto V>
+    template <::scl::concepts::enum_type auto V>
     [[nodiscard]]
     constexpr ::std::string_view enum_name() noexcept
     {
-        constexpr auto text = detail::enum_name_pattern_text<V>();
-        constexpr auto prefix_length = detail::enum_prefix_lenght();
-        constexpr auto suffix_length = detail::enum_suffix_lenght();
+        constexpr auto text = ::scl::detail::enum_name_pattern_text<V>();
+        constexpr auto prefix_length = ::scl::detail::enum_prefix_length();
+        constexpr auto suffix_length = ::scl::detail::enum_suffix_length();
 
         constexpr auto result = text.substr(prefix_length, text.length() - prefix_length - suffix_length);
 
-        if constexpr (!detail::names_constant(result))
+        if constexpr (!::scl::detail::names_constant(result))
             return {};
         else
             return result;
@@ -150,11 +133,11 @@ namespace scl
      * constexpr auto name = ::scl::enum_short_name<gfx::Mode::Fast>(); // Returns "Fast"
      * @endcode
      */
-    template <concepts::enum_type auto V>
+    template <::scl::concepts::enum_type auto V>
     [[nodiscard]]
     constexpr ::std::string_view enum_short_name() noexcept
     {
-        constexpr auto result = enum_name<V>();
+        constexpr auto result = ::scl::enum_name<V>();
         constexpr auto pos = result.find_last_of(':');
         if constexpr (pos != ::std::string_view::npos)
             return result.substr(pos + 1);
