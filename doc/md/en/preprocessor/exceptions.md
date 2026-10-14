@@ -14,10 +14,9 @@ exceptions and to `0` where it is compiled without them.
 - **Always defined:** a caller tests the macro with `#if` rather than `#ifdef`. Under `#if`
   a misspelled name reads as `0` and draws a `-Wundef` warning; under `#ifdef` it reads as false
   with no warning.
-- **Source:** the value of the macro follows `_CPPUNWIND` (MSVC, clang-cl and Clang for
-  the MSVC target), `__EXCEPTIONS` (GCC and Clang for a GNU target) or
-  `__has_feature(cxx_exceptions)` (Clang). The language defines no feature-test macro for
-  exceptions.
+- **Source:** the value of the macro follows `__has_feature(cxx_exceptions)` where the compiler
+  offers it (Clang, clang-cl, GCC 14 and later), and otherwise `_CPPUNWIND` (MSVC) or
+  `__EXCEPTIONS` (GCC 13). The language defines no feature-test macro for exceptions.
 - **Not a switch:** the value of the macro follows the command line of the compiler, and
   exceptions are not turned on or off by defining the macro by hand. The options that turn it to
   `0` are listed on the [group page](index.md#compiler-options).

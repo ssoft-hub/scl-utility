@@ -9,16 +9,17 @@
  *     `1` when the translation unit is compiled with RTTI enabled, `0` otherwise.
  */
 
-#if defined(_CPPRTTI) || defined(__GXX_RTTI)
-#define SCL_HAS_RTTI 1
+// __has_feature first, as for exceptions: it follows the language option itself.
+#ifdef __has_feature
 // Nested rather than `defined(__has_feature) && __has_feature(...)`: a compiler without
 // __has_feature still parses the whole expression, and the call form is a syntax error there.
-#elif defined(__has_feature)
 #if __has_feature(cxx_rtti)
 #define SCL_HAS_RTTI 1
 #else
 #define SCL_HAS_RTTI 0
 #endif
+#elif defined(_CPPRTTI) || defined(__GXX_RTTI)
+#define SCL_HAS_RTTI 1
 #else
 #define SCL_HAS_RTTI 0
 #endif
@@ -32,9 +33,9 @@
  * @ingroup scl_utility_preprocessor
  * @brief Whether the translation unit is compiled with RTTI enabled.
  *
- * Expands to `1` with RTTI and `0` without it, derived from whichever signal
- * the compiler offers: `_CPPRTTI` (MSVC, clang-cl and Clang for the MSVC target), `__GXX_RTTI`
- * (GCC and Clang for a GNU target) or `__has_feature(cxx_rtti)` (Clang). The language offers no
+ * Expands to `1` with RTTI and `0` without it, derived from `__has_feature(cxx_rtti)` where
+ * the compiler offers it (Clang, clang-cl, GCC 14 and later), and otherwise from `_CPPRTTI`
+ * (MSVC) or `__GXX_RTTI` (GCC 13). The language offers no
  * standard feature-test macro for RTTI, which is why this one exists.
  *
  * Always defined, so a caller tests it with `#if`: a misspelled name then reads as `0` and draws

@@ -14,9 +14,9 @@ The macro `SCL_HAS_RTTI` expands to `1` where the translation unit is compiled w
 - **Always defined:** a caller tests the macro with `#if` rather than `#ifdef`. Under `#if`
   a misspelled name reads as `0` and draws a `-Wundef` warning; under `#ifdef` it reads as false
   with no warning.
-- **Source:** the value of the macro follows `_CPPRTTI` (MSVC, clang-cl and Clang for the MSVC
-  target), `__GXX_RTTI` (GCC and Clang for a GNU target) or `__has_feature(cxx_rtti)` (Clang).
-  The language defines no feature-test macro for RTTI.
+- **Source:** the value of the macro follows `__has_feature(cxx_rtti)` where the compiler offers
+  it (Clang, clang-cl, GCC 14 and later), and otherwise `_CPPRTTI` (MSVC) or `__GXX_RTTI`
+  (GCC 13). The language defines no feature-test macro for RTTI.
 - **Not a switch:** the value of the macro follows the command line of the compiler, and RTTI is
   not turned on or off by defining the macro by hand. The options that turn it to `0` are
   listed on the [group page](index.md#compiler-options).
