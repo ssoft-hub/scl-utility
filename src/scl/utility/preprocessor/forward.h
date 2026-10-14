@@ -21,6 +21,4 @@
  *
  * @snippet preprocessor/forward/preprocessor_forward_example.cpp apply
  */
-#ifndef SCL_FORWARD
 #define SCL_FORWARD(...) __VA_ARGS__
-#endif
