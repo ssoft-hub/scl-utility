@@ -2,78 +2,45 @@
 
 #include <scl/utility/preprocessor/counter.h>
 
-// === Test with a simple struct tag ===
+#include <concepts>
+#include <cstdint>
+#include <type_traits>
 
-// Define a tag for the first counter
-struct MyCounterTag1
+struct Apples
 {};
 
-// The counter starts at 0 before any increments
-constexpr auto val1_0 = SCL_COUNTER_VALUE(MyCounterTag1);
-
-SCL_COUNTER_NEXT(MyCounterTag1)
-constexpr auto val1_1 = SCL_COUNTER_VALUE(MyCounterTag1);
-
-SCL_COUNTER_NEXT(MyCounterTag1)
-constexpr auto val1_2 = SCL_COUNTER_VALUE(MyCounterTag1);
-
-// === Test with another simple struct tag to ensure counters are independent ===
-
-// Define a tag for the second counter
-struct MyCounterTag2
+struct Pears
 {};
 
-constexpr auto val2_0 = SCL_COUNTER_VALUE(MyCounterTag2);
+constexpr auto apples_before = SCL_COUNTER_VALUE(Apples);
 
-SCL_COUNTER_NEXT(MyCounterTag2)
-constexpr auto val2_1 = SCL_COUNTER_VALUE(MyCounterTag2);
+SCL_COUNTER_NEXT(Apples)
 
-// === Test with a template tag, which requires SCL_FORWARD to work correctly ===
+constexpr auto apples_after_one = SCL_COUNTER_VALUE(Apples);
 
-// Define a template tag
-template <typename T>
-struct TemplateTag
-{};
+SCL_COUNTER_NEXT(Apples)
+SCL_COUNTER_NEXT(Pears)
 
-// The SCL_FORWARD macro is crucial here
-constexpr auto tpl_val_0 = SCL_COUNTER_VALUE(TemplateTag<int>);
-
-SCL_COUNTER_NEXT(TemplateTag<int>)
-constexpr auto tpl_val_1 = SCL_COUNTER_VALUE(TemplateTag<int>);
-
-// A different specialization of the same template tag should be a different counter
-constexpr auto tpl_val_float_0 = SCL_COUNTER_VALUE(TemplateTag<float>);
-
-TEST(CompileTimeCounter, HandlesSimpleTags)
+/**
+ * @test Verify that the value is of type std::uint_fast32_t.
+ */
+TEST(Counter, ValueIsOfTypeUintFast32)
 {
-    // Check initial and incremented values
-    EXPECT_EQ(val1_0, 0);
-    EXPECT_EQ(val1_1, 1);
-    EXPECT_EQ(val1_2, 2);
+    STATIC_EXPECT_TRUE((::std::same_as<::std::remove_cvref_t<decltype(SCL_COUNTER_VALUE(Apples))>,
+        ::std::uint_fast32_t>));
 }
 
-TEST(CompileTimeCounter, CountersAreIndependent)
+/**
+ * @test Verify that a counter reads 0 before the first advance and one more after each of them.
+ */
+TEST(Counter, ReadsZeroThenOneMoreAfterEachAdvance)
 {
-    // Check that the second counter was not affected by the first
-    EXPECT_EQ(val2_0, 0);
-    EXPECT_EQ(val2_1, 1);
-
-    // Re-check the first counter's final value to ensure it's independent
-    EXPECT_EQ(val1_2, 2);
+    STATIC_EXPECT_EQ(apples_before, 0U);
+    STATIC_EXPECT_EQ(apples_after_one, 1U);
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Apples), 2U);
 }
 
-TEST(CompileTimeCounter, HandlesTemplateTags)
-{
-    // Check values for the template tag with `int`
-    EXPECT_EQ(tpl_val_0, 0);
-    EXPECT_EQ(tpl_val_1, 1);
-}
-
-TEST(CompileTimeCounter, TemplateSpecializationsAreIndependent)
-{
-    // Check that the `float` specialization is a separate counter
-    EXPECT_EQ(tpl_val_float_0, 0);
-
-    // Re-check the `int` specialization's final value
-    EXPECT_EQ(tpl_val_1, 1);
-}
+/**
+ * @test Verify that advancing the counter of one tag leaves the counter of another tag alone.
+ */
+TEST(Counter, CountersOfTwoTagsAreApart) { STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pears), 1U); }

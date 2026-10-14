@@ -1,75 +1,59 @@
 #include <gtest_utils.h>
 
-#include <scl/utility/preprocessor.h>
+#include <scl/utility/preprocessor/forward.h>
 
-#include <string>
-#include <utility>
-#include <vector>
+#include <string_view>
+#include <type_traits>
 
-// Local helper macros used in tests
-#define CALL(fn, ...) fn(__VA_ARGS__)
-#define MAKE_PAIR(a, b) a, b
-#define FORWARD_TO_EMPLACE(obj, ...) obj.emplace_back(__VA_ARGS__)
-#define ID(x) x
+#define SCL_TEST_ONE_ARGUMENT(argument) argument
+#define SCL_TEST_STRINGIZE(argument) #argument
+#define SCL_TEST_PASTE(argument) SCL_TEST_PASTED_##argument
+#define SCL_TEST_PASTED_SCL_FORWARD(...) true
 
 namespace
 {
-    int add(int a, int b) { return a + b; }
-
-    template <typename... Ts>
+    template <typename... Types>
     struct type_list
     {};
+
+    constexpr int add(int left, int right) noexcept { return left + right; }
 } // namespace
 
-TEST(ExpandMacros, ForwardsFunctionArgs)
+/**
+ * @test Verify that the macro expands to its arguments with no parentheses around them.
+ */
+TEST(Forward, ExpandsToItsArguments)
 {
-    // SCL_FORWARD should forward the two arguments unchanged
-    int result = CALL(add, SCL_FORWARD(1, 2));
-    EXPECT_EQ(result, 3);
+    STATIC_EXPECT_TRUE((::std::is_same_v<type_list<SCL_FORWARD(int, long)>, type_list<int, long>>));
 }
 
-TEST(ExpandMacros, ExpandsTemplateParameterList)
+/**
+ * @test Verify that the macro written as an argument of another macro stays one argument and the
+ *       parameter receives the whole list.
+ */
+TEST(Forward, StaysOneArgumentOfAnotherMacro)
 {
-// SCL_FORWARD should expand a macro producing a comma-separated type list
-#define BASIC_TYPES int, long, double
-    using TL = type_list<SCL_FORWARD(BASIC_TYPES)>;
-    using Expected = type_list<int, long, double>;
-    EXPECT_TRUE((::std::is_same_v<TL, Expected>));
-#undef BASIC_TYPES
+    STATIC_EXPECT_EQ(add(SCL_TEST_ONE_ARGUMENT(SCL_FORWARD(1, 2))), 3);
 }
 
-TEST(ExpandMacros, ChainingMacrosToMakeStdPairType)
+/**
+ * @test Verify that a parameter under # receives the argument unexpanded.
+ */
+TEST(Forward, ParameterUnderStringizingReceivesItUnexpanded)
 {
-    using PairT = ::std::pair<SCL_FORWARD(MAKE_PAIR(int, double))>;
-    EXPECT_TRUE((::std::is_same_v<PairT, ::std::pair<int, double>>));
-
-    PairT p{1, 2.0};
-    EXPECT_EQ(p.first, 1);
-    EXPECT_DOUBLE_EQ(p.second, 2.0);
+    STATIC_EXPECT_EQ(::std::string_view{SCL_TEST_STRINGIZE(SCL_FORWARD(1, 2))},
+        ::std::string_view{"SCL_FORWARD(1, 2)"});
 }
 
-TEST(ExpandMacros, ForwardingArgumentsToEmplaceBack)
+/**
+ * @test Verify that a parameter under ## receives the argument unexpanded.
+ */
+TEST(Forward, ParameterUnderPastingReceivesItUnexpanded)
 {
-    ::std::vector<::std::pair<int, ::std::string>> v;
-    FORWARD_TO_EMPLACE(v, SCL_FORWARD(42, "answer"));
-    ASSERT_EQ(v.size(), 1u);
-    EXPECT_EQ(v[0].first, 42);
-    EXPECT_EQ(v[0].second, "answer");
+    STATIC_EXPECT_TRUE(SCL_TEST_PASTE(SCL_FORWARD(1, 2)));
 }
 
-TEST(ExpandMacros, ForcesExpansionThroughIdentityMacro)
-{
-    // Using ID to ensure tokens produced by MAKE_PAIR are forwarded as two separate arguments
-    auto sum = [](int a, int b) { return a + b; };
-    int s = sum(ID(SCL_FORWARD(MAKE_PAIR(7, 9))));
-    EXPECT_EQ(s, 16);
-
-    using PairT2 = ::std::pair<ID(SCL_FORWARD(MAKE_PAIR(float, char)))>;
-    EXPECT_TRUE((::std::is_same_v<PairT2, ::std::pair<float, char>>));
-}
-
-// Cleanup local helper macros to avoid leaking into other compilation units
-#undef CALL
-#undef MAKE_PAIR
-#undef FORWARD_TO_EMPLACE
-#undef ID
+#undef SCL_TEST_PASTED_SCL_FORWARD
+#undef SCL_TEST_PASTE
+#undef SCL_TEST_STRINGIZE
+#undef SCL_TEST_ONE_ARGUMENT
