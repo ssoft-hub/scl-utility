@@ -115,8 +115,7 @@ namespace scl::preprocessor::detail
                                                                                                                         SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 29,         \
                                                                                                                             SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 30,     \
                                                                                                                                 SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 31, \
-                                                                                                                                    0))))))))))))))))))))))))))))))))                         \
-            .value)
+                                                                                                                                    0))))))))))))))))))))))))))))))))())
 
 /**
  * @def SCL_COUNTER_NEXT(...)

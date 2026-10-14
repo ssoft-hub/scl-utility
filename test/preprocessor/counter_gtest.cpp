@@ -4,7 +4,6 @@
 
 #include <concepts>
 #include <cstdint>
-#include <type_traits>
 
 struct Apples
 {};
@@ -26,8 +25,7 @@ SCL_COUNTER_NEXT(Pears)
  */
 TEST(Counter, ValueIsOfTypeUintFast32)
 {
-    STATIC_EXPECT_TRUE((::std::same_as<::std::remove_cvref_t<decltype(SCL_COUNTER_VALUE(Apples))>,
-        ::std::uint_fast32_t>));
+    STATIC_EXPECT_TRUE((::std::same_as<decltype(SCL_COUNTER_VALUE(Apples)), ::std::uint_fast32_t>));
 }
 
 /**
