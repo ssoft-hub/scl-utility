@@ -19,17 +19,21 @@ the macro `SCL_COUNTER_NEXT(Tag)` adds one to that counter for the rest of the t
   without `const` and a pointer to the element.
 - **Spelling of the tag:** the tag is the whole argument list of the macro, so a name that holds
   commas, such as `std::pair<int, char>`, is written as is.
+- **Full name of the tag:** writing the names of the tag in full, starting with the global
+  namespace, such as `::std::pair<::fruit::apple, int>`, is recommended. Otherwise, where a name
+  of the tag conflicts with a name declared in another scope, the program fails to compile, or
+  the counter of another tag is read and advanced with no diagnostic.
 - **Value:** `SCL_COUNTER_VALUE(Tag)` is a constant expression of type `std::uint_fast32_t`. It
   reads `0` before the first `SCL_COUNTER_NEXT(Tag)` of the translation unit and one more after
   each of them.
-- **Advance:** `SCL_COUNTER_NEXT(Tag)` expands to a declaration rather than a statement, so it
-  stands at namespace or class scope, not in a function body.
+- **Inside a template:** `SCL_COUNTER_VALUE(Tag)` in a template reads the count at the point
+  where it is written, not where the template is instantiated, whatever the tag, one that depends
+  on a parameter of the template included.
+- **Advance:** `SCL_COUNTER_NEXT(Tag)` stands at the global namespace scope only: not in
+  a function body, a class or a namespace of the caller.
 - **Translation unit:** the count is kept in each translation unit apart. An inline function or
   a template that reads a counter in a header can read different values in different units, which
   breaks the one-definition rule.
-- **Mechanism:** `SCL_COUNTER_NEXT` declares an overload of a helper function, and
-  `SCL_COUNTER_VALUE` calls that function by its qualified name and assembles the count by
-  overload resolution over the overloads declared above the call.
 
 ## Examples
 

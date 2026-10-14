@@ -9,11 +9,6 @@
  * @file
  * @brief Compile-time counters, one per tag type.
  * @ingroup scl_utility_preprocessor
- * @details
- * @ref SCL_COUNTER_NEXT declares an overload of a helper function that encodes the next
- * count, and @ref SCL_COUNTER_VALUE calls that function by its qualified name, so overload
- * resolution over the overloads declared above the call assembles the count, and the count grows
- * through the translation unit.
  */
 
 namespace scl::preprocessor::detail
@@ -72,11 +67,15 @@ namespace scl::preprocessor::detail
  * @ingroup scl_utility_preprocessor
  * @details
  * Reads `0` before the first @ref SCL_COUNTER_NEXT of the tag in the translation unit, and one
- * more after each of them. The tag is written as is, commas included, such as
- * `std::pair<int, char>`. Each type is the tag of a counter of its own, and two specializations
- * of one class template are two tags. A reference, a `const` type and an array are tags apart
- * from, respectively, the type referred to, the type without `const` and a pointer
- * to the element.
+ * more after each of them. In a template it reads the count at the point where it is written,
+ * not where the template is instantiated, whatever the tag, one that depends on a parameter of
+ * the template included. The tag is written as is, commas included, such as
+ * `std::pair<int, char>`. Writing the names of the tag in full, starting with `::`, is
+ * recommended. Otherwise, where a name of the tag conflicts with a name declared in another
+ * scope, the program fails to compile, or the counter of another tag is read and advanced with
+ * no diagnostic. Each type is the tag of a counter of its own, and two specializations of one
+ * class template are two tags. A reference, a `const` type and an array are tags apart from,
+ * respectively, the type referred to, the type without `const` and a pointer to the element.
  *
  * @param ... The type whose counter is read.
  * @return A constant expression of type `std::uint_fast32_t`.
@@ -125,8 +124,9 @@ namespace scl::preprocessor::detail
  * @ingroup scl_utility_preprocessor
  * @details
  * Expands to a declaration, so every later @ref SCL_COUNTER_VALUE of the tag reads one more
- * than before. The tag is written as is, commas included. Being a declaration rather than
- * a statement, it stands at namespace or class scope, not in a function body.
+ * than before. The macro stands at the global namespace scope only. The tag is written as is,
+ * commas included, and writing its names in full, starting with `::`, is recommended, as for
+ * @ref SCL_COUNTER_VALUE.
  *
  * @param ... The type whose counter advances.
  *

@@ -98,7 +98,8 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
 
 ## Requirements
 
-- C++20 compiler (MSVC 19.30+, GCC 13+, Clang 16+)
+- C++20 compiler (MSVC 19.30+, GCC 13+, Clang 16+); MSVC with two-phase name lookup, that is with
+  `/permissive-` (the default from C++20) and without `/Zc:twoPhase-`
 - CMake 3.23+, and only to build the tests, the examples, or an installed package —
   using the headers needs no build step
 
