@@ -2,11 +2,8 @@
 
 /**
  * @file
- * @brief Thread support detection (C++20).
+ * @brief Whether the standard library supports threads.
  * @ingroup scl_utility_preprocessor
- * @details
- * - ::SCL_HAS_THREADS:
- *     `1` when the standard library supports threads, `0` otherwise.
  */
 
 // The configuration macros of the standard library come with any of its headers.
@@ -25,14 +22,14 @@
 
 /**
  * @def SCL_HAS_THREADS
- * @ingroup scl_utility_preprocessor
  * @brief Whether the standard library supports threads.
+ * @ingroup scl_utility_preprocessor
  *
  * Expands to `1` where the standard library declares `std::mutex` and its `std::thread` can start
- * a thread, and `0` where it is built without threads, as the library of `arm-none-eabi` is. It is
- * derived from the configuration of the library: `_GLIBCXX_HAS_GTHREADS` (libstdc++),
- * `_LIBCPP_HAS_NO_THREADS` or `_LIBCPP_HAS_THREADS` (libc++); every other library counts as
- * supporting threads. The value of the standard macro `__STDCPP_THREADS__` follows the target
+ * a thread, and `0` where it is built without threads, such as the library of the `arm-none-eabi`
+ * target. It is derived from the configuration of the library: `_GLIBCXX_HAS_GTHREADS`
+ * (libstdc++), `_LIBCPP_HAS_NO_THREADS` or `_LIBCPP_HAS_THREADS` (libc++); every other library
+ * counts as supporting threads. The value of the standard macro `__STDCPP_THREADS__` follows the target
  * rather than the library, and Clang defines it for `arm-none-eabi` as well, which is why this one
  * exists.
  *

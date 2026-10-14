@@ -1,9 +1,9 @@
 # Preprocessor
 
-The preprocessor group holds macros that expand to `1` or `0` as the translation unit is compiled
-with RTTI and with exceptions or not and as the standard library supports threads or not,
-a macro that passes a comma-separated list through one parameter of another macro, and two macros
-that read and advance a counter at compile time.
+The preprocessor group holds three macros that expand to `1` or `0`: whether the translation unit
+is compiled with RTTI, whether it is compiled with exceptions, and whether the standard library
+supports threads. It also holds a macro that passes a comma-separated list through one parameter
+of another macro, and two macros that read and advance a counter at compile time.
 
 - Header: `#include <scl/utility/preprocessor.h>`
 
@@ -33,7 +33,7 @@ macros take the values:
 | `/GR-` | MSVC, clang-cl | `0` | `0` |
 
 The macros [`SCL_FORWARD`](forward.md), [`SCL_COUNTER_VALUE` and `SCL_COUNTER_NEXT`](counter.md)
-behave the same under every option.
+behave the same under every option of the table.
 
 ## Documentation of the group
 

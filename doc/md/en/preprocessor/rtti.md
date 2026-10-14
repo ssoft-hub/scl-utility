@@ -18,7 +18,7 @@ The macro `SCL_HAS_RTTI` expands to `1` where the translation unit is compiled w
   it (Clang, clang-cl, GCC 14 and later), and otherwise `_CPPRTTI` (MSVC) or `__GXX_RTTI`
   (GCC 13). The language defines no feature-test macro for RTTI.
 - **Not a switch:** the value of the macro follows the command line of the compiler, and RTTI is
-  not turned on or off by defining the macro by hand. The options that turn it to `0` are
+  not turned on or off by defining the macro by hand. The options that set it to `0` are
   listed on the [group page](index.md#compiler-options).
 
 ## Examples
