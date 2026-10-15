@@ -83,8 +83,6 @@ static_assert(scl::enum_short_name<Color{42}>().empty());
 
 ## Смотрите также
 
-- [`scl::enum_string(value)`](../runtime/enum_string.md), значение переменной перечисляемого типа,
-  записанное во время выполнения
 - [`example/meta/enum_name/meta_enum_name_example.cpp`](../../../../example/meta/enum_name/meta_enum_name_example.cpp)
 
 ---

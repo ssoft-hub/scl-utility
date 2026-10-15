@@ -15,14 +15,6 @@
 | `<scl/utility/meta/type.h>` | [`type_name<T>()`](type_name.md) | `scl::type_name`, `scl::type_short_name` |
 | `<scl/utility/meta/type_key.h>` | [`type_key`](type_key.md) | `scl::type_key`, `scl::type_key_of` |
 
-## Во время выполнения
-
-Шаблоны функций группы [runtime](../runtime/index.md) возвращают имена во время выполнения
-программы. Шаблон функции [`scl::type_name(obj)`](../runtime/type_name.md) возвращает имя класса,
-экземпляром которого был создан объект полиморфного класса, а шаблон функции
-[`scl::enum_string(value)`](../runtime/enum_string.md) записывает значение, которое хранит
-переменная перечисляемого типа.
-
 ## Документация группы
 
 ### Шаблоны функций

@@ -104,7 +104,6 @@ static_assert(scl::type_short_name<std::vector<app::Item>>() == "vector");
 
 ## See also
 
-- [`scl::type_name(obj)`](../runtime/type_name.md), the name of the type of an object at run time
 - [`scl::type_key_of<T>()`](type_key.md), the identity of a type
 - [`example/meta/type_name/meta_type_name_example.cpp`](../../../../example/meta/type_name/meta_type_name_example.cpp)
 
