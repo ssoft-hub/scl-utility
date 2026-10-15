@@ -28,35 +28,21 @@
  * @ingroup scl_utility_preprocessor
  * @brief Whether the standard library supports threads.
  *
- * Expands to `1` where the standard library declares `std::mutex` and its `std::thread` can start a
- * thread, and `0` where it is built without threads, as the library of `arm-none-eabi` is. It is
+ * Expands to `1` where the standard library declares `std::mutex` and its `std::thread` can start
+ * a thread, and `0` where it is built without threads, as the library of `arm-none-eabi` is. It is
  * derived from the configuration of the library: `_GLIBCXX_HAS_GTHREADS` (libstdc++),
  * `_LIBCPP_HAS_NO_THREADS` or `_LIBCPP_HAS_THREADS` (libc++); every other library counts as
- * supporting threads. The standard macro `__STDCPP_THREADS__` reports the target rather than the
- * library, and Clang defines it for `arm-none-eabi` as well, which is why this one exists.
+ * supporting threads. The value of the standard macro `__STDCPP_THREADS__` follows the target
+ * rather than the library, and Clang defines it for `arm-none-eabi` as well, which is why this one
+ * exists.
  *
- * Always defined, so interrogate it with `#if`: a misspelled name is then caught by `-Wundef`
- * instead of quietly evaluating to false, as it would under `#ifdef`.
+ * Always defined, so a caller tests it with `#if`: a misspelled name then reads as `0` and draws
+ * a `-Wundef` warning, while under `#ifdef` it reads as false with no warning.
  *
- * The cache of demangled names behind ::scl::type_name(obj) takes a lock only where it is `1`, so
- * code that has to build with a single-thread library branches on the same macro:
- * @code
- * #include <scl/utility/preprocessor/threads.h>
+ * Code built both for a library with threads and for one without them branches on the macro:
  *
- * #if SCL_HAS_THREADS
- * #include <mutex>
- * #endif
+ * @snippet preprocessor/threads/preprocessor_threads_example.cpp next_ticket
  *
- * int next_ticket()
- * {
- *     static int ticket = 0;
- * #if SCL_HAS_THREADS
- *     static std::mutex mutex;
- *     std::lock_guard const lock{mutex};
- * #endif
- *     return ++ticket;
- * }
- * @endcode
- *
- * @see SCL_HAS_RTTI, SCL_HAS_EXCEPTIONS - report on the translation unit rather than the library
+ * @see SCL_HAS_RTTI, SCL_HAS_EXCEPTIONS - their values follow the translation unit rather than
+ *      the library
  */

@@ -1,72 +1,58 @@
-# Exception availability
+# `SCL_HAS_EXCEPTIONS`
 
-Reports whether the translation unit is compiled with exceptions, and gates the ScL
-declarations that answer a failed request by throwing.
-
-- Header: `#include <scl/utility/preprocessor/exceptions.h>`
-
-Contents:
-- [`SCL_HAS_EXCEPTIONS`](#scl_has_exceptions)
-
----
-
-## `SCL_HAS_EXCEPTIONS`
-
-Expands to `1` when the translation unit is compiled with exceptions, `0` otherwise.
+The macro `SCL_HAS_EXCEPTIONS` expands to `1` where the translation unit is compiled with
+exceptions and to `0` where it is compiled without them.
 
 - Header: `#include <scl/utility/preprocessor/exceptions.h>`
-- Declaration: `#define SCL_HAS_EXCEPTIONS /* 1 or 0 */`
-
-### Semantics
-
-- **Always defined:** interrogate it with `#if`, never `#ifdef`. A misspelled name is then
-  reported by `-Wundef` instead of quietly reading as false.
-- **Derived per compiler:** `_CPPUNWIND` (MSVC), `__EXCEPTIONS` (GCC and Clang) or
-  `__has_feature(cxx_exceptions)` (Clang). The language defines no feature-test macro for
-  exceptions, which is why this macro exists.
-- **A report, not a switch:** defining it by hand does not turn exceptions on or off. It
-  states what the compiler was told on the command line.
-- **What it gates in ScL:** the four `scl::any_cast` overloads that return by value or by
-  reference are declared only where it is `1` — see
-  [`any_view`](../any/any_view.md) and [`any_arg`](../any/any_arg.md). The pointer-returning
-  overloads stay, and answer a failed request with `nullptr`.
-- **`scl::flags`:** an enumerator ordinal `>= bit_count` is a precondition violation rather
-  than a query that answered no, so there is nothing to return in its place. Where the
-  macro is `0` the offending call ends the program through `std::abort()` instead of
-  throwing `std::out_of_range`. It is ill-formed in constant evaluation either way.
-
-### Examples
 
 ```cpp
-#include <scl/utility/any.h>
-#include <scl/utility/preprocessor/exceptions.h>
+#define SCL_HAS_EXCEPTIONS /* 1 or 0 */
+```
 
-std::string const & text(scl::any_view const & view)
+## Semantics
+
+- **Always defined:** a caller tests the macro with `#if` rather than `#ifdef`. Under `#if`
+  a misspelled name reads as `0` and draws a `-Wundef` warning; under `#ifdef` it reads as false
+  with no warning.
+- **Source:** the value of the macro follows `_CPPUNWIND` (MSVC, clang-cl and Clang for
+  the MSVC target), `__EXCEPTIONS` (GCC and Clang for a GNU target) or
+  `__has_feature(cxx_exceptions)` (Clang). The language defines no feature-test macro for
+  exceptions.
+- **Not a switch:** the value of the macro follows the command line of the compiler, and
+  exceptions are not turned on or off by defining the macro by hand. The options that turn it to
+  `0` are listed on the [group page](index.md#compiler-options).
+
+## Examples
+
+A function that reads text in both builds:
+
+<!-- snippet: example/preprocessor/exceptions/preprocessor_exceptions_example.cpp text_of -->
+```cpp
+std::string text_of(scl::any_view const & view)
 {
 #if SCL_HAS_EXCEPTIONS
-    return scl::any_cast<std::string const &>(view);
+    try
+    {
+        return scl::any_cast<std::string>(view);
+    }
+    catch (scl::bad_any_cast const &)
+    {
+        return "<not a string>";
+    }
 #else
-    return *scl::any_cast<std::string>(&view);
+    auto const * text = scl::any_cast<std::string>(&view);
+    return text != nullptr ? *text : "<not a string>";
 #endif
 }
 ```
 
-Code that has to compile in both configurations reaches for the pointer form alone, which
-is declared in both:
+## See also
 
-```cpp
-#include <scl/utility/any.h>
+- [`SCL_HAS_RTTI`](rtti.md), the same macro for RTTI; the two macros are independent of each
+  other
+- [`example/preprocessor/exceptions/preprocessor_exceptions_example.cpp`](../../../../example/preprocessor/exceptions/preprocessor_exceptions_example.cpp)
 
-bool is_empty_string(scl::any_view const & view)
-{
-    auto const * text = scl::any_cast<std::string>(&view);
-    return (text != nullptr) && text->empty();
-}
-```
+---
 
-## Notes
-
-- `scl::bad_any_cast` is declared in both configurations. Only the overloads that throw it
-  go away, so a `catch` written against the type still compiles wherever it is reachable.
-- [`SCL_HAS_RTTI`](rtti.md) is the same treatment for RTTI, and the two are independent:
-  each configuration of one is available under either configuration of the other.
+Previous: [`SCL_FORWARD`](forward.md) | Next: [`SCL_HAS_RTTI`](rtti.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

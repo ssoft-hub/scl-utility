@@ -1,53 +1,50 @@
-# Доступность RTTI
+# `SCL_HAS_RTTI`
 
-Сообщает, скомпилирована ли единица трансляции с RTTI, и управляет объявлением тех
-сущностей ScL, которым нужен `typeid`.
+Макрос `SCL_HAS_RTTI` раскрывается в `1`, если единица трансляции скомпилирована с RTTI, и в `0`,
+если без него.
 
 - Заголовок: `#include <scl/utility/preprocessor/rtti.h>`
 
-Содержание:
-- [`SCL_HAS_RTTI`](#scl_has_rtti)
+```cpp
+#define SCL_HAS_RTTI /* 1 or 0 */
+```
+
+## Семантика
+
+- **Определён всегда:** вызывающий код проверяет макрос директивой `#if`, а не `#ifdef`. При `#if`
+  имя с опечаткой читается как `0`, и компилятор с ключом `-Wundef` выдаёт предупреждение;
+  при `#ifdef` такое имя молча читается как ложное.
+- **Источник:** значение макроса определяется по `_CPPRTTI` (MSVC, clang-cl и Clang для цели MSVC),
+  `__GXX_RTTI` (GCC и Clang для цели GNU) или `__has_feature(cxx_rtti)` (Clang). Язык
+  не определяет для RTTI макроса проверки возможностей.
+- **Не переключатель:** значение макроса задаётся ключами командной строки компилятора, и RTTI
+  не включается и не выключается определением макроса вручную. Ключи, при которых он равен `0`,
+  перечислены на [странице группы](index.md#ключи-компилятора).
+
+## Примеры
+
+Функция, которая возвращает имя типа объекта в обеих сборках:
+
+<!-- snippet: example/preprocessor/rtti/preprocessor_rtti_example.cpp name_of -->
+```cpp
+template <typename Type>
+std::string name_of([[maybe_unused]] Type const & object)
+{
+#if SCL_HAS_RTTI
+    return scl::type_short_name(object); // the dynamic type of a polymorphic object
+#else
+    return std::string{scl::type_short_name<Type>()}; // the static type of the argument
+#endif
+}
+```
+
+## Смотрите также
+
+- [`SCL_HAS_EXCEPTIONS`](exceptions.md), такой же макрос для исключений; два макроса
+  не зависят друг от друга
+- [`example/preprocessor/rtti/preprocessor_rtti_example.cpp`](../../../../example/preprocessor/rtti/preprocessor_rtti_example.cpp)
 
 ---
 
-## `SCL_HAS_RTTI`
-
-Раскрывается в `1`, если единица трансляции скомпилирована с RTTI, иначе в `0`.
-
-- Заголовок: `#include <scl/utility/preprocessor/rtti.h>`
-- Объявление: `#define SCL_HAS_RTTI /* 1 или 0 */`
-
-### Семантика
-
-- **Определён всегда:** проверять через `#if`, а не через `#ifdef`. Тогда опечатку в имени
-  сообщит `-Wundef`, а не молчаливое вычисление в ложь.
-- **Выводится по компилятору:** `_CPPRTTI` (MSVC), `__GXX_RTTI` (GCC и Clang в режиме GNU)
-  либо `__has_feature(cxx_rtti)` (Clang). Стандартного макроса проверки этой возможности
-  язык не определяет — ради этого макрос и существует.
-- **Это отчёт, а не переключатель:** определение его вручную не включает и не выключает
-  RTTI. Он сообщает то, что компилятору передали в командной строке.
-- **Что он закрывает в ScL:** [`scl::type_name`](../runtime/type_name.md) и остальное
-  содержимое `<scl/utility/runtime/type.h>`, а также хранение через `std::any` в
-  [`any_view`](../any/any_view.md) и [`any_arg`](../any/any_arg.md). Прямое хранение —
-  представление типизированного lvalue — обходится без `typeid` и остаётся.
-- **Ключ идентичности без RTTI:** [`scl::type_key`](../meta/type_key.md) отвечает на тот же
-  вопрос, что и `typeid`, в обеих конфигурациях, поэтому коду, которому нужно лишь
-  сравнивать типы, ветвиться не приходится.
-
-### Примеры
-
-```cpp
-#include <scl/utility/preprocessor/rtti.h>
-
-#if SCL_HAS_RTTI
-#include <scl/utility/runtime/type.h>
-std::string name_of(auto const & object) { return scl::type_name(object); }
-#else
-std::string name_of(auto const &) { return "<unknown>"; }
-#endif
-```
-
-## Примечания
-
-- [`SCL_HAS_EXCEPTIONS`](exceptions.md) — то же самое для исключений, и эти два макроса
-  независимы: любая конфигурация одного доступна при любой конфигурации другого.
+Назад: [`SCL_HAS_EXCEPTIONS`](exceptions.md) | Далее: [`SCL_HAS_THREADS`](threads.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

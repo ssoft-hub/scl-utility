@@ -8,11 +8,12 @@
 
 /**
  * @defgroup scl_utility_preprocessor ScL Preprocessor Utilities (C++)
- * @brief Helper macros for the C/C++ preprocessor.
+ * @brief Macros of the build, a list passed through a macro and counters of compile time.
  * @details
- * - Utilities for macro expansion and safe forwarding of tokens.
- * - Building blocks for more complex preprocessor metaprogramming patterns.
- * - Designed to be portable and minimal.
+ * - @ref SCL_HAS_RTTI and @ref SCL_HAS_EXCEPTIONS expand to `1` where the translation unit has RTTI
+ *   and exceptions, and @ref SCL_HAS_THREADS where the standard library supports threads.
+ * - @ref SCL_FORWARD passes a comma-separated list through one parameter of another macro.
+ * - @ref SCL_COUNTER_VALUE and @ref SCL_COUNTER_NEXT read and advance a counter per tag type.
  * @{
  */
 

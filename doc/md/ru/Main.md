@@ -120,15 +120,14 @@ target_link_libraries(your_target PRIVATE scl::utility)
 |-----------|-----------|----------|
 | [flags](flags/flags.md) | `<scl/utility/flags.h>` | Множество значений перечисления: алгебра множеств, предикаты и двунаправленный диапазон по хранимым значениям |
 
-### Preprocessor — макроутилиты
+### Preprocessor - макросы сборки и этапа компиляции
 
-| Компонент | Заголовок | Описание |
-|-----------|-----------|----------|
-| [SCL_FORWARD](preprocessor/forward.md) | `<scl/utility/preprocessor/forward.h>` | Макрос-идентификатор для проброса токенов |
-| [SCL_COUNTER](preprocessor/counter.md) | `<scl/utility/preprocessor/counter.h>` | Счётчик времени компиляции через ADL |
-| [SCL_HAS_RTTI](preprocessor/rtti.md) | `<scl/utility/preprocessor/rtti.h>` | Есть ли в единице трансляции RTTI и что от этого зависит |
-| [SCL_HAS_EXCEPTIONS](preprocessor/exceptions.md) | `<scl/utility/preprocessor/exceptions.h>` | Есть ли в единице трансляции исключения и что от этого зависит |
-| [SCL_HAS_THREADS](preprocessor/threads.md) | `<scl/utility/preprocessor/threads.h>` | Поддерживает ли стандартная библиотека потоки и что от этого зависит |
+В группу входят макросы, которые раскрываются в `1` или `0` в зависимости от того,
+есть ли в единице трансляции RTTI и исключения и поддерживает ли стандартная библиотека потоки;
+макрос, который передаёт разделённый запятыми список через один параметр другого макроса;
+и счётчики, по одному на каждый тип-тег, которые читаются и увеличиваются на этапе компиляции.
+
+[К группе](preprocessor/index.md)
 
 ### Type traits — расширенные свойства типов
 

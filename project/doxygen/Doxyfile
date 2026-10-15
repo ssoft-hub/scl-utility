@@ -1144,10 +1144,10 @@ EXCLUDE_PATTERNS       = */detail/*
 # ANamespace::AClass, ANamespace::*Test
 
 # Internal entities that sit in public scope, so nothing else keeps them out: the macro
-# spelling of the detail namespace, the counter's own helper, and the two anchors whose only
-# purpose is to give __PRETTY_FUNCTION__ a known shape. Each also carries @internal.
+# spelling of the detail namespace, and the two anchors whose only purpose is to give
+# __PRETTY_FUNCTION__ a known shape. Each also carries @internal.
 
-EXCLUDE_SYMBOLS        = *::detail *::detail::* SCL_DETAIL_* SCL_COUNTER_CRUMB \
+EXCLUDE_SYMBOLS        = *::detail *::detail::* SCL_DETAIL_* \
                          lah4l4tjla6_f we5r256sg_e
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
@@ -2541,7 +2541,12 @@ INCLUDE_FILE_PATTERNS  =
 # recursively expanded use the := operator instead of the = operator.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-PREDEFINED             = SCL_DOXYGEN
+# The preprocessor of Doxygen does not finish expanding the counter macros in a program that
+# uses them.
+
+PREDEFINED             = SCL_DOXYGEN \
+                         "SCL_COUNTER_VALUE(Tag)=0" \
+                         "SCL_COUNTER_NEXT(Tag)="
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
