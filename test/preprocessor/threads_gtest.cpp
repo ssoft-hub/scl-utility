@@ -1,6 +1,6 @@
 #include <gtest_utils.h>
 
-#include <scl/utility/preprocessor.h>
+#include <scl/utility/preprocessor/threads.h>
 
 #ifndef SCL_HAS_THREADS
 #error "SCL_HAS_THREADS must always be defined, so that #if catches a misspelling"
@@ -8,6 +8,9 @@
 
 // The hosted library of MSVC and libstdc++ on glibc always supports threads.
 #if defined(_MSVC_STL_VERSION) || (defined(__GLIBCXX__) && defined(__GLIBC__))
+/**
+ * @test Verify that a hosted library known to support threads reports them.
+ */
 TEST(PreprocessorThreads, AHostedLibraryReportsThreads) { STATIC_EXPECT_EQ(SCL_HAS_THREADS, 1); }
 #endif
 
@@ -15,6 +18,9 @@ TEST(PreprocessorThreads, AHostedLibraryReportsThreads) { STATIC_EXPECT_EQ(SCL_H
 #include <mutex>
 #include <thread>
 
+/**
+ * @test Verify that a library reporting threads starts a thread that takes a lock.
+ */
 TEST(PreprocessorThreads, AThreadedLibraryRunsAThreadUnderALock)
 {
     ::std::mutex mutex;

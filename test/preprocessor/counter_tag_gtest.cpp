@@ -29,6 +29,10 @@ template <typename First, typename Second>
 struct Pair
 {};
 
+template <typename Type>
+struct Box
+{};
+
 namespace scl
 {
     struct Probe
@@ -66,13 +70,12 @@ SCL_COUNTER_NEXT(Ints)
 SCL_COUNTER_NEXT(Function)
 SCL_COUNTER_NEXT(unsigned int)
 SCL_COUNTER_NEXT(Pair<int, char>)
-SCL_COUNTER_NEXT(Pair<char, int>)
+SCL_COUNTER_NEXT(Box<int>)
 SCL_COUNTER_NEXT(::detail::Id)
 SCL_COUNTER_NEXT(::counter)
 SCL_COUNTER_NEXT(::Pair<::detail::Id, int>)
 SCL_COUNTER_NEXT(::Probe)
 SCL_COUNTER_NEXT(Shadowed)
-SCL_COUNTER_NEXT(SCL_FORWARD(Pair<char, int>))
 
 /**
  * @test Verify that a class without a default constructor is a tag of its own counter.
@@ -135,22 +138,17 @@ TEST(CounterTag, FunctionType) { STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Function), 1
 TEST(CounterTag, TypeOfSeveralWords) { STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(unsigned int), 1U); }
 
 /**
- * @test Verify that a tag whose name holds a comma is written as is, apart from another
- *       specialization of the same template.
+ * @test Verify that a tag whose name holds a comma is written as is.
  */
-TEST(CounterTag, NameWithComma)
-{
-    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pair<int, char>), 1U);
-    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pair<int, long>), 0U);
-}
+TEST(CounterTag, NameWithComma) { STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pair<int, char>), 1U); }
 
 /**
- * @test Verify that a tag wrapped in SCL_FORWARD shares the counter of the same tag written as is.
+ * @test Verify that two specializations of one class template are two tags.
  */
-TEST(CounterTag, NameWrappedInForward)
+TEST(CounterTag, TwoSpecializationsAreTwoTags)
 {
-    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pair<char, int>), 2U);
-    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(SCL_FORWARD(Pair<char, int>)), 2U);
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Box<int>), 1U);
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Box<long>), 0U);
 }
 
 /**
@@ -262,4 +260,25 @@ constexpr auto count_after()
 TEST(CounterTag, ReadInsideTemplateDefinedAfterAdvance)
 {
     STATIC_EXPECT_EQ(count_after<::Ticket>(), 1U);
+}
+
+namespace scl
+{
+    struct Lamp
+    {};
+} // namespace scl
+
+struct Lamp
+{};
+
+SCL_COUNTER_NEXT(Lamp)
+
+/**
+ * @test Verify that a tag name written without :: and conflicting with a name of the namespace scl
+ *       advances the counter of that other tag with no diagnostic.
+ */
+TEST(CounterTag, ConflictingNameAdvancesAnotherTag)
+{
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(::scl::Lamp), 1U);
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(::Lamp), 0U);
 }
