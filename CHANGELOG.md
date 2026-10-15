@@ -39,6 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [hash] Took the range of every hash function as a forwarding reference, so `fnv1a<T>(lvalue)` breaks
 - [hash] Made `noexcept` of every hash function, hasher and `key` follow the range it reads
 - [meta] Broke `type_short_name<T>()` for a pointer, an array, a function or a member pointer
+- [preprocessor] Broke a `SCL_FORWARD` defined before its header: the header no longer yields to it
 - Marked the entry points of `hash`, `meta`, `forward_like` and `overload_cast` `[[nodiscard]]`
 
 ### Fixed
