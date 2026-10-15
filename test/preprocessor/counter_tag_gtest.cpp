@@ -25,6 +25,10 @@ using Ints = int[3];
 using IntPointer = int *;
 using Function = void(int);
 
+template <typename First, typename Second>
+struct Pair
+{};
+
 SCL_COUNTER_NEXT(WithoutDefaultConstructor)
 SCL_COUNTER_NEXT(Incomplete)
 SCL_COUNTER_NEXT(Abstract)
@@ -34,6 +38,9 @@ SCL_COUNTER_NEXT(PlainConst)
 SCL_COUNTER_NEXT(Ints)
 SCL_COUNTER_NEXT(Function)
 SCL_COUNTER_NEXT(unsigned int)
+SCL_COUNTER_NEXT(Pair<int, char>)
+SCL_COUNTER_NEXT(Pair<char, int>)
+SCL_COUNTER_NEXT(SCL_FORWARD(Pair<char, int>))
 
 /**
  * @test Verify that a class without a default constructor is a tag of its own counter.
@@ -94,3 +101,22 @@ TEST(CounterTag, FunctionType) { STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Function), 1
  * @test Verify that a type written in several words is a tag of its own counter.
  */
 TEST(CounterTag, TypeOfSeveralWords) { STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(unsigned int), 1U); }
+
+/**
+ * @test Verify that a tag whose name holds a comma is written as is, apart from another
+ *       specialization of the same template.
+ */
+TEST(CounterTag, NameWithComma)
+{
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pair<int, char>), 1U);
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pair<int, long>), 0U);
+}
+
+/**
+ * @test Verify that a tag wrapped in SCL_FORWARD shares the counter of the same tag written as is.
+ */
+TEST(CounterTag, NameWrappedInForward)
+{
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pair<char, int>), 2U);
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(SCL_FORWARD(Pair<char, int>)), 2U);
+}

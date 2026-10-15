@@ -43,7 +43,6 @@ DECLARE_ALIAS(phone_book, SCL_FORWARD(std::map<std::string, int>))
 
 ## See also
 
-- [`SCL_COUNTER_VALUE`](counter.md), which takes a tag through one parameter
 - [`example/preprocessor/forward/preprocessor_forward_example.cpp`](../../../../example/preprocessor/forward/preprocessor_forward_example.cpp)
 
 ---

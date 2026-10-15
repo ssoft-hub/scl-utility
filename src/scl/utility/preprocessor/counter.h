@@ -67,78 +67,80 @@ namespace scl::preprocessor::detail
         ::scl::preprocessor::detail::counter<rank>(), ::scl::preprocessor::detail::counter<acc>())
 
 /**
- * @def SCL_COUNTER_VALUE(Tag)
+ * @def SCL_COUNTER_VALUE(...)
  * @brief Reads the counter of a tag at the point of expansion.
  * @ingroup scl_utility_preprocessor
  * @details
- * Reads `0` before the first @ref SCL_COUNTER_NEXT of @p Tag in the translation unit, and one
- * more after each of them. Each type is the tag of a counter of its own, and two specializations
+ * Reads `0` before the first @ref SCL_COUNTER_NEXT of the tag in the translation unit, and one
+ * more after each of them. The tag is written as is, commas included, such as
+ * `std::pair<int, char>`. Each type is the tag of a counter of its own, and two specializations
  * of one class template are two tags. A reference, a `const` type and an array are tags apart
  * from, respectively, the type referred to, the type without `const` and a pointer
  * to the element.
  *
- * @param Tag The type whose counter is read.
+ * @param ... The type whose counter is read.
  * @return A constant expression of type `std::uint_fast32_t`.
  *
  * @snippet preprocessor/counter/preprocessor_counter_example.cpp count
  */
-#define SCL_COUNTER_VALUE(Tag)                                                                                                                                                        \
-    (SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 0,                                                                                                                             \
-        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 1,                                                                                                                          \
-            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 2,                                                                                                                      \
-                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 3,                                                                                                                  \
-                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 4,                                                                                                              \
-                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 5,                                                                                                          \
-                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 6,                                                                                                      \
-                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 7,                                                                                                  \
-                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 8,                                                                                              \
-                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 9,                                                                                          \
-                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 10,                                                                                     \
-                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 11,                                                                                 \
-                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 12,                                                                             \
-                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 13,                                                                         \
-                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 14,                                                                     \
-                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 15,                                                                 \
-                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 16,                                                             \
-                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 17,                                                         \
-                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 18,                                                     \
-                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 19,                                                 \
-                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 20,                                             \
-                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 21,                                         \
-                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 22,                                     \
-                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 23,                                 \
-                                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 24,                             \
-                                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 25,                         \
-                                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 26,                     \
-                                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 27,                 \
-                                                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 28,             \
-                                                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 29,         \
-                                                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 30,     \
-                                                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(Tag), 1ul << 31, \
-                                                                                                                                    0))))))))))))))))))))))))))))))))                 \
+#define SCL_COUNTER_VALUE(...)                                                                                                                                                                \
+    (SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 0,                                                                                                                             \
+        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 1,                                                                                                                          \
+            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 2,                                                                                                                      \
+                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 3,                                                                                                                  \
+                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 4,                                                                                                              \
+                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 5,                                                                                                          \
+                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 6,                                                                                                      \
+                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 7,                                                                                                  \
+                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 8,                                                                                              \
+                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 9,                                                                                          \
+                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 10,                                                                                     \
+                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 11,                                                                                 \
+                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 12,                                                                             \
+                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 13,                                                                         \
+                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 14,                                                                     \
+                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 15,                                                                 \
+                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 16,                                                             \
+                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 17,                                                         \
+                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 18,                                                     \
+                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 19,                                                 \
+                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 20,                                             \
+                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 21,                                         \
+                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 22,                                     \
+                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 23,                                 \
+                                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 24,                             \
+                                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 25,                         \
+                                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 26,                     \
+                                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 27,                 \
+                                                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 28,             \
+                                                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 29,         \
+                                                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 30,     \
+                                                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 31, \
+                                                                                                                                    0))))))))))))))))))))))))))))))))                         \
             .value)
 
 /**
- * @def SCL_COUNTER_NEXT(Tag)
+ * @def SCL_COUNTER_NEXT(...)
  * @brief Adds one to the counter of a tag for the rest of the translation unit.
  * @ingroup scl_utility_preprocessor
  * @details
- * Expands to a declaration, so every later @ref SCL_COUNTER_VALUE of @p Tag reads one more
- * than before. Being a declaration rather than a statement, it stands at namespace or class
- * scope, not in a function body.
+ * Expands to a declaration, so every later @ref SCL_COUNTER_VALUE of the tag reads one more
+ * than before. The tag is written as is, commas included. Being a declaration rather than
+ * a statement, it stands at namespace or class scope, not in a function body.
  *
- * @param Tag The type whose counter advances.
+ * @param ... The type whose counter advances.
  *
  * @snippet preprocessor/counter/preprocessor_counter_example.cpp template_tag
  */
-#define SCL_COUNTER_NEXT(Tag)                                                                                  \
-    namespace scl::preprocessor::detail                                                                        \
-    {                                                                                                          \
-        [[nodiscard]]                                                                                          \
-        constexpr counter<SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1> crumb(::std::type_identity<Tag> *,          \
-            counter<(SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1) & ~SCL_COUNTER_VALUE(SCL_FORWARD(Tag))>,         \
-            counter<(SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1) & SCL_COUNTER_VALUE(SCL_FORWARD(Tag))>) noexcept \
-        {                                                                                                      \
-            return {};                                                                                         \
-        }                                                                                                      \
+#define SCL_COUNTER_NEXT(...)                                                                        \
+    namespace scl::preprocessor::detail                                                              \
+    {                                                                                                \
+        [[nodiscard]]                                                                                \
+        constexpr counter<SCL_COUNTER_VALUE(__VA_ARGS__) + 1>                                        \
+        crumb(::std::type_identity<__VA_ARGS__> *,                                                   \
+            counter<(SCL_COUNTER_VALUE(__VA_ARGS__) + 1) & ~SCL_COUNTER_VALUE(__VA_ARGS__)>,         \
+            counter<(SCL_COUNTER_VALUE(__VA_ARGS__) + 1) & SCL_COUNTER_VALUE(__VA_ARGS__)>) noexcept \
+        {                                                                                            \
+            return {};                                                                               \
+        }                                                                                            \
     }
