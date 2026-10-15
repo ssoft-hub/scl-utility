@@ -29,6 +29,33 @@ template <typename First, typename Second>
 struct Pair
 {};
 
+namespace scl
+{
+    struct Probe
+    {};
+} // namespace scl
+
+struct Probe
+{};
+
+namespace detail
+{
+    struct Id
+    {};
+} // namespace detail
+
+struct counter
+{};
+
+struct Shadowed
+{};
+
+namespace caller
+{
+    struct Shadowed
+    {};
+} // namespace caller
+
 SCL_COUNTER_NEXT(WithoutDefaultConstructor)
 SCL_COUNTER_NEXT(Incomplete)
 SCL_COUNTER_NEXT(Abstract)
@@ -40,6 +67,11 @@ SCL_COUNTER_NEXT(Function)
 SCL_COUNTER_NEXT(unsigned int)
 SCL_COUNTER_NEXT(Pair<int, char>)
 SCL_COUNTER_NEXT(Pair<char, int>)
+SCL_COUNTER_NEXT(::detail::Id)
+SCL_COUNTER_NEXT(::counter)
+SCL_COUNTER_NEXT(::Pair<::detail::Id, int>)
+SCL_COUNTER_NEXT(::Probe)
+SCL_COUNTER_NEXT(Shadowed)
 SCL_COUNTER_NEXT(SCL_FORWARD(Pair<char, int>))
 
 /**
@@ -119,4 +151,115 @@ TEST(CounterTag, NameWrappedInForward)
 {
     STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(Pair<char, int>), 2U);
     STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(SCL_FORWARD(Pair<char, int>)), 2U);
+}
+
+/**
+ * @test Verify that a tag whose name the library declares as well counts when written from ::.
+ */
+TEST(CounterTag, NameOfLibraryWrittenFromGlobal)
+{
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(::detail::Id), 1U);
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(::counter), 1U);
+}
+
+/**
+ * @test Verify that a name of the library inside a template argument counts when written from ::.
+ */
+TEST(CounterTag, NameOfLibraryInTemplateArgument)
+{
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(::Pair<::detail::Id, int>), 1U);
+}
+
+/**
+ * @test Verify that a class named as a class of the namespace scl, written from ::, advances its
+ *       own counter.
+ */
+TEST(CounterTag, NameOfNamespaceSclWrittenFromGlobal)
+{
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(::Probe), 1U);
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(::scl::Probe), 0U);
+}
+
+namespace caller
+{
+    inline constexpr auto own_count = SCL_COUNTER_VALUE(Shadowed);
+    inline constexpr auto global_count = SCL_COUNTER_VALUE(::Shadowed);
+} // namespace caller
+
+/**
+ * @test Verify that a tag written from :: inside a namespace that declares the same name reads
+ *       the counter advanced at the global namespace scope.
+ */
+TEST(CounterTag, NameShadowedInNamespaceWrittenFromGlobal)
+{
+    STATIC_EXPECT_EQ(caller::global_count, 1U);
+    STATIC_EXPECT_EQ(caller::own_count, 0U);
+}
+
+struct Holder
+{
+    struct Shadowed
+    {};
+
+    static constexpr auto own_count = SCL_COUNTER_VALUE(Shadowed);
+    static constexpr auto global_count = SCL_COUNTER_VALUE(::Shadowed);
+};
+
+/**
+ * @test Verify that a tag written from :: inside a class that declares the same name reads
+ *       the counter advanced at the global namespace scope.
+ */
+TEST(CounterTag, NameShadowedInClassWrittenFromGlobal)
+{
+    STATIC_EXPECT_EQ(Holder::global_count, 1U);
+    STATIC_EXPECT_EQ(Holder::own_count, 0U);
+}
+
+struct Ticket
+{};
+
+template <typename Tag>
+constexpr auto count_of()
+{
+    return SCL_COUNTER_VALUE(Tag);
+}
+
+template <typename Unused>
+constexpr auto count_of_ticket()
+{
+    return SCL_COUNTER_VALUE(::Ticket);
+}
+
+template <typename Tag>
+struct Reader
+{
+    static auto count() { return SCL_COUNTER_VALUE(Tag); }
+};
+
+SCL_COUNTER_NEXT(::Ticket)
+
+/**
+ * @test Verify that a read inside a template answers the count at the definition of the template,
+ *       for a tag that depends on a parameter of the template and for one that does not.
+ */
+TEST(CounterTag, ReadInsideTemplateAnswersCountAtDefinition)
+{
+    STATIC_EXPECT_EQ(SCL_COUNTER_VALUE(::Ticket), 1U);
+    STATIC_EXPECT_EQ(count_of<::Ticket>(), 0U);
+    STATIC_EXPECT_EQ(count_of_ticket<int>(), 0U);
+    EXPECT_EQ(Reader<::Ticket>::count(), 0U);
+}
+
+template <typename Tag>
+constexpr auto count_after()
+{
+    return SCL_COUNTER_VALUE(Tag);
+}
+
+/**
+ * @test Verify that a template defined after an advance reads the advanced count.
+ */
+TEST(CounterTag, ReadInsideTemplateDefinedAfterAdvance)
+{
+    STATIC_EXPECT_EQ(count_after<::Ticket>(), 1U);
 }
