@@ -37,7 +37,8 @@ namespace scl::preprocessor::detail
      * unchanged, so the bit `Rank` stays clear. @ref SCL_COUNTER_VALUE reads the bits from
      * the highest down, starting with `Acc = 0`.
      *
-     * @tparam Tag  The type used to identify a specific counter.
+     * @tparam Tag  The type used to identify a specific counter, passed as a pointer
+     *              to `std::type_identity<Tag>` so that a type of any kind is a tag.
      * @tparam Rank The value of the bit being read, a power of two.
      * @tparam Acc  The bits of the count above `Rank`, read so far.
      * @return A `counter` holding `Acc`.
@@ -45,7 +46,7 @@ namespace scl::preprocessor::detail
     template <typename Tag, ::std::uint_fast32_t Rank, ::std::uint_fast32_t Acc>
     [[nodiscard]]
     constexpr counter<Acc>
-    crumb(Tag /*tag*/, counter<Rank> /*rank*/, counter<Acc> /*acc*/) noexcept // NOLINT(readability-named-parameter)
+    crumb(::std::type_identity<Tag> * /*tag*/, counter<Rank> /*rank*/, counter<Acc> /*acc*/) noexcept // NOLINT(readability-named-parameter)
     {
         return {};
     }
@@ -61,9 +62,9 @@ namespace scl::preprocessor::detail
  * @param rank The value of the bit to read, a power of two.
  * @param acc The bits of the count above @p rank, read so far.
  */
-#define SCL_DETAIL_COUNTER_CRUMB(Tag, rank, acc)                                            \
-    ::scl::preprocessor::detail::crumb(Tag{}, ::scl::preprocessor::detail::counter<rank>(), \
-        ::scl::preprocessor::detail::counter<acc>())
+#define SCL_DETAIL_COUNTER_CRUMB(Tag, rank, acc)                                          \
+    ::scl::preprocessor::detail::crumb(static_cast<::std::type_identity<Tag> *>(nullptr), \
+        ::scl::preprocessor::detail::counter<rank>(), ::scl::preprocessor::detail::counter<acc>())
 
 /**
  * @def SCL_COUNTER_VALUE(Tag)
@@ -72,7 +73,9 @@ namespace scl::preprocessor::detail
  * @details
  * Reads `0` before the first @ref SCL_COUNTER_NEXT of @p Tag in the translation unit, and one
  * more after each of them. Each type is the tag of a counter of its own, and two specializations
- * of one class template are two tags.
+ * of one class template are two tags. A reference, a `const` type and an array are tags apart
+ * from, respectively, the type referred to, the type without `const` and a pointer
+ * to the element.
  *
  * @param Tag The type whose counter is read.
  * @return A constant expression of type `std::uint_fast32_t`.
@@ -132,7 +135,7 @@ namespace scl::preprocessor::detail
     namespace scl::preprocessor::detail                                                                        \
     {                                                                                                          \
         [[nodiscard]]                                                                                          \
-        constexpr counter<SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1> crumb(Tag,                                  \
+        constexpr counter<SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1> crumb(::std::type_identity<Tag> *,          \
             counter<(SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1) & ~SCL_COUNTER_VALUE(SCL_FORWARD(Tag))>,         \
             counter<(SCL_COUNTER_VALUE(SCL_FORWARD(Tag)) + 1) & SCL_COUNTER_VALUE(SCL_FORWARD(Tag))>) noexcept \
         {                                                                                                      \
