@@ -17,10 +17,10 @@ where it is built without them.
 - **Source:** the value of the macro follows the configuration of the library:
   `_GLIBCXX_HAS_GTHREADS` (libstdc++), `_LIBCPP_HAS_NO_THREADS` or `_LIBCPP_HAS_THREADS` (libc++).
   Every other library counts as supporting threads.
-- **A library without threads:** such a library, as the library of `arm-none-eabi` is, declares no
-  `std::mutex`, and its `std::thread` cannot start a thread. The value of the standard
-  macro `__STDCPP_THREADS__` follows the target rather than the library, and Clang defines it for
-  `arm-none-eabi` as well.
+- **A library without threads:** a library built without threads, such as the library of
+  the `arm-none-eabi` target, declares no `std::mutex`, and its `std::thread` cannot start
+  a thread. The value of the standard macro `__STDCPP_THREADS__` follows the target rather than
+  the library, and Clang defines it for `arm-none-eabi` as well.
 - **Not a switch:** the value of the macro follows how the standard library was built, and
   threads are not added or removed by defining the macro by hand. No option of the compiler
   listed on the [group page](index.md#compiler-options) changes it.

@@ -66,19 +66,23 @@ namespace scl::preprocessor::detail
  * @brief Reads the counter of a tag at the point of expansion.
  * @ingroup scl_utility_preprocessor
  * @details
- * Reads `0` before the first @ref SCL_COUNTER_NEXT of the tag in the translation unit, and one
- * more after each of them. In a template it reads the count at the point where it is written,
- * not where the template is instantiated, whatever the tag, one that depends on a parameter of
- * the template included. The tag is written as is, commas included, such as
- * `std::pair<int, char>`. Writing the names of the tag in full, starting with `::`, is
- * recommended. Otherwise, where a name of the tag conflicts with a name declared in another
- * scope, the program fails to compile, or the counter of another tag is read and advanced with
- * no diagnostic. Each type is the tag of a counter of its own, and two specializations of one
- * class template are two tags. A reference, a `const` type and an array are tags apart from,
- * respectively, the type referred to, the type without `const` and a pointer to the element.
+ * Expands to a constant expression of type `std::uint_fast32_t`: `0` before the first
+ * @ref SCL_COUNTER_NEXT of the tag in the translation unit, and one more after each of them. In a
+ * template it gives the count where the macro is written, not where the template is instantiated,
+ * for any tag, a tag that depends on a template parameter included.
+ *
+ * Every type is the tag of a counter of its own. Two specializations of one class template are two
+ * tags, and so are `int &` and `int`, `int const` and `int`, `int[3]` and `int *`. The tag is
+ * written as is, commas included, such as `std::pair<int, char>`. Writing every name in the tag
+ * fully qualified from `::` is recommended: where a name of the tag conflicts with a name declared
+ * in another scope, the program fails to compile, or the counter of another tag is read or
+ * advanced with no diagnostic.
+ *
+ * Each translation unit keeps its own count, so an inline function or a template in a header that
+ * reads a counter can get different values in different translation units, which breaks the
+ * one-definition rule. Reading and advancing a counter within one source file is recommended.
  *
  * @param ... The type whose counter is read.
- * @return A constant expression of type `std::uint_fast32_t`.
  *
  * @snippet preprocessor/counter/preprocessor_counter_example.cpp count
  */
@@ -124,8 +128,8 @@ namespace scl::preprocessor::detail
  * @details
  * Expands to a declaration, so every later @ref SCL_COUNTER_VALUE of the tag reads one more
  * than before. The macro stands at the global namespace scope only. The tag is written as is,
- * commas included, and writing its names in full, starting with `::`, is recommended, as for
- * @ref SCL_COUNTER_VALUE.
+ * commas included, and writing every name in the tag fully qualified from `::` is recommended,
+ * as for @ref SCL_COUNTER_VALUE.
  *
  * @param ... The type whose counter advances.
  *

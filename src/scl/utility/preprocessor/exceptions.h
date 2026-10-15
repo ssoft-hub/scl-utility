@@ -2,11 +2,8 @@
 
 /**
  * @file
- * @brief Exception availability detection (C++20).
+ * @brief Whether the translation unit is compiled with exceptions.
  * @ingroup scl_utility_preprocessor
- * @details
- * - ::SCL_HAS_EXCEPTIONS:
- *     `1` when the translation unit is compiled with exceptions enabled, `0` otherwise.
  */
 
 // __has_feature first: Clang defines __EXCEPTIONS under -fexceptions -fno-cxx-exceptions, where
@@ -31,8 +28,8 @@
 
 /**
  * @def SCL_HAS_EXCEPTIONS
- * @ingroup scl_utility_preprocessor
  * @brief Whether the translation unit is compiled with exceptions enabled.
+ * @ingroup scl_utility_preprocessor
  *
  * Expands to `1` with exceptions and `0` without them, derived from
  * `__has_feature(cxx_exceptions)` where the compiler offers it (Clang, clang-cl, GCC 14 and

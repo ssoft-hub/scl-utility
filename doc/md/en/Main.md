@@ -122,9 +122,10 @@ included, and a value of an enumeration type as `Type::N`.
 
 ### Preprocessor - macros of the build and of compile time
 
-Macros that expand to `1` or `0` as the translation unit has RTTI and exceptions or not and as
-the standard library supports threads or not, a macro that passes a comma-separated list through
-one parameter of another macro, and a counter per tag type read and advanced at compile time.
+Three macros that expand to `1` or `0`: whether the translation unit is compiled with RTTI,
+whether it is compiled with exceptions, and whether the standard library supports threads. Also
+a macro that passes a comma-separated list through one parameter of another macro, and a counter
+per tag type read and advanced at compile time.
 
 [To the group](preprocessor/index.md)
 

@@ -15,8 +15,7 @@
  * ::scl::symbol_name and ::scl::symbol_short_name the name of a function, a variable or
  * a member, all evaluated at compile time without RTTI. The class ::scl::type_key, which
  * ::scl::type_key_of returns, identifies a type, and the class template ::scl::is_tu_local tells
- * whether a type is local to its translation unit. The names a type and an enumeration value
- * have at run time are returned by the function templates of the group @ref scl_utility_runtime.
+ * whether a type is local to its translation unit.
  * @{
  */
 

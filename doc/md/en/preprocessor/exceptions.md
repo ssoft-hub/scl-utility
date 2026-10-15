@@ -18,7 +18,7 @@ exceptions and to `0` where it is compiled without them.
   offers it (Clang, clang-cl, GCC 14 and later), and otherwise `_CPPUNWIND` (MSVC) or
   `__EXCEPTIONS` (GCC 13). The language defines no feature-test macro for exceptions.
 - **Not a switch:** the value of the macro follows the command line of the compiler, and
-  exceptions are not turned on or off by defining the macro by hand. The options that turn it to
+  exceptions are not turned on or off by defining the macro by hand. The options that set it to
   `0` are listed on the [group page](index.md#compiler-options).
 
 ## Examples

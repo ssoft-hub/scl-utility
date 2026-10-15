@@ -40,6 +40,25 @@ static_assert(SCL_COUNTER_VALUE(per_type<int>) == 1);
 static_assert(SCL_COUNTER_VALUE(per_type<long>) == 0);
 //! [template_tag]
 
+//! [full_name]
+struct lamp
+{};
+
+namespace shop
+{
+    struct lamp
+    {};
+} // namespace shop
+
+SCL_COUNTER_NEXT(::lamp)
+
+namespace shop
+{
+    static_assert(SCL_COUNTER_VALUE(::lamp) == 1);
+    static_assert(SCL_COUNTER_VALUE(lamp) == 0); // shop::lamp, another tag
+} // namespace shop
+//! [full_name]
+
 int main()
 {
     std::cout << "apples: " << SCL_COUNTER_VALUE(apples) << '\n';

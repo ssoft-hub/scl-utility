@@ -15,14 +15,6 @@ tells whether a type is local to its translation unit.
 | `<scl/utility/meta/type.h>` | [`type_name<T>()`](type_name.md) | `scl::type_name`, `scl::type_short_name` |
 | `<scl/utility/meta/type_key.h>` | [`type_key`](type_key.md) | `scl::type_key`, `scl::type_key_of` |
 
-## At run time
-
-The function templates of the group [runtime](../runtime/index.md) return names while
-the program runs. The function template [`scl::type_name(obj)`](../runtime/type_name.md) returns
-the name of the type an object of a polymorphic class was created as, and the function template
-[`scl::enum_string(value)`](../runtime/enum_string.md) spells the value a variable of
-an enumeration type holds.
-
 ## Documentation of the group
 
 ### Function templates

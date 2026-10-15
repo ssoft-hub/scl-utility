@@ -1,7 +1,7 @@
 # `SCL_COUNTER_VALUE`, `SCL_COUNTER_NEXT`
 
-The macro `SCL_COUNTER_VALUE(Tag)` reads at compile time the counter of the tag `Tag`, and
-the macro `SCL_COUNTER_NEXT(Tag)` adds one to that counter for the rest of the translation unit.
+The macro `SCL_COUNTER_VALUE(Tag)` reads the counter of the tag `Tag` at compile time, and
+the macro `SCL_COUNTER_NEXT(Tag)` adds one to it for the rest of the translation unit.
 
 - Header: `#include <scl/utility/preprocessor/counter.h>`
 
@@ -12,28 +12,31 @@ the macro `SCL_COUNTER_NEXT(Tag)` adds one to that counter for the rest of the t
 
 ## Semantics
 
-- **A counter per tag:** each type is the tag of a counter of its own, and two specializations
-  of one class template are two tags. A class without a default constructor, an incomplete
-  or abstract class, a function type, a reference and `void` are tags as well. A reference,
-  a `const` type and an array are tags apart from, respectively, the type referred to, the type
-  without `const` and a pointer to the element.
-- **Spelling of the tag:** the tag is the whole argument list of the macro, so a name that holds
-  commas, such as `std::pair<int, char>`, is written as is.
-- **Full name of the tag:** writing the names of the tag in full, starting with the global
-  namespace, such as `::std::pair<::fruit::apple, int>`, is recommended. Otherwise, where a name
-  of the tag conflicts with a name declared in another scope, the program fails to compile, or
-  the counter of another tag is read and advanced with no diagnostic.
-- **Value:** `SCL_COUNTER_VALUE(Tag)` is a constant expression of type `std::uint_fast32_t`. It
-  reads `0` before the first `SCL_COUNTER_NEXT(Tag)` of the translation unit and one more after
-  each of them.
-- **Inside a template:** `SCL_COUNTER_VALUE(Tag)` in a template reads the count at the point
-  where it is written, not where the template is instantiated, whatever the tag, one that depends
-  on a parameter of the template included.
-- **Advance:** `SCL_COUNTER_NEXT(Tag)` stands at the global namespace scope only: not in
-  a function body, a class or a namespace of the caller.
-- **Translation unit:** the count is kept in each translation unit apart. An inline function or
-  a template that reads a counter in a header can read different values in different units, which
-  breaks the one-definition rule.
+- **Value:** `SCL_COUNTER_VALUE(Tag)` is a constant expression of type `std::uint_fast32_t`. It is
+  `0` before the first `SCL_COUNTER_NEXT(Tag)` of the translation unit and one more after each
+  of them.
+- **Placement:** `SCL_COUNTER_NEXT(Tag)` appears at the global namespace scope only, never
+  in a function body, a class or a namespace the caller declares.
+- **Inside a template:** `SCL_COUNTER_VALUE(Tag)` in a template gives the count where the macro
+  is written, not where the template is instantiated. This holds for any tag, a tag that depends
+  on a template parameter included.
+- **What a tag is:** every type is the tag of a counter of its own, a class without a default
+  constructor, an incomplete or abstract class, a function type, a reference and `void` included.
+- **Tags kept apart:** each pair below names two counters:
+  - two specializations of one class template, such as `per_type<int>` and `per_type<long>`;
+  - a reference and the type it refers to, such as `int &` and `int`;
+  - a `const` type and the type without `const`, such as `int const` and `int`;
+  - an array and a pointer to its element, such as `int[3]` and `int *`.
+- **Spelling of the tag:** the tag is the whole argument list of the macro, so a name with commas,
+  such as `std::pair<int, char>`, is written as is.
+- **Full name of the tag:** writing every name in the tag fully qualified from `::`, such as
+  `::std::pair<::lamp, int>`, is recommended. Where a name of the tag conflicts with
+  a name declared in another scope, the program fails to compile, or the counter of another tag
+  is read or advanced with no diagnostic.
+- **Translation unit:** each translation unit keeps its own count. An inline function or a template
+  in a header that reads a counter can get different values in different translation units, which
+  breaks the one-definition rule. Reading and advancing a counter within one source file is
+  recommended.
 
 ## Examples
 
@@ -74,6 +77,28 @@ SCL_COUNTER_NEXT(per_type<int>)
 
 static_assert(SCL_COUNTER_VALUE(per_type<int>) == 1);
 static_assert(SCL_COUNTER_VALUE(per_type<long>) == 0);
+```
+
+A tag written fully qualified from `::`, read in a namespace that declares the same name:
+
+<!-- snippet: example/preprocessor/counter/preprocessor_counter_example.cpp full_name -->
+```cpp
+struct lamp
+{};
+
+namespace shop
+{
+    struct lamp
+    {};
+} // namespace shop
+
+SCL_COUNTER_NEXT(::lamp)
+
+namespace shop
+{
+    static_assert(SCL_COUNTER_VALUE(::lamp) == 1);
+    static_assert(SCL_COUNTER_VALUE(lamp) == 0); // shop::lamp, another tag
+} // namespace shop
 ```
 
 ## See also

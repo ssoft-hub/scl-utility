@@ -2,11 +2,8 @@
 
 /**
  * @file
- * @brief RTTI availability detection (C++20).
+ * @brief Whether the translation unit is compiled with RTTI.
  * @ingroup scl_utility_preprocessor
- * @details
- * - ::SCL_HAS_RTTI:
- *     `1` when the translation unit is compiled with RTTI enabled, `0` otherwise.
  */
 
 // __has_feature first, as for exceptions: it follows the language option itself.
@@ -30,13 +27,13 @@
 
 /**
  * @def SCL_HAS_RTTI
- * @ingroup scl_utility_preprocessor
  * @brief Whether the translation unit is compiled with RTTI enabled.
+ * @ingroup scl_utility_preprocessor
  *
  * Expands to `1` with RTTI and `0` without it, derived from `__has_feature(cxx_rtti)` where
  * the compiler offers it (Clang, clang-cl, GCC 14 and later), and otherwise from `_CPPRTTI`
- * (MSVC) or `__GXX_RTTI` (GCC 13). The language offers no
- * standard feature-test macro for RTTI, which is why this one exists.
+ * (MSVC) or `__GXX_RTTI` (GCC 13). The language offers no standard feature-test macro for RTTI,
+ * which is why this one exists.
  *
  * Always defined, so a caller tests it with `#if`: a misspelled name then reads as `0` and draws
  * a `-Wundef` warning, while under `#ifdef` it reads as false with no warning.
