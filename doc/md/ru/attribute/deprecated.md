@@ -1,74 +1,74 @@
-# SCL_DEPRECATED / SCL_DEPRECATED_MSG
+# `SCL_DEPRECATED`, `SCL_DEPRECATED_MSG`
 
-Макросы аннотации устаревших сущностей.
+Компилятор предупреждает о каждом использовании сущности, помеченной `SCL_DEPRECATED`
+или `SCL_DEPRECATED_MSG`.
 
 - Заголовок: `#include <scl/utility/attribute/deprecated.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
-
----
-
-## SCL_DEPRECATED
-
-Помечает любую именованную сущность (функцию, класс, переменную, typedef,
-перечисление) как устаревшую. Компилятор выдаёт предупреждение при каждом
-использовании, побуждая пользователей перейти на замену.
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(deprecated)` (C++14) | `[[deprecated]]` |
-| MSVC, кроме clang-cl | `__declspec(deprecated)` |
-| `__has_attribute(deprecated)` (более старые GCC и Clang) | `__attribute__((deprecated))` |
-| Ни одно не выполнено | *(пусто — предупреждение не выдаётся)* |
-
-### Использование
 
 ```cpp
-#include <scl/utility/attribute/deprecated.h>
-
-SCL_DEPRECATED void old_connect(const char* host, int port);
-
-struct SCL_DEPRECATED LegacyHandle { int fd; };
+#define SCL_DEPRECATED /* see below */
+#define SCL_DEPRECATED_MSG(msg) /* see below */
 ```
 
----
+## Семантика
 
-## SCL_DEPRECATED_MSG(msg)
+- **Что сообщается компилятору:** сущность сохранена только для старого кода, а в новом коде следует
+  использовать другую. Компилятор предупреждает о каждом использовании сущности и не выдаёт
+  предупреждения о самом объявлении.
+- **Сообщение:** строковый литерал `msg` из `SCL_DEPRECATED_MSG` вставляется в предупреждение.
+  `SCL_DEPRECATED_MSG` раскрывается в `SCL_DEPRECATED`, и сообщение в предупреждение не вставляется,
+  если не совпала ни одна строка до последней или если `SCL_DEPRECATED` определён до заголовка.
+- **Место:** любой из макросов записывается перед объявлением функции или переменной, а в объявлении
+  типа после `struct`, `class`, `enum` или `enum class`.
 
-Аналогично `SCL_DEPRECATED`, но включает строковый литерал `msg` в текст
-диагностического сообщения, объясняя причину устаревания и указывая замену.
-На компиляторах, не поддерживающих форму с сообщением, макрос раскрывается
-в `SCL_DEPRECATED` (предупреждение выдаётся без текста).
+| Условие, первое совпавшее | `SCL_DEPRECATED` | `SCL_DEPRECATED_MSG(msg)` |
+|---|---|---|
+| `__has_cpp_attribute(deprecated)` (C++14) | `[[deprecated]]` | `[[deprecated(msg)]]` |
+| MSVC, кроме clang-cl | `__declspec(deprecated)` | `__declspec(deprecated(msg))` |
+| `__has_attribute(__deprecated__)` | `__attribute__((__deprecated__))` | `__attribute__((__deprecated__(msg)))` |
+| ничего из перечисленного | пусто | `SCL_DEPRECATED` |
 
-### Определение наличия
+Макросы раскрываются в `[[deprecated]]` и `[[deprecated(msg)]]` на GCC, Clang и MSVC в C++20.
 
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(deprecated)` (C++14) | `[[deprecated(msg)]]` |
-| MSVC, кроме clang-cl | `__declspec(deprecated(msg))` |
-| `__has_attribute(deprecated)` (более старые GCC и Clang) | `__attribute__((deprecated(msg)))` |
-| Ни одно не выполнено | *(пусто)* |
+## Определения до заголовка
 
-### Использование
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
 
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_DEPRECATED` | `[[deprecated]]`, `__attribute__((__deprecated__))`, пусто | `[[deprecated]]`, `__attribute__((__deprecated__))`, пусто | `[[deprecated]]`, `__declspec(deprecated)`, пусто |
+| `SCL_DEPRECATED_MSG(msg)` | `[[deprecated(msg)]]`, `__attribute__((__deprecated__(msg)))`, `SCL_DEPRECATED` | `[[deprecated(msg)]]`, `__attribute__((__deprecated__(msg)))`, `SCL_DEPRECATED` | `[[deprecated(msg)]]`, `__declspec(deprecated(msg))`, `SCL_DEPRECATED` |
+
+## Примеры
+
+Функция и тип, оставленные только для старого кода:
+
+<!-- snippet: example/attribute/deprecated/attribute_deprecated_example.cpp deprecated -->
 ```cpp
-#include <scl/utility/attribute/deprecated.h>
+struct endpoint
+{
+    char const * host;
+    int port;
+};
 
-SCL_DEPRECATED_MSG("используйте connect(Endpoint) вместо этого")
-void old_connect(const char* host, int port);
+bool connect(endpoint const & target) { return target.port > 0; }
 
-struct SCL_DEPRECATED_MSG("заменено на ResourceHandle в v2") LegacyHandle { int fd; };
+SCL_DEPRECATED_MSG("use connect(endpoint) instead")
+bool connect(char const * host, int port);
+
+struct SCL_DEPRECATED legacy_handle
+{
+    int descriptor;
+};
 ```
+
+## Смотрите также
+
+- [`example/attribute/deprecated/attribute_deprecated_example.cpp`](../../../../example/attribute/deprecated/attribute_deprecated_example.cpp)
 
 ---
 
-## Примечания
-
-- Оба макроса не подавляют существующие предупреждения, а лишь добавляют
-  новые в местах использования.
-- Чтобы подавить предупреждение об устаревании внутри собственной реализации
-  (например, в обёртке, вызывающей устаревшую функцию), используйте прагму
-  подавления диагностики в этом месте.
-- Каждый макрос можно переопределить до включения заголовка через
-  `#define SCL_DEPRECATED` или `#define SCL_DEPRECATED_MSG(msg)`.
+Назад: [`SCL_ASSUME`](assume.md) | Далее: [`SCL_FALLTHROUGH`](fallthrough.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

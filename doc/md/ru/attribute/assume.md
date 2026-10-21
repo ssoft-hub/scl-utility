@@ -1,90 +1,115 @@
-# SCL_ASSUME / SCL_UNREACHABLE
+# `SCL_ASSUME`, `SCL_UNREACHABLE`
 
-Подсказки оптимизатору: предположение об истинности выражения и пометка недостижимого кода.
+Оптимизатор считает условие `SCL_ASSUME` истинным в той точке, где записан макрос, а точку
+`SCL_UNREACHABLE` считает недостижимой.
 
 - Заголовок: `#include <scl/utility/attribute/assume.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
 
----
+```cpp
+#define SCL_ASSUME(expr) /* see below */
+#define SCL_UNREACHABLE() /* see below */
+```
 
-## SCL_ASSUME(expr)
+## `SCL_ASSUME`
 
-Сообщает оптимизатору, что `expr` всегда истинно в этой точке. Компилятор
-может использовать это для устранения лишних ветвлений, исключения проверок на
-`nullptr` или уточнения границ циклов.
+- **Что сообщается компилятору:** `expr` истинно каждый раз, когда выполнение доходит до оператора.
+  Оптимизатор может убрать ветвь или проверку, которую условие делает лишней.
+- **Ложное обещание:** поведение программы не определено, если в этой точке `expr` ложно,
+  а раскрытие выбрано по одной из первых пяти строк таблицы.
+- **Аргумент:** `expr` не вычисляется при первых четырёх строках таблицы и вычисляется при последних
+  двух, поэтому следует передавать выражение без побочных эффектов.
+- **`SCL_ASSUME(false)`:** обещание совпадает с обещанием `SCL_UNREACHABLE`, но Clang всё равно
+  выдаёт предупреждение `-Wreturn-type`, если функция завершается после `[[assume(false)]]`.
+  Для такого обещания следует писать `SCL_UNREACHABLE()`.
+- **Место:** макрос записывается отдельным оператором, который завершается точкой с запятой.
 
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(assume)` (C++23) | `[[assume(expr)]]` |
+| Условие, первое совпавшее | Раскрытие |
+|---|---|
+| `__has_cpp_attribute(assume)`, если `__cplusplus` или `_MSVC_LANG` больше `202002L` | `[[assume(expr)]]` |
 | MSVC, кроме clang-cl | `__assume(expr)` |
 | `__has_builtin(__builtin_assume)` (Clang) | `__builtin_assume(expr)` |
-| `__has_attribute(assume)` | `__attribute__((assume(expr)))` |
+| `__has_attribute(__assume__)` | `__attribute__((__assume__(expr)))` |
 | `__has_builtin(__builtin_unreachable)` | `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())` |
-| Ни одно не выполнено | `((void)(expr))` |
+| ничего из перечисленного | `((void)(expr))` |
 
-> **Важно:** В первых четырёх ветках `expr` **не вычисляется** во время
-> выполнения. В двух последних оно вычисляется. Никогда не передавайте выражения
-> с побочными эффектами.
+Макрос раскрывается в `__assume(expr)` на MSVC, в `__builtin_assume(expr)` на Clang
+и в `__attribute__((__assume__(expr)))` на GCC в C++20. Макрос раскрывается в `[[assume(expr)]]`,
+только если `__cplusplus` или `_MSVC_LANG` больше `202002L` и `__has_cpp_attribute(assume)` не равно
+`0`, как на GCC 13 и Clang 22 под `-std=c++23`. MSVC 19.44 сообщает `0` для `assume`
+под `/std:c++latest`, поэтому там остаётся раскрытие `__assume(expr)`.
 
-### Использование
+## `SCL_UNREACHABLE`
 
-```cpp
-#include <scl/utility/attribute/assume.h>
+- **Что сообщается компилятору:** выполнение не доходит до оператора. Компилятор перестаёт
+  предупреждать, что функция, которая возвращает значение, может завершиться без него.
+- **Ложное обещание:** поведение программы не определено, если выполнение доходит до оператора,
+  а раскрытие выбрано по одной из первых двух строк таблицы.
+- **Место:** макрос записывается отдельным оператором, который завершается точкой с запятой.
 
-void scale(float* data, int n) {
-    SCL_ASSUME(data != nullptr);
-    SCL_ASSUME(n > 0);
-    SCL_ASSUME(n % 4 == 0);        // подсказка: количество итераций кратно 4
-    for (int i = 0; i < n; ++i)
-        data[i] *= 2.0f;
-}
-```
-
----
-
-## SCL_UNREACHABLE()
-
-Помечает текущую точку кода как недостижимую. Если выполнение доходит до неё
-во время работы программы — поведение **неопределённо**. Применяется для:
-
-- Подавления предупреждений «не все пути возврата возвращают значение».
-- Устранения мёртвых ветвей в генерируемом коде.
-- Обозначения того, что `switch` исчерпывающе покрывает все значения перечисления.
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
+| Условие, первое совпавшее | Раскрытие |
+|---|---|
 | MSVC, кроме clang-cl | `__assume(false)` |
 | `__has_builtin(__builtin_unreachable)` (GCC, Clang) | `__builtin_unreachable()` |
-| Ни одно не выполнено | `((void)0)` |
+| ничего из перечисленного | `((void)0)` |
 
-### Использование
+Макрос раскрывается в `__assume(false)` на MSVC и в `__builtin_unreachable()` на GCC и Clang.
 
+## Определения до заголовка
+
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
+
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_ASSUME(expr)` | `__attribute__((__assume__(expr)))`, `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())`, `((void)(expr))` | `__builtin_assume(expr)`, `__attribute__((__assume__(expr)))`, `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())`, `((void)(expr))` | `__assume(expr)`, `((void)(expr))` |
+| `SCL_UNREACHABLE()` | `__builtin_unreachable()`, `((void)0)` | `__builtin_unreachable()`, `((void)0)` | `__assume(false)`, `((void)0)` |
+
+В C++23 на GCC и на Clang 19 и более поздних допускается также `[[assume(expr)]]`.
+
+## Примеры
+
+Количество, которое обещано кратным четырём:
+
+<!-- snippet: example/attribute/assume/attribute_assume_example.cpp assume -->
 ```cpp
-#include <scl/utility/attribute/assume.h>
-
-int priority(Severity s) {
-    switch (s) {
-    case Severity::Low:      return 1;
-    case Severity::Medium:   return 2;
-    case Severity::High:     return 3;
-    case Severity::Critical: return 4;
-    }
-    SCL_UNREACHABLE();  // все значения перечисления покрыты выше
+int sum_of_quads(int const * values, int count)
+{
+    SCL_ASSUME(count % 4 == 0);
+    int sum = 0;
+    for (int index = 0; index < count; ++index)
+        sum += values[index];
+    return sum;
 }
 ```
 
+Точка после `switch` с возвратом значения в каждой ветви:
+
+<!-- snippet: example/attribute/assume/attribute_assume_example.cpp unreachable -->
+```cpp
+enum class severity
+{
+    low,
+    high
+};
+
+int priority(severity level)
+{
+    switch (level)
+    {
+    case severity::low:
+        return 1;
+    case severity::high:
+        return 2;
+    }
+    SCL_UNREACHABLE();
+}
+```
+
+## Смотрите также
+
+- [`example/attribute/assume/attribute_assume_example.cpp`](../../../../example/attribute/assume/attribute_assume_example.cpp)
+
 ---
 
-## Примечания
-
-- Оба макроса работают на уровне инструкций — завершайте их точкой с запятой.
-- `SCL_ASSUME(false)` утверждает то же, что и `SCL_UNREACHABLE()`, и на GCC и MSVC
-  раскрывается в тот же текст. Clang недостижимым его не считает: он по-прежнему
-  выдаёт `-Wreturn-type` там, где функция доходит до конца без `return`.
-  Предпочитайте `SCL_UNREACHABLE()`.
-- Каждый макрос можно переопределить до включения заголовка через
-  `#define SCL_ASSUME(expr)` или `#define SCL_UNREACHABLE()`.
+Далее: [`SCL_DEPRECATED`](deprecated.md) | [К группе](index.md) | [К главной странице](../Main.md)

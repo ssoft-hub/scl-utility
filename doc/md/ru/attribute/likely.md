@@ -1,139 +1,105 @@
-# SCL_LIKELY / SCL_UNLIKELY / SCL_LIKELY_EXPR / SCL_UNLIKELY_EXPR
+# `SCL_LIKELY`, `SCL_UNLIKELY`, `SCL_LIKELY_EXPR`, `SCL_UNLIKELY_EXPR`
 
-Макросы подсказок предсказателю ветвлений.
+Ветвь, помеченная `SCL_LIKELY`, выбирается обычно, а ветвь, помеченная `SCL_UNLIKELY`, выбирается
+редко. Выражение в `SCL_LIKELY_EXPR` обычно истинно, а выражение в `SCL_UNLIKELY_EXPR` обычно ложно.
 
 - Заголовок: `#include <scl/utility/attribute/likely.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
-
----
-
-## SCL_LIKELY
-
-Переносимая обёртка над атрибутом инструкции `[[likely]]` из C++20. Размещается
-перед инструкцией и тем самым сообщает оптимизатору, что эта ветвь — основной
-путь исполнения. По стилю соответствует остальным макросам `SCL_*` — без аргументов.
-
-### Размещение
-
-| Позиция | Синтаксис |
-|---------|-----------|
-| Ветвь `if` | `if (cond) SCL_LIKELY { ... }` |
-| Метка `case` в `switch` | `SCL_LIKELY case N: ...` |
-| Метка `default` в `switch` | `SCL_LIKELY default: ...` |
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(likely)` (C++20) | `[[likely]]` |
-| Ни одно не выполнено | *(пусто — подсказка отсутствует)* |
-
-### Использование
 
 ```cpp
-#include <scl/utility/attribute/likely.h>
+#define SCL_LIKELY /* see below */
+#define SCL_UNLIKELY /* see below */
+#define SCL_LIKELY_EXPR(expr) /* see below */
+#define SCL_UNLIKELY_EXPR(expr) /* see below */
+```
 
-if (cache_hit) SCL_LIKELY {
-    return cache_value;
-}
+## `SCL_LIKELY`, `SCL_UNLIKELY`
 
-switch (msg.type) {
-SCL_LIKELY case MsgType::Data:
-    process(msg);
-    break;
-SCL_UNLIKELY default:
-    handle_unknown(msg);
-    break;
+- **Что сообщается компилятору:** оператор после макроса находится на пути, который программа
+  выбирает обычно (`SCL_LIKELY`) или редко (`SCL_UNLIKELY`). Оптимизатор может расположить код
+  под этот путь.
+- **Место:** любой из макросов записывается перед оператором ветви `if` или `else` или перед меткой
+  `case` или `default`, но не внутри условия.
+
+| Условие, первое совпавшее | `SCL_LIKELY` | `SCL_UNLIKELY` |
+|---|---|---|
+| `__has_cpp_attribute(likely)`, `__has_cpp_attribute(unlikely)` (C++20) | `[[likely]]` | `[[unlikely]]` |
+| ничего из перечисленного | пусто | пусто |
+
+Макросы раскрываются в `[[likely]]` и `[[unlikely]]` на GCC, Clang и MSVC в C++20.
+
+## `SCL_LIKELY_EXPR`, `SCL_UNLIKELY_EXPR`
+
+- **Что сообщается компилятору:** `expr` обычно истинно (`SCL_LIKELY_EXPR`) или обычно ложно
+  (`SCL_UNLIKELY_EXPR`).
+- **Аргумент:** `expr` является выражением, к которому применим оператор `!`.
+- **Значение:** значением раскрытия является значение истинности `expr`, и на любом компиляторе оно
+  имеет тип `bool`.
+- **MSVC:** подсказка на MSVC не передаётся, и в раскрытии остаётся только проверка истинности.
+- **Место:** любой из макросов записывается в любом выражении, в том числе в условии `if`, `while`
+  или `?:`.
+
+| Условие, первое совпавшее | `SCL_LIKELY_EXPR(expr)` | `SCL_UNLIKELY_EXPR(expr)` |
+|---|---|---|
+| MSVC, кроме clang-cl | `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(!!(expr)))` |
+| `__has_builtin(__builtin_expect)` (GCC, Clang) | `(static_cast<bool>(__builtin_expect(!!(expr), 1)))` | `(static_cast<bool>(__builtin_expect(!!(expr), 0)))` |
+| ничего из перечисленного | `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(!!(expr)))` |
+
+Макросы раскрываются в `(static_cast<bool>(!!(expr)))` на MSVC, а на GCC и Clang в раскрытия
+с `__builtin_expect`.
+
+## Определения до заголовка
+
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
+
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_LIKELY` | `[[likely]]`, пусто | `[[likely]]`, пусто | `[[likely]]`, пусто |
+| `SCL_UNLIKELY` | `[[unlikely]]`, пусто | `[[unlikely]]`, пусто | `[[unlikely]]`, пусто |
+| `SCL_LIKELY_EXPR(expr)` | `(static_cast<bool>(__builtin_expect(!!(expr), 1)))`, `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(__builtin_expect(!!(expr), 1)))`, `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(!!(expr)))` |
+| `SCL_UNLIKELY_EXPR(expr)` | `(static_cast<bool>(__builtin_expect(!!(expr), 0)))`, `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(__builtin_expect(!!(expr), 0)))`, `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(!!(expr)))` |
+
+## Примеры
+
+Ветвь для цифры, обычная при разборе, и другая ветвь:
+
+<!-- snippet: example/attribute/likely/attribute_likely_example.cpp likely -->
+```cpp
+int parse_digit(char symbol)
+{
+    if (symbol >= '0' && symbol <= '9')
+        SCL_LIKELY { return symbol - '0'; }
+    else
+        SCL_UNLIKELY { return -1; }
 }
 ```
 
----
+Условие ошибки, редкое в цикле, и результат, который обычно истинен:
 
-## SCL_UNLIKELY
-
-Аналогично `SCL_LIKELY`, но помечает ветвь как редкий путь исполнения.
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(unlikely)` (C++20) | `[[unlikely]]` |
-| Ни одно не выполнено | *(пусто — подсказка отсутствует)* |
-
-### Использование
-
+<!-- snippet: example/attribute/likely/attribute_likely_example.cpp likely_expr -->
 ```cpp
-if (error) SCL_UNLIKELY {
-    log_and_abort(error);
+int count_errors(int const * codes, std::size_t size)
+{
+    int errors = 0;
+    for (std::size_t index = 0; index < size; ++index)
+        if (SCL_UNLIKELY_EXPR(codes[index] != 0))
+            ++errors;
+    return errors;
+}
+
+bool all_valid(int const * codes, std::size_t size)
+{
+    return SCL_LIKELY_EXPR(count_errors(codes, size) == 0);
 }
 ```
 
----
+## Смотрите также
 
-## SCL_LIKELY_EXPR(expr)
-
-Подсказка предсказателю ветвлений на уровне выражения через `__builtin_expect`.
-Оборачивает булево или целочисленное выражение и возвращает `0` или `1`. Используется внутри условий `if`, `while`
-или тернарного оператора, где атрибут инструкции разместить невозможно.
-
-На MSVC, который полагается на оптимизацию по профилю, обёртка подсказки не
-даёт: остаётся только проверка выражения на истинность.
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| MSVC, кроме clang-cl | `(!!(expr))` |
-| `__has_builtin(__builtin_expect)` (GCC, Clang) | `__builtin_expect(!!(expr), 1)` |
-| Ни одно не выполнено | `(!!(expr))` |
-
-### Использование
-
-```cpp
-if (SCL_LIKELY_EXPR(ptr != nullptr)) {
-    // быстрый путь — предсказатель смещён сюда
-}
-
-while (SCL_LIKELY_EXPR(queue.size() > 0)) {
-    drain(queue);
-}
-```
+- [`SCL_HOT`, `SCL_COLD`](hotcold.md), подсказки обо всей функции, а не об одной ветви
+- [`example/attribute/likely/attribute_likely_example.cpp`](../../../../example/attribute/likely/attribute_likely_example.cpp)
 
 ---
 
-## SCL_UNLIKELY_EXPR(expr)
-
-Аналогично `SCL_LIKELY_EXPR`, но смещает предсказатель в сторону ложного исхода.
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| MSVC, кроме clang-cl | `(!!(expr))` |
-| `__has_builtin(__builtin_expect)` (GCC, Clang) | `__builtin_expect(!!(expr), 0)` |
-| Ни одно не выполнено | `(!!(expr))` |
-
-### Использование
-
-```cpp
-if (SCL_UNLIKELY_EXPR(error_code != 0)) {
-    handle_error(error_code);
-}
-```
-
----
-
-## Примечания
-
-- `SCL_LIKELY` / `SCL_UNLIKELY` — **атрибуты инструкции**: аннотируют ветвь,
-  а не выражение. Внутри условия их поставить нельзя.
-- `SCL_LIKELY_EXPR` / `SCL_UNLIKELY_EXPR` — **обёртки выражений**: допустимы
-  в любом месте, где ожидается целочисленное выражение.
-- `SCL_LIKELY` и `SCL_UNLIKELY` ничего не вычисляют и значения не меняют;
-  обёртки `_EXPR` возвращают `0` или `1`. Меняется лишь то, как оптимизатор
-  раскладывает ветви.
-- Не расставляйте подсказки наугад — неверные подсказки могут снижать
-  производительность.
-- Каждый макрос можно переопределить до включения заголовка через
-  `#define SCL_LIKELY`, `#define SCL_UNLIKELY`, `#define SCL_LIKELY_EXPR(expr)`,
-  `#define SCL_UNLIKELY_EXPR(expr)`.
+Назад: [`SCL_LIFETIMEBOUND`](lifetimebound.md) | Далее: [`SCL_MAYBE_UNUSED`](maybe_unused.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

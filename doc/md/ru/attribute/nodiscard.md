@@ -1,74 +1,83 @@
-# SCL_NODISCARD / SCL_NODISCARD_MSG
+# `SCL_NODISCARD`, `SCL_NODISCARD_MSG`
 
-Макросы предупреждения об игнорировании возвращаемого значения.
+Компилятор предупреждает, если отброшен результат, помеченный `SCL_NODISCARD`
+или `SCL_NODISCARD_MSG`.
 
 - Заголовок: `#include <scl/utility/attribute/nodiscard.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
 
----
+```cpp
+#define SCL_NODISCARD /* see below */
+#define SCL_NODISCARD_MSG(msg) /* see below */
+```
 
-## SCL_NODISCARD
+## Семантика
 
-Предписывает компилятору выдавать предупреждение, если возвращаемое значение
-аннотированной функции (или объект аннотированного типа) игнорируется
-вызывающим кодом. Применяется к объявлениям функций и к объявлениям
-классов/структур/перечислений.
+- **Что сообщается компилятору:** отбросить результат функции значит ошибиться. Компилятор
+  предупреждает там, где вызов функции записан отдельным оператором.
+- **На типе:** компилятор предупреждает, если отброшен результат любой функции, которая возвращает
+  этот тип по значению.
+- **Сообщение:** строковый литерал `msg` из `SCL_NODISCARD_MSG` вставляется в предупреждение,
+  если `__has_cpp_attribute(nodiscard)` равно `201907L` или больше. Сообщение в остальных случаях
+  не вставляется, а `SCL_NODISCARD_MSG` раскрывается в `SCL_NODISCARD`, если `SCL_NODISCARD`
+  определён до заголовка.
+- **Место:** любой из макросов записывается перед объявлением функции, а в объявлении типа
+  после `struct`, `class`, `enum` или `enum class`.
 
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(nodiscard)` ≥ 201907L (C++20) | `[[nodiscard]]` |
+| Условие, первое совпавшее | `SCL_NODISCARD` |
+|---|---|
 | `__has_cpp_attribute(nodiscard)` (C++17) | `[[nodiscard]]` |
-| `__has_attribute(warn_unused_result)` (более старые GCC и Clang) | `__attribute__((warn_unused_result))` |
-| Ни одно не выполнено | *(пусто — предупреждение не выдаётся)* |
+| `__has_attribute(__warn_unused_result__)` | `__attribute__((__warn_unused_result__))` |
+| ничего из перечисленного | пусто |
 
-### Использование
+| Условие, первое совпавшее | `SCL_NODISCARD_MSG(msg)` |
+|---|---|
+| `__has_cpp_attribute(nodiscard)` не меньше `201907L` (C++20) | `[[nodiscard(msg)]]` |
+| `__has_cpp_attribute(nodiscard)` (C++17) | `[[nodiscard]]` |
+| `__has_attribute(__warn_unused_result__)` | `__attribute__((__warn_unused_result__))` |
+| ничего из перечисленного | `SCL_NODISCARD` |
 
+Макросы раскрываются в `[[nodiscard]]` и `[[nodiscard(msg)]]` на GCC, Clang и MSVC в C++20.
+
+## Определения до заголовка
+
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
+
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_NODISCARD` | `[[nodiscard]]`, `__attribute__((__warn_unused_result__))`, пусто | `[[nodiscard]]`, `__attribute__((__warn_unused_result__))`, пусто | `[[nodiscard]]`, пусто |
+| `SCL_NODISCARD_MSG(msg)` | `[[nodiscard(msg)]]`, `[[nodiscard]]`, `__attribute__((__warn_unused_result__))`, `SCL_NODISCARD` | `[[nodiscard(msg)]]`, `[[nodiscard]]`, `__attribute__((__warn_unused_result__))`, `SCL_NODISCARD` | `[[nodiscard(msg)]]`, `[[nodiscard]]`, `SCL_NODISCARD` |
+
+## Примеры
+
+Функция, результат которой равен `false`, если значение не сохранено, и тип, значение которого
+предназначено для чтения:
+
+<!-- snippet: example/attribute/nodiscard/attribute_nodiscard_example.cpp nodiscard -->
 ```cpp
-#include <scl/utility/attribute/nodiscard.h>
+SCL_NODISCARD_MSG("the result tells whether the value was stored")
+bool store(std::vector<int> & storage, int value)
+{
+    if (storage.size() == storage.capacity())
+        return false;
+    storage.push_back(value);
+    return true;
+}
 
-SCL_NODISCARD bool try_lock();
+struct SCL_NODISCARD status
+{
+    int code;
+};
 
-struct SCL_NODISCARD ErrorCode { int value; };
+status open_channel(int id) { return status{id < 0 ? 1 : 0}; }
 ```
+
+## Смотрите также
+
+- [`example/attribute/nodiscard/attribute_nodiscard_example.cpp`](../../../../example/attribute/nodiscard/attribute_nodiscard_example.cpp)
 
 ---
 
-## SCL_NODISCARD_MSG(msg)
-
-Аналогично `SCL_NODISCARD`, но прикрепляет строковый литерал `msg` к
-диагностике, объясняя последствия игнорирования значения. Доступно в форме
-`[[nodiscard(msg)]]` начиная с C++20. На компиляторах, где форма с сообщением
-недоступна, макрос раскрывается в `SCL_NODISCARD` (предупреждение выдаётся без
-сообщения).
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(nodiscard)` ≥ 201907L (C++20) | `[[nodiscard(msg)]]` |
-| `__has_cpp_attribute(nodiscard)` (C++17) или запасной вариант | `SCL_NODISCARD` (сообщение опускается) |
-
-### Использование
-
-```cpp
-#include <scl/utility/attribute/nodiscard.h>
-
-SCL_NODISCARD_MSG("игнорирование кода ошибки приведёт к утечке дескриптора файла")
-ErrorCode write(int fd, const void* buf, std::size_t n);
-
-SCL_NODISCARD_MSG("вызовите release() во избежание утечки ресурса")
-ResourceHandle acquire(std::size_t bytes);
-```
-
----
-
-## Примечания
-
-- Применение `SCL_NODISCARD` к типу неявно помечает все функции, возвращающие
-  этот тип, атрибутом `[[nodiscard]]`.
-- Приведение к `void` подавляет предупреждение в конкретном месте вызова:
-  `(void)try_lock();`
-- Каждый макрос можно переопределить до включения заголовка через
-  `#define SCL_NODISCARD` или `#define SCL_NODISCARD_MSG(msg)`.
+Назад: [`SCL_MAYBE_UNUSED`](maybe_unused.md) | Далее: [`SCL_NORETURN`](noreturn.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

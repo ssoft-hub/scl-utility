@@ -1,57 +1,69 @@
-# SCL_NO_UNIQUE_ADDRESS
+# `SCL_NO_UNIQUE_ADDRESS`
 
-Переносимый атрибут `[[no_unique_address]]` для всех поддерживаемых компиляторов.
+Пустой член, помеченный `SCL_NO_UNIQUE_ADDRESS`, может разделить адрес с другим членом и тогда
+не занимает собственной памяти.
 
 - Заголовок: `#include <scl/utility/attribute/no_unique_address.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
-
-## Назначение
-
-`[[no_unique_address]]` (C++20) разрешает компилятору размещать пустой подобъект-член
-по адресу другого члена, не выделяя ему отдельной памяти. Без этого атрибута каждый
-член занимает минимум один байт, даже если его тип пустой, что нарушает принцип
-нулевых накладных расходов в решениях на основе политик и исполнителей (executor).
-
-Доступное написание определяет целевой ABI, а не сам компилятор.
-При сборке под ABI MSVC раскладку меняет только `[[msvc::no_unique_address]]`,
-а при сборке под ABI Itanium — только стандартное написание. Макрос
-`SCL_NO_UNIQUE_ADDRESS` выбирает ту форму, которую принимает целевой ABI.
-
-## Определение наличия
-
-Макрос выбирается через `__has_cpp_attribute`:
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(no_unique_address)` | `[[no_unique_address]]` |
-| `__has_cpp_attribute(msvc::no_unique_address)` | `[[msvc::no_unique_address]]` |
-| Ни одно не выполнено | *(пусто; пустой член не сворачивается)* |
-
-При сборке под ABI MSVC первая проверка возвращает 0 — и на MSVC, и на clang-cl,
-и на Clang, — а написание с префиксом `msvc::` подхватывает вторая. При сборке под
-ABI Itanium на первую проверку отвечают GCC и Clang, и до второй дело не доходит.
-
-## Использование
 
 ```cpp
-#include <scl/utility/attribute/no_unique_address.h>
-
-struct EmptyPolicy {};
-
-struct Buffer {
-    SCL_NO_UNIQUE_ADDRESS EmptyPolicy policy;
-    int size;
-    char data[64];
-};
-
-// Пустая политика не занимает дополнительного места
-static_assert(sizeof(Buffer) == sizeof(int) + 64);
+#define SCL_NO_UNIQUE_ADDRESS /* see below */
 ```
 
-## Примечания
+## Семантика
 
-- Применяется только к нестатическим членам-данным.
-- Два члена одного и того же типа не могут разделять адрес даже с этим
-  атрибутом — компилятор выделит каждому отдельный байт.
-- Макрос можно переопределить до включения заголовка через
-  `#define SCL_NO_UNIQUE_ADDRESS`.
+- **Что сообщается компилятору:** члену не нужен адрес, отличный от адресов других членов.
+  Компилятор может разместить пустой член по адресу другого, и тогда в классе под него не отводится
+  ни одного байта.
+- **Форма записи по цели:** `__has_cpp_attribute(no_unique_address)` равно `0` на MSVC,
+  а также на Clang 22, включая clang-cl, для ABI MSVC. Раскладка меняется там
+  только с `[[msvc::no_unique_address]]`. GCC и Clang принимают стандартную форму для ABI Itanium.
+- **Два члена одного типа:** два члена одного типа даже с макросом имеют разные адреса, но каждый
+  из них может разделить адрес с членом другого типа.
+- **Место:** макрос записывается перед объявлением нестатического члена данных.
+
+| Условие, первое совпавшее | Раскрытие |
+|---|---|
+| `__has_cpp_attribute(no_unique_address)` | `[[no_unique_address]]` |
+| `__has_cpp_attribute(msvc::no_unique_address)`, `msvc` не является макросом | `[[msvc::no_unique_address]]` |
+| ничего из перечисленного | пусто, и пустой член занимает байт |
+
+Макрос раскрывается в `[[no_unique_address]]` на GCC и в `[[msvc::no_unique_address]]` на MSVC.
+Макрос раскрывается на Clang 22 в `[[no_unique_address]]` для ABI Itanium
+и в `[[msvc::no_unique_address]]` для ABI MSVC.
+
+## Определения до заголовка
+
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
+
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_NO_UNIQUE_ADDRESS` | `[[no_unique_address]]`, пусто | `[[no_unique_address]]`, пусто; для ABI MSVC `[[msvc::no_unique_address]]`, пусто | `[[msvc::no_unique_address]]`, пусто |
+
+## Примеры
+
+Класс, пустой член которого не занимает собственной памяти:
+
+<!-- snippet: example/attribute/no_unique_address/attribute_no_unique_address_example.cpp no_unique_address -->
+```cpp
+struct no_policy
+{};
+
+struct counter
+{
+    SCL_NO_UNIQUE_ADDRESS no_policy policy;
+    int value;
+};
+
+static_assert(sizeof(counter) == sizeof(int));
+```
+
+## Смотрите также
+
+- [`example/attribute/no_unique_address/attribute_no_unique_address_example.cpp`](../../../../example/attribute/no_unique_address/attribute_no_unique_address_example.cpp)
+
+---
+
+Назад: [`SCL_NORETURN`](noreturn.md) | Далее: [`SCL_UNSEQUENCED`](unsequenced.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

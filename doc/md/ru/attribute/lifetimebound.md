@@ -1,73 +1,66 @@
-# SCL_LIFETIMEBOUND
+# `SCL_LIFETIMEBOUND`
 
-Аннотация параметра, ограниченного временем жизни возвращаемого значения.
+Макрос `SCL_LIFETIMEBOUND` записывается на параметре, на объект которого ссылается результат
+функции. Clang, а при анализе кода и MSVC, предупреждают, если результат живёт дольше этого объекта.
 
 - Заголовок: `#include <scl/utility/attribute/lifetimebound.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
+
+```cpp
+#define SCL_LIFETIMEBOUND /* see below */
+```
+
+## Семантика
+
+- **Что сообщается компилятору:** ссылка, указатель или представление, которые возвращает функция,
+  ссылаются на тот же объект, что и параметр. То же сообщается о `*this` на функции-члене.
+- **Что выдаёт Clang:** Clang выдаёт предупреждение `-Wdangling`, если результат живёт дольше
+  объекта. Так бывает, если `std::string_view` инициализируется
+  из `first_word(std::string{"hello world"})`, а аргумент уничтожается в конце полного выражения.
+- **Что выдаёт MSVC:** MSVC выдаёт предупреждение C26815, если результат живёт дольше объекта,
+  при анализе кода с ключами `/analyze /analyze:plugin EspXEngine.dll`. MSVC не выдаёт ничего
+  без этого модуля анализа.
+- **GCC:** макрос раскрывается на GCC в пустоту. GCC выдаёт своё предупреждение
+  `-Wdangling-reference`, которое входит в `-Wall`, по собственному анализу, и этот анализ одинаков
+  с макросом и без него.
+- **Место:** макрос записывается после декларатора параметра или после квалификаторов функции-члена.
+
+| Условие, первое совпавшее | Раскрытие |
+|---|---|
+| MSVC, кроме clang-cl, `__has_cpp_attribute(msvc::lifetimebound)`, ни `msvc`, ни `lifetimebound` не являются макросами | `[[msvc::lifetimebound]]` |
+| `__has_cpp_attribute(_Clang::__lifetimebound__)` (Clang) | `[[_Clang::__lifetimebound__]]` |
+| `__has_attribute(__lifetimebound__)` | `__attribute__((__lifetimebound__))` |
+| ничего из перечисленного | пусто |
+
+Макрос раскрывается в `[[msvc::lifetimebound]]` на MSVC 19.44, в `[[_Clang::__lifetimebound__]]`
+на Clang и в пустоту на GCC.
+
+## Определения до заголовка
+
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
+
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_LIFETIMEBOUND` | пусто | `[[_Clang::__lifetimebound__]]`, `__attribute__((__lifetimebound__))`, пусто | `[[msvc::lifetimebound]]`, пусто |
+
+## Примеры
+
+Представление строки, переданной функции:
+
+<!-- snippet: example/attribute/lifetimebound/attribute_lifetimebound_example.cpp lifetimebound -->
+```cpp
+std::string_view first_word(std::string const & text SCL_LIFETIMEBOUND)
+{
+    return std::string_view{text}.substr(0, text.find(' '));
+}
+```
+
+## Смотрите также
+
+- [`example/attribute/lifetimebound/attribute_lifetimebound_example.cpp`](../../../../example/attribute/lifetimebound/attribute_lifetimebound_example.cpp)
 
 ---
 
-## SCL_LIFETIMEBOUND
-
-Помечает параметр функции (или неявный `*this` метода) как ограниченный
-временем жизни возвращаемого значения. При аннотации компилятор может
-предупредить, если возвращаемая ссылка, указатель или представление
-переживает аргумент — позволяя обнаруживать ошибки висячих ссылок
-во время компиляции.
-
-**Размещение** — после объявления параметра или после cv-квалификатора
-метода.
-
-> **Примечание:** Атрибут реализует только Clang. GCC и MSVC
-> не реализуют этот атрибут, и на них макрос пуст: эти компиляторы предупреждений
-> не выдают, а аннотированный код собирается без ошибок.
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| MSVC, кроме clang-cl | *(пусто, аналога нет)* |
-| `__has_cpp_attribute(clang::lifetimebound)` (Clang) | `[[clang::lifetimebound]]` |
-| `__has_attribute(lifetimebound)` (более старый Clang) | `__attribute__((lifetimebound))` |
-| Ни одно не выполнено | *(пусто — анализ времени жизни отсутствует)* |
-
-### Использование
-
-```cpp
-#include <scl/utility/attribute/lifetimebound.h>
-
-// Параметр — возвращаемое значение не должно переживать 's'
-std::string_view first_word(const std::string& s SCL_LIFETIMEBOUND);
-
-// Несколько параметров
-const int& clamp(const int& v SCL_LIFETIMEBOUND,
-                 const int& lo SCL_LIFETIMEBOUND,
-                 const int& hi SCL_LIFETIMEBOUND);
-
-// Метод — возвращаемое значение не должно переживать *this
-class Builder {
-public:
-    Builder& set_name(std::string_view name) SCL_LIFETIMEBOUND;
-    std::string_view name() const SCL_LIFETIMEBOUND;
-};
-```
-
-### Что обнаруживает Clang
-
-```cpp
-std::string_view sv = first_word(std::string{"hello world"});
-//                                            ^~~~~~~~~~~~~ временный объект уничтожен здесь
-// warning: temporary whose address is used as value of local variable 'sv'
-//          will be destroyed at the end of the full-expression [-Wdangling]
-```
-
----
-
-## Примечания
-
-- `SCL_LIFETIMEBOUND` не имеет накладных расходов во время выполнения —
-  это исключительно подсказка компилятору.
-- Не заменяет RAII или типы владения; используйте для аннотации функций,
-  возвращающих невладеющие представления.
-- Макрос можно переопределить до включения заголовка через
-  `#define SCL_LIFETIMEBOUND`.
+Назад: [`SCL_INDETERMINATE`](indeterminate.md) | Далее: [`SCL_LIKELY`](likely.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

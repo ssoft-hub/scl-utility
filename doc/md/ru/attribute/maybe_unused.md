@@ -1,54 +1,59 @@
-# SCL_MAYBE_UNUSED
+# `SCL_MAYBE_UNUSED`
 
-Подавление предупреждений о неиспользуемых сущностях.
+Сущность, помеченная `SCL_MAYBE_UNUSED`, может остаться неиспользованной в какой-то сборке,
+и компилятор не выдаёт о ней предупреждения.
 
 - Заголовок: `#include <scl/utility/attribute/maybe_unused.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
-
----
-
-## SCL_MAYBE_UNUSED
-
-Подавляет предупреждения компилятора о неиспользуемых переменных, параметрах
-функций, функциях и типах. Применяется к сущностям, которые намеренно могут
-оставаться неиспользованными в отдельных конфигурациях сборки (например,
-переменные только для отладки, платформозависимые параметры, значения только
-для `assert`).
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(maybe_unused)` (C++17) | `[[maybe_unused]]` |
-| `__has_attribute(unused)` (более старые GCC и Clang) | `__attribute__((unused))` |
-| Ни одно не выполнено | *(пусто — предупреждение может появляться)* |
-
-### Использование
 
 ```cpp
-#include <scl/utility/attribute/maybe_unused.h>
-
-// Параметр не используется в сборке с `NDEBUG` (только внутри assert)
-void set_size(std::size_t n, SCL_MAYBE_UNUSED std::size_t capacity) {
-    assert(n <= capacity);
-    storage_.resize(n);
-}
-
-// Функция исключается из сборки с `NDEBUG`
-SCL_MAYBE_UNUSED static void dump_state() { ... }
-
-// Переменная читается только в режиме отладки
-SCL_MAYBE_UNUSED bool ok = init();
-assert(ok);
+#define SCL_MAYBE_UNUSED /* see below */
 ```
+
+## Семантика
+
+- **Что сообщается компилятору:** сущность может не использоваться, например параметр, который
+  читается только в проверке `assert` в сборке без `NDEBUG`. Компилятор не выдаёт предупреждения
+  о неиспользованной сущности, и сборки с макросом и без него различаются только этим
+  предупреждением.
+- **Место:** макрос записывается перед объявлением переменной, параметра или функции, а в объявлении
+  типа после `struct`, `class`, `enum` или `enum class`.
+
+| Условие, первое совпавшее | Раскрытие |
+|---|---|
+| `__has_cpp_attribute(maybe_unused)` (C++17) | `[[maybe_unused]]` |
+| `__has_attribute(__unused__)` | `__attribute__((__unused__))` |
+| ничего из перечисленного | пусто |
+
+Макрос раскрывается в `[[maybe_unused]]` на GCC, Clang и MSVC в C++20.
+
+## Определения до заголовка
+
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
+
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_MAYBE_UNUSED` | `[[maybe_unused]]`, `__attribute__((__unused__))`, пусто | `[[maybe_unused]]`, `__attribute__((__unused__))`, пусто | `[[maybe_unused]]`, пусто |
+
+## Примеры
+
+Параметр, который читается только в проверке `assert`:
+
+<!-- snippet: example/attribute/maybe_unused/attribute_maybe_unused_example.cpp maybe_unused -->
+```cpp
+void resize(std::vector<int> & storage, std::size_t size, SCL_MAYBE_UNUSED std::size_t capacity)
+{
+    assert(size <= capacity);
+    storage.resize(size);
+}
+```
+
+## Смотрите также
+
+- [`example/attribute/maybe_unused/attribute_maybe_unused_example.cpp`](../../../../example/attribute/maybe_unused/attribute_maybe_unused_example.cpp)
 
 ---
 
-## Примечания
-
-- `SCL_MAYBE_UNUSED` подавляет предупреждение безусловно; предпочитайте его
-  приведению `(void)var`, когда сущность используется только в отдельных
-  конфигурациях сборки.
-- Применение к типу подавляет предупреждения обо всех переменных этого типа.
-- Макрос можно переопределить до включения заголовка через
-  `#define SCL_MAYBE_UNUSED`.
+Назад: [`SCL_LIKELY`](likely.md) | Далее: [`SCL_NODISCARD`](nodiscard.md) |
+[К группе](index.md) | [К главной странице](../Main.md)
