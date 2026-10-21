@@ -125,36 +125,36 @@
 
 #ifndef SCL_LIKELY_EXPR
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_LIKELY_EXPR(expr) (!!(expr))
+#define SCL_LIKELY_EXPR(expr) (static_cast<bool>(!!(expr)))
 #endif
 #endif
 
 #ifndef SCL_LIKELY_EXPR
 #ifdef __has_builtin
 #if __has_builtin(__builtin_expect)
-#define SCL_LIKELY_EXPR(expr) __builtin_expect(!!(expr), 1)
+#define SCL_LIKELY_EXPR(expr) (static_cast<bool>(__builtin_expect(!!(expr), 1)))
 #endif
 #endif
 #endif
 
 #ifndef SCL_LIKELY_EXPR
-#define SCL_LIKELY_EXPR(expr) (!!(expr))
+#define SCL_LIKELY_EXPR(expr) (static_cast<bool>(!!(expr)))
 #endif
 
 #ifndef SCL_UNLIKELY_EXPR
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_UNLIKELY_EXPR(expr) (!!(expr))
+#define SCL_UNLIKELY_EXPR(expr) (static_cast<bool>(!!(expr)))
 #endif
 #endif
 
 #ifndef SCL_UNLIKELY_EXPR
 #ifdef __has_builtin
 #if __has_builtin(__builtin_expect)
-#define SCL_UNLIKELY_EXPR(expr) __builtin_expect(!!(expr), 0)
+#define SCL_UNLIKELY_EXPR(expr) (static_cast<bool>(__builtin_expect(!!(expr), 0)))
 #endif
 #endif
 #endif
 
 #ifndef SCL_UNLIKELY_EXPR
-#define SCL_UNLIKELY_EXPR(expr) (!!(expr))
+#define SCL_UNLIKELY_EXPR(expr) (static_cast<bool>(!!(expr)))
 #endif

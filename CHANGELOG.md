@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- [attribute] Made `SCL_LIKELY_EXPR` and `SCL_UNLIKELY_EXPR` yield `bool` on GCC and Clang, as on MSVC
 - [hash] Broke `fnv1a("text")`: every hash function and `key` refuse a bounded array
 - [hash] Refused a range of elements wider than a byte, a breaking change
 - [hash] Took the range of every hash function as a forwarding reference, so `fnv1a<T>(lvalue)` breaks
