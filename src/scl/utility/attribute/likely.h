@@ -2,104 +2,11 @@
 
 /**
  * @file
- * @brief Branch-prediction hint macros: SCL_LIKELY, SCL_UNLIKELY,
- *        SCL_LIKELY_EXPR, SCL_UNLIKELY_EXPR.
+ * @brief The macros `SCL_LIKELY`, `SCL_UNLIKELY`, `SCL_LIKELY_EXPR` and `SCL_UNLIKELY_EXPR`.
  * @ingroup scl_utility_attribute
  */
 
 #include <scl/utility/attribute/detail/spelling.h>
-
-/**
- * @def SCL_LIKELY
- * @brief Statement attribute that marks a branch as likely to be taken.
- * @ingroup scl_utility_attribute
- * @details
- * Portable wrapper for the C++20 @c [[likely]] statement attribute.
- * Apply it before a statement in an @c if branch or before a label in a
- * @c switch to guide the optimizer's branch-layout decisions.
- *
- * Detection order:
- *  1. @c __has_cpp_attribute(likely) (C++20): @c [[likely]]
- *  2. Fallback: empty (no hint; compiles without effect)
- *
- * @code{.cpp}
- * // if branch
- * if (condition) SCL_LIKELY { fast_path(); }
- *
- * // switch label
- * switch (x) {
- * SCL_LIKELY case 0: ...
- * }
- * @endcode
- */
-
-/**
- * @def SCL_UNLIKELY
- * @brief Statement attribute that marks a branch as unlikely to be taken.
- * @ingroup scl_utility_attribute
- * @details
- * Portable wrapper for the C++20 @c [[unlikely]] statement attribute.
- *
- * Detection order:
- *  1. @c __has_cpp_attribute(unlikely) (C++20): @c [[unlikely]]
- *  2. Fallback: empty
- *
- * @code{.cpp}
- * if (error) SCL_UNLIKELY { handle_error(); }
- *
- * switch (x) {
- * SCL_UNLIKELY default: ...
- * }
- * @endcode
- */
-
-/**
- * @def SCL_LIKELY_EXPR(expr)
- * @brief Expression wrapper that hints the optimizer @p expr is usually true.
- * @ingroup scl_utility_attribute
- * @details
- * Wraps a boolean or integer expression and yields its truth value, @c 0 or
- * @c 1. On GCC and Clang the hint is communicated via @c __builtin_expect.
- * On MSVC, which relies on profile-guided optimisation instead, the wrapper
- * carries no hint and only the truth test remains.
- *
- * Detection order:
- *  1. MSVC other than clang-cl: @c (!!(expr))
- *  2. @c __has_builtin(__builtin_expect) (GCC, Clang):
- *       @c __builtin_expect(!!(expr), 1)
- *  3. Fallback: @c (!!(expr))
- *
- * @param expr An expression convertible to @c bool (or @c int).
- *
- * @code{.cpp}
- * if (SCL_LIKELY_EXPR(ptr != nullptr)) {
- *     // fast path — branch predictor biased here
- * }
- * @endcode
- */
-
-/**
- * @def SCL_UNLIKELY_EXPR(expr)
- * @brief Expression wrapper that hints the optimizer @p expr is usually false.
- * @ingroup scl_utility_attribute
- * @details
- * Like @ref SCL_LIKELY_EXPR but biases the branch predictor toward the
- * false (zero) outcome.
- *
- * Detection order:
- *  1. MSVC other than clang-cl: @c (!!(expr))
- *  2. @c __has_builtin(__builtin_expect) (GCC, Clang):
- *       @c __builtin_expect(!!(expr), 0)
- *  3. Fallback: @c (!!(expr))
- *
- * @param expr An expression convertible to @c bool (or @c int).
- *
- * @code{.cpp}
- * if (SCL_UNLIKELY_EXPR(error_code != 0)) {
- *     handle_error(error_code);
- * }
- * @endcode
- */
 
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(likely)
@@ -202,3 +109,89 @@ static_assert(
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_EXPR_BUILTIN(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_EXPR_FALLBACK(scl_detail_condition))),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_UNLIKELY_EXPR));
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @def SCL_LIKELY
+ * @brief The marked branch is the path the program usually takes.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** the statement after the macro is the path the program usually
+ *   takes (`SCL_LIKELY`) or rarely takes (`SCL_UNLIKELY`). The optimizer may lay out the code for
+ *   that path.
+ * - **Place:** either macro is written before the statement of a branch of `if` or `else`, or
+ *   before a `case` or `default` label, and never inside a condition.
+ *
+ * | Condition, first match | `SCL_LIKELY` | `SCL_UNLIKELY` |
+ * |---|---|---|
+ * | `__has_cpp_attribute(likely)`, `__has_cpp_attribute(unlikely)` (C++20) | `[[likely]]` | `[[unlikely]]` |
+ * | none of the above | nothing | nothing |
+ *
+ * The macros expand to `[[likely]]` and `[[unlikely]]` on GCC, Clang and MSVC in C++20.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_LIKELY` | `[[likely]]`, empty | `[[likely]]`, empty | `[[likely]]`, empty |
+ * | `SCL_UNLIKELY` | `[[unlikely]]`, empty | `[[unlikely]]`, empty | `[[unlikely]]`, empty |
+ *
+ * @snippet attribute/likely/attribute_likely_example.cpp likely
+ */
+
+/**
+ * @def SCL_UNLIKELY
+ * @brief The marked branch is the path the program rarely takes.
+ * @ingroup scl_utility_attribute
+ * @details
+ * @copydetails SCL_LIKELY
+ */
+
+/**
+ * @def SCL_LIKELY_EXPR(expr)
+ * @brief The expression `expr` is usually `true`.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** `expr` is usually `true` (`SCL_LIKELY_EXPR`) or usually `false`
+ *   (`SCL_UNLIKELY_EXPR`).
+ * - **The value:** the value of the expansion is the truth value of `expr`, of the type `bool` on
+ *   every compiler.
+ * - **MSVC:** no hint is given on MSVC, and only the truth test is left in the expansion.
+ * - **Place:** either macro is written in any expression, the condition of `if`, `while` or `?:`
+ *   included.
+ *
+ * | Condition, first match | `SCL_LIKELY_EXPR(expr)` | `SCL_UNLIKELY_EXPR(expr)` |
+ * |---|---|---|
+ * | MSVC other than clang-cl | `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(!!(expr)))` |
+ * | `__has_builtin(__builtin_expect)` (GCC, Clang) | `(static_cast<bool>(__builtin_expect(!!(expr), 1)))` | `(static_cast<bool>(__builtin_expect(!!(expr), 0)))` |
+ * | none of the above | `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(!!(expr)))` |
+ *
+ * The macros expand to `(static_cast<bool>(!!(expr)))` on MSVC, and to the expansions with
+ * `__builtin_expect` on GCC and Clang.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_LIKELY_EXPR(expr)` | `(static_cast<bool>(__builtin_expect(!!(expr), 1)))`, `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(__builtin_expect(!!(expr), 1)))`, `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(!!(expr)))` |
+ * | `SCL_UNLIKELY_EXPR(expr)` | `(static_cast<bool>(__builtin_expect(!!(expr), 0)))`, `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(__builtin_expect(!!(expr), 0)))`, `(static_cast<bool>(!!(expr)))` | `(static_cast<bool>(!!(expr)))` |
+ *
+ * @param expr An expression the operator `!` can be applied to.
+ *
+ * @snippet attribute/likely/attribute_likely_example.cpp likely_expr
+ */
+
+/**
+ * @def SCL_UNLIKELY_EXPR(expr)
+ * @brief The expression `expr` is usually `false`.
+ * @ingroup scl_utility_attribute
+ * @details
+ * @copydetails SCL_LIKELY_EXPR
+ */

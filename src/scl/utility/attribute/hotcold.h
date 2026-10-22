@@ -2,61 +2,11 @@
 
 /**
  * @file
- * @brief Function-frequency hint macros: SCL_HOT and SCL_COLD.
+ * @brief The macros `SCL_HOT` and `SCL_COLD`.
  * @ingroup scl_utility_attribute
  */
 
 #include <scl/utility/attribute/detail/spelling.h>
-
-/**
- * @def SCL_HOT
- * @brief Marks a function as called frequently (hot path).
- * @ingroup scl_utility_attribute
- * @details
- * Instructs the compiler to optimise the function more aggressively and
- * place it in a section of the binary that improves instruction-cache
- * locality for hot code. A branch toward a @c SCL_HOT call keeps the
- * probability it would have had unannotated; only @ref SCL_COLD biases one.
- *
- * Detection order:
- *  1. MSVC other than clang-cl: empty (no equivalent)
- *  2. @c __has_cpp_attribute(gnu::hot) (GCC, Clang):
- *       @c [[gnu::hot]]
- *  3. @c __has_attribute(hot) (older GCC and Clang):
- *       @c __attribute__((hot))
- *  4. Fallback: empty (no hint)
- *
- * @code{.cpp}
- * SCL_HOT void dispatch(const Event& e);
- *
- * SCL_HOT int lookup(std::uint32_t key);
- * @endcode
- */
-
-/**
- * @def SCL_COLD
- * @brief Marks a function as called rarely (cold path).
- * @ingroup scl_utility_attribute
- * @details
- * Instructs the compiler to optimise the function for size rather than
- * speed and to place it in a cold section of the binary, away from hot
- * code. Branches toward a @c SCL_COLD call site are implicitly biased as
- * unlikely. Combines naturally with @ref SCL_NOINLINE and @ref SCL_NORETURN.
- *
- * Detection order:
- *  1. MSVC other than clang-cl: empty (no equivalent)
- *  2. @c __has_cpp_attribute(gnu::cold) (GCC, Clang):
- *       @c [[gnu::cold]]
- *  3. @c __has_attribute(cold) (older GCC and Clang):
- *       @c __attribute__((cold))
- *  4. Fallback: empty (no hint)
- *
- * @code{.cpp}
- * SCL_COLD SCL_NOINLINE void report_oom(std::size_t requested);
- *
- * SCL_NORETURN SCL_COLD void fatal(const char* msg);
- * @endcode
- */
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_DETAIL_HOT_MSVC
@@ -133,3 +83,54 @@ static_assert(
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_COLD));
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @def SCL_HOT
+ * @brief The compiler is told that the marked function is called often.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** the function is called often (`SCL_HOT`) or rarely (`SCL_COLD`).
+ * - **What GCC and Clang do:** GCC and Clang mark a function under `SCL_HOT` as called often, and
+ *   GCC optimizes it harder. Both optimize a function under `SCL_COLD` for size and take a branch
+ *   that leads to a call of it as unlikely. Both place hot functions in one section and cold
+ *   functions in another, apart from the rest of the code, where the target and the options allow
+ *   it. The likelihood of a branch that leads to a call of a hot function stays as it is.
+ * - **MSVC:** MSVC has no attribute for a function called often or rarely, and both macros expand
+ *   to nothing there.
+ * - **One of the two:** `SCL_HOT` and `SCL_COLD` must not both be written on one function. Clang
+ *   rejects the pair, and GCC drops one of the two attributes with a warning.
+ * - **Place:** either macro is written before the declaration of a function.
+ *
+ * | Condition, first match | `SCL_HOT` | `SCL_COLD` |
+ * |---|---|---|
+ * | MSVC other than clang-cl | nothing | nothing |
+ * | `__has_cpp_attribute(__gnu__::__hot__)`, `__has_cpp_attribute(__gnu__::__cold__)` (GCC, Clang) | `[[__gnu__::__hot__]]` | `[[__gnu__::__cold__]]` |
+ * | `__has_attribute(__hot__)`, `__has_attribute(__cold__)` | `__attribute__((__hot__))` | `__attribute__((__cold__))` |
+ * | none of the above | nothing | nothing |
+ *
+ * The macros expand to nothing on MSVC, and to `[[__gnu__::__hot__]]` and `[[__gnu__::__cold__]]`
+ * on GCC and Clang.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_HOT` | `[[__gnu__::__hot__]]`, `__attribute__((__hot__))`, empty | `[[__gnu__::__hot__]]`, `__attribute__((__hot__))`, empty | empty |
+ * | `SCL_COLD` | `[[__gnu__::__cold__]]`, `__attribute__((__cold__))`, empty | `[[__gnu__::__cold__]]`, `__attribute__((__cold__))`, empty | empty |
+ *
+ * @snippet attribute/hotcold/attribute_hotcold_example.cpp hotcold
+ */
+
+/**
+ * @def SCL_COLD
+ * @brief The compiler is told that the marked function is called rarely.
+ * @ingroup scl_utility_attribute
+ * @details
+ * @copydetails SCL_HOT
+ */

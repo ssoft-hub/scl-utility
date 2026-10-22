@@ -2,54 +2,11 @@
 
 /**
  * @file
- * @brief Lifetime-bound parameter annotation macro: SCL_LIFETIMEBOUND.
+ * @brief The macro `SCL_LIFETIMEBOUND`.
  * @ingroup scl_utility_attribute
  */
 
 #include <scl/utility/attribute/detail/spelling.h>
-
-/**
- * @def SCL_LIFETIMEBOUND
- * @brief Marks a function parameter (or implicit @c *this) as
- *        lifetime-bound to the return value.
- * @ingroup scl_utility_attribute
- * @details
- * When applied to a parameter, the compiler warns if the returned
- * reference or pointer outlives the annotated argument (dangling
- * reference detection at compile time).
- *
- * **Placement** — after the parameter declaration or after the
- * cv-qualifier of a member function:
- * @code{.cpp}
- * // Parameter
- * std::string_view first(const std::string& s SCL_LIFETIMEBOUND);
- *
- * // Member function (*this is lifetimebound to return value)
- * class Builder {
- *     Builder& set(int v) SCL_LIFETIMEBOUND;
- * };
- * @endcode
- *
- * Detection order:
- *  1. MSVC other than clang-cl: empty (no equivalent)
- *  2. @c __has_cpp_attribute(clang::lifetimebound) (Clang):
- *       @c [[clang::lifetimebound]]
- *  3. @c __has_attribute(lifetimebound) (older Clang):
- *       @c __attribute__((lifetimebound))
- *  4. Fallback: empty (no lifetime analysis; no warning)
- *
- * @note GCC and MSVC do not currently support this attribute; there the macro
- *       expands to nothing.
- *
- * @code{.cpp}
- * const int& clamp(const int& v SCL_LIFETIMEBOUND,
- *                  const int& lo SCL_LIFETIMEBOUND,
- *                  const int& hi SCL_LIFETIMEBOUND);
- *
- * // Dangling reference — Clang warns with SCL_LIFETIMEBOUND:
- * const int& r = clamp(42, 0, 100);  // temporary args destroyed
- * @endcode
- */
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #ifdef __has_cpp_attribute
@@ -100,3 +57,48 @@ static_assert(
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_LIFETIMEBOUND));
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @def SCL_LIFETIMEBOUND
+ * @brief The result of the function refers to the object of the marked parameter or of `*this`.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** the reference, pointer or view the function returns refers to
+ *   the object the parameter refers to. The same is stated of `*this` on a member function.
+ * - **What Clang reports:** Clang reports the warning `-Wdangling` where the result outlives
+ *   the object, such as a `std::string_view` initialised from
+ *   `first_word(std::string{"hello world"})`, whose argument is destroyed at the end of the full
+ *   expression.
+ * - **What MSVC reports:** MSVC reports warning C26815 where the result outlives the object, in
+ *   code analysis with `/analyze /analyze:plugin EspXEngine.dll`. MSVC reports nothing without that
+ *   plugin.
+ * - **GCC:** the macro expands to nothing on GCC. GCC issues its warning `-Wdangling-reference`,
+ *   part of `-Wall`, by an analysis of its own, and that analysis is the same with the macro and
+ *   without it.
+ * - **Place:** the macro is written after the declarator of a parameter, or after the qualifiers of
+ *   a member function.
+ *
+ * | Condition, first match | Expansion |
+ * |---|---|
+ * | MSVC other than clang-cl, `__has_cpp_attribute(msvc::lifetimebound)`, neither `msvc` nor `lifetimebound` a macro | `[[msvc::lifetimebound]]` |
+ * | `__has_cpp_attribute(_Clang::__lifetimebound__)` (Clang) | `[[_Clang::__lifetimebound__]]` |
+ * | `__has_attribute(__lifetimebound__)` | `__attribute__((__lifetimebound__))` |
+ * | none of the above | nothing |
+ *
+ * The macro expands to `[[msvc::lifetimebound]]` on MSVC 19.44, to `[[_Clang::__lifetimebound__]]`
+ * on Clang and to nothing on GCC.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_LIFETIMEBOUND` | empty | `[[_Clang::__lifetimebound__]]`, `__attribute__((__lifetimebound__))`, empty | `[[msvc::lifetimebound]]`, empty |
+ *
+ * @snippet attribute/lifetimebound/attribute_lifetimebound_example.cpp lifetimebound
+ */

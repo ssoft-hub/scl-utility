@@ -2,70 +2,11 @@
 
 /**
  * @file
- * @brief Optimizer hint macros: SCL_ASSUME and SCL_UNREACHABLE.
+ * @brief The macros `SCL_ASSUME` and `SCL_UNREACHABLE`.
  * @ingroup scl_utility_attribute
  */
 
 #include <scl/utility/attribute/detail/spelling.h>
-
-/**
- * @def SCL_ASSUME(expr)
- * @brief Informs the optimizer that @p expr is always true at this point.
- * @ingroup scl_utility_attribute
- * @details
- * In the first four branches @p expr is @b not evaluated at runtime; in the
- * last two it is.
- * Do NOT pass expressions with side effects.
- *
- * Detection order:
- *  1. @c __has_cpp_attribute(assume) (C++23):
- *       @c [[assume(expr)]] — standard form, forward-compatible
- *  2. MSVC other than clang-cl:
- *       @c __assume(expr)
- *  3. @c __has_builtin(__builtin_assume) (Clang):
- *       @c __builtin_assume(expr)
- *  4. @c __has_attribute(assume):
- *       @c __attribute__((assume(expr)))
- *  5. @c __has_builtin(__builtin_unreachable):
- *       @c (static_cast&lt;bool&gt;(expr) ? (void)0 : __builtin_unreachable())
- *  6. Fallback: @c ((void)(expr))
- *
- * @param expr A boolean expression assumed to be always true.
- *
- * @code{.cpp}
- * void process(int* p) {
- *     SCL_ASSUME(p != nullptr);
- *     *p = 42; // optimizer may elide null-check
- * }
- * @endcode
- */
-
-/**
- * @def SCL_UNREACHABLE()
- * @brief Marks the current location as unreachable code.
- * @ingroup scl_utility_attribute
- * @details
- * Invoking this macro in a code path that IS reached is undefined behaviour.
- * Use it to suppress "not all control paths return a value" warnings and
- * to guide the optimizer in dead-code elimination.
- *
- * Detection order:
- *  1. MSVC other than clang-cl:
- *       @c __assume(false)
- *  2. @c __has_builtin(__builtin_unreachable) (GCC, Clang):
- *       @c __builtin_unreachable()
- *  3. Fallback: @c ((void)0)
- *
- * @code{.cpp}
- * int f(Color c) {
- *     switch (c) {
- *     case Color::Red:   return 1;
- *     case Color::Green: return 2;
- *     }
- *     SCL_UNREACHABLE();
- * }
- * @endcode
- */
 
 #ifdef __has_cpp_attribute
 #if __cplusplus > 202002L || (defined(_MSVC_LANG) && _MSVC_LANG > 202002L)
@@ -154,3 +95,83 @@ static_assert(
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNREACHABLE_BUILTIN()),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNREACHABLE_FALLBACK())),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_UNREACHABLE));
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @def SCL_ASSUME(expr)
+ * @brief The optimizer takes the condition `expr` as true where the macro is written.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** `expr` is `true` each time execution reaches the statement.
+ *   The optimizer may drop a branch or a check that the condition makes redundant.
+ * - **A false promise:** the behaviour of the program is undefined where `expr` is `false` at that
+ *   point and the expansion is taken from one of the first five rows of the table.
+ * - **The argument:** `expr` is not evaluated under the first four rows of the table and is
+ *   evaluated under the last two, so an expression with no side effects should be passed.
+ * - **`SCL_ASSUME(false)`:** the promise is that of `SCL_UNREACHABLE`, yet Clang still reports
+ *   the warning `-Wreturn-type` where a function ends after `[[assume(false)]]`.
+ *   `SCL_UNREACHABLE()` should be written for that promise.
+ * - **Place:** the macro is written as a statement of its own, closed by a semicolon.
+ *
+ * | Condition, first match | Expansion |
+ * |---|---|
+ * | `__has_cpp_attribute(assume)`, where `__cplusplus` or `_MSVC_LANG` is above `202002L` | `[[assume(expr)]]` |
+ * | MSVC other than clang-cl | `__assume(expr)` |
+ * | `__has_builtin(__builtin_assume)` (Clang) | `__builtin_assume(expr)` |
+ * | `__has_attribute(__assume__)` | `__attribute__((__assume__(expr)))` |
+ * | `__has_builtin(__builtin_unreachable)` | `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())` |
+ * | none of the above | `((void)(expr))` |
+ *
+ * The macro expands to `__assume(expr)` on MSVC, to `__builtin_assume(expr)` on Clang and to
+ * `__attribute__((__assume__(expr)))` on GCC in C++20. It expands to `[[assume(expr)]]` only where
+ * `__cplusplus` or `_MSVC_LANG` is above `202002L` and `__has_cpp_attribute(assume)` is not `0`, as
+ * on GCC 13 and Clang 22 under `-std=c++23`. MSVC 19.44 reports `0` for `assume` under
+ * `/std:c++latest`, so the macro keeps `__assume(expr)` there.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_ASSUME(expr)` | `__attribute__((__assume__(expr)))`, `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())`, `((void)(expr))` | `__builtin_assume(expr)`, `__attribute__((__assume__(expr)))`, `(static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())`, `((void)(expr))` | `__assume(expr)`, `((void)(expr))` |
+ *
+ * `[[assume(expr)]]` is admitted as well in C++23 on GCC and on Clang 19 and later.
+ *
+ * @param expr The condition taken as `true`.
+ *
+ * @snippet attribute/assume/attribute_assume_example.cpp assume
+ */
+
+/**
+ * @def SCL_UNREACHABLE()
+ * @brief The optimizer takes the point of the macro as never reached.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** execution never reaches the statement. The compiler stops
+ *   warning that a function returning a value may end without one.
+ * - **A false promise:** the behaviour of the program is undefined where execution reaches
+ *   the statement and the expansion is taken from one of the first two rows of the table.
+ * - **Place:** the macro is written as a statement of its own, closed by a semicolon.
+ *
+ * | Condition, first match | Expansion |
+ * |---|---|
+ * | MSVC other than clang-cl | `__assume(false)` |
+ * | `__has_builtin(__builtin_unreachable)` (GCC, Clang) | `__builtin_unreachable()` |
+ * | none of the above | `((void)0)` |
+ *
+ * The macro expands to `__assume(false)` on MSVC and to `__builtin_unreachable()` on GCC and Clang.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_UNREACHABLE()` | `__builtin_unreachable()`, `((void)0)` | `__builtin_unreachable()`, `((void)0)` | `__assume(false)`, `((void)0)` |
+ *
+ * @snippet attribute/assume/attribute_assume_example.cpp unreachable
+ */
