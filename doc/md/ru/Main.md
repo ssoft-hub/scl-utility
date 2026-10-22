@@ -58,23 +58,17 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | [any_anchor](any/any_anchor.md) | `<scl/utility/any/any_anchor.h>` | Якорь: объявляется рядом со значением и позволяет прочитать его через представление на этапе компиляции |
 | [any_switch](any/any_switch.md) | `<scl/utility/any/any_switch.h>` | Цепочка ветвей: выполняет одну ветвь, выбранную по фактическому типу значения; само значение не хранит |
 
-### Attribute — переносимые макросы атрибутов компилятора
+### Attribute - переносимые макросы атрибутов компилятора
 
-| Компонент | Заголовок | Описание |
-|-----------|-----------|----------|
-| [SCL_NO_UNIQUE_ADDRESS](attribute/no_unique_address.md) | `<scl/utility/attribute/no_unique_address.h>` | Переносимый `[[no_unique_address]]` для MSVC/GCC/Clang |
-| [SCL_ASSUME / SCL_UNREACHABLE](attribute/assume.md) | `<scl/utility/attribute/assume.h>` | Подсказки оптимизатору: предположение и недостижимый код |
-| [SCL_FORCE_INLINE / SCL_NOINLINE](attribute/inline.md) | `<scl/utility/attribute/inline.h>` | Управление встраиванием функций |
-| [SCL_NORETURN](attribute/noreturn.md) | `<scl/utility/attribute/noreturn.h>` | Пометка функции, не возвращающей управление |
-| [SCL_DEPRECATED / SCL_DEPRECATED_MSG](attribute/deprecated.md) | `<scl/utility/attribute/deprecated.h>` | Аннотации устаревших сущностей |
-| [SCL_FALLTHROUGH](attribute/fallthrough.md) | `<scl/utility/attribute/fallthrough.h>` | Пометка намеренного провала между ветками switch |
-| [SCL_NODISCARD / SCL_NODISCARD_MSG](attribute/nodiscard.md) | `<scl/utility/attribute/nodiscard.h>` | Предупреждение об игнорировании возвращаемого значения |
-| [SCL_MAYBE_UNUSED](attribute/maybe_unused.md) | `<scl/utility/attribute/maybe_unused.h>` | Подавление предупреждений о неиспользуемых сущностях |
-| [SCL_LIKELY / SCL_UNLIKELY / SCL_LIKELY_EXPR / SCL_UNLIKELY_EXPR](attribute/likely.md) | `<scl/utility/attribute/likely.h>` | Подсказки предсказателю ветвлений |
-| [SCL_UNSEQUENCED / SCL_REPRODUCIBLE](attribute/unsequenced.md) | `<scl/utility/attribute/unsequenced.h>` | Аннотации чистых функций (C23 / gnu::const / gnu::pure) |
-| [SCL_INDETERMINATE](attribute/indeterminate.md) | `<scl/utility/attribute/indeterminate.h>` | Явный выбор неопределённого хранилища (C++26) |
-| [SCL_HOT / SCL_COLD](attribute/hotcold.md) | `<scl/utility/attribute/hotcold.h>` | Подсказки о частоте вызова функции |
-| [SCL_LIFETIMEBOUND](attribute/lifetimebound.md) | `<scl/utility/attribute/lifetimebound.h>` | Обнаружение висячих ссылок через аннотацию времени жизни параметра |
+Макросы группы раскрываются в атрибут или подсказку компилятору в той форме, которую принимает
+данный компилятор, а если у компилятора такого атрибута нет, то в пустоту или в простую замену. Одни
+макросы несут факт о коде, например что результат нужно прочитать или что функция не возвращает
+управление. Другие несут подсказку оптимизатору об условии, встраивании, ветвлении, переменной,
+в которую пишут до каждого чтения, или вызовах функции. Любой из макросов можно заменить
+определением, сделанным раньше первого включённого заголовка модуля, в форме записи, указанной
+на его странице для данного компилятора.
+
+[К группе](attribute/index.md)
 
 ### Concepts — концепты для стандартных свойств типов
 

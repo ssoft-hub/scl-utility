@@ -1,62 +1,72 @@
-# SCL_FALLTHROUGH
+# `SCL_FALLTHROUGH`
 
-Аннотация намеренного проваливания в следующий `case`.
+Выполнение намеренно переходит из ветви `switch`, помеченной `SCL_FALLTHROUGH`, в следующую ветвь.
 
 - Заголовок: `#include <scl/utility/attribute/fallthrough.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
-
----
-
-## SCL_FALLTHROUGH
-
-Помечает конец тела `case`, который намеренно проваливается в следующий `case`
-без `break`, `return` или `throw`. Подавляет предупреждение
-`-Wimplicit-fallthrough` (GCC, Clang) и предупреждение C26819 (анализатор
-MSVC).
-
-Размещается как последняя инструкция в теле `case`, завершается точкой с
-запятой.
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(fallthrough)` (C++17) | `[[fallthrough]]` |
-| `__has_attribute(fallthrough)` (более старые GCC и Clang) | `__attribute__((fallthrough))` |
-| Ни одно не выполнено | `((void)0)` — ничего не делает |
-
-### Использование
 
 ```cpp
-#include <scl/utility/attribute/fallthrough.h>
+#define SCL_FALLTHROUGH /* see below */
+```
 
-void handle(int code) {
-    switch (code) {
+## Семантика
+
+- **Что сообщается компилятору:** ветвь намеренно завершается без `break`. Компилятор не выдаёт
+  для неё предупреждения `-Wimplicit-fallthrough`. MSVC не выдаёт предупреждения C5262, которое
+  по умолчанию выключено, а при анализе кода с ключами `/analyze /analyze:plugin EspXEngine.dll`
+  не выдаёт предупреждения C26819. Порядок выполнения одинаков с макросом и без него.
+- **Место:** макрос записывается последним оператором ветви перед следующей меткой и завершается
+  точкой с запятой.
+
+| Условие, первое совпавшее | Раскрытие |
+|---|---|
+| `__has_cpp_attribute(fallthrough)` (C++17) | `[[fallthrough]]` |
+| `__has_attribute(__fallthrough__)` | `__attribute__((__fallthrough__))` |
+| ничего из перечисленного | `((void)0)` |
+
+Макрос раскрывается в `[[fallthrough]]` на GCC, Clang и MSVC в C++20.
+
+## Определения до заголовка
+
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
+
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_FALLTHROUGH` | `[[fallthrough]]`, `__attribute__((__fallthrough__))`, `((void)0)` | `[[fallthrough]]`, `__attribute__((__fallthrough__))`, `((void)0)` | `[[fallthrough]]`, `((void)0)` |
+
+## Примеры
+
+Все шаги от заданной стадии до последней:
+
+<!-- snippet: example/attribute/fallthrough/attribute_fallthrough_example.cpp fallthrough -->
+```cpp
+int steps_left(int stage)
+{
+    int steps = 0;
+    switch (stage)
+    {
+    case 0:
+        ++steps;
+        SCL_FALLTHROUGH;
     case 1:
-        prepare();
+        ++steps;
         SCL_FALLTHROUGH;
     case 2:
-        execute();
-        break;
-    case 3:
-        log();
-        SCL_FALLTHROUGH;
-    case 4:
-        cleanup();
+        ++steps;
         break;
     default:
         break;
     }
+    return steps;
 }
 ```
 
+## Смотрите также
+
+- [`example/attribute/fallthrough/attribute_fallthrough_example.cpp`](../../../../example/attribute/fallthrough/attribute_fallthrough_example.cpp)
+
 ---
 
-## Примечания
-
-- `SCL_FALLTHROUGH` лишь подавляет предупреждение о неявном провале;
-  на ход выполнения программы не влияет.
-- Запасное значение `((void)0)` является корректным выражением-инструкцией
-  на всех целевых компиляторах и компилируется без побочных эффектов.
-- Макрос можно переопределить до включения заголовка через
-  `#define SCL_FALLTHROUGH`.
+Назад: [`SCL_DEPRECATED`](deprecated.md) | Далее: [`SCL_FORCE_INLINE`](inline.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

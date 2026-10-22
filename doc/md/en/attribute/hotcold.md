@@ -1,123 +1,77 @@
-# SCL_HOT / SCL_COLD
+# `SCL_HOT`, `SCL_COLD`
 
-Function-frequency hint macros.
+The compiler is told that a function marked with `SCL_HOT` is called often, and that a function
+marked with `SCL_COLD` is called rarely.
 
 - Header: `#include <scl/utility/attribute/hotcold.h>`
-- Aggregator: `#include <scl/utility/attribute.h>`
-
----
-
-## SCL_HOT
-
-Marks a function as called frequently. The compiler optimizes it more
-aggressively and places it in a hot section of the binary to improve
-instruction-cache locality. A branch toward a call of it keeps the probability
-it would have had unannotated; only `SCL_COLD` biases one.
-
-Place before the return type.
-
-### Detection
-
-| Condition | Expansion |
-|-----------|-----------|
-| MSVC other than clang-cl | *(empty, no equivalent)* |
-| `__has_cpp_attribute(gnu::hot)` (GCC, Clang) | `[[gnu::hot]]` |
-| `__has_attribute(hot)` (older GCC and Clang) | `__attribute__((hot))` |
-| None of the above | *(empty — no hint)* |
-
-### Usage
 
 ```cpp
-#include <scl/utility/attribute/hotcold.h>
-
-SCL_HOT void dispatch(const Event& e);
-
-SCL_HOT int lookup(std::uint32_t key);
+#define SCL_HOT /* see below */
+#define SCL_COLD /* see below */
 ```
 
----
+## Semantics
 
-## SCL_COLD
+- **What the compiler is told:** the function is called often (`SCL_HOT`) or rarely (`SCL_COLD`).
+- **What GCC and Clang do:** GCC and Clang mark a function under `SCL_HOT` as called often, and GCC
+  optimizes it harder. Both optimize a function under `SCL_COLD` for size and take a branch that
+  leads to a call of it as unlikely. Both place hot functions in one section and cold functions in
+  another, apart from the rest of the code, where the target and the options allow it.
+  The likelihood of a branch that leads to a call of a hot function stays as it is.
+- **MSVC:** MSVC has no attribute for a function called often or rarely, and both macros expand to
+  nothing there.
+- **One of the two:** `SCL_HOT` and `SCL_COLD` must not both be written on one function. Clang
+  rejects the pair, and GCC drops one of the two attributes with a warning.
+- **Place:** either macro is written before the declaration of a function.
 
-Marks a function as called rarely. The compiler optimizes it for size rather
-than speed and places it in a cold section of the binary, away from hot code.
-Call sites branching toward a `SCL_COLD` function are implicitly treated as
-unlikely.
-
-Place before the return type. Combines naturally with `SCL_NOINLINE` and
-`SCL_NORETURN` for error handlers and fatal paths.
-
-### Detection
-
-| Condition | Expansion |
-|-----------|-----------|
-| MSVC other than clang-cl | *(empty, no equivalent)* |
-| `__has_cpp_attribute(gnu::cold)` (GCC, Clang) | `[[gnu::cold]]` |
-| `__has_attribute(cold)` (older GCC and Clang) | `__attribute__((cold))` |
-| None of the above | *(empty — no hint)* |
-
-### Usage
-
-```cpp
-#include <scl/utility/attribute/hotcold.h>
-
-SCL_COLD SCL_NOINLINE void report_oom(std::size_t requested);
-
-SCL_NORETURN SCL_COLD void fatal(const char* msg);
-```
-
----
-
-## Relation to other attribute macros
-
-### vs `SCL_FORCE_INLINE`
-
-These are complementary strategies, not overlapping ones:
-
-| | `SCL_FORCE_INLINE` | `SCL_HOT` |
+| Condition, first match | `SCL_HOT` | `SCL_COLD` |
 |---|---|---|
-| What it does | Inlines the function body at every call site | Keeps the function as a callable; optimises it more aggressively |
-| Function in binary | Eliminated (or kept as a rarely-used fallback) | Present; moved to a hot section (`.text.hot` on GCC, `.text$hot` on Clang) |
-| I-cache effect | Code is duplicated across call sites | Hot functions are grouped together — better locality |
+| MSVC other than clang-cl | nothing | nothing |
+| `__has_cpp_attribute(__gnu__::__hot__)`, `__has_cpp_attribute(__gnu__::__cold__)` (GCC, Clang) | `[[__gnu__::__hot__]]` | `[[__gnu__::__cold__]]` |
+| `__has_attribute(__hot__)`, `__has_attribute(__cold__)` | `__attribute__((__hot__))` | `__attribute__((__cold__))` |
+| none of the above | nothing | nothing |
 
-`SCL_FORCE_INLINE` trades code size for call overhead; `SCL_HOT` trades neither.
-Combining `SCL_HOT` with `SCL_NOINLINE` is idiomatic: keep the function as a
-single well-optimised body without bloating every call site.
+The macros expand to nothing on MSVC, and to `[[__gnu__::__hot__]]` and `[[__gnu__::__cold__]]` on
+GCC and Clang.
 
-### vs `SCL_LIKELY` / `SCL_UNLIKELY`
+## Definitions made before the header
 
-| Tool | Scope | Mechanism |
-|------|-------|-----------|
-| `SCL_HOT` / `SCL_COLD` | Whole function | Binary layout + optimization level for the entire function |
-| `SCL_LIKELY` / `SCL_UNLIKELY` | Single branch (statement) | Branch-layout hint at one specific `if`/`switch` |
-| `SCL_LIKELY_EXPR` / `SCL_UNLIKELY_EXPR` | Single branch (expression) | `__builtin_expect` at one specific condition |
+A definition of a macro made before its header is kept only as one of the expansions below for
+the compiler at hand. The build with any other text ends with an error, as described on the [group
+page](index.md#replacing-a-macro).
 
-`SCL_COLD` implicitly makes **all** branches leading to a call of that
-function unlikely — a whole-function effect. `SCL_UNLIKELY` / `SCL_UNLIKELY_EXPR`
-affect only one specific branch at the call site.
+| Macro | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_HOT` | `[[__gnu__::__hot__]]`, `__attribute__((__hot__))`, empty | `[[__gnu__::__hot__]]`, `__attribute__((__hot__))`, empty | empty |
+| `SCL_COLD` | `[[__gnu__::__cold__]]`, `__attribute__((__cold__))`, empty | `[[__gnu__::__cold__]]`, `__attribute__((__cold__))`, empty | empty |
 
-### Typical combinations
+## Examples
 
+A function run for every block of data, and one run only for a damaged block:
+
+<!-- snippet: example/attribute/hotcold/attribute_hotcold_example.cpp hotcold -->
 ```cpp
-// Hot dispatcher — optimise aggressively but do not inline,
-// to avoid bloating every call site
-SCL_HOT SCL_NOINLINE void dispatch(Event e);
+SCL_HOT unsigned checksum(unsigned char const * bytes, std::size_t size)
+{
+    unsigned sum = 0;
+    for (std::size_t index = 0; index < size; ++index)
+        sum = sum * 31 + bytes[index];
+    return sum;
+}
 
-// Cold error handler — move away from hot code entirely
-SCL_NORETURN SCL_COLD SCL_NOINLINE void fatal(const char* msg);
-
-// Inside a hot function — fine-grained per-branch hint
-SCL_HOT int process(const Packet* p) {
-    if (SCL_LIKELY_EXPR(p->is_valid()))
-        return handle(p);
-    SCL_UNLIKELY { return drop(p); }
+SCL_COLD void report_corruption(std::size_t block)
+{
+    std::cerr << "block " << block << " is damaged\n";
 }
 ```
 
+## See also
+
+- [`SCL_FORCE_INLINE`, `SCL_NOINLINE`](inline.md), hints about inlining a function
+- [`SCL_LIKELY`, `SCL_UNLIKELY`](likely.md), hints about one branch rather than a whole function
+- [`example/attribute/hotcold/attribute_hotcold_example.cpp`](../../../../example/attribute/hotcold/attribute_hotcold_example.cpp)
+
 ---
 
-## Notes
-
-- `SCL_HOT` and `SCL_COLD` are mutually exclusive on the same function.
-- Each macro can be overridden before inclusion via `#define SCL_HOT` or
-  `#define SCL_COLD`.
+Previous: [`SCL_FORCE_INLINE`](inline.md) | Next: [`SCL_INDETERMINATE`](indeterminate.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

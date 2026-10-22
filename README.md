@@ -30,22 +30,22 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
   - `any_switch` — a branch chain running the one branch whose type the erased value holds
   - `any_cast` — recovers the value by pointer (`nullptr` on mismatch), by copy, or by
     const reference
-- **Attribute** — portable compiler attribute macros (`#include <scl/utility/attribute.h>`):
-  - `SCL_NO_UNIQUE_ADDRESS` — portable `[[no_unique_address]]` (MSVC/GCC/Clang)
-  - `SCL_ASSUME(expr)` — optimizer hint: expression is always true
-  - `SCL_UNREACHABLE()` — mark unreachable code path
-  - `SCL_FORCE_INLINE` / `SCL_NOINLINE` — inlining control
-  - `SCL_NORETURN` — mark functions that never return
-  - `SCL_DEPRECATED` / `SCL_DEPRECATED_MSG(msg)` — deprecation warnings
-  - `SCL_FALLTHROUGH` — suppress implicit-fallthrough warning in `switch`
-  - `SCL_NODISCARD` / `SCL_NODISCARD_MSG(msg)` — warn on discarded return value
-  - `SCL_MAYBE_UNUSED` — suppress unused-entity warnings
-  - `SCL_LIKELY` / `SCL_UNLIKELY` — C++20 statement branch hints
-  - `SCL_LIKELY_EXPR(expr)` / `SCL_UNLIKELY_EXPR(expr)` — expression branch hints via `__builtin_expect`
-  - `SCL_HOT` / `SCL_COLD` — function frequency hints
-  - `SCL_LIFETIMEBOUND` — dangling-reference detection (`[[clang::lifetimebound]]`)
-  - `SCL_UNSEQUENCED` / `SCL_REPRODUCIBLE` — purity annotations (C++26 semantics, GCC/Clang)
-  - `SCL_INDETERMINATE` — C++26 opt-in to indeterminate storage
+- **Attribute** - portable compiler attribute macros (`#include <scl/utility/attribute.h>`):
+  - `SCL_NO_UNIQUE_ADDRESS` - portable `[[no_unique_address]]` (MSVC/GCC/Clang)
+  - `SCL_ASSUME(expr)` - optimizer hint: expression is always true
+  - `SCL_UNREACHABLE()` - mark unreachable code path
+  - `SCL_FORCE_INLINE` / `SCL_NOINLINE` - inlining control
+  - `SCL_NORETURN` - mark functions that never return
+  - `SCL_DEPRECATED` / `SCL_DEPRECATED_MSG(msg)` - deprecation warnings
+  - `SCL_FALLTHROUGH` - suppress implicit-fallthrough warning in `switch`
+  - `SCL_NODISCARD` / `SCL_NODISCARD_MSG(msg)` - warn on discarded return value
+  - `SCL_MAYBE_UNUSED` - suppress unused-entity warnings
+  - `SCL_LIKELY` / `SCL_UNLIKELY` - C++20 statement branch hints
+  - `SCL_LIKELY_EXPR(expr)` / `SCL_UNLIKELY_EXPR(expr)` - expression branch hints via `__builtin_expect`
+  - `SCL_HOT` / `SCL_COLD` - function frequency hints
+  - `SCL_LIFETIMEBOUND` - dangling-reference detection (Clang `-Wdangling`, MSVC code analysis)
+  - `SCL_UNSEQUENCED` / `SCL_REPRODUCIBLE` - purity annotations (`gnu::const` and `gnu::pure` on GCC/Clang)
+  - `SCL_INDETERMINATE` - C++26 opt-in to indeterminate storage
 - **Concepts** — concept form of the standard type traits that have no `std` concept
   (`#include <scl/utility/concepts.h>`):
   - reference and qualifier classifiers (`reference`, `lvalue_reference`, `const_type`,

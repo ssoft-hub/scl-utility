@@ -1,56 +1,71 @@
-# SCL_NORETURN
+# `SCL_NORETURN`
 
-Аннотация функции, которая никогда не возвращает управление.
+Функция, помеченная `SCL_NORETURN`, не возвращает управление вызывающему коду.
 
 - Заголовок: `#include <scl/utility/attribute/noreturn.h>`
-- Агрегатор: `#include <scl/utility/attribute.h>`
-
----
-
-## SCL_NORETURN
-
-Помечает функцию, которая никогда не возвращает управление вызывающему коду —
-она бросает исключение, вызывает `std::terminate`, уходит в бесконечный цикл
-или выполняет `longjmp`. Компилятор вправе считать код после вызова такой
-функции недостижимым и подавляет предупреждение «не все управляющие пути
-возвращают значение».
-
-Размещается перед возвращаемым типом в объявлении и определении.
-
-> **Неопределённое поведение:** Если функция, помеченная `SCL_NORETURN`,
-> всё же возвращает управление, поведение неопределено.
-
-### Определение наличия
-
-| Условие | Раскрытие |
-|---------|-----------|
-| `__has_cpp_attribute(noreturn)` (C++11) | `[[noreturn]]` |
-| MSVC, кроме clang-cl | `__declspec(noreturn)` |
-| `__has_attribute(noreturn)` (более старые GCC и Clang) | `__attribute__((noreturn))` |
-| Ни одно не выполнено | *(пусто — аннотация отсутствует)* |
-
-### Использование
 
 ```cpp
-#include <scl/utility/attribute/noreturn.h>
+#define SCL_NORETURN /* see below */
+```
 
-SCL_NORETURN void fatal(const char* msg) {
-    std::fprintf(stderr, "fatal: %s\n", msg);
-    std::terminate();
+## Семантика
+
+- **Что сообщается компилятору:** каждый вызов функции завершает программу, выбрасывает исключение,
+  передаёт управление в другое место или не завершается никогда. Компилятор считает код после вызова
+  недостижимым и перестаёт предупреждать, что функция, которая возвращает значение, может
+  завершиться без него.
+- **Ложное обещание:** поведение программы не определено, если функция возвращает управление,
+  а раскрытие выбрано по любой строке таблицы, кроме последней.
+- **Рядом с другими макросами:** `SCL_NORETURN` должен быть записан раньше `SCL_NOINLINE`
+  и `SCL_FORCE_INLINE`. `[[noreturn]]` после `__declspec(noinline)` или `__forceinline` является
+  на MSVC ошибкой C3829, а `[[noreturn]]` после `inline` из раскрытия `SCL_FORCE_INLINE` является
+  ошибкой и на GCC и Clang.
+- **Место:** макрос записывается перед объявлением функции.
+
+| Условие, первое совпавшее | Раскрытие |
+|---|---|
+| `__has_cpp_attribute(noreturn)` (C++11) | `[[noreturn]]` |
+| MSVC, кроме clang-cl | `__declspec(noreturn)` |
+| `__has_attribute(__noreturn__)` | `__attribute__((__noreturn__))` |
+| ничего из перечисленного | пусто |
+
+Макрос раскрывается в `[[noreturn]]` на GCC, Clang и MSVC в C++20.
+
+## Определения до заголовка
+
+Определение макроса, сделанное до его заголовка, сохраняется только в виде одного из раскрытий ниже
+для данного компилятора. Сборка с любым другим текстом завершается с ошибкой, как описано
+на [странице группы](index.md#замена-макроса).
+
+| Макрос | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_NORETURN` | `[[noreturn]]`, `__attribute__((__noreturn__))`, пусто | `[[noreturn]]`, `__attribute__((__noreturn__))`, пусто | `[[noreturn]]`, `__declspec(noreturn)`, пусто |
+
+## Примеры
+
+Функция, которая завершает программу, и функция, которая её вызывает:
+
+<!-- snippet: example/attribute/noreturn/attribute_noreturn_example.cpp noreturn -->
+```cpp
+SCL_NORETURN void fail(char const * message)
+{
+    std::cerr << "fatal: " << message << '\n';
+    std::exit(EXIT_FAILURE);
 }
 
-int divide(int a, int b) {
-    if (b == 0) fatal("division by zero");
-    return a / b;  // нет предупреждения "не все пути возвращают значение"
+int divide(int dividend, int divisor)
+{
+    if (divisor == 0)
+        fail("division by zero");
+    return dividend / divisor;
 }
 ```
 
+## Смотрите также
+
+- [`example/attribute/noreturn/attribute_noreturn_example.cpp`](../../../../example/attribute/noreturn/attribute_noreturn_example.cpp)
+
 ---
 
-## Примечания
-
-- Применяется к объявлению функции, а не к отдельным местам вызова.
-- Можно сочетать с `SCL_NOINLINE`, чтобы выносить аварийные пути из горячего кода.
-  Ставьте `SCL_NORETURN` первым: на MSVC остальные макросы раскрываются
-  в `__declspec`, а `[[noreturn]]` после `__declspec` даёт ошибку C3829.
-- Макрос можно переопределить до включения заголовка через `#define SCL_NORETURN`.
+Назад: [`SCL_NODISCARD`](nodiscard.md) | Далее: [`SCL_NO_UNIQUE_ADDRESS`](no_unique_address.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

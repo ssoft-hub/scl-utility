@@ -88,9 +88,10 @@
  *   any_mutable_view stores one and writes through it, any_arg takes one as a parameter
  *   and also binds temporaries, any_switch runs the branch matching the type held, and
  *   any_cast recovers the value.
- * - **Attribute** (@ref scl_utility_attribute) — portable macros for
- *   [[no_unique_address]], optimizer hints (SCL_ASSUME, SCL_UNREACHABLE),
- *   and inlining control (SCL_FORCE_INLINE, SCL_NOINLINE).
+ * - **Attribute** (@ref scl_utility_attribute) - macros that expand to an attribute or a compiler
+ *   hint in the form the compiler at hand accepts, one header per macro or family: assume.h,
+ *   deprecated.h, fallthrough.h, hotcold.h, indeterminate.h, inline.h, lifetimebound.h, likely.h,
+ *   maybe_unused.h, no_unique_address.h, nodiscard.h, noreturn.h and unsequenced.h.
  * - **Concepts** (@ref scl_utility_concepts) — concept wrappers for
  *   std type traits that have no std concept equivalent: reference, qualifier,
  *   type-category, and type-property classifiers.

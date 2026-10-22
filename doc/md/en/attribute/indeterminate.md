@@ -1,57 +1,76 @@
-# SCL_INDETERMINATE
+# `SCL_INDETERMINATE`
 
-Opt-in to indeterminate (uninitialised) storage.
+The macro `SCL_INDETERMINATE` is written on a variable with automatic storage duration, or on
+a function parameter, whose storage is not read before it is written. The implementation then need
+not give that storage an erroneous value in C++26.
 
 - Header: `#include <scl/utility/attribute/indeterminate.h>`
-- Aggregator: `#include <scl/utility/attribute.h>`
-
----
-
-## SCL_INDETERMINATE
-
-Marks a variable declaration as having an indeterminate initial value,
-explicitly opting out of any zero- or default-initialisation the compiler
-would otherwise insert. This allows the compiler to skip the initialisation
-instruction entirely, which can matter in tight loops or hot paths where a
-scratch variable is always written before it is read.
-
-Corresponds to the C++26 `[[indeterminate]]` attribute. On compilers that do
-not yet support it the macro expands to nothing — the variable is simply
-initialised normally, with no undefined behaviour and no performance gain.
-
-Place before the type in a local variable declaration.
-
-> **Safety:** Reading the variable before writing to it is **undefined
-> behaviour**. Use only when the variable is unconditionally assigned before
-> its first read on every code path.
-
-### Detection
-
-| Condition | Expansion |
-|-----------|-----------|
-| `__has_cpp_attribute(indeterminate)` (C++26) | `[[indeterminate]]` |
-| None of the above | *(empty — normal initialisation)* |
-
-### Usage
 
 ```cpp
-#include <scl/utility/attribute/indeterminate.h>
+#define SCL_INDETERMINATE /* see below */
+```
 
-void encode(const float* src, std::uint8_t* dst, std::size_t n) {
-    SCL_INDETERMINATE std::uint8_t byte;  // written on every iteration
-    for (std::size_t i = 0; i < n; ++i) {
-        byte = static_cast<std::uint8_t>(src[i] * 255.0f);
-        dst[i] = byte;
-    }
+## Semantics
+
+- **Without an initializer:** a variable with automatic storage duration declared with no
+  initializer stays uninitialised whatever the macro expands to, except for what a default
+  constructor initialises.
+- **What the compiler is told:** the storage is not read before it is written. The implementation
+  gives such a variable an erroneous value in C++26, and a read of it before the first write is
+  erroneous behaviour. The implementation may skip that value under the attribute
+  `[[indeterminate]]`.
+- **Without the attribute:** a read before the first write is undefined behaviour before C++26, and
+  erroneous behaviour in C++26.
+- **A false promise:** a read of such storage before it is written is undefined behaviour under
+  `[[indeterminate]]`.
+- **Place:** the macro is written before the definition of a variable with automatic storage
+  duration, or before a parameter in the first declaration of its function. A program is ill-formed,
+  no diagnostic required, where a parameter is declared with the attribute in the first declaration
+  of its function in one translation unit and without it in the first declaration in another.
+
+| Condition, first match | Expansion |
+|---|---|
+| `__has_cpp_attribute(indeterminate)` (C++26), `indeterminate` not a macro | `[[indeterminate]]` |
+| none of the above | nothing |
+
+The macro expands to `[[indeterminate]]` where `__has_cpp_attribute(indeterminate)` is not `0` and
+`indeterminate` is not a macro. GCC 13, Clang 22 and MSVC 19.44 report `0` in C++20, so the macro
+expands to nothing there.
+
+## Definitions made before the header
+
+A definition of a macro made before its header is kept only as one of the expansions below for
+the compiler at hand. The build with any other text ends with an error, as described on the [group
+page](index.md#replacing-a-macro).
+
+| Macro | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_INDETERMINATE` | empty | empty | empty |
+
+## Examples
+
+A buffer filled digit by digit and read only where it has been written:
+
+<!-- snippet: example/attribute/indeterminate/attribute_indeterminate_example.cpp indeterminate -->
+```cpp
+std::string reversed_decimal(unsigned value)
+{
+    SCL_INDETERMINATE char digits[std::numeric_limits<unsigned>::digits10 + 1];
+    std::size_t count = 0;
+    do
+    {
+        digits[count++] = static_cast<char>('0' + value % 10);
+        value /= 10;
+    } while (value != 0);
+    return std::string(digits, count);
 }
 ```
 
+## See also
+
+- [`example/attribute/indeterminate/attribute_indeterminate_example.cpp`](../../../../example/attribute/indeterminate/attribute_indeterminate_example.cpp)
+
 ---
 
-## Notes
-
-- On compilers without `[[indeterminate]]` support the code compiles and runs
-  correctly, just without the optimisation hint.
-- Unlike `SCL_ASSUME`, there is no runtime expression involved — the attribute
-  only affects whether initialisation code is emitted.
-- The macro can be overridden before inclusion via `#define SCL_INDETERMINATE`.
+Previous: [`SCL_HOT`](hotcold.md) | Next: [`SCL_LIFETIMEBOUND`](lifetimebound.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

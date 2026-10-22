@@ -1,73 +1,82 @@
-# SCL_NODISCARD / SCL_NODISCARD_MSG
+# `SCL_NODISCARD`, `SCL_NODISCARD_MSG`
 
-Warn-on-discard annotation macros.
+The compiler warns where a result marked with `SCL_NODISCARD` or `SCL_NODISCARD_MSG` is discarded.
 
 - Header: `#include <scl/utility/attribute/nodiscard.h>`
-- Aggregator: `#include <scl/utility/attribute.h>`
 
----
+```cpp
+#define SCL_NODISCARD /* see below */
+#define SCL_NODISCARD_MSG(msg) /* see below */
+```
 
-## SCL_NODISCARD
+## Semantics
 
-Instructs the compiler to warn when the return value of an annotated function
-(or an object of an annotated type) is discarded by the caller. Applies to
-function declarations and class/struct/enum declarations.
+- **What the compiler is told:** discarding the result of the function is a mistake. The compiler
+  warns where a call of the function is written as a statement of its own.
+- **On a type:** the compiler warns where the result of any function returning the type by value is
+  discarded.
+- **The message:** the string literal `msg` of `SCL_NODISCARD_MSG` is put into the warning where
+  `__has_cpp_attribute(nodiscard)` is `201907L` or more. No message is put into the warning
+  elsewhere, and `SCL_NODISCARD_MSG` expands to `SCL_NODISCARD` where `SCL_NODISCARD` is defined
+  before the header.
+- **Place:** either macro is written before the declaration of a function, and after `struct`,
+  `class`, `enum` or `enum class` in the declaration of a type.
 
-### Detection
-
-| Condition | Expansion |
-|-----------|-----------|
-| `__has_cpp_attribute(nodiscard)` ≥ 201907L (C++20) | `[[nodiscard]]` |
+| Condition, first match | `SCL_NODISCARD` |
+|---|---|
 | `__has_cpp_attribute(nodiscard)` (C++17) | `[[nodiscard]]` |
-| `__has_attribute(warn_unused_result)` (older GCC and Clang) | `__attribute__((warn_unused_result))` |
-| None of the above | *(empty — no warning emitted)* |
+| `__has_attribute(__warn_unused_result__)` | `__attribute__((__warn_unused_result__))` |
+| none of the above | nothing |
 
-### Usage
+| Condition, first match | `SCL_NODISCARD_MSG(msg)` |
+|---|---|
+| `__has_cpp_attribute(nodiscard)` at `201907L` or more (C++20) | `[[nodiscard(msg)]]` |
+| `__has_cpp_attribute(nodiscard)` (C++17) | `[[nodiscard]]` |
+| `__has_attribute(__warn_unused_result__)` | `__attribute__((__warn_unused_result__))` |
+| none of the above | `SCL_NODISCARD` |
 
+The macros expand to `[[nodiscard]]` and `[[nodiscard(msg)]]` on GCC, Clang and MSVC in C++20.
+
+## Definitions made before the header
+
+A definition of a macro made before its header is kept only as one of the expansions below for
+the compiler at hand. The build with any other text ends with an error, as described on the [group
+page](index.md#replacing-a-macro).
+
+| Macro | GCC | Clang, clang-cl | MSVC |
+|---|---|---|---|
+| `SCL_NODISCARD` | `[[nodiscard]]`, `__attribute__((__warn_unused_result__))`, empty | `[[nodiscard]]`, `__attribute__((__warn_unused_result__))`, empty | `[[nodiscard]]`, empty |
+| `SCL_NODISCARD_MSG(msg)` | `[[nodiscard(msg)]]`, `[[nodiscard]]`, `__attribute__((__warn_unused_result__))`, `SCL_NODISCARD` | `[[nodiscard(msg)]]`, `[[nodiscard]]`, `__attribute__((__warn_unused_result__))`, `SCL_NODISCARD` | `[[nodiscard(msg)]]`, `[[nodiscard]]`, `SCL_NODISCARD` |
+
+## Examples
+
+A function whose result is `false` where the value was not stored, and a type whose value is meant
+to be read:
+
+<!-- snippet: example/attribute/nodiscard/attribute_nodiscard_example.cpp nodiscard -->
 ```cpp
-#include <scl/utility/attribute/nodiscard.h>
+SCL_NODISCARD_MSG("the result tells whether the value was stored")
+bool store(std::vector<int> & storage, int value)
+{
+    if (storage.size() == storage.capacity())
+        return false;
+    storage.push_back(value);
+    return true;
+}
 
-SCL_NODISCARD bool try_lock();
+struct SCL_NODISCARD status
+{
+    int code;
+};
 
-struct SCL_NODISCARD ErrorCode { int value; };
+status open_channel(int id) { return status{id < 0 ? 1 : 0}; }
 ```
+
+## See also
+
+- [`example/attribute/nodiscard/attribute_nodiscard_example.cpp`](../../../../example/attribute/nodiscard/attribute_nodiscard_example.cpp)
 
 ---
 
-## SCL_NODISCARD_MSG(msg)
-
-Like `SCL_NODISCARD` but attaches a string literal `msg` to the diagnostic,
-explaining what discarding the value implies. Available as `[[nodiscard(msg)]]`
-since C++20.
-On compilers where the message form is unavailable the macro falls back to
-`SCL_NODISCARD` (the warning is still emitted, but without the message).
-
-### Detection
-
-| Condition | Expansion |
-|-----------|-----------|
-| `__has_cpp_attribute(nodiscard)` ≥ 201907L (C++20) | `[[nodiscard(msg)]]` |
-| `__has_cpp_attribute(nodiscard)` (C++17) or earlier fallback | `SCL_NODISCARD` (message dropped) |
-
-### Usage
-
-```cpp
-#include <scl/utility/attribute/nodiscard.h>
-
-SCL_NODISCARD_MSG("ignoring the error code leaks the file descriptor")
-ErrorCode write(int fd, const void* buf, std::size_t n);
-
-SCL_NODISCARD_MSG("call release() to avoid a resource leak")
-ResourceHandle acquire(std::size_t bytes);
-```
-
----
-
-## Notes
-
-- Applying `SCL_NODISCARD` to a type marks every function returning that type
-  as nodiscard implicitly.
-- A cast to `void` suppresses the warning at a specific call site:
-  `(void)try_lock();`
-- Each macro can be overridden before inclusion via `#define SCL_NODISCARD`
-  or `#define SCL_NODISCARD_MSG(msg)`.
+Previous: [`SCL_MAYBE_UNUSED`](maybe_unused.md) | Next: [`SCL_NORETURN`](noreturn.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)
