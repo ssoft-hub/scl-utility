@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [any] Added `scl::any_cast` and `scl::bad_any_cast`, the cast of every any handle and its failure
 - [any] Added `scl::any_switch`, a chain of typed branches over an any handle
 - [any] Added `scl::any_anchor`, which lets a handle cast in constant evaluation on C++20
+- [attribute] Added `[[msvc::lifetimebound]]` to `SCL_LIFETIMEBOUND` on MSVC, whose code analysis then reports a result that outlives its argument
 - [concepts] Added concepts for the standard type traits that have no standard concept
 - [flags] Added `scl::flags`, a set of enumeration values usable in constant evaluation
 - [hash] Added `scl::hash::byte_view`, presenting wider elements as the bytes a hash takes
@@ -37,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [attribute] Made `SCL_LIKELY_EXPR` and `SCL_UNLIKELY_EXPR` yield `bool` on GCC and Clang, as on MSVC
 - [attribute] Broke a macro defined before its header as a text its page does not list for the compiler at hand: the build stops with an error naming the macro
 - [attribute] Broke a build for MSVC under a caller's macro `noinline`, or for the MSVC ABI under `msvc`: the error names the macro of the group to define as empty
+- [attribute] Broke a build for MSVC under a caller's macro `msvc` or `lifetimebound` with no definition of `SCL_LIFETIMEBOUND` made before the header
 - [hash] Broke `fnv1a("text")`: every hash function and `key` refuse a bounded array
 - [hash] Refused a range of elements wider than a byte, a breaking change
 - [hash] Took the range of every hash function as a forwarding reference, so `fnv1a<T>(lvalue)` breaks
