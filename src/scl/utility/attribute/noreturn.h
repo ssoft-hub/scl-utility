@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_NORETURN
  * @brief Marks a function that never returns to its caller.
@@ -37,28 +39,40 @@
  * @endcode
  */
 
-#ifndef SCL_NORETURN
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(noreturn)
-#define SCL_NORETURN [[noreturn]]
-#endif
+#define SCL_DETAIL_NORETURN_STD [[noreturn]]
 #endif
 #endif
 
-#ifndef SCL_NORETURN
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_NORETURN __declspec(noreturn)
-#endif
+#define SCL_DETAIL_NORETURN_MSVC __declspec(noreturn)
 #endif
 
-#ifndef SCL_NORETURN
 #ifdef __has_attribute
-#if __has_attribute(noreturn)
-#define SCL_NORETURN __attribute__((noreturn))
-#endif
+#if __has_attribute(__noreturn__)
+#define SCL_DETAIL_NORETURN_ATTRIBUTE __attribute__((__noreturn__))
 #endif
 #endif
 
+#define SCL_DETAIL_NORETURN_FALLBACK
+
 #ifndef SCL_NORETURN
-#define SCL_NORETURN
+#ifdef SCL_DETAIL_NORETURN_STD
+#define SCL_NORETURN SCL_DETAIL_NORETURN_STD
+#elif defined(SCL_DETAIL_NORETURN_MSVC)
+#define SCL_NORETURN SCL_DETAIL_NORETURN_MSVC
+#elif defined(SCL_DETAIL_NORETURN_ATTRIBUTE)
+#define SCL_NORETURN SCL_DETAIL_NORETURN_ATTRIBUTE
+#else
+#define SCL_NORETURN SCL_DETAIL_NORETURN_FALLBACK
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NORETURN),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NORETURN_STD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NORETURN_MSVC),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NORETURN_ATTRIBUTE),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NORETURN_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NORETURN));

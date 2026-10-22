@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_UNSEQUENCED(...)
  * @brief Wrapping macro that marks a function as having no observable side
@@ -83,70 +85,108 @@
  *  5. Fallback: identity — no annotation
  */
 
-#ifndef SCL_UNSEQUENCED
+// GCC 15 and later report [[unsequenced]] in C++ and ignore it there.
+#if !defined(__GNUC__) || defined(__clang__)
 #ifdef __has_cpp_attribute
+#ifndef unsequenced
 #if __has_cpp_attribute(unsequenced)
-#define SCL_UNSEQUENCED(...) __VA_ARGS__ [[unsequenced]]
+#define SCL_DETAIL_UNSEQUENCED_C23(...) __VA_ARGS__ [[unsequenced]]
+#endif
 #endif
 #endif
 #endif
 
-#ifndef SCL_UNSEQUENCED
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_UNSEQUENCED(...) __VA_ARGS__
-#endif
+#define SCL_DETAIL_UNSEQUENCED_MSVC(...) __VA_ARGS__
 #endif
 
-#ifndef SCL_UNSEQUENCED
 #ifdef __has_cpp_attribute
-#if __has_cpp_attribute(gnu::const)
-#define SCL_UNSEQUENCED(...) [[gnu::const]] __VA_ARGS__
-#endif
+#if __has_cpp_attribute(__gnu__::__const__)
+#define SCL_DETAIL_UNSEQUENCED_GNU(...) [[__gnu__::__const__]] __VA_ARGS__
 #endif
 #endif
 
-#ifndef SCL_UNSEQUENCED
 #ifdef __has_attribute
-#if __has_attribute(const)
-#define SCL_UNSEQUENCED(...) __attribute__((const)) __VA_ARGS__
+#if __has_attribute(__const__)
+#define SCL_DETAIL_UNSEQUENCED_ATTRIBUTE(...) __attribute__((__const__)) __VA_ARGS__
 #endif
 #endif
-#endif
+
+#define SCL_DETAIL_UNSEQUENCED_FALLBACK(...) __VA_ARGS__
 
 #ifndef SCL_UNSEQUENCED
-#define SCL_UNSEQUENCED(...) __VA_ARGS__
+#ifdef SCL_DETAIL_UNSEQUENCED_C23
+#define SCL_UNSEQUENCED(...) SCL_DETAIL_UNSEQUENCED_C23(__VA_ARGS__)
+#elif defined(SCL_DETAIL_UNSEQUENCED_MSVC)
+#define SCL_UNSEQUENCED(...) SCL_DETAIL_UNSEQUENCED_MSVC(__VA_ARGS__)
+#elif defined(SCL_DETAIL_UNSEQUENCED_GNU)
+#define SCL_UNSEQUENCED(...) SCL_DETAIL_UNSEQUENCED_GNU(__VA_ARGS__)
+#elif defined(SCL_DETAIL_UNSEQUENCED_ATTRIBUTE)
+#define SCL_UNSEQUENCED(...) SCL_DETAIL_UNSEQUENCED_ATTRIBUTE(__VA_ARGS__)
+#else
+#define SCL_UNSEQUENCED(...) SCL_DETAIL_UNSEQUENCED_FALLBACK(__VA_ARGS__)
+#endif
 #endif
 
-#ifndef SCL_REPRODUCIBLE
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNSEQUENCED(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNSEQUENCED_C23(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNSEQUENCED_MSVC(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNSEQUENCED_GNU(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNSEQUENCED_ATTRIBUTE(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNSEQUENCED_FALLBACK(int scl_detail_declarator(int)))),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_UNSEQUENCED));
+
+// GCC 15 and later report [[reproducible]] in C++ and ignore it there.
+#if !defined(__GNUC__) || defined(__clang__)
 #ifdef __has_cpp_attribute
+#ifndef reproducible
 #if __has_cpp_attribute(reproducible)
-#define SCL_REPRODUCIBLE(...) __VA_ARGS__ [[reproducible]]
+#define SCL_DETAIL_REPRODUCIBLE_C23(...) __VA_ARGS__ [[reproducible]]
+#endif
 #endif
 #endif
 #endif
 
-#ifndef SCL_REPRODUCIBLE
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_REPRODUCIBLE(...) __VA_ARGS__
-#endif
+#define SCL_DETAIL_REPRODUCIBLE_MSVC(...) __VA_ARGS__
 #endif
 
-#ifndef SCL_REPRODUCIBLE
 #ifdef __has_cpp_attribute
-#if __has_cpp_attribute(gnu::pure)
-#define SCL_REPRODUCIBLE(...) [[gnu::pure]] __VA_ARGS__
-#endif
+#if __has_cpp_attribute(__gnu__::__pure__)
+#define SCL_DETAIL_REPRODUCIBLE_GNU(...) [[__gnu__::__pure__]] __VA_ARGS__
 #endif
 #endif
 
-#ifndef SCL_REPRODUCIBLE
 #ifdef __has_attribute
-#if __has_attribute(pure)
-#define SCL_REPRODUCIBLE(...) __attribute__((pure)) __VA_ARGS__
-#endif
+#if __has_attribute(__pure__)
+#define SCL_DETAIL_REPRODUCIBLE_ATTRIBUTE(...) __attribute__((__pure__)) __VA_ARGS__
 #endif
 #endif
 
+#define SCL_DETAIL_REPRODUCIBLE_FALLBACK(...) __VA_ARGS__
+
 #ifndef SCL_REPRODUCIBLE
-#define SCL_REPRODUCIBLE(...) __VA_ARGS__
+#ifdef SCL_DETAIL_REPRODUCIBLE_C23
+#define SCL_REPRODUCIBLE(...) SCL_DETAIL_REPRODUCIBLE_C23(__VA_ARGS__)
+#elif defined(SCL_DETAIL_REPRODUCIBLE_MSVC)
+#define SCL_REPRODUCIBLE(...) SCL_DETAIL_REPRODUCIBLE_MSVC(__VA_ARGS__)
+#elif defined(SCL_DETAIL_REPRODUCIBLE_GNU)
+#define SCL_REPRODUCIBLE(...) SCL_DETAIL_REPRODUCIBLE_GNU(__VA_ARGS__)
+#elif defined(SCL_DETAIL_REPRODUCIBLE_ATTRIBUTE)
+#define SCL_REPRODUCIBLE(...) SCL_DETAIL_REPRODUCIBLE_ATTRIBUTE(__VA_ARGS__)
+#else
+#define SCL_REPRODUCIBLE(...) SCL_DETAIL_REPRODUCIBLE_FALLBACK(__VA_ARGS__)
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_REPRODUCIBLE(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_REPRODUCIBLE_C23(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_REPRODUCIBLE_MSVC(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_REPRODUCIBLE_GNU(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_REPRODUCIBLE_ATTRIBUTE(int scl_detail_declarator(int))),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_REPRODUCIBLE_FALLBACK(int scl_detail_declarator(int)))),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_REPRODUCIBLE));

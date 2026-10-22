@@ -300,6 +300,7 @@ and `example/quick_start/<group>/` holds the programs `README.md` quotes.
 | `*_catch2.cpp` | Catch2 v3 | the framework |
 | `*_catch2.cpp` | Catch2 v2, target `utility_<group>_catch2_v2` | the test source |
 | `*_shared.cpp` | none, a shared library for the tests of its directory | - |
+| `*_compile_fail.cpp` | none, a translation unit whose build must stop, target `utility_<group>_<base name>` | - |
 | `*_gbench.cpp` | Google Benchmark | the framework |
 | `*_size.cpp` | none, see Benchmarks | - |
 
@@ -316,6 +317,22 @@ and `example/quick_start/<group>/` holds the programs `README.md` quotes.
 - A contributor adding a public interface must add a test under `test/<group>/`.
 - `STATIC_EXPECT_*` from `test/gtest_utils.h` checks a compile-time fact twice, with
   `static_assert` and with the matching `EXPECT_*`.
+- A contributor writing a `*_compile_fail.cpp` source must put on a line
+  `// expect: <regular expression>` a pattern of the message the build stops with; the test passes
+  only where the build stops and its output matches the pattern. A line `// options: <flags>` adds
+  compiler flags, and a line `// requires: <compiler>` limits the source to the compilers its
+  value names:
+
+  | Value | Compilers |
+  |---|---|
+  | `msvc_abi` | MSVC, clang-cl and Clang for the MSVC ABI |
+  | `msvc` | MSVC other than clang-cl |
+  | `clang` | Clang, clang-cl included |
+  | `gcc` | GCC |
+  | `gnu` | GCC and Clang, clang-cl included |
+
+  A source with no such line is built on every compiler.
+
 - A contributor writing a `*_shared.cpp` library must export the symbols the tests use, in
   the way the platform requires: `__declspec(dllexport)` on Windows, for one.
 

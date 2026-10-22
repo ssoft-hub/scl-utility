@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_NO_UNIQUE_ADDRESS
  * @brief Portable [[no_unique_address]] (C++20).
@@ -27,16 +29,42 @@
  * static_assert(sizeof(S) == sizeof(int));
  * @endcode
  */
-#ifndef SCL_NO_UNIQUE_ADDRESS
+
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(no_unique_address)
-#define SCL_NO_UNIQUE_ADDRESS [[no_unique_address]]
-#elif __has_cpp_attribute(msvc::no_unique_address)
-#define SCL_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#define SCL_DETAIL_NO_UNIQUE_ADDRESS_STD [[no_unique_address]]
+#endif
+#endif
+
+#ifdef __has_cpp_attribute
+#ifndef msvc
+#if __has_cpp_attribute(msvc::no_unique_address)
+#define SCL_DETAIL_NO_UNIQUE_ADDRESS_MSVC [[msvc::no_unique_address]]
 #endif
 #endif
 #endif
 
+#define SCL_DETAIL_NO_UNIQUE_ADDRESS_FALLBACK
+
 #ifndef SCL_NO_UNIQUE_ADDRESS
-#define SCL_NO_UNIQUE_ADDRESS
+#if defined(_MSC_VER) && defined(msvc) && !defined(SCL_DETAIL_NO_UNIQUE_ADDRESS_STD)
+#error "No spelling of SCL_NO_UNIQUE_ADDRESS remains for the MSVC ABI under the macro msvc; SCL_NO_UNIQUE_ADDRESS must be defined before the header as an empty macro, in every translation unit of the program"
 #endif
+#endif
+
+#ifndef SCL_NO_UNIQUE_ADDRESS
+#ifdef SCL_DETAIL_NO_UNIQUE_ADDRESS_STD
+#define SCL_NO_UNIQUE_ADDRESS SCL_DETAIL_NO_UNIQUE_ADDRESS_STD
+#elif defined(SCL_DETAIL_NO_UNIQUE_ADDRESS_MSVC)
+#define SCL_NO_UNIQUE_ADDRESS SCL_DETAIL_NO_UNIQUE_ADDRESS_MSVC
+#else
+#define SCL_NO_UNIQUE_ADDRESS SCL_DETAIL_NO_UNIQUE_ADDRESS_FALLBACK
+#endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NO_UNIQUE_ADDRESS),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NO_UNIQUE_ADDRESS_STD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NO_UNIQUE_ADDRESS_MSVC),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NO_UNIQUE_ADDRESS_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NO_UNIQUE_ADDRESS));

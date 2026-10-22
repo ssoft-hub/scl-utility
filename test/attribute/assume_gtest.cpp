@@ -1,6 +1,6 @@
 #include <gtest_utils.h>
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic error "-Wpedantic"
 #endif
 

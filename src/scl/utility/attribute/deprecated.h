@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_DEPRECATED
  * @brief Marks a declaration as deprecated.
@@ -57,41 +59,84 @@
  * @endcode
  */
 
-#ifndef SCL_DEPRECATED
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(deprecated)
-#define SCL_DEPRECATED [[deprecated]]
-#ifndef SCL_DEPRECATED_MSG
-#define SCL_DEPRECATED_MSG(msg) [[deprecated(msg)]]
-#endif
-#endif
+#define SCL_DETAIL_DEPRECATED_STD [[deprecated]]
 #endif
 #endif
 
-#ifndef SCL_DEPRECATED
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_DEPRECATED __declspec(deprecated)
-#ifndef SCL_DEPRECATED_MSG
-#define SCL_DEPRECATED_MSG(msg) __declspec(deprecated(msg))
-#endif
-#endif
+#define SCL_DETAIL_DEPRECATED_MSVC __declspec(deprecated)
 #endif
 
-#ifndef SCL_DEPRECATED
 #ifdef __has_attribute
-#if __has_attribute(deprecated)
-#define SCL_DEPRECATED __attribute__((deprecated))
-#ifndef SCL_DEPRECATED_MSG
-#define SCL_DEPRECATED_MSG(msg) __attribute__((deprecated(msg)))
+#if __has_attribute(__deprecated__)
+#define SCL_DETAIL_DEPRECATED_ATTRIBUTE __attribute__((__deprecated__))
 #endif
 #endif
-#endif
+
+#define SCL_DETAIL_DEPRECATED_FALLBACK
+
+#ifdef SCL_DEPRECATED
+#define SCL_DETAIL_DEPRECATED_GIVEN
 #endif
 
 #ifndef SCL_DEPRECATED
-#define SCL_DEPRECATED
+#ifdef SCL_DETAIL_DEPRECATED_STD
+#define SCL_DEPRECATED SCL_DETAIL_DEPRECATED_STD
+#elif defined(SCL_DETAIL_DEPRECATED_MSVC)
+#define SCL_DEPRECATED SCL_DETAIL_DEPRECATED_MSVC
+#elif defined(SCL_DETAIL_DEPRECATED_ATTRIBUTE)
+#define SCL_DEPRECATED SCL_DETAIL_DEPRECATED_ATTRIBUTE
+#else
+#define SCL_DEPRECATED SCL_DETAIL_DEPRECATED_FALLBACK
+#endif
 #endif
 
-#ifndef SCL_DEPRECATED_MSG
-#define SCL_DEPRECATED_MSG(msg) SCL_DEPRECATED
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DEPRECATED),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_STD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSVC),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_ATTRIBUTE),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_DEPRECATED));
+
+#ifdef __has_cpp_attribute
+#if __has_cpp_attribute(deprecated)
+#define SCL_DETAIL_DEPRECATED_MSG_STD(msg) [[deprecated(msg)]]
 #endif
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#define SCL_DETAIL_DEPRECATED_MSG_MSVC(msg) __declspec(deprecated(msg))
+#endif
+
+#ifdef __has_attribute
+#if __has_attribute(__deprecated__)
+#define SCL_DETAIL_DEPRECATED_MSG_ATTRIBUTE(msg) __attribute__((__deprecated__(msg)))
+#endif
+#endif
+
+#define SCL_DETAIL_DEPRECATED_MSG_FALLBACK(msg) SCL_DEPRECATED
+
+#ifndef SCL_DEPRECATED_MSG
+#ifdef SCL_DETAIL_DEPRECATED_GIVEN
+#define SCL_DEPRECATED_MSG(msg) SCL_DETAIL_DEPRECATED_MSG_FALLBACK(msg)
+#elif defined(SCL_DETAIL_DEPRECATED_MSG_STD)
+#define SCL_DEPRECATED_MSG(msg) SCL_DETAIL_DEPRECATED_MSG_STD(msg)
+#elif defined(SCL_DETAIL_DEPRECATED_MSG_MSVC)
+#define SCL_DEPRECATED_MSG(msg) SCL_DETAIL_DEPRECATED_MSG_MSVC(msg)
+#elif defined(SCL_DETAIL_DEPRECATED_MSG_ATTRIBUTE)
+#define SCL_DEPRECATED_MSG(msg) SCL_DETAIL_DEPRECATED_MSG_ATTRIBUTE(msg)
+#else
+#define SCL_DEPRECATED_MSG(msg) SCL_DETAIL_DEPRECATED_MSG_FALLBACK(msg)
+#endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DEPRECATED_MSG("scl_detail_message")),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_STD("scl_detail_message")),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_MSVC("scl_detail_message")),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_ATTRIBUTE("scl_detail_message")),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_FALLBACK("scl_detail_message"))),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_DEPRECATED_MSG));
