@@ -52,7 +52,13 @@
  */
 
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_DETAIL_LIFETIMEBOUND_MSVC
+#ifdef __has_cpp_attribute
+#if !defined(msvc) && !defined(lifetimebound)
+#if __has_cpp_attribute(msvc::lifetimebound)
+#define SCL_DETAIL_LIFETIMEBOUND_MSVC [[msvc::lifetimebound]]
+#endif
+#endif
+#endif
 #endif
 
 #ifdef __has_cpp_attribute
@@ -68,6 +74,12 @@
 #endif
 
 #define SCL_DETAIL_LIFETIMEBOUND_FALLBACK
+
+#ifndef SCL_LIFETIMEBOUND
+#if defined(_MSC_VER) && !defined(__clang__) && (defined(msvc) || defined(lifetimebound))
+#error "No spelling of SCL_LIFETIMEBOUND remains for MSVC under the macro msvc or lifetimebound; SCL_LIFETIMEBOUND must be defined before the header as an empty macro"
+#endif
+#endif
 
 #ifndef SCL_LIFETIMEBOUND
 #ifdef SCL_DETAIL_LIFETIMEBOUND_MSVC

@@ -34,7 +34,7 @@ TEST(AttributeCallerMacros, ExpandAsWithoutMacrosNamedLikeAttributeTokens)
             continue;
 #endif
 #if defined(_MSC_VER) && !defined(__clang__)
-        if (index == index_of("SCL_NOINLINE"))
+        if (index == index_of("SCL_NOINLINE") || index == index_of("SCL_LIFETIMEBOUND"))
             continue;
 #endif
         EXPECT_STREQ(caller_macros_expansions[index], reference_expansions[index]) << names[index];
@@ -47,6 +47,7 @@ TEST(AttributeCallerMacros, KeepTheDefinitionsTheHeadersAskForUnderMacrosOfTheCa
     EXPECT_STREQ(caller_macros_expansions[index_of("SCL_NO_UNIQUE_ADDRESS")], "[]");
 #if !defined(__clang__)
     EXPECT_STREQ(caller_macros_expansions[index_of("SCL_NOINLINE")], "[]");
+    EXPECT_STREQ(caller_macros_expansions[index_of("SCL_LIFETIMEBOUND")], "[]");
 #endif
 }
 #endif

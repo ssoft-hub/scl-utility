@@ -36,12 +36,13 @@
 #endif
 
 // The headers ask for these definitions: SCL_NO_UNIQUE_ADDRESS under msvc for the MSVC ABI, and on
-// MSVC SCL_NOINLINE under noinline.
+// MSVC SCL_NOINLINE under noinline and SCL_LIFETIMEBOUND under msvc or lifetimebound.
 #if defined(_MSC_VER)
 #define SCL_NO_UNIQUE_ADDRESS
 #endif
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_NOINLINE
+#define SCL_LIFETIMEBOUND
 #endif
 
 #include "caller_macros.h"
