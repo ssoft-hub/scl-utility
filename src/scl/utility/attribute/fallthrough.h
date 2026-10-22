@@ -2,39 +2,11 @@
 
 /**
  * @file
- * @brief Intentional switch fall-through annotation macro: SCL_FALLTHROUGH.
+ * @brief The macro `SCL_FALLTHROUGH`.
  * @ingroup scl_utility_attribute
  */
 
 #include <scl/utility/attribute/detail/spelling.h>
-
-/**
- * @def SCL_FALLTHROUGH
- * @brief Suppresses the implicit fall-through warning in a @c switch statement.
- * @ingroup scl_utility_attribute
- * @details
- * Place as a statement at the end of a @c case body that intentionally falls
- * through to the next @c case. This silences @c -Wimplicit-fallthrough and the
- * equivalent MSVC warning C26819.
- *
- * Detection order:
- *  1. @c __has_cpp_attribute(fallthrough) (C++17):
- *       @c [[fallthrough]]
- *  2. @c __has_attribute(fallthrough) (older GCC and Clang):
- *       @c __attribute__((fallthrough))
- *  3. Fallback: @c ((void)0) — silent no-op
- *
- * @code{.cpp}
- * switch (code) {
- * case 1:
- *     prepare();
- *     SCL_FALLTHROUGH;
- * case 2:
- *     execute();
- *     break;
- * }
- * @endcode
- */
 
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(fallthrough)
@@ -66,3 +38,38 @@ static_assert(
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FALLTHROUGH_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FALLTHROUGH_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_FALLTHROUGH));
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @def SCL_FALLTHROUGH
+ * @brief Execution passes on purpose from the marked case of a `switch` into the next case.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** the case ends without `break` on purpose. The compiler issues no
+ *   warning `-Wimplicit-fallthrough` for it. MSVC issues no warning C5262, which is off by default,
+ *   and its code analysis with `/analyze /analyze:plugin EspXEngine.dll` issues no warning C26819.
+ *   The flow of control is the same with the macro and without it.
+ * - **Place:** the macro is written as the last statement of a case, closed by a semicolon, right
+ *   before the next label.
+ *
+ * | Condition, first match | Expansion |
+ * |---|---|
+ * | `__has_cpp_attribute(fallthrough)` (C++17) | `[[fallthrough]]` |
+ * | `__has_attribute(__fallthrough__)` | `__attribute__((__fallthrough__))` |
+ * | none of the above | `((void)0)` |
+ *
+ * The macro expands to `[[fallthrough]]` on GCC, Clang and MSVC in C++20.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_FALLTHROUGH` | `[[fallthrough]]`, `__attribute__((__fallthrough__))`, `((void)0)` | `[[fallthrough]]`, `__attribute__((__fallthrough__))`, `((void)0)` | `[[fallthrough]]`, `((void)0)` |
+ *
+ * @snippet attribute/fallthrough/attribute_fallthrough_example.cpp fallthrough
+ */

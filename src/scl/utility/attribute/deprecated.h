@@ -2,62 +2,11 @@
 
 /**
  * @file
- * @brief Deprecation annotation macros: SCL_DEPRECATED and SCL_DEPRECATED_MSG.
+ * @brief The macros `SCL_DEPRECATED` and `SCL_DEPRECATED_MSG`.
  * @ingroup scl_utility_attribute
  */
 
 #include <scl/utility/attribute/detail/spelling.h>
-
-/**
- * @def SCL_DEPRECATED
- * @brief Marks a declaration as deprecated.
- * @ingroup scl_utility_attribute
- * @details
- * Causes the compiler to emit a warning whenever the annotated entity is used.
- * Apply before a function, a variable or a typedef, and after the @c class,
- * @c struct or @c enum keyword: @c struct @c SCL_DEPRECATED @c Name.
- *
- * Detection order:
- *  1. @c __has_cpp_attribute(deprecated) (C++14):
- *       @c [[deprecated]]
- *  2. MSVC other than clang-cl:
- *       @c __declspec(deprecated)
- *  3. @c __has_attribute(deprecated) (GCC, Clang):
- *       @c __attribute__((deprecated))
- *  4. Fallback: empty (no annotation; no warning emitted)
- *
- * @code{.cpp}
- * SCL_DEPRECATED void old_api();
- *
- * struct SCL_DEPRECATED LegacyHandle { int fd; };
- * @endcode
- */
-
-/**
- * @def SCL_DEPRECATED_MSG(msg)
- * @brief Marks a declaration as deprecated with a custom message.
- * @ingroup scl_utility_attribute
- * @details
- * Like @ref SCL_DEPRECATED but includes a string literal @p msg in the
- * compiler diagnostic. On compilers that do not support message-bearing
- * deprecation the macro falls back to @ref SCL_DEPRECATED (warning without
- * message).
- *
- * Detection order:
- *  1. @c __has_cpp_attribute(deprecated) (C++14):
- *       @c [[deprecated(msg)]]
- *  2. MSVC other than clang-cl:
- *       @c __declspec(deprecated(msg))
- *  3. @c __has_attribute(deprecated) (GCC, Clang):
- *       @c __attribute__((deprecated(msg)))
- *  4. Fallback: empty
- *
- * @param msg A string literal describing the deprecation reason.
- *
- * @code{.cpp}
- * SCL_DEPRECATED_MSG("Use new_api() instead") void old_api();
- * @endcode
- */
 
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(deprecated)
@@ -140,3 +89,52 @@ static_assert(
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_ATTRIBUTE("scl_detail_message")),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_FALLBACK("scl_detail_message"))),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_DEPRECATED_MSG));
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @def SCL_DEPRECATED
+ * @brief The compiler warns at every use of the marked entity.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** the entity is kept only for old code, and another entity should
+ *   be used in new code. The compiler warns at every use of the entity and issues no warning at
+ *   the declaration itself.
+ * - **The message:** the string literal `msg` of `SCL_DEPRECATED_MSG` is put into the warning.
+ *   `SCL_DEPRECATED_MSG` expands to `SCL_DEPRECATED`, and no message is put into the warning, where
+ *   no row before the last matches or where `SCL_DEPRECATED` is defined before the header.
+ * - **Place:** either macro is written before the declaration of a function or a variable, and
+ *   after `struct`, `class`, `enum` or `enum class` in the declaration of a type.
+ *
+ * | Condition, first match | `SCL_DEPRECATED` | `SCL_DEPRECATED_MSG(msg)` |
+ * |---|---|---|
+ * | `__has_cpp_attribute(deprecated)` (C++14) | `[[deprecated]]` | `[[deprecated(msg)]]` |
+ * | MSVC other than clang-cl | `__declspec(deprecated)` | `__declspec(deprecated(msg))` |
+ * | `__has_attribute(__deprecated__)` | `__attribute__((__deprecated__))` | `__attribute__((__deprecated__(msg)))` |
+ * | none of the above | nothing | `SCL_DEPRECATED` |
+ *
+ * The macros expand to `[[deprecated]]` and `[[deprecated(msg)]]` on GCC, Clang and MSVC in C++20.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_DEPRECATED` | `[[deprecated]]`, `__attribute__((__deprecated__))`, empty | `[[deprecated]]`, `__attribute__((__deprecated__))`, empty | `[[deprecated]]`, `__declspec(deprecated)`, empty |
+ * | `SCL_DEPRECATED_MSG(msg)` | `[[deprecated(msg)]]`, `__attribute__((__deprecated__(msg)))`, `SCL_DEPRECATED` | `[[deprecated(msg)]]`, `__attribute__((__deprecated__(msg)))`, `SCL_DEPRECATED` | `[[deprecated(msg)]]`, `__declspec(deprecated(msg))`, `SCL_DEPRECATED` |
+ *
+ * @snippet attribute/deprecated/attribute_deprecated_example.cpp deprecated
+ */
+
+/**
+ * @def SCL_DEPRECATED_MSG(msg)
+ * @brief The compiler warns at every use of the marked entity, with the message `msg`.
+ * @ingroup scl_utility_attribute
+ * @details
+ * @copydetails SCL_DEPRECATED
+ *
+ * @param msg The string literal put into the warning.
+ */

@@ -2,33 +2,11 @@
 
 /**
  * @file
- * @brief Portable [[no_unique_address]] attribute macro.
+ * @brief The macro `SCL_NO_UNIQUE_ADDRESS`.
  * @ingroup scl_utility_attribute
  */
 
 #include <scl/utility/attribute/detail/spelling.h>
-
-/**
- * @def SCL_NO_UNIQUE_ADDRESS
- * @brief Portable [[no_unique_address]] (C++20).
- * @ingroup scl_utility_attribute
- * @details
- * Detection uses @c __has_cpp_attribute to select the right spelling:
- *  1. @c __has_cpp_attribute(no_unique_address) -> @c [[no_unique_address]]
- *  2. @c __has_cpp_attribute(msvc::no_unique_address) -> @c [[msvc::no_unique_address]]
- *  3. Fallback: empty (the empty member is not collapsed)
- *
- * The target ABI decides which spelling is available, not the compiler brand. Targeting
- * the MSVC ABI, step 1 returns 0 and step 2 picks up the vendor form, on MSVC, on
- * clang-cl and on Clang alike. Only the vendor form collapses the empty member
- * there. Targeting the Itanium ABI, step 1 answers and step 2 is never reached.
- *
- * @code{.cpp}
- * struct Empty {};
- * struct S { SCL_NO_UNIQUE_ADDRESS Empty e; int value; };
- * static_assert(sizeof(S) == sizeof(int));
- * @endcode
- */
 
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(no_unique_address)
@@ -68,3 +46,43 @@ static_assert(
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NO_UNIQUE_ADDRESS_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NO_UNIQUE_ADDRESS_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NO_UNIQUE_ADDRESS));
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @def SCL_NO_UNIQUE_ADDRESS
+ * @brief The marked empty member may share its address with another member.
+ * @ingroup scl_utility_attribute
+ * @details
+ * - **What the compiler is told:** the member needs no address distinct from the other members.
+ *   The compiler may place an empty member at the address of another, and then no byte of the class
+ *   is given to it.
+ * - **The spelling by target:** `__has_cpp_attribute(no_unique_address)` is `0` on MSVC, and on
+ *   Clang 22, clang-cl included, for the MSVC ABI. The layout changes there only under
+ *   `[[msvc::no_unique_address]]`. GCC and Clang take the standard spelling for the Itanium ABI.
+ * - **Two members of one type:** two members of one type keep distinct addresses under the macro,
+ *   yet either may still share its address with a member of another type.
+ * - **Place:** the macro is written before the declaration of a non-static data member.
+ *
+ * | Condition, first match | Expansion |
+ * |---|---|
+ * | `__has_cpp_attribute(no_unique_address)` | `[[no_unique_address]]` |
+ * | `__has_cpp_attribute(msvc::no_unique_address)`, `msvc` not a macro | `[[msvc::no_unique_address]]` |
+ * | none of the above | nothing, and the empty member takes a byte |
+ *
+ * The macro expands to `[[no_unique_address]]` on GCC and to `[[msvc::no_unique_address]]` on MSVC.
+ * It expands to `[[no_unique_address]]` on Clang 22 for the Itanium ABI, and to
+ * `[[msvc::no_unique_address]]` for the MSVC ABI.
+ *
+ * A definition of a macro made before its header is kept only as one of the expansions below for
+ * the compiler at hand. The build with any other text ends with an error, as described in
+ * @ref scl_utility_attribute_replacing.
+ *
+ * | Macro | GCC | Clang, clang-cl | MSVC |
+ * |---|---|---|---|
+ * | `SCL_NO_UNIQUE_ADDRESS` | `[[no_unique_address]]`, empty | `[[no_unique_address]]`, empty; for the MSVC ABI `[[msvc::no_unique_address]]`, empty | `[[msvc::no_unique_address]]`, empty |
+ *
+ * @snippet attribute/no_unique_address/attribute_no_unique_address_example.cpp no_unique_address
+ */
