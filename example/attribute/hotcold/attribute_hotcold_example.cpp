@@ -12,7 +12,8 @@
 #include <iostream>
 
 //! [hotcold]
-SCL_HOT unsigned checksum(unsigned char const * bytes, std::size_t size)
+SCL_HOT
+unsigned checksum(unsigned char const * bytes, std::size_t size)
 {
     unsigned sum = 0;
     for (std::size_t index = 0; index < size; ++index)
@@ -20,7 +21,8 @@ SCL_HOT unsigned checksum(unsigned char const * bytes, std::size_t size)
     return sum;
 }
 
-SCL_COLD void report_corruption(std::size_t block)
+SCL_COLD
+void report_corruption(std::size_t block)
 {
     std::cerr << "block " << block << " is damaged\n";
 }

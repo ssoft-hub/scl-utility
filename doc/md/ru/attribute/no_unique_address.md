@@ -52,7 +52,8 @@ struct no_policy
 
 struct counter
 {
-    SCL_NO_UNIQUE_ADDRESS no_policy policy;
+    SCL_NO_UNIQUE_ADDRESS
+    no_policy policy;
     int value;
 };
 

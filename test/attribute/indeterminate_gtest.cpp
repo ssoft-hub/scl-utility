@@ -8,7 +8,8 @@ namespace
 {
     int sum_of_squares(int count)
     {
-        SCL_INDETERMINATE int squares[8];
+        SCL_INDETERMINATE
+        int squares[8];
         for (int index = 0; index < count; ++index)
             squares[index] = index * index;
         int sum = 0;

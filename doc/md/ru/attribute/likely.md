@@ -68,10 +68,10 @@
 ```cpp
 int parse_digit(char symbol)
 {
-    if (symbol >= '0' && symbol <= '9')
-        SCL_LIKELY { return symbol - '0'; }
-    else
-        SCL_UNLIKELY { return -1; }
+    if (symbol >= '0' && symbol <= '9') SCL_LIKELY
+        return symbol - '0';
+    else SCL_UNLIKELY
+        return -1;
 }
 ```
 

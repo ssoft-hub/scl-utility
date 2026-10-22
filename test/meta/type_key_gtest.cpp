@@ -250,8 +250,8 @@ TEST(TypeKeyTest, TypesOfOneSpellingGetKeysOfTheirOwn)
 #if !defined(_MSC_VER) || defined(__clang__)
     STATIC_EXPECT_EQ(::scl::type_key_of<arrow_first>().name(), ::scl::type_key_of<arrow_second>().name());
     STATIC_EXPECT_EQ(::scl::type_key_of<order_first>().name(), ::scl::type_key_of<order_second>().name());
-    STATIC_EXPECT_EQ(::scl::type_key_of<anon_arrow_first>().name(),
-        ::scl::type_key_of<anon_arrow_second>().name());
+    STATIC_EXPECT_EQ(
+        ::scl::type_key_of<anon_arrow_first>().name(), ::scl::type_key_of<anon_arrow_second>().name());
 #endif
     STATIC_EXPECT_NE(::scl::type_key_of<arrow_first>(), ::scl::type_key_of<arrow_second>());
     STATIC_EXPECT_NE(::scl::type_key_of<order_first>(), ::scl::type_key_of<order_second>());

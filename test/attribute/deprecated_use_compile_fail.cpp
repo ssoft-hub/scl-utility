@@ -3,6 +3,7 @@
 
 #include "attribute_strict_warnings.h"
 
-SCL_DEPRECATED int old_value();
+SCL_DEPRECATED
+int old_value();
 
 int caller() { return old_value(); }

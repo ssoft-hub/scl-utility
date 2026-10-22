@@ -15,7 +15,11 @@ namespace
         green = 2,
     };
 
-    SCL_NODISCARD constexpr int answer() noexcept { return 42; }
+    SCL_NODISCARD
+    constexpr int answer() noexcept
+    {
+        return 42;
+    }
 } // namespace
 
 /**

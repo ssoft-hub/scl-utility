@@ -11,14 +11,19 @@
 #include <iostream>
 
 //! [force_inline]
-SCL_FORCE_INLINE int clamp(int value, int low, int high)
+SCL_FORCE_INLINE
+int clamp(int value, int low, int high)
 {
     return value < low ? low : value > high ? high : value;
 }
 //! [force_inline]
 
 //! [noinline]
-SCL_NOINLINE void report_out_of_range(int value) { std::cerr << value << " is out of range\n"; }
+SCL_NOINLINE
+void report_out_of_range(int value)
+{
+    std::cerr << value << " is out of range\n";
+}
 //! [noinline]
 
 int main()

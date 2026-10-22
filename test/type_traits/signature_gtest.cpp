@@ -17,8 +17,7 @@ namespace
 
     template <typename Pointer>
     inline constexpr bool round_trips_v = ::std::is_same_v<
-        ::scl::member_like_t<::scl::signature::object_t<Pointer>, ::scl::signature_t<Pointer>>,
-        Pointer>;
+        ::scl::member_like_t<::scl::signature::object_t<Pointer>, ::scl::signature_t<Pointer>>, Pointer>;
 
     struct widget
     {};
@@ -88,8 +87,8 @@ TEST(SignatureTest, FunctionType)
  */
 TEST(SignatureTest, FunctionPointer)
 {
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<::scl::signature_t<void (*)(int, char const *)>, void(int, char const *)>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::signature_t<void (*)(int, char const *)>, void(int, char const *)>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<void (*)(int) noexcept>, void(int) noexcept>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<void (*)()>, void()>));
 }
@@ -99,8 +98,10 @@ TEST(SignatureTest, FunctionPointer)
  */
 TEST(SignatureTest, FunctionReference)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<int (&)(double, int &&)>, int(double, int &&)>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<int (&)(double) noexcept>, int(double) noexcept>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::signature_t<int (&)(double, int &&)>, int(double, int &&)>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::signature_t<int (&)(double) noexcept>, int(double) noexcept>));
 }
 
 /**
@@ -108,10 +109,11 @@ TEST(SignatureTest, FunctionReference)
  */
 TEST(SignatureTest, MemberFunctionPointer)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<long (widget::*)(int, char)>, long(int, char)>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::signature_t<long (widget::*)(int, char)>, long(int, char)>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<long (widget::*)(int) const &>, long(int)>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<long (widget::*)(int) volatile && noexcept>,
-        long(int) noexcept>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::signature_t<long (widget::*)(int) volatile && noexcept>, long(int) noexcept>));
 }
 
 /**
@@ -154,11 +156,12 @@ TEST(SignatureTest, MemberFunctionPointerRoundTrips)
 TEST(SignatureTest, MemberFunctionObject)
 {
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::object_t<void (widget::*)()>, widget>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::object_t<void (widget::*)() const>, widget const>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::object_t<void (widget::*)() volatile &>,
-        widget volatile &>));
     STATIC_EXPECT_TRUE(
-        (::std::is_same_v<::scl::signature::object_t<void (widget::*)() const &&>, widget const &&>));
+        (::std::is_same_v<::scl::signature::object_t<void (widget::*)() const>, widget const>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::signature::object_t<void (widget::*)() volatile &>, widget volatile &>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::signature::object_t<void (widget::*)() const &&>, widget const &&>));
 }
 
 /**
@@ -172,7 +175,8 @@ TEST(SignatureTest, CallOperator)
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<decltype(lambda)>, int(int, double &)>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<decltype(counter)>, int(long)>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::object_t<call_operator>, call_operator const>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::object_t<decltype(counter)>, decltype(counter)>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::signature::object_t<decltype(counter)>, decltype(counter)>));
 }
 
 /**
@@ -180,7 +184,8 @@ TEST(SignatureTest, CallOperator)
  */
 TEST(SignatureTest, QualifiedCallOperator)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<call_operator const>, int(long, short const &)>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::signature_t<call_operator const>, int(long, short const &)>));
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<::scl::signature_t<call_operator volatile>, int(long, short const &)>));
     STATIC_EXPECT_TRUE(
@@ -247,18 +252,18 @@ TEST(SignatureTest, ExplicitObjectParameter)
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<::scl::signature::object_t<explicit_object>, explicit_object const &>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<explicit_rvalue_object>, int(long)>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::object_t<explicit_rvalue_object>,
-        explicit_rvalue_object &&>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::signature::object_t<explicit_rvalue_object>, explicit_rvalue_object &&>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<explicit_value_object>, int(long)>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<::scl::signature::object_t<explicit_value_object>, explicit_value_object>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::signature::object_t<explicit_value_object>, explicit_value_object>));
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<::scl::signature_t<explicit_variadic_object>, int(char const *, ...)>));
     STATIC_EXPECT_TRUE(::scl::signature::is_variadic_v<explicit_variadic_object>);
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<explicit_incomplete_object>,
-        int(incomplete_parameter) noexcept>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<explicit_variadic_noexcept_object>,
-        int(int, ...) noexcept>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::signature_t<explicit_incomplete_object>, int(incomplete_parameter) noexcept>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::signature_t<explicit_variadic_noexcept_object>, int(int, ...) noexcept>));
     STATIC_EXPECT_TRUE(::scl::signature::is_rvalue_reference_v<explicit_variadic_noexcept_object>);
     STATIC_EXPECT_FALSE(::scl::signature::is_const_v<explicit_variadic_noexcept_object>);
     STATIC_EXPECT_TRUE(::scl::signature::is_const_v<explicit_object>);
@@ -300,9 +305,10 @@ namespace
  */
 TEST(SignatureTest, StaticCallOperator)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<static_call_operator>,
-        int(static_call_operator const &, long)>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<static_pinned_call_operator>, int(pinned, int)>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::signature_t<static_call_operator>, int(static_call_operator const &, long)>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::signature_t<static_pinned_call_operator>, int(pinned, int)>));
 }
 #endif
 
@@ -325,8 +331,8 @@ TEST(SignatureTest, ResultAndParameters)
 {
     using pointer = long (widget::*)(int, char const &) const;
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::result_t<pointer>, long>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<::scl::signature::parameters_t<pointer>, ::std::tuple<int, char const &>>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::signature::parameters_t<pointer>, ::std::tuple<int, char const &>>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::parameter_t<pointer, 1>, char const &>));
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::parameters_t<void (*)()>, ::std::tuple<>>));
 }
@@ -400,8 +406,8 @@ TEST(SignatureTest, RefQualifiedNoexceptCallOperator)
 TEST(SignatureTest, InheritedCallOperator)
 {
     STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<derived_call_operator>, int(long)>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::object_t<derived_call_operator>,
-        derived_call_operator const>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::signature::object_t<derived_call_operator>, derived_call_operator const>));
 }
 
 /**
@@ -424,13 +430,14 @@ TEST(SignatureTest, Variadic)
     STATIC_EXPECT_TRUE(::scl::signature::is_variadic_v<int (widget::*)(int, ...) const noexcept>);
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<::scl::signature_t<int (*)(char const *, ...)>, int(char const *, ...)>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<int(char const *, ...) noexcept>,
-        int(char const *, ...) noexcept>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::signature_t<int(char const *, ...) noexcept>, int(char const *, ...) noexcept>));
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<::scl::signature_t<int (widget::*)(int, ...) const &>, int(int, ...)>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature::parameters_t<int (*)(char const *, ...)>,
-        ::std::tuple<char const *>>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<variadic_call_operator>, int(char const *, ...)>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::signature::parameters_t<int (*)(char const *, ...)>, ::std::tuple<char const *>>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::signature_t<variadic_call_operator>, int(char const *, ...)>));
     STATIC_EXPECT_TRUE(::scl::signature::is_variadic_v<int (*)(char const *, ...)>);
     STATIC_EXPECT_TRUE(::scl::signature::is_variadic_v<variadic_call_operator>);
     STATIC_EXPECT_FALSE(::scl::signature::is_variadic_v<int (*)(char const *)>);
@@ -462,8 +469,8 @@ TEST(SignatureTest, ParameterIndexOutOfRange)
  */
 TEST(SignatureTest, LvalueCallOperator)
 {
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<::scl::signature::object_t<lvalue_call_operator>, lvalue_call_operator &>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::signature::object_t<lvalue_call_operator>, lvalue_call_operator &>));
     STATIC_EXPECT_TRUE(::scl::signature::is_lvalue_reference_v<lvalue_call_operator>);
     STATIC_EXPECT_FALSE(::scl::signature::is_rvalue_reference_v<lvalue_call_operator>);
 }
@@ -473,7 +480,8 @@ TEST(SignatureTest, LvalueCallOperator)
  */
 TEST(SignatureTest, MemberFunctionPointerReference)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::signature_t<long (widget::* const &)(int) &&>, long(int)>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::signature_t<long (widget::* const &)(int) &&>, long(int)>));
     STATIC_EXPECT_TRUE((::std::is_same_v<
         ::scl::signature::object_t<long (widget::* volatile)(int) const>, widget const>));
 }

@@ -32,8 +32,8 @@ using print_t = decltype(&printer::print); // int (printer::*)(long, std::string
 //! [signature]
 static_assert(::std::is_same_v<::scl::signature_t<print_t>, int(long, ::std::string const &) noexcept>);
 static_assert(::std::is_same_v<::scl::signature::result_t<print_t>, int>);
-static_assert(::std::is_same_v<::scl::signature::parameters_t<print_t>,
-    ::std::tuple<long, ::std::string const &>>);
+static_assert(
+    ::std::is_same_v<::scl::signature::parameters_t<print_t>, ::std::tuple<long, ::std::string const &>>);
 static_assert(::std::is_same_v<::scl::signature::parameter_t<print_t, 1>, ::std::string const &>);
 //! [signature]
 
@@ -48,8 +48,7 @@ static_assert(::scl::signature::is_noexcept_v<print_t>);
 //! [object]
 static_assert(::std::is_same_v<::scl::signature::object_t<print_t>, printer const &>);
 static_assert(::std::is_same_v<
-    ::scl::member_like_t<::scl::signature::object_t<print_t>, ::scl::signature_t<print_t>>,
-    print_t>);
+    ::scl::member_like_t<::scl::signature::object_t<print_t>, ::scl::signature_t<print_t>>, print_t>);
 //! [object]
 
 //! [overload]
@@ -133,7 +132,8 @@ struct handler : base_handler
 {};
 
 static_assert(::std::is_same_v<::scl::signature::object_t<handler>, handler const>);
-static_assert(::std::is_same_v<::scl::signature::object_t<decltype(&handler::operator())>, base_handler const>);
+static_assert(
+    ::std::is_same_v<::scl::signature::object_t<decltype(&handler::operator())>, base_handler const>);
 //! [inherited]
 
 //! [explicit]

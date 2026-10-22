@@ -33,7 +33,11 @@
 
 namespace
 {
-    SCL_FORCE_INLINE int twice(int value) { return value * 2; }
+    SCL_FORCE_INLINE
+    int twice(int value)
+    {
+        return value * 2;
+    }
 
     SCL_UNSEQUENCED(int square(int value)) { return value * value; }
 

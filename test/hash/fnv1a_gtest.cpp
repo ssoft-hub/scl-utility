@@ -60,7 +60,8 @@ TEST(Fnv1aTest, DifferentInputsDifferentHashes)
  */
 TEST(Fnv1aTest, ChainingEquivalentToConcatenation)
 {
-    STATIC_EXPECT_EQ(fnv1a(::std::string_view{"bar"}, fnv1a(::std::string_view{"foo"})),
+    STATIC_EXPECT_EQ(
+        fnv1a(::std::string_view{"bar"}, fnv1a(::std::string_view{"foo"})),
         fnv1a(::std::string_view{"foobar"}));
 }
 

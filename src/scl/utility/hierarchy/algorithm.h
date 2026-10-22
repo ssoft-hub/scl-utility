@@ -116,7 +116,7 @@ namespace scl::hierarchy
      */
     template <typename Value>
     [[nodiscard]]
-    constexpr decltype(auto) parent_of(Value && value) /**/
+    constexpr decltype(auto) parent_of(Value && value)
         noexcept(noexcept(adl_parent(::std::forward<Value>(value))))
         requires requires { adl_parent(::std::forward<Value>(value)); }
     {
@@ -181,7 +181,7 @@ namespace scl::hierarchy
      */
     template <typename Value>
     [[nodiscard]]
-    constexpr bool has_parent(Value && value) /**/
+    constexpr bool has_parent(Value && value)
         noexcept(noexcept(adl_has_parent(::std::forward<Value>(value))))
         requires requires { adl_has_parent(::std::forward<Value>(value)); }
     {
@@ -211,17 +211,18 @@ namespace scl::hierarchy
     template <typename Parent, typename Value>
     [[nodiscard]]
     constexpr bool is_parent_of(Parent && parent, Value && value) /**/
-        noexcept(noexcept(::scl::hierarchy::has_parent(value)) &&
-            noexcept(::scl::hierarchy::are_identical(parent,
-                ::scl::hierarchy::parent_of(::std::forward<Value>(value)))))
+        noexcept(
+            noexcept(::scl::hierarchy::has_parent(value)) &&
+            noexcept(::scl::hierarchy::are_identical(
+                parent, ::scl::hierarchy::parent_of(::std::forward<Value>(value)))))
         requires requires(Value && v) {
                      ::scl::hierarchy::has_parent(v);
                      ::scl::hierarchy::parent_of(v);
                  }
     {
         return ::scl::hierarchy::has_parent(value) &&
-            ::scl::hierarchy::are_identical(::std::forward<Parent>(parent),
-                ::scl::hierarchy::parent_of(::std::forward<Value>(value)));
+            ::scl::hierarchy::are_identical(
+                ::std::forward<Parent>(parent), ::scl::hierarchy::parent_of(::std::forward<Value>(value)));
     }
 
     /**
@@ -249,7 +250,8 @@ namespace scl::hierarchy
     template <typename Parent, typename Value>
     [[nodiscard]]
     constexpr bool is_ancestor_of(Parent && parent, Value && value) /**/
-        noexcept(noexcept(::scl::hierarchy::has_parent(value)) &&
+        noexcept(
+            noexcept(::scl::hierarchy::has_parent(value)) &&
             noexcept(::scl::hierarchy::is_parent_of(::std::forward<Parent>(parent), ::std::forward<Value>(value))))
         requires requires(Value && v) {
                      ::scl::hierarchy::has_parent(v);
@@ -260,8 +262,8 @@ namespace scl::hierarchy
             return false;
         if (::scl::hierarchy::is_parent_of(parent, value))
             return true;
-        return ::scl::hierarchy::is_ancestor_of(::std::forward<Parent>(parent),
-            ::scl::hierarchy::parent_of(::std::forward<Value>(value)));
+        return ::scl::hierarchy::is_ancestor_of(
+            ::std::forward<Parent>(parent), ::scl::hierarchy::parent_of(::std::forward<Value>(value)));
     }
 
     /**
@@ -289,8 +291,10 @@ namespace scl::hierarchy
     template <typename First, typename Second>
     [[nodiscard]]
     constexpr bool are_sibling(First && first, Second && second) /**/
-        noexcept(noexcept(::scl::hierarchy::has_parent(first)) &&
-            noexcept(::scl::hierarchy::are_identical(::scl::hierarchy::parent_of(::std::forward<First>(first)),
+        noexcept(
+            noexcept(::scl::hierarchy::has_parent(first)) &&
+            noexcept(::scl::hierarchy::are_identical(
+                ::scl::hierarchy::parent_of(::std::forward<First>(first)),
                 ::scl::hierarchy::parent_of(::std::forward<Second>(second)))))
         requires requires(First && f, Second && s) {
                      ::scl::hierarchy::has_parent(f);
@@ -301,7 +305,8 @@ namespace scl::hierarchy
     {
         if (!::scl::hierarchy::has_parent(first) || !::scl::hierarchy::has_parent(second))
             return false;
-        return ::scl::hierarchy::are_identical(::scl::hierarchy::parent_of(::std::forward<First>(first)),
+        return ::scl::hierarchy::are_identical(
+            ::scl::hierarchy::parent_of(::std::forward<First>(first)),
             ::scl::hierarchy::parent_of(::std::forward<Second>(second)));
     }
 

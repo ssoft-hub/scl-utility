@@ -24,11 +24,14 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIKELY),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIKELY),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_LIKELY));
+// clang-format on
 
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(unlikely)
@@ -46,11 +49,14 @@ static_assert(
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNLIKELY),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNLIKELY),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_UNLIKELY));
+// clang-format on
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_DETAIL_LIKELY_EXPR_MSVC(expr) (static_cast<bool>(!!(expr)))
@@ -75,7 +81,8 @@ static_assert(
 #endif
 
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIKELY_EXPR(scl_detail_condition)),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIKELY_EXPR(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_EXPR_MSVC(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_EXPR_BUILTIN(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_EXPR_FALLBACK(scl_detail_condition))),
@@ -104,7 +111,8 @@ static_assert(
 #endif
 
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNLIKELY_EXPR(scl_detail_condition)),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNLIKELY_EXPR(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_EXPR_MSVC(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_EXPR_BUILTIN(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_EXPR_FALLBACK(scl_detail_condition))),

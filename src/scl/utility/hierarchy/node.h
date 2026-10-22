@@ -70,7 +70,7 @@ namespace scl::hierarchy
         }
 
         template <typename... Arguments>
-        constexpr node(Arguments &&... arguments) /**/
+        constexpr node(Arguments &&... arguments)
             noexcept(::std::is_nothrow_constructible_v<payload, Arguments...>)
             requires(::std::constructible_from<payload, Arguments...>)
             : m_payload{::std::forward<Arguments>(arguments)...}
@@ -153,7 +153,7 @@ namespace scl::hierarchy
         }
 
         template <typename Argument>
-        constexpr iterator push_back(Argument && argument) /**/
+        constexpr iterator push_back(Argument && argument)
             noexcept(noexcept(insert(cend(), ::std::forward<Argument>(argument))))
             requires(::std::constructible_from<node, Argument>)
         {
@@ -161,7 +161,7 @@ namespace scl::hierarchy
         }
 
         template <typename... Arguments>
-        constexpr iterator emplace_back(Arguments &&... arguments) /**/
+        constexpr iterator emplace_back(Arguments &&... arguments)
             noexcept(noexcept(emplace(cend(), ::std::forward<Arguments>(arguments)...)))
             requires(::std::constructible_from<node, Arguments...>)
         {
@@ -169,7 +169,7 @@ namespace scl::hierarchy
         }
 
         template <typename Argument>
-        constexpr iterator push_front(Argument && argument) /**/
+        constexpr iterator push_front(Argument && argument)
             noexcept(noexcept(insert(cbegin(), ::std::forward<Argument>(argument))))
             requires(::std::constructible_from<node, Argument>)
         {
@@ -177,7 +177,7 @@ namespace scl::hierarchy
         }
 
         template <typename... Arguments>
-        constexpr iterator emplace_front(Arguments &&... arguments) /**/
+        constexpr iterator emplace_front(Arguments &&... arguments)
             noexcept(noexcept(emplace(cbegin(), ::std::forward<Arguments>(arguments)...)))
             requires(::std::constructible_from<node, Arguments...>)
         {
@@ -185,7 +185,7 @@ namespace scl::hierarchy
         }
 
         template <typename Argument>
-        constexpr iterator insert(const_iterator where, Argument && argument) /**/
+        constexpr iterator insert(const_iterator where, Argument && argument)
             noexcept(noexcept(emplace(where, ::std::forward<Argument>(argument))))
             requires(::std::constructible_from<node, Argument>)
         {
@@ -193,9 +193,9 @@ namespace scl::hierarchy
         }
 
         template <typename... Arguments>
-        constexpr iterator emplace(const_iterator where, Arguments &&... arguments) /**/
-            noexcept(noexcept(::std::declval<nodes &>().emplace(::std::declval<const_iterator>(),
-                ::std::declval<Arguments>()...)))
+        constexpr iterator emplace(const_iterator where, Arguments &&... arguments)
+            noexcept(noexcept(::std::declval<nodes &>().emplace(
+                ::std::declval<const_iterator>(), ::std::declval<Arguments>()...)))
             requires(::std::constructible_from<node, Arguments...>)
         {
             iterator result = m_nodes.emplace(where, ::std::forward<Arguments>(arguments)...);
@@ -269,8 +269,8 @@ namespace scl::hierarchy
             m_nodes.splice(where, from.m_nodes, it);
         }
 
-        constexpr void
-        transfer(const_iterator where, reference from, const_iterator first, const_iterator last) noexcept
+        constexpr void transfer(
+            const_iterator where, reference from, const_iterator first, const_iterator last) noexcept
         {
             ::std::for_each (first, last, [parent = this](const_reference child) {
                 const_cast<node &>(child).m_parent = parent;
@@ -384,7 +384,7 @@ namespace scl::hierarchy
     // constness of the parent always matches the constness of self.
     template <typename Payload, template <typename> class Allocator>
     [[nodiscard]]
-    constexpr node<Payload, Allocator> & adl_parent(node<Payload, Allocator> & self) /**/
+    constexpr node<Payload, Allocator> & adl_parent(node<Payload, Allocator> & self)
         noexcept(noexcept(self.parent()))
     {
         return self.parent();
@@ -392,7 +392,7 @@ namespace scl::hierarchy
 
     template <typename Payload, template <typename> class Allocator>
     [[nodiscard]]
-    constexpr node<Payload, Allocator> const & adl_parent(node<Payload, Allocator> const & self) /**/
+    constexpr node<Payload, Allocator> const & adl_parent(node<Payload, Allocator> const & self)
         noexcept(noexcept(self.parent()))
     {
         return self.parent();
@@ -400,7 +400,7 @@ namespace scl::hierarchy
 
     template <typename Payload, template <typename> class Allocator>
     [[nodiscard]]
-    constexpr bool adl_has_parent(node<Payload, Allocator> const & self) /**/
+    constexpr bool adl_has_parent(node<Payload, Allocator> const & self)
         noexcept(noexcept(self.has_parent()))
     {
         return self.has_parent();

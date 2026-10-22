@@ -40,8 +40,8 @@ namespace
     concept view_castable = requires(::scl::any_view view) { ::scl::any_cast<Type>(view); };
 
     template <typename Type>
-    concept view_ptr_castable =
-        requires(::scl::any_view const * view) { ::scl::any_cast<Type>(view); };
+    concept view_ptr_castable = requires(
+        ::scl::any_view const * view) { ::scl::any_cast<Type>(view); };
 
     template <typename Type>
     concept view_from_lvalue = requires(Type & object) { ::scl::any_view{object}; };
@@ -134,7 +134,8 @@ TEST(AnyViewTest, PointerCastAlwaysYieldsConst)
     ::scl::any_view const view{value};
 
     STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::any_cast<counted>(&view)), counted const *>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::any_cast<counted const>(&view)), counted const *>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<decltype(::scl::any_cast<counted const>(&view)), counted const *>));
 
     EXPECT_NE(::scl::any_cast<counted>(&view), nullptr);
     EXPECT_NE(::scl::any_cast<counted const>(&view), nullptr);

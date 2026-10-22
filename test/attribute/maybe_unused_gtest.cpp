@@ -6,7 +6,11 @@
 
 namespace
 {
-    SCL_MAYBE_UNUSED int never_called() { return 0; }
+    SCL_MAYBE_UNUSED
+    int never_called()
+    {
+        return 0;
+    }
 
     int first(int kept, SCL_MAYBE_UNUSED int unread) { return kept; }
 
@@ -22,6 +26,7 @@ namespace
 
 TEST(AttributeMaybeUnused, LeavesAnUnusedEntityWithNoWarning)
 {
-    SCL_MAYBE_UNUSED int const unread = 1;
+    SCL_MAYBE_UNUSED
+    int const unread = 1;
     EXPECT_EQ(first(2, 3), 2);
 }

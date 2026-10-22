@@ -222,15 +222,16 @@ operator, since the whole line is parsed before it is evaluated.
 #if __has_feature(cxx_exceptions)
 ```
 
-An empty block comment `/**/` at the end of a declarator line is a break hint for
-clang-format: the declarator stays whole on its line, and `noexcept(...)` moves to the next.
-A contributor should put it only where the formatter would otherwise break the declarator
-itself.
+An empty block comment `/**/` is a hint to clang-format or the compiler. A contributor should
+put it only where it changes the result. As a break hint, it ends the line where it stands.
 
 ```cpp
 [[nodiscard]]
 constexpr auto begin() /**/
     noexcept(noexcept(cursor{::std::ranges::begin(source), ::std::ranges::end(source)}))
+
+constexpr auto operator()(/**/
+    R (Class::*ptr)(Args...) const volatile noexcept) const noexcept -> decltype(ptr)
 ```
 
 A contributor must list the members of a class body in three sections: types and aliases,

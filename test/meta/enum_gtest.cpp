@@ -80,8 +80,8 @@ TEST(MetaEnumTest, Declarations)
     STATIC_EXPECT_TRUE(noexcept(::scl::enum_short_name<Namespace::Color::Red>()));
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<decltype(::scl::enum_name<Namespace::Color::Red>()), ::std::string_view>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::enum_short_name<Namespace::Color::Red>()),
-        ::std::string_view>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<decltype(::scl::enum_short_name<Namespace::Color::Red>()), ::std::string_view>));
 }
 
 /**

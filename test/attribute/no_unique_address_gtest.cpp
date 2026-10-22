@@ -16,14 +16,17 @@ namespace
 
     struct one_empty
     {
-        SCL_NO_UNIQUE_ADDRESS empty policy;
+        SCL_NO_UNIQUE_ADDRESS
+        empty policy;
         int value;
     };
 
     struct two_empty
     {
-        SCL_NO_UNIQUE_ADDRESS empty first;
-        SCL_NO_UNIQUE_ADDRESS empty second;
+        SCL_NO_UNIQUE_ADDRESS
+        empty first;
+        SCL_NO_UNIQUE_ADDRESS
+        empty second;
         int value;
     };
 } // namespace

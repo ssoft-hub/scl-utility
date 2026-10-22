@@ -55,7 +55,8 @@ A buffer filled digit by digit and read only where it has been written:
 ```cpp
 std::string reversed_decimal(unsigned value)
 {
-    SCL_INDETERMINATE char digits[std::numeric_limits<unsigned>::digits10 + 1];
+    SCL_INDETERMINATE
+    char digits[std::numeric_limits<unsigned>::digits10 + 1];
     std::size_t count = 0;
     do
     {

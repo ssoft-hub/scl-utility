@@ -47,7 +47,8 @@
     using name##_method_t = ::scl::detected_t<name##_method_operation, Arguments...>;                                \
                                                                                                                      \
     template <typename Type, typename... Arguments>                                                                  \
-    using name##_method_exact_operation = decltype((::std::declval<Type>().*                                         \
+    using name##_method_exact_operation = decltype((                                                                 \
+        ::std::declval<Type>().*                                                                                     \
         static_cast<::scl::member_function_like_t<Type, name##_method_operation<Type, Arguments...>(Arguments...)>>( \
             &::std::remove_cvref_t<Type>::name))(::std::declval<Arguments>()...));                                   \
     template <typename... Arguments>                                                                                 \
@@ -57,8 +58,8 @@
     using name##_method_exact_t = ::scl::detected_t<name##_method_exact_operation, Arguments...>;                    \
                                                                                                                      \
     template <typename Type, typename... Arguments>                                                                  \
-    using name##_static_method_operation =                                                                           \
-        decltype(::std::remove_cvref_t<Type>::name(::std::declval<Arguments>()...));                                 \
+    using name##_static_method_operation = decltype(::std::remove_cvref_t<Type>::name(                               \
+        ::std::declval<Arguments>()...));                                                                            \
     template <typename... Arguments>                                                                                 \
     inline static constexpr auto has_##name##_static_method_v =                                                      \
         ::scl::is_detected_v<name##_static_method_operation, Arguments...>;                                          \
@@ -73,4 +74,5 @@
     inline static constexpr auto has_##name##_static_method_exact_v =                                                \
         ::scl::is_detected_v<name##_static_method_exact_operation, Arguments...>;                                    \
     template <typename... Arguments>                                                                                 \
-    using name##_static_method_exact_t = ::scl::detected_t<name##_static_method_exact_operation, Arguments...>;
+    using name##_static_method_exact_t =                                                                             \
+        ::scl::detected_t<name##_static_method_exact_operation, Arguments...>;

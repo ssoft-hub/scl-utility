@@ -47,7 +47,9 @@ namespace scl::detail
 
 namespace scl
 {
-    template <concepts::enum_type Enum, ::std::size_t bit_count = 32> // NOLINT(readability-identifier-naming)
+    template <
+        concepts::enum_type Enum,
+        ::std::size_t bit_count = 32> // NOLINT(readability-identifier-naming)
     class flags
     {
     public:
@@ -331,8 +333,8 @@ namespace scl
             {
                 auto const position = before - 1;
                 auto const index = position / 8;
-                auto const bits = static_cast<::std::uint8_t>(bits_at(index) &
-                    (0xFFu >> (7 - (position % 8))));
+                auto const bits = static_cast<::std::uint8_t>(
+                    bits_at(index) & (0xFFu >> (7 - (position % 8))));
                 if (bits != 0)
                     return (index * 8) + 7 - static_cast<::std::size_t>(::std::countl_zero(bits));
                 before = index * 8;

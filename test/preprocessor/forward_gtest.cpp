@@ -41,8 +41,8 @@ TEST(Forward, StaysOneArgumentOfAnotherMacro)
  */
 TEST(Forward, ParameterUnderStringizingReceivesItUnexpanded)
 {
-    STATIC_EXPECT_EQ(::std::string_view{SCL_TEST_STRINGIZE(SCL_FORWARD(1, 2))},
-        ::std::string_view{"SCL_FORWARD(1, 2)"});
+    STATIC_EXPECT_EQ(
+        ::std::string_view{SCL_TEST_STRINGIZE(SCL_FORWARD(1, 2))}, ::std::string_view{"SCL_FORWARD(1, 2)"});
 }
 
 /**

@@ -30,8 +30,8 @@ namespace scl::detail
     {
         // Spelled out rather than left to aggregate initialisation, which would also admit
         // a default-constructed one - describing no type at all.
-        constexpr explicit any_anchored_descriptor(any_type_descriptor const & descriptor,
-            Type * referent = nullptr) noexcept
+        constexpr explicit any_anchored_descriptor(
+            any_type_descriptor const & descriptor, Type * referent = nullptr) noexcept
             : any_type_descriptor{any_anchored_form(descriptor)}
             , referent{referent}
         {}

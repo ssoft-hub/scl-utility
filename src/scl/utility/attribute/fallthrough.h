@@ -32,12 +32,15 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_FALLTHROUGH),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_FALLTHROUGH),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FALLTHROUGH_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FALLTHROUGH_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FALLTHROUGH_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_FALLTHROUGH));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

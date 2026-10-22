@@ -74,7 +74,8 @@ A short function the compiler is asked to inline at every call:
 
 <!-- snippet: example/attribute/inline/attribute_inline_example.cpp force_inline -->
 ```cpp
-SCL_FORCE_INLINE int clamp(int value, int low, int high)
+SCL_FORCE_INLINE
+int clamp(int value, int low, int high)
 {
     return value < low ? low : value > high ? high : value;
 }
@@ -84,7 +85,11 @@ A report of an error the compiler is asked to keep as one function:
 
 <!-- snippet: example/attribute/inline/attribute_inline_example.cpp noinline -->
 ```cpp
-SCL_NOINLINE void report_out_of_range(int value) { std::cerr << value << " is out of range\n"; }
+SCL_NOINLINE
+void report_out_of_range(int value)
+{
+    std::cerr << value << " is out of range\n";
+}
 ```
 
 ## See also

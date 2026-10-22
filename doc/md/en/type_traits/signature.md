@@ -161,8 +161,8 @@ The function type, the result type and the parameter types of `printer::print`. 
 ```cpp
 static_assert(::std::is_same_v<::scl::signature_t<print_t>, int(long, ::std::string const &) noexcept>);
 static_assert(::std::is_same_v<::scl::signature::result_t<print_t>, int>);
-static_assert(::std::is_same_v<::scl::signature::parameters_t<print_t>,
-    ::std::tuple<long, ::std::string const &>>);
+static_assert(
+    ::std::is_same_v<::scl::signature::parameters_t<print_t>, ::std::tuple<long, ::std::string const &>>);
 static_assert(::std::is_same_v<::scl::signature::parameter_t<print_t, 1>, ::std::string const &>);
 ```
 
@@ -197,8 +197,7 @@ to `printer::print`:
 ```cpp
 static_assert(::std::is_same_v<::scl::signature::object_t<print_t>, printer const &>);
 static_assert(::std::is_same_v<
-    ::scl::member_like_t<::scl::signature::object_t<print_t>, ::scl::signature_t<print_t>>,
-    print_t>);
+    ::scl::member_like_t<::scl::signature::object_t<print_t>, ::scl::signature_t<print_t>>, print_t>);
 ```
 
 For a free function and a static call operator a use of the alias template `signature::object_t`

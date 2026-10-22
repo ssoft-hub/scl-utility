@@ -154,8 +154,8 @@ TEST(MetaSymbolTest, Declarations)
     STATIC_EXPECT_TRUE(noexcept(::scl::symbol_short_name<Namespace::initialize>()));
     STATIC_EXPECT_TRUE((
         ::std::is_same_v<decltype(::scl::symbol_name<Namespace::initialize>()), ::std::string_view>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::symbol_short_name<Namespace::initialize>()),
-        ::std::string_view>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(::scl::symbol_short_name<Namespace::initialize>()), ::std::string_view>));
 }
 
 /**
@@ -196,11 +196,12 @@ TEST(MetaSymbolTest, SignatureDropped)
  */
 TEST(MetaSymbolTest, TemplateArgumentWithSpace)
 {
-    STATIC_EXPECT_EQ(::scl::symbol_name<&Namespace::Pool<unsigned int>::count>(),
-        "Namespace::Pool<unsigned int>::count");
-    STATIC_EXPECT_EQ(::scl::symbol_name<&Namespace::Pool<unsigned int>::act>(),
-        "Namespace::Pool<unsigned int>::act");
-    STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::generic<unsigned int>>().starts_with("Namespace::generic"));
+    STATIC_EXPECT_EQ(
+        ::scl::symbol_name<&Namespace::Pool<unsigned int>::count>(), "Namespace::Pool<unsigned int>::count");
+    STATIC_EXPECT_EQ(
+        ::scl::symbol_name<&Namespace::Pool<unsigned int>::act>(), "Namespace::Pool<unsigned int>::act");
+    STATIC_EXPECT_TRUE(
+        ::scl::symbol_name<&Namespace::generic<unsigned int>>().starts_with("Namespace::generic"));
 }
 
 /**
@@ -226,15 +227,15 @@ TEST(MetaSymbolTest, Operators)
  */
 TEST(MetaSymbolTest, OperatorInTemplateArgument)
 {
-    STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::Hook<Namespace::equals>::act>().starts_with(
-        "Namespace::Hook<"));
+    STATIC_EXPECT_TRUE(
+        ::scl::symbol_name<&Namespace::Hook<Namespace::equals>::act>().starts_with("Namespace::Hook<"));
     STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::Hook<Namespace::equals>::act>().ends_with(">::act"));
     STATIC_EXPECT_EQ(::scl::symbol_short_name<&Namespace::Hook<Namespace::equals>::act>(), "act");
-    STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::Hook<Namespace::less>::act>().starts_with(
-        "Namespace::Hook<"));
+    STATIC_EXPECT_TRUE(
+        ::scl::symbol_name<&Namespace::Hook<Namespace::less>::act>().starts_with("Namespace::Hook<"));
     STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::Hook<Namespace::less>::act>().ends_with(">::act"));
-    STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::Hook<Namespace::greater>::act>().starts_with(
-        "Namespace::Hook<"));
+    STATIC_EXPECT_TRUE(
+        ::scl::symbol_name<&Namespace::Hook<Namespace::greater>::act>().starts_with("Namespace::Hook<"));
     STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::Hook<Namespace::greater>::act>().ends_with(">::act"));
 }
 
@@ -270,7 +271,8 @@ TEST(MetaSymbolTest, MemberOfClassWithSeveralBases)
     STATIC_EXPECT_EQ(::scl::symbol_name<&Namespace::Both::operator~ >(), "Namespace::Both::operator~");
 #if defined(_MSC_VER) && !defined(__clang__)
     STATIC_EXPECT_EQ((::scl::symbol_name<&Namespace::Both::operator, >()), "Namespace::Both::operator ,");
-    STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::Both::both>().starts_with("Namespace::Both::`vcall'{"));
+    STATIC_EXPECT_TRUE(
+        ::scl::symbol_name<&Namespace::Both::both>().starts_with("Namespace::Both::`vcall'{"));
     STATIC_EXPECT_TRUE(::scl::symbol_name<&Namespace::Both::both>().ends_with(",{flat}}'"));
     STATIC_EXPECT_TRUE(::scl::symbol_short_name<&Namespace::Both::both>().starts_with("`vcall'{"));
 #else
@@ -291,7 +293,8 @@ TEST(MetaSymbolTest, ShortNames)
     STATIC_EXPECT_EQ(::scl::symbol_short_name<&Namespace::Processor::property>(), "property");
     STATIC_EXPECT_EQ(::scl::symbol_short_name<&Namespace::Processor::count>(), "count");
     STATIC_EXPECT_EQ(::scl::symbol_short_name<&Namespace::variable>(), "variable");
-    STATIC_EXPECT_TRUE(::scl::symbol_short_name<&Namespace::generic<Outside::Item>>().starts_with("generic"));
+    STATIC_EXPECT_TRUE(
+        ::scl::symbol_short_name<&Namespace::generic<Outside::Item>>().starts_with("generic"));
 }
 
 /**

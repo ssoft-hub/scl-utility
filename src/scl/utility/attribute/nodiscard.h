@@ -36,12 +36,15 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NODISCARD),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NODISCARD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NODISCARD));
+// clang-format on
 
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(nodiscard) >= 201907L
@@ -78,7 +81,8 @@ static_assert(
 #endif
 
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NODISCARD_MSG("scl_detail_message")),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NODISCARD_MSG("scl_detail_message")),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_MSG_MESSAGE("scl_detail_message")),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_MSG_STD("scl_detail_message")),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_MSG_ATTRIBUTE("scl_detail_message")),

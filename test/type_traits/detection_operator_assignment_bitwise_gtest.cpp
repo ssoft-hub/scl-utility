@@ -313,7 +313,8 @@ TEST(OperatorDetectionTest, RightShiftAssignMemberExact)
     STATIC_EXPECT_FALSE((::scl::has_right_shift_assign_member_exact_v<WithLvalueConstMember &&, int>));
     STATIC_EXPECT_FALSE((::scl::has_right_shift_assign_member_exact_v<WithLvalueConstMember const, int>));
     STATIC_EXPECT_TRUE((::scl::has_right_shift_assign_member_exact_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_right_shift_assign_member_exact_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_right_shift_assign_member_exact_v<WithLvalueConstMember const &&, int>));
 
     STATIC_EXPECT_FALSE((::scl::has_right_shift_assign_member_exact_v<WithGlobal, int>));
     STATIC_EXPECT_FALSE((::scl::has_right_shift_assign_member_exact_v<WithGlobal &, int>));
@@ -473,7 +474,8 @@ TEST(OperatorDetectionTest, BitwiseAndAssignMemberExact)
     STATIC_EXPECT_FALSE((::scl::has_bitwise_and_assign_member_exact_v<WithLvalueConstMember &&, int>));
     STATIC_EXPECT_FALSE((::scl::has_bitwise_and_assign_member_exact_v<WithLvalueConstMember const, int>));
     STATIC_EXPECT_TRUE((::scl::has_bitwise_and_assign_member_exact_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_bitwise_and_assign_member_exact_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_bitwise_and_assign_member_exact_v<WithLvalueConstMember const &&, int>));
 
     STATIC_EXPECT_FALSE((::scl::has_bitwise_and_assign_member_exact_v<WithGlobal, int>));
     STATIC_EXPECT_FALSE((::scl::has_bitwise_and_assign_member_exact_v<WithGlobal &, int>));
@@ -793,7 +795,8 @@ TEST(OperatorDetectionTest, BitwiseXorAssignMemberExact)
     STATIC_EXPECT_FALSE((::scl::has_bitwise_xor_assign_member_exact_v<WithLvalueConstMember &&, int>));
     STATIC_EXPECT_FALSE((::scl::has_bitwise_xor_assign_member_exact_v<WithLvalueConstMember const, int>));
     STATIC_EXPECT_TRUE((::scl::has_bitwise_xor_assign_member_exact_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_bitwise_xor_assign_member_exact_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_bitwise_xor_assign_member_exact_v<WithLvalueConstMember const &&, int>));
 
     STATIC_EXPECT_FALSE((::scl::has_bitwise_xor_assign_member_exact_v<WithGlobal, int>));
     STATIC_EXPECT_FALSE((::scl::has_bitwise_xor_assign_member_exact_v<WithGlobal &, int>));

@@ -323,18 +323,20 @@ TEST(HierarchyTreeTest, ReferenceReverseIteratorWrites)
 TEST(HierarchyTreeTest, ReverseIteratorMutabilityFollowsTheProxy)
 {
     STATIC_EXPECT_TRUE((std::is_same_v<int_tree::reference::reverse_iterator, int_tree::reverse_iterator>));
-    STATIC_EXPECT_TRUE((std::is_same_v<decltype(*std::declval<int_tree::reference &>().rbegin()),
-        int_tree::reference>));
-    STATIC_EXPECT_TRUE((std::is_same_v<decltype(*std::declval<int_tree::reference const &>().rbegin()),
-        int_tree::const_reference>));
-    STATIC_EXPECT_TRUE((std::is_same_v<decltype(*std::declval<int_tree::reference &>().crbegin()),
-        int_tree::const_reference>));
-    STATIC_EXPECT_TRUE((std::is_same_v<decltype(*std::declval<int_tree::const_reference &>().rbegin()),
-        int_tree::const_reference>));
+    STATIC_EXPECT_TRUE((
+        std::is_same_v<decltype(*std::declval<int_tree::reference &>().rbegin()), int_tree::reference>));
+    STATIC_EXPECT_TRUE((std::is_same_v<
+        decltype(*std::declval<int_tree::reference const &>().rbegin()), int_tree::const_reference>));
+    STATIC_EXPECT_TRUE((std::is_same_v<
+        decltype(*std::declval<int_tree::reference &>().crbegin()), int_tree::const_reference>));
+    STATIC_EXPECT_TRUE((std::is_same_v<
+        decltype(*std::declval<int_tree::const_reference &>().rbegin()), int_tree::const_reference>));
 
-    STATIC_EXPECT_TRUE((std::is_same_v<std::iterator_traits<int_tree::iterator>::reference,
+    STATIC_EXPECT_TRUE((std::is_same_v<
+        std::iterator_traits<int_tree::iterator>::reference,
         decltype(*std::declval<int_tree::iterator &>())>));
-    STATIC_EXPECT_TRUE((std::is_same_v<std::iterator_traits<int_tree::const_iterator>::reference,
+    STATIC_EXPECT_TRUE((std::is_same_v<
+        std::iterator_traits<int_tree::const_iterator>::reference,
         decltype(*std::declval<int_tree::const_iterator &>())>));
 
     int_tree t;
@@ -349,9 +351,11 @@ TEST(HierarchyTreeTest, ReverseIteratorMutabilityFollowsTheProxy)
  */
 TEST(HierarchyTreeTest, ArrowReachesTheProxyThroughAReverseIterator)
 {
-    STATIC_EXPECT_TRUE((std::is_same_v<std::iterator_traits<int_tree::iterator>::pointer,
+    STATIC_EXPECT_TRUE((std::is_same_v<
+        std::iterator_traits<int_tree::iterator>::pointer,
         decltype(std::declval<int_tree::iterator const &>().operator->())>));
-    STATIC_EXPECT_TRUE((std::is_same_v<std::iterator_traits<int_tree::const_iterator>::pointer,
+    STATIC_EXPECT_TRUE((std::is_same_v<
+        std::iterator_traits<int_tree::const_iterator>::pointer,
         decltype(std::declval<int_tree::const_iterator const &>().operator->())>));
 
     int_tree t;

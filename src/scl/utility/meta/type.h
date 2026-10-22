@@ -24,8 +24,7 @@ namespace scl::detail
 
     // GCC spells a type or a function of the namespace its enclosing function stands in without
     // that namespace, where Clang and MSVC spell the namespace too.
-    constexpr ::scl::detail::anchor_span
-    find_anchor(::std::string_view text, ::std::string_view qualified) noexcept
+    constexpr ::scl::detail::anchor_span find_anchor(::std::string_view text, ::std::string_view qualified) noexcept
     {
         if (auto const position = text.find(qualified); position != ::std::string_view::npos)
             return {.position = position, .length = qualified.size()};
@@ -124,7 +123,9 @@ namespace scl::detail
         if (!head.ends_with(keyword) || index >= symbol + length)
             return index;
         auto const start = head.size() - keyword.size();
-        return start > 0 && ::scl::detail::identifier_char(::scl::detail::char_or_null_at(str, start - 1)) ? index : start;
+        return start > 0 && ::scl::detail::identifier_char(::scl::detail::char_or_null_at(str, start - 1))
+            ? index
+            : start;
     }
 
     // Whether the operator at an index is ->, ->*, <=> or >>, whose last > may close a template
@@ -147,8 +148,8 @@ namespace scl::detail
     };
 
     // Where the scan from the end goes on after the angle bracket at an index.
-    constexpr ::std::size_t
-    scan_angle(::std::string_view str, ::std::size_t index, scope_scan & result, unsigned shorter_from_end) noexcept
+    constexpr ::std::size_t scan_angle(
+        ::std::string_view str, ::std::size_t index, scope_scan & result, unsigned shorter_from_end) noexcept
     {
         auto const keyword = ::scl::detail::operator_start(str, index);
         if (keyword == index)

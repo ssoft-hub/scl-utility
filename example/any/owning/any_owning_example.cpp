@@ -102,9 +102,11 @@ static void show_copying()
     ::scl::any const owned{::std::make_unique<int>(42)};
     ::scl::any const refused = owned.try_copy();
 
-    ::std::cout << "  copyable=" << text.copyable() << " copy=\"" << *::scl::any_cast<::std::string>(&copy) << "\"\n";
     ::std::cout
-        << "  unique_ptr copyable=" << owned.copyable() << " copy has_value=" << refused.has_value() << '\n'; // 0 0
+        << "  copyable=" << text.copyable() << " copy=\"" << *::scl::any_cast<::std::string>(&copy) << "\"\n";
+    ::std::cout
+        << "  unique_ptr copyable=" << owned.copyable() << " copy has_value=" << refused.has_value()
+        << '\n'; // 0 0
 }
 //! [copying]
 
@@ -140,7 +142,8 @@ static void show_allocator()
     value.emplace<::std::string>(64U, 'x');
 
     ::std::cout
-        << "  allocated from the given resource? " << (value.get_allocator().resource() == &resource) << '\n'; // 1
+        << "  allocated from the given resource? "
+        << (value.get_allocator().resource() == &resource) << '\n'; // 1
 
     // The allocator travels with the object: what one allocator acquired, only
     // that allocator may release.

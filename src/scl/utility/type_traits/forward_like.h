@@ -14,13 +14,13 @@ namespace scl::detail
 {
     // Add const from From onto To if From is const (ignoring reference)
     template <typename From, typename To>
-    using add_const_from_t =
-        ::std::conditional_t<::std::is_const_v<::std::remove_reference_t<From>>, ::std::add_const_t<To>, To>;
+    using add_const_from_t = ::std::conditional_t<
+        ::std::is_const_v<::std::remove_reference_t<From>>, ::std::add_const_t<To>, To>;
 
     // Add volatile from From onto To if From is volatile (ignoring reference)
     template <typename From, typename To>
-    using add_volatile_from_t =
-        ::std::conditional_t<::std::is_volatile_v<::std::remove_reference_t<From>>, ::std::add_volatile_t<To>, To>;
+    using add_volatile_from_t = ::std::conditional_t<
+        ::std::is_volatile_v<::std::remove_reference_t<From>>, ::std::add_volatile_t<To>, To>;
 
     // Add both const and volatile from From to To (ignoring reference)
     template <typename From, typename To>
@@ -30,7 +30,8 @@ namespace scl::detail
     // Matches std::forward_like semantics: the result is always a reference.
     // Don't add reference to void.
     template <typename From, typename To>
-    using add_reference_like_t = ::std::conditional_t<::std::is_lvalue_reference_v<From>,
+    using add_reference_like_t = ::std::conditional_t<
+        ::std::is_lvalue_reference_v<From>,
         ::std::conditional_t<::std::is_void_v<To>, To, ::std::add_lvalue_reference_t<To>>,
         ::std::conditional_t<::std::is_void_v<To>, To, ::std::add_rvalue_reference_t<To>>>;
 
@@ -64,8 +65,8 @@ namespace scl
      * @endcode
      */
     template <typename Base, typename Type>
-    using forward_like_t = ::scl::detail::add_reference_like_t<Base,
-        ::scl::detail::add_cv_from_t<Base, ::std::remove_reference_t<Type>>>;
+    using forward_like_t = ::scl::detail::add_reference_like_t<
+        Base, ::scl::detail::add_cv_from_t<Base, ::std::remove_reference_t<Type>>>;
 
     /**
      * @brief Forwards a value with the cv-ref qualifiers of `Base` applied to `T`'s type,

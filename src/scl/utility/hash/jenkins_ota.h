@@ -69,7 +69,7 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint32_t jenkins_ota(Range && range) /**/
+    constexpr ::std::uint32_t jenkins_ota(Range && range)
         noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
         ::std::uint32_t h = 0;
@@ -100,7 +100,7 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range && range) const /**/
+        constexpr result_type operator()(Range && range) const
             noexcept(noexcept(::scl::hash::jenkins_ota(::std::forward<Range>(range))))
         {
             return ::scl::hash::jenkins_ota(::std::forward<Range>(range));

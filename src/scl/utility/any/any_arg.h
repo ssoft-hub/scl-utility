@@ -32,7 +32,8 @@ namespace scl
 
     template <::scl::concepts::object_type Type>
     [[nodiscard]]
-    SCL_HOT constexpr Type * any_cast(any_argument const * arg) noexcept;
+    SCL_HOT
+    constexpr Type * any_cast(any_argument const * arg) noexcept;
 
     class any_argument : detail::any_base
     {
@@ -61,7 +62,8 @@ namespace scl
         constexpr any_argument(Any && value SCL_LIFETIMEBOUND) noexcept
             requires(detail::is_std_any_v<::std::remove_cvref_t<Any>>) &&
             (!::std::is_volatile_v<::std::remove_reference_t<Any>>)
-            : base_type{::std::addressof(value), &detail::any_type_descriptor_of<::std::remove_reference_t<Any> &>}
+            : base_type{::std::addressof(value),
+                  &detail::any_type_descriptor_of<::std::remove_reference_t<Any> &>}
         {}
 #endif
 
@@ -113,13 +115,16 @@ namespace scl
             // With the recovery constant-evaluable on its own, the binding is the plain one
             // a view makes, and every restriction the anchor imposed on where an `any_arg`
             // may sit goes with it.
-            : base_type{::std::addressof(object), &detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
+            : base_type{::std::addressof(object),
+                  &detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
         {}
 #else
         template <typename Type>
         // cppcheck-suppress noExplicitConstructor
-        // NOLINTNEXTLINE(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
-        constexpr any_argument(Type && object SCL_LIFETIMEBOUND
+        // NOLINTBEGIN(*-explicit-*,*-missing-std-forward): implicit view by design; binds, never forwards
+        constexpr any_argument(
+            Type && object SCL_LIFETIMEBOUND
+        // NOLINTEND(*-explicit-*,*-missing-std-forward)
 #ifndef SCL_DOXYGEN
             // The anchor is a caller's temporary, so it cannot be created inside this
             // constructor; a default argument is what puts it in the caller's frame. It is
@@ -129,8 +134,9 @@ namespace scl
             // reference the temporary would be a const object, and writing through one is
             // not a constant expression.
             // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
-            detail::any_anchored_descriptor<::std::remove_cvref_t<Type>> && anchor = detail::any_anchored_descriptor<
-                ::std::remove_cvref_t<Type>>{detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
+            detail::any_anchored_descriptor<::std::remove_cvref_t<Type>> && anchor =
+                detail::any_anchored_descriptor<::std::remove_cvref_t<Type>>{
+                    detail::any_type_descriptor_of<::std::remove_reference_t<Type> &>}
 #endif
             ) noexcept
             requires(!detail::is_std_any_v<::std::remove_cvref_t<Type>>) &&
@@ -180,7 +186,8 @@ namespace scl
 
     template <::scl::concepts::object_type Type>
     [[nodiscard]]
-    SCL_HOT constexpr Type * any_cast(any_argument const * arg) noexcept
+    SCL_HOT
+    constexpr Type * any_cast(any_argument const * arg) noexcept
     {
         if (arg == nullptr) [[unlikely]]
             return nullptr;

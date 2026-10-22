@@ -74,8 +74,8 @@ namespace scl::detail
     inline ::std::string_view cached_demangled_name(char const * mangled)
     {
         // Never destroyed, so a destructor that runs after main returns still reads the names.
-        static auto & names = *new ::std::unordered_map<::std::string, ::std::string,
-            mangled_name_hash, ::std::equal_to<>>;
+        static auto & names = *new ::std::unordered_map<
+            ::std::string, ::std::string, mangled_name_hash, ::std::equal_to<>>;
 #if SCL_HAS_THREADS
         static auto & mutex = *new ::std::mutex;
         ::std::scoped_lock const lock{mutex};

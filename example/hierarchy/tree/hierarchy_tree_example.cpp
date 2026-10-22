@@ -53,7 +53,8 @@ namespace
 
         void on_clear() { by_assignee.clear(); }
 
-        void on_change(Tree::const_payload_reference before, /**/
+        void on_change(
+            Tree::const_payload_reference before, /**/
             Tree::const_payload_reference after)
         {
             if (before.assignee == after.assignee)
@@ -78,7 +79,8 @@ namespace
         void on_erase(Tree::const_iterator it) { --by_status[it->value().status]; }
         void on_clear() { by_status.clear(); }
 
-        void on_change(Tree::const_payload_reference before, /**/
+        void on_change(
+            Tree::const_payload_reference before, /**/
             Tree::const_payload_reference after)
         {
             if (before.status == after.status)
@@ -92,8 +94,8 @@ namespace
     // declaration order — tree sees one Observer type, this example gets two
     // independently maintained indexes for free.
     template <typename Tree>
-    using board_observer =
-        ::scl::hierarchy::observer_tuple<Tree, assignee_index_observer<Tree>, status_count_observer<Tree>>;
+    using board_observer = ::scl::hierarchy::observer_tuple<
+        Tree, assignee_index_observer<Tree>, status_count_observer<Tree>>;
 
     using board = ::scl::hierarchy::tree<task, board_observer>;
 

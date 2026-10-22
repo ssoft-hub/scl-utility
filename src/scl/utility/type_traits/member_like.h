@@ -33,7 +33,8 @@ namespace scl::detail
     struct build_member_function_like
     {
     private:
-        static_assert(::std::is_class_v<::std::remove_cvref_t<Type>>,
+        static_assert(
+            ::std::is_class_v<::std::remove_cvref_t<Type>>,
             "member_function_like_t requires Type to be a class type");
 
         using class_t = ::std::remove_cvref_t<Type>;
@@ -59,21 +60,27 @@ namespace scl::detail
         static constexpr bool is_r = ::std::is_rvalue_reference_v<Type>;
 
     public:
-        using type = ::std::conditional_t<is_l,
+        using type = ::std::conditional_t<
+            is_l,
             // lvalue-qualified member functions
-            ::std::conditional_t<(is_c && is_v), cv_l, ::std::conditional_t<is_c, c_l, ::std::conditional_t<is_v, v_l, un_l>>>,
-            ::std::conditional_t<is_r,
+            ::std::conditional_t<
+                (is_c && is_v), cv_l, ::std::conditional_t<is_c, c_l, ::std::conditional_t<is_v, v_l, un_l>>>,
+            ::std::conditional_t<
+                is_r,
                 // rvalue-qualified member functions
-                ::std::conditional_t<(is_c && is_v), cv_r, ::std::conditional_t<is_c, c_r, ::std::conditional_t<is_v, v_r, un_r>>>,
+                ::std::conditional_t<
+                    (is_c && is_v), cv_r, ::std::conditional_t<is_c, c_r, ::std::conditional_t<is_v, v_r, un_r>>>,
                 // no ref-qualifier
-                ::std::conditional_t<(is_c && is_v), cv, ::std::conditional_t<is_c, c, ::std::conditional_t<is_v, v, un>>>>>;
+                ::std::conditional_t<
+                    (is_c && is_v), cv, ::std::conditional_t<is_c, c, ::std::conditional_t<is_v, v, un>>>>>;
     };
 
     template <typename Type, typename Result, typename... Arguments>
     struct build_member_function_like<Type, Result, member_function_noexcept::enabled, Arguments...>
     {
     private:
-        static_assert(::std::is_class_v<::std::remove_cvref_t<Type>>,
+        static_assert(
+            ::std::is_class_v<::std::remove_cvref_t<Type>>,
             "member_function_like_t requires Type to be a class type");
 
         using class_t = ::std::remove_cvref_t<Type>;
@@ -99,14 +106,19 @@ namespace scl::detail
         static constexpr bool is_r = ::std::is_rvalue_reference_v<Type>;
 
     public:
-        using type = ::std::conditional_t<is_l,
+        using type = ::std::conditional_t<
+            is_l,
             // lvalue-qualified member functions
-            ::std::conditional_t<(is_c && is_v), cv_l, ::std::conditional_t<is_c, c_l, ::std::conditional_t<is_v, v_l, un_l>>>,
-            ::std::conditional_t<is_r,
+            ::std::conditional_t<
+                (is_c && is_v), cv_l, ::std::conditional_t<is_c, c_l, ::std::conditional_t<is_v, v_l, un_l>>>,
+            ::std::conditional_t<
+                is_r,
                 // rvalue-qualified member functions
-                ::std::conditional_t<(is_c && is_v), cv_r, ::std::conditional_t<is_c, c_r, ::std::conditional_t<is_v, v_r, un_r>>>,
+                ::std::conditional_t<
+                    (is_c && is_v), cv_r, ::std::conditional_t<is_c, c_r, ::std::conditional_t<is_v, v_r, un_r>>>,
                 // no ref-qualifier
-                ::std::conditional_t<(is_c && is_v), cv, ::std::conditional_t<is_c, c, ::std::conditional_t<is_v, v, un>>>>>;
+                ::std::conditional_t<
+                    (is_c && is_v), cv, ::std::conditional_t<is_c, c, ::std::conditional_t<is_v, v, un>>>>>;
     };
 
     // Entry: Signature without noexcept
@@ -125,7 +137,8 @@ namespace scl::detail
     template <typename Type, typename Signature>
     struct member_function_like
     {
-        static_assert(::std::is_function_v<Signature>,
+        static_assert(
+            ::std::is_function_v<Signature>,
             "::scl::member_function_like_t requires a function type like Result(Arguments...) or Result(Arguments...) noexcept");
     };
 
@@ -135,16 +148,18 @@ namespace scl::detail
     private:
         using class_t = ::std::remove_cvref_t<Type>;
 
-        static_assert(::std::is_class_v<class_t> || ::std::is_union_v<class_t>,
+        static_assert(
+            ::std::is_class_v<class_t> || ::std::is_union_v<class_t>,
             "member_property_like_t requires Type to be a class or union type");
-        static_assert(!::std::is_function_v<Member>,
+        static_assert(
+            !::std::is_function_v<Member>,
             "member_property_like_t expects a data member type; use member_function_like_t for member functions");
 
         using no_ref_t = ::std::remove_reference_t<Type>;
         using member_like_c_t =
             ::std::conditional_t<::std::is_const_v<no_ref_t>, ::std::add_const_t<Member>, Member>;
-        using member_like_cv_t =
-            ::std::conditional_t<::std::is_volatile_v<no_ref_t>, ::std::add_volatile_t<member_like_c_t>, member_like_c_t>;
+        using member_like_cv_t = ::std::conditional_t<
+            ::std::is_volatile_v<no_ref_t>, ::std::add_volatile_t<member_like_c_t>, member_like_c_t>;
 
     public:
         using type = member_like_cv_t(class_t::*);

@@ -11,9 +11,15 @@
 
 namespace
 {
-    [[maybe_unused]] SCL_DEPRECATED_MSG("use kept") int retired();
+    [[maybe_unused]]
+    SCL_DEPRECATED_MSG("use kept")
+    int retired();
 
-    SCL_NODISCARD_MSG("the value is the result") int kept() { return 1; }
+    SCL_NODISCARD_MSG("the value is the result")
+    int kept()
+    {
+        return 1;
+    }
 } // namespace
 
 TEST(AttributeReplacement, GivesTheMessageFormTheDefinitionOfTheBaseMacro)

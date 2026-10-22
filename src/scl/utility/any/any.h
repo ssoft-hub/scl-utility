@@ -177,7 +177,8 @@ namespace scl
                 SCL_UNLIKELY_EXPR(overlaps_held(value)))
                 return *this;
 
-            if constexpr (::std::is_nothrow_move_constructible_v<bare> && sizeof(bare) <= detail::any_widest_reuse_copy)
+            if constexpr (::std::is_nothrow_move_constructible_v<bare> &&
+                sizeof(bare) <= detail::any_widest_reuse_copy)
             {
                 if (reuses_block<bare>())
                 {
@@ -307,7 +308,8 @@ namespace scl
             if (detail::any_fits_in_buffer(described, buffer_capacity))
                 return false;
 
-            return detail::any_same_block(extent(), {.size = described.size, .alignment = described.alignment});
+            return detail::any_same_block(
+                extent(), {.size = described.size, .alignment = described.alignment});
         }
 
         template <typename ValueType>
@@ -354,8 +356,9 @@ namespace scl
 #if SCL_HAS_EXCEPTIONS
             try
             {
-                m_storage.adopt(detail::any_make_holder_in_place<ValueType>(block,
-                    ::std::forward<Arguments>(arguments)...));
+                m_storage.adopt(
+                    detail::any_make_holder_in_place<ValueType>(
+                        block, ::std::forward<Arguments>(arguments)...));
             }
             catch (...)
             {
@@ -363,8 +366,8 @@ namespace scl
                 throw;
             }
 #else
-            m_storage.adopt(detail::any_make_holder_in_place<ValueType>(block,
-                ::std::forward<Arguments>(arguments)...));
+            m_storage.adopt(
+                detail::any_make_holder_in_place<ValueType>(block, ::std::forward<Arguments>(arguments)...));
 #endif
             m_descriptor = &detail::any_type_descriptor_of<ValueType &>;
         }
@@ -377,35 +380,35 @@ namespace scl
         {
             if (::std::is_constant_evaluated())
             {
-                m_storage.adopt(detail::any_make_holder<ValueType>(m_allocator,
-                    ::std::forward<Arguments>(arguments)...));
+                m_storage.adopt(
+                    detail::any_make_holder<ValueType>(m_allocator, ::std::forward<Arguments>(arguments)...));
                 m_descriptor = &detail::any_descriptor_of<ValueType, Allocator>;
                 return;
             }
 
             auto const & described = detail::any_type_descriptor_of<ValueType &>;
             if (detail::any_fits_in_buffer(described, buffer_capacity))
-                static_cast<void>(detail::any_make_holder_in_place<ValueType>(m_storage.buffer(),
-                    ::std::forward<Arguments>(arguments)...));
+                static_cast<void>(detail::any_make_holder_in_place<ValueType>(
+                    m_storage.buffer(), ::std::forward<Arguments>(arguments)...));
             else
-                m_storage.adopt(place_allocated<ValueType>(described,
-                    ::std::forward<Arguments>(arguments)...));
+                m_storage.adopt(
+                    place_allocated<ValueType>(described, ::std::forward<Arguments>(arguments)...));
 
             m_descriptor = &described;
         }
 
         template <typename ValueType, typename... Arguments>
         [[nodiscard]]
-        detail::any_holder_base *
-        place_allocated(detail::any_type_descriptor const & described, Arguments &&... arguments)
+        detail::any_holder_base * place_allocated(
+            detail::any_type_descriptor const & described, Arguments &&... arguments)
         {
             detail::any_extent const room{.size = described.size, .alignment = described.alignment};
             void * const storage = detail::any_acquire(m_allocator, room);
 #if SCL_HAS_EXCEPTIONS
             try
             {
-                return detail::any_make_holder_in_place<ValueType>(storage,
-                    ::std::forward<Arguments>(arguments)...);
+                return detail::any_make_holder_in_place<ValueType>(
+                    storage, ::std::forward<Arguments>(arguments)...);
             }
             catch (...)
             {
@@ -413,8 +416,8 @@ namespace scl
                 throw;
             }
 #else
-            return detail::any_make_holder_in_place<ValueType>(storage,
-                ::std::forward<Arguments>(arguments)...);
+            return detail::any_make_holder_in_place<ValueType>(
+                storage, ::std::forward<Arguments>(arguments)...);
 #endif
         }
 
@@ -439,11 +442,11 @@ namespace scl
         // Constant evaluation allocates through the typed allocator, and only an owner-made
         // descriptor names one, so the referent has to arrive from a handle over an owning
         // any whose allocator this any shares. Anything else stops on the cast below.
-        constexpr void
-        take_held_referent(detail::any_type_descriptor const * described, detail::any_holder_base const * held)
+        constexpr void take_held_referent(
+            detail::any_type_descriptor const * described, detail::any_holder_base const * held)
         {
-            auto const * const stored =
-                static_cast<detail::any_descriptor<Allocator> const *>(described->as_value);
+            auto const * const stored = static_cast<detail::any_descriptor<Allocator> const *>(
+                described->as_value);
 
             // Refused on the same terms as at run time.
             if (stored->duplicate == nullptr || stored->alignment > detail::any_widest_alignment)
@@ -460,8 +463,7 @@ namespace scl
             return m_descriptor != nullptr && candidate != nullptr && candidate == held();
         }
 
-        constexpr void
-        take_referent(detail::any_type_descriptor const * described, void const * referent)
+        constexpr void take_referent(detail::any_type_descriptor const * described, void const * referent)
         {
             if (described == nullptr || described->place == nullptr)
                 return;
@@ -654,8 +656,7 @@ namespace scl
 #endif
 
     template <typename Allocator, ::std::size_t Capacity>
-    constexpr void
-    swap(basic_any<Allocator, Capacity> & left, basic_any<Allocator, Capacity> & right) noexcept
+    constexpr void swap(basic_any<Allocator, Capacity> & left, basic_any<Allocator, Capacity> & right) noexcept
     {
         left.swap(right);
     }

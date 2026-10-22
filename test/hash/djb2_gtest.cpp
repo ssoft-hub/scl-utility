@@ -53,7 +53,8 @@ TEST(Djb2Test, DifferentInputsDifferentHashes)
  */
 TEST(Djb2Test, ChainingEquivalentToConcatenation)
 {
-    STATIC_EXPECT_EQ(djb2(::std::string_view{"bar"}, djb2(::std::string_view{"foo"})),
+    STATIC_EXPECT_EQ(
+        djb2(::std::string_view{"bar"}, djb2(::std::string_view{"foo"})),
         djb2(::std::string_view{"foobar"}));
 }
 
