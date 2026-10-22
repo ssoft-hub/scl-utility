@@ -9,8 +9,20 @@
 
 #include "attribute_text.h"
 
+namespace
+{
+    [[maybe_unused]] SCL_DEPRECATED_MSG("use kept") int retired();
+
+    SCL_NODISCARD_MSG("the value is the result") int kept() { return 1; }
+} // namespace
+
 TEST(AttributeReplacement, GivesTheMessageFormTheDefinitionOfTheBaseMacro)
 {
     EXPECT_STREQ(SCL_TEST_TEXT(SCL_DEPRECATED_MSG("m")), "[[[deprecated]]]");
     EXPECT_STREQ(SCL_TEST_TEXT(SCL_NODISCARD_MSG("m")), "[[[nodiscard]]]");
+}
+
+TEST(AttributeReplacement, StandsInAPlaceInTheMessageFormUnderTheDefinitionOfTheBaseMacro)
+{
+    EXPECT_EQ(kept(), 1);
 }

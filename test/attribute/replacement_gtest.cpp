@@ -37,6 +37,20 @@ namespace
 
     SCL_UNSEQUENCED(int square(int value)) { return value * value; }
 
+    SCL_REPRODUCIBLE(int first(int const * values)) { return values[0]; }
+
+    void count_stage(int stage, int & steps)
+    {
+        switch (stage)
+        {
+        case 0:
+            ++steps;
+            return;
+        default:
+            SCL_UNREACHABLE();
+        }
+    }
+
     int positive(int value)
     {
         SCL_ASSUME(value > 0);
@@ -87,8 +101,20 @@ TEST(AttributeReplacement, KeepsADefinitionOfTheLastRowMadeBeforeTheHeader)
     EXPECT_STREQ(SCL_TEST_TEXT(SCL_REPRODUCIBLE(int f())), "[int f()]");
 }
 
-TEST(AttributeReplacement, KeepsTheProgramWorkingUnderTheLastRowsThatAreNotEmpty)
+TEST(AttributeReplacement, EvaluatesTheConditionOfAssumeUnderTheLastRow)
 {
+    int evaluations = 0;
+    SCL_ASSUME((++evaluations, true));
+    EXPECT_EQ(evaluations, 1);
+}
+
+TEST(AttributeReplacement, ComputesAsWithoutTheMacrosUnderTheLastRowsThatAreNotEmpty)
+{
+    int const values[] = {8};
+    int steps = 0;
+    count_stage(0, steps);
+    EXPECT_EQ(steps, 1);
+    EXPECT_EQ(first(values), 8);
     EXPECT_EQ(twice(2), 4);
     EXPECT_EQ(square(3), 9);
     EXPECT_EQ(positive(5), 5);
