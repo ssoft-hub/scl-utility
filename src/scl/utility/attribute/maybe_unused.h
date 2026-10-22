@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_MAYBE_UNUSED
  * @brief Suppresses compiler warnings about unused variables, parameters,
@@ -34,22 +36,33 @@
  * @endcode
  */
 
-#ifndef SCL_MAYBE_UNUSED
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(maybe_unused)
-#define SCL_MAYBE_UNUSED [[maybe_unused]]
-#endif
+#define SCL_DETAIL_MAYBE_UNUSED_STD [[maybe_unused]]
 #endif
 #endif
 
-#ifndef SCL_MAYBE_UNUSED
 #ifdef __has_attribute
-#if __has_attribute(unused)
-#define SCL_MAYBE_UNUSED __attribute__((unused))
-#endif
+#if __has_attribute(__unused__)
+#define SCL_DETAIL_MAYBE_UNUSED_ATTRIBUTE __attribute__((__unused__))
 #endif
 #endif
 
+#define SCL_DETAIL_MAYBE_UNUSED_FALLBACK
+
 #ifndef SCL_MAYBE_UNUSED
-#define SCL_MAYBE_UNUSED
+#ifdef SCL_DETAIL_MAYBE_UNUSED_STD
+#define SCL_MAYBE_UNUSED SCL_DETAIL_MAYBE_UNUSED_STD
+#elif defined(SCL_DETAIL_MAYBE_UNUSED_ATTRIBUTE)
+#define SCL_MAYBE_UNUSED SCL_DETAIL_MAYBE_UNUSED_ATTRIBUTE
+#else
+#define SCL_MAYBE_UNUSED SCL_DETAIL_MAYBE_UNUSED_FALLBACK
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_MAYBE_UNUSED),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_MAYBE_UNUSED_STD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_MAYBE_UNUSED_ATTRIBUTE),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_MAYBE_UNUSED_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_MAYBE_UNUSED));

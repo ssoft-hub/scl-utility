@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_ASSUME(expr)
  * @brief Informs the optimizer that @p expr is always true at this point.
@@ -65,62 +67,90 @@
  * @endcode
  */
 
-#ifndef SCL_ASSUME
 #ifdef __has_cpp_attribute
+#if __cplusplus > 202002L || (defined(_MSVC_LANG) && _MSVC_LANG > 202002L)
 #if __has_cpp_attribute(assume)
-#define SCL_ASSUME(expr) [[assume(expr)]]
+#define SCL_DETAIL_ASSUME_CXX23(expr) [[assume(expr)]]
 #endif
 #endif
 #endif
 
-#ifndef SCL_ASSUME
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_ASSUME(expr) __assume(expr)
-#endif
+#define SCL_DETAIL_ASSUME_MSVC(expr) __assume(expr)
 #endif
 
-#ifndef SCL_ASSUME
 #ifdef __has_builtin
 #if __has_builtin(__builtin_assume)
-#define SCL_ASSUME(expr) __builtin_assume(expr)
-#endif
+#define SCL_DETAIL_ASSUME_BUILTIN(expr) __builtin_assume(expr)
 #endif
 #endif
 
-#ifndef SCL_ASSUME
 #ifdef __has_attribute
-#if __has_attribute(assume)
-#define SCL_ASSUME(expr) __attribute__((assume(expr)))
-#endif
+#if __has_attribute(__assume__)
+#define SCL_DETAIL_ASSUME_ATTRIBUTE(expr) __attribute__((__assume__(expr)))
 #endif
 #endif
 
-#ifndef SCL_ASSUME
 #ifdef __has_builtin
 #if __has_builtin(__builtin_unreachable)
-#define SCL_ASSUME(expr) (static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())
+#define SCL_DETAIL_ASSUME_UNREACHABLE(expr) \
+    (static_cast<bool>(expr) ? (void)0 : __builtin_unreachable())
 #endif
 #endif
-#endif
+
+#define SCL_DETAIL_ASSUME_FALLBACK(expr) ((void)(expr))
 
 #ifndef SCL_ASSUME
-#define SCL_ASSUME(expr) ((void)(expr))
+#ifdef SCL_DETAIL_ASSUME_CXX23
+#define SCL_ASSUME(expr) SCL_DETAIL_ASSUME_CXX23(expr)
+#elif defined(SCL_DETAIL_ASSUME_MSVC)
+#define SCL_ASSUME(expr) SCL_DETAIL_ASSUME_MSVC(expr)
+#elif defined(SCL_DETAIL_ASSUME_BUILTIN)
+#define SCL_ASSUME(expr) SCL_DETAIL_ASSUME_BUILTIN(expr)
+#elif defined(SCL_DETAIL_ASSUME_ATTRIBUTE)
+#define SCL_ASSUME(expr) SCL_DETAIL_ASSUME_ATTRIBUTE(expr)
+#elif defined(SCL_DETAIL_ASSUME_UNREACHABLE)
+#define SCL_ASSUME(expr) SCL_DETAIL_ASSUME_UNREACHABLE(expr)
+#else
+#define SCL_ASSUME(expr) SCL_DETAIL_ASSUME_FALLBACK(expr)
+#endif
 #endif
 
-#ifndef SCL_UNREACHABLE
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_ASSUME(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_CXX23(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_MSVC(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_BUILTIN(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_ATTRIBUTE(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_UNREACHABLE(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_FALLBACK(scl_detail_condition))),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_ASSUME));
+
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_UNREACHABLE() __assume(false)
-#endif
+#define SCL_DETAIL_UNREACHABLE_MSVC() __assume(false)
 #endif
 
-#ifndef SCL_UNREACHABLE
 #ifdef __has_builtin
 #if __has_builtin(__builtin_unreachable)
-#define SCL_UNREACHABLE() __builtin_unreachable()
-#endif
+#define SCL_DETAIL_UNREACHABLE_BUILTIN() __builtin_unreachable()
 #endif
 #endif
 
+#define SCL_DETAIL_UNREACHABLE_FALLBACK() ((void)0)
+
 #ifndef SCL_UNREACHABLE
-#define SCL_UNREACHABLE() ((void)0)
+#ifdef SCL_DETAIL_UNREACHABLE_MSVC
+#define SCL_UNREACHABLE() SCL_DETAIL_UNREACHABLE_MSVC()
+#elif defined(SCL_DETAIL_UNREACHABLE_BUILTIN)
+#define SCL_UNREACHABLE() SCL_DETAIL_UNREACHABLE_BUILTIN()
+#else
+#define SCL_UNREACHABLE() SCL_DETAIL_UNREACHABLE_FALLBACK()
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNREACHABLE()),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNREACHABLE_MSVC()),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNREACHABLE_BUILTIN()),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNREACHABLE_FALLBACK())),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_UNREACHABLE));

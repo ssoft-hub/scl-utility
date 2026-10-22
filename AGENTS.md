@@ -111,6 +111,6 @@ bash script/lint/clang_format.sh    # one of them, when only formatting is in qu
 ## Pitfalls
 
 - A test or benchmark source without its suffix joins no target: `_gtest`, `_doctest`,
-  `_catch2`, `_shared`, `_gbench`, `_size`
+  `_catch2`, `_shared`, `_compile_fail`, `_gbench`, `_size`
 - A `.cpp` under `src/` turns the interface target into a compiled library
 - `script/doxygen/build.sh` runs `git checkout -f`: commit before running it

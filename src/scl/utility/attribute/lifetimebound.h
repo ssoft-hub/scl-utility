@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_LIFETIMEBOUND
  * @brief Marks a function parameter (or implicit @c *this) as
@@ -49,28 +51,40 @@
  * @endcode
  */
 
-#ifndef SCL_LIFETIMEBOUND
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_LIFETIMEBOUND
-#endif
+#define SCL_DETAIL_LIFETIMEBOUND_MSVC
 #endif
 
-#ifndef SCL_LIFETIMEBOUND
 #ifdef __has_cpp_attribute
-#if __has_cpp_attribute(clang::lifetimebound)
-#define SCL_LIFETIMEBOUND [[clang::lifetimebound]]
-#endif
+#if __has_cpp_attribute(_Clang::__lifetimebound__)
+#define SCL_DETAIL_LIFETIMEBOUND_CLANG [[_Clang::__lifetimebound__]]
 #endif
 #endif
 
-#ifndef SCL_LIFETIMEBOUND
 #ifdef __has_attribute
-#if __has_attribute(lifetimebound)
-#define SCL_LIFETIMEBOUND __attribute__((lifetimebound))
-#endif
+#if __has_attribute(__lifetimebound__)
+#define SCL_DETAIL_LIFETIMEBOUND_ATTRIBUTE __attribute__((__lifetimebound__))
 #endif
 #endif
 
+#define SCL_DETAIL_LIFETIMEBOUND_FALLBACK
+
 #ifndef SCL_LIFETIMEBOUND
-#define SCL_LIFETIMEBOUND
+#ifdef SCL_DETAIL_LIFETIMEBOUND_MSVC
+#define SCL_LIFETIMEBOUND SCL_DETAIL_LIFETIMEBOUND_MSVC
+#elif defined(SCL_DETAIL_LIFETIMEBOUND_CLANG)
+#define SCL_LIFETIMEBOUND SCL_DETAIL_LIFETIMEBOUND_CLANG
+#elif defined(SCL_DETAIL_LIFETIMEBOUND_ATTRIBUTE)
+#define SCL_LIFETIMEBOUND SCL_DETAIL_LIFETIMEBOUND_ATTRIBUTE
+#else
+#define SCL_LIFETIMEBOUND SCL_DETAIL_LIFETIMEBOUND_FALLBACK
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIFETIMEBOUND),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_MSVC),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_CLANG),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_ATTRIBUTE),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_LIFETIMEBOUND));

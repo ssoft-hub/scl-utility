@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_INDETERMINATE
  * @brief Explicitly marks a variable as having an indeterminate value,
@@ -35,14 +37,26 @@
  * @endcode
  */
 
-#ifndef SCL_INDETERMINATE
 #ifdef __has_cpp_attribute
+#ifndef indeterminate
 #if __has_cpp_attribute(indeterminate)
-#define SCL_INDETERMINATE [[indeterminate]]
+#define SCL_DETAIL_INDETERMINATE_STD [[indeterminate]]
 #endif
 #endif
 #endif
 
+#define SCL_DETAIL_INDETERMINATE_FALLBACK
+
 #ifndef SCL_INDETERMINATE
-#define SCL_INDETERMINATE
+#ifdef SCL_DETAIL_INDETERMINATE_STD
+#define SCL_INDETERMINATE SCL_DETAIL_INDETERMINATE_STD
+#else
+#define SCL_INDETERMINATE SCL_DETAIL_INDETERMINATE_FALLBACK
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_INDETERMINATE),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_INDETERMINATE_STD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_INDETERMINATE_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_INDETERMINATE));

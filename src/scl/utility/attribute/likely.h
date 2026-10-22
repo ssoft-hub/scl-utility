@@ -7,6 +7,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_LIKELY
  * @brief Statement attribute that marks a branch as likely to be taken.
@@ -99,62 +101,104 @@
  * @endcode
  */
 
-#ifndef SCL_LIKELY
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(likely)
-#define SCL_LIKELY [[likely]]
+#define SCL_DETAIL_LIKELY_STD [[likely]]
 #endif
 #endif
-#endif
+
+#define SCL_DETAIL_LIKELY_FALLBACK
 
 #ifndef SCL_LIKELY
-#define SCL_LIKELY
+#ifdef SCL_DETAIL_LIKELY_STD
+#define SCL_LIKELY SCL_DETAIL_LIKELY_STD
+#else
+#define SCL_LIKELY SCL_DETAIL_LIKELY_FALLBACK
+#endif
 #endif
 
-#ifndef SCL_UNLIKELY
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIKELY),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_STD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_LIKELY));
+
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(unlikely)
-#define SCL_UNLIKELY [[unlikely]]
+#define SCL_DETAIL_UNLIKELY_STD [[unlikely]]
 #endif
 #endif
-#endif
+
+#define SCL_DETAIL_UNLIKELY_FALLBACK
 
 #ifndef SCL_UNLIKELY
-#define SCL_UNLIKELY
+#ifdef SCL_DETAIL_UNLIKELY_STD
+#define SCL_UNLIKELY SCL_DETAIL_UNLIKELY_STD
+#else
+#define SCL_UNLIKELY SCL_DETAIL_UNLIKELY_FALLBACK
+#endif
 #endif
 
-#ifndef SCL_LIKELY_EXPR
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNLIKELY),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_STD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_UNLIKELY));
+
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_LIKELY_EXPR(expr) (!!(expr))
-#endif
+#define SCL_DETAIL_LIKELY_EXPR_MSVC(expr) (static_cast<bool>(!!(expr)))
 #endif
 
-#ifndef SCL_LIKELY_EXPR
 #ifdef __has_builtin
 #if __has_builtin(__builtin_expect)
-#define SCL_LIKELY_EXPR(expr) __builtin_expect(!!(expr), 1)
+#define SCL_DETAIL_LIKELY_EXPR_BUILTIN(expr) (static_cast<bool>(__builtin_expect(!!(expr), 1)))
 #endif
 #endif
-#endif
+
+#define SCL_DETAIL_LIKELY_EXPR_FALLBACK(expr) (static_cast<bool>(!!(expr)))
 
 #ifndef SCL_LIKELY_EXPR
-#define SCL_LIKELY_EXPR(expr) (!!(expr))
+#ifdef SCL_DETAIL_LIKELY_EXPR_MSVC
+#define SCL_LIKELY_EXPR(expr) SCL_DETAIL_LIKELY_EXPR_MSVC(expr)
+#elif defined(SCL_DETAIL_LIKELY_EXPR_BUILTIN)
+#define SCL_LIKELY_EXPR(expr) SCL_DETAIL_LIKELY_EXPR_BUILTIN(expr)
+#else
+#define SCL_LIKELY_EXPR(expr) SCL_DETAIL_LIKELY_EXPR_FALLBACK(expr)
+#endif
 #endif
 
-#ifndef SCL_UNLIKELY_EXPR
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIKELY_EXPR(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_EXPR_MSVC(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_EXPR_BUILTIN(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIKELY_EXPR_FALLBACK(scl_detail_condition))),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_LIKELY_EXPR));
+
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_UNLIKELY_EXPR(expr) (!!(expr))
-#endif
+#define SCL_DETAIL_UNLIKELY_EXPR_MSVC(expr) (static_cast<bool>(!!(expr)))
 #endif
 
-#ifndef SCL_UNLIKELY_EXPR
 #ifdef __has_builtin
 #if __has_builtin(__builtin_expect)
-#define SCL_UNLIKELY_EXPR(expr) __builtin_expect(!!(expr), 0)
-#endif
+#define SCL_DETAIL_UNLIKELY_EXPR_BUILTIN(expr) (static_cast<bool>(__builtin_expect(!!(expr), 0)))
 #endif
 #endif
 
+#define SCL_DETAIL_UNLIKELY_EXPR_FALLBACK(expr) (static_cast<bool>(!!(expr)))
+
 #ifndef SCL_UNLIKELY_EXPR
-#define SCL_UNLIKELY_EXPR(expr) (!!(expr))
+#ifdef SCL_DETAIL_UNLIKELY_EXPR_MSVC
+#define SCL_UNLIKELY_EXPR(expr) SCL_DETAIL_UNLIKELY_EXPR_MSVC(expr)
+#elif defined(SCL_DETAIL_UNLIKELY_EXPR_BUILTIN)
+#define SCL_UNLIKELY_EXPR(expr) SCL_DETAIL_UNLIKELY_EXPR_BUILTIN(expr)
+#else
+#define SCL_UNLIKELY_EXPR(expr) SCL_DETAIL_UNLIKELY_EXPR_FALLBACK(expr)
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNLIKELY_EXPR(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_EXPR_MSVC(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_EXPR_BUILTIN(scl_detail_condition)),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNLIKELY_EXPR_FALLBACK(scl_detail_condition))),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_UNLIKELY_EXPR));

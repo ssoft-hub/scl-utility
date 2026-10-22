@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_NODISCARD
  * @brief Warns if the return value of a function (or an object of a type) is
@@ -53,37 +55,79 @@
  * @endcode
  */
 
+#ifdef __has_cpp_attribute
+#if __has_cpp_attribute(nodiscard)
+#define SCL_DETAIL_NODISCARD_STD [[nodiscard]]
+#endif
+#endif
+
+#ifdef __has_attribute
+#if __has_attribute(__warn_unused_result__)
+#define SCL_DETAIL_NODISCARD_ATTRIBUTE __attribute__((__warn_unused_result__))
+#endif
+#endif
+
+#define SCL_DETAIL_NODISCARD_FALLBACK
+
+#ifdef SCL_NODISCARD
+#define SCL_DETAIL_NODISCARD_GIVEN
+#endif
+
 #ifndef SCL_NODISCARD
+#ifdef SCL_DETAIL_NODISCARD_STD
+#define SCL_NODISCARD SCL_DETAIL_NODISCARD_STD
+#elif defined(SCL_DETAIL_NODISCARD_ATTRIBUTE)
+#define SCL_NODISCARD SCL_DETAIL_NODISCARD_ATTRIBUTE
+#else
+#define SCL_NODISCARD SCL_DETAIL_NODISCARD_FALLBACK
+#endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NODISCARD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_STD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_ATTRIBUTE),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NODISCARD));
+
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(nodiscard) >= 201907L
-#define SCL_NODISCARD [[nodiscard]]
-#ifndef SCL_NODISCARD_MSG
-#define SCL_NODISCARD_MSG(msg) [[nodiscard(msg)]]
-#endif
-#elif __has_cpp_attribute(nodiscard)
-#define SCL_NODISCARD [[nodiscard]]
-#ifndef SCL_NODISCARD_MSG
-#define SCL_NODISCARD_MSG(msg) [[nodiscard]]
-#endif
-#endif
+#define SCL_DETAIL_NODISCARD_MSG_MESSAGE(msg) [[nodiscard(msg)]]
 #endif
 #endif
 
-#ifndef SCL_NODISCARD
+#ifdef __has_cpp_attribute
+#if __has_cpp_attribute(nodiscard)
+#define SCL_DETAIL_NODISCARD_MSG_STD(msg) [[nodiscard]]
+#endif
+#endif
+
 #ifdef __has_attribute
-#if __has_attribute(warn_unused_result)
-#define SCL_NODISCARD __attribute__((warn_unused_result))
-#ifndef SCL_NODISCARD_MSG
-#define SCL_NODISCARD_MSG(msg) __attribute__((warn_unused_result))
-#endif
-#endif
+#if __has_attribute(__warn_unused_result__)
+#define SCL_DETAIL_NODISCARD_MSG_ATTRIBUTE(msg) __attribute__((__warn_unused_result__))
 #endif
 #endif
 
-#ifndef SCL_NODISCARD
-#define SCL_NODISCARD
-#endif
+#define SCL_DETAIL_NODISCARD_MSG_FALLBACK(msg) SCL_NODISCARD
 
 #ifndef SCL_NODISCARD_MSG
-#define SCL_NODISCARD_MSG(msg) SCL_NODISCARD
+#ifdef SCL_DETAIL_NODISCARD_GIVEN
+#define SCL_NODISCARD_MSG(msg) SCL_DETAIL_NODISCARD_MSG_FALLBACK(msg)
+#elif defined(SCL_DETAIL_NODISCARD_MSG_MESSAGE)
+#define SCL_NODISCARD_MSG(msg) SCL_DETAIL_NODISCARD_MSG_MESSAGE(msg)
+#elif defined(SCL_DETAIL_NODISCARD_MSG_STD)
+#define SCL_NODISCARD_MSG(msg) SCL_DETAIL_NODISCARD_MSG_STD(msg)
+#elif defined(SCL_DETAIL_NODISCARD_MSG_ATTRIBUTE)
+#define SCL_NODISCARD_MSG(msg) SCL_DETAIL_NODISCARD_MSG_ATTRIBUTE(msg)
+#else
+#define SCL_NODISCARD_MSG(msg) SCL_DETAIL_NODISCARD_MSG_FALLBACK(msg)
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NODISCARD_MSG("scl_detail_message")),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_MSG_MESSAGE("scl_detail_message")),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_MSG_STD("scl_detail_message")),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_MSG_ATTRIBUTE("scl_detail_message")),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NODISCARD_MSG_FALLBACK("scl_detail_message"))),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NODISCARD_MSG));

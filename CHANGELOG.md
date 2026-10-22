@@ -34,6 +34,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- [attribute] Made `SCL_LIKELY_EXPR` and `SCL_UNLIKELY_EXPR` yield `bool` on GCC and Clang, as on MSVC
+- [attribute] Broke a macro defined before its header as a text its page does not list for the compiler at hand: the build stops with an error naming the macro
+- [attribute] Broke a build for MSVC under a caller's macro `noinline`, or for the MSVC ABI under `msvc`: the error names the macro of the group to define as empty
 - [hash] Broke `fnv1a("text")`: every hash function and `key` refuse a bounded array
 - [hash] Refused a range of elements wider than a byte, a breaking change
 - [hash] Took the range of every hash function as a forwarding reference, so `fnv1a<T>(lvalue)` breaks
@@ -44,9 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- [attribute] Preprocessed every attribute header on a compiler lacking a `__has_*` operator
-- [attribute] Kept a caller's predefined macro, such as `SCL_NODISCARD_MSG` alone, on inclusion
-- [attribute] Applied `SCL_FORCE_INLINE` and `SCL_NOINLINE` where `__has_cpp_attribute` misses `gnu::`
+- [attribute] Kept the build and the attribute of every macro on GCC and Clang under a caller's macro named like an attribute token, such as `noinline` or `hot`
 - [hash] Accepted in `djb2` and `sdbm` a range whose end is a sentinel of its own type
 - [hash] Accepted a view that cannot be read through a `const` reference
 - [hash] Accepted `std::byte` and other single-byte trivially copyable elements

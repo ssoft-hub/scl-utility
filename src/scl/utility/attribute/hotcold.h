@@ -6,6 +6,8 @@
  * @ingroup scl_utility_attribute
  */
 
+#include <scl/utility/attribute/detail/spelling.h>
+
 /**
  * @def SCL_HOT
  * @brief Marks a function as called frequently (hot path).
@@ -56,54 +58,78 @@
  * @endcode
  */
 
-#ifndef SCL_HOT
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_HOT
-#endif
+#define SCL_DETAIL_HOT_MSVC
 #endif
 
-#ifndef SCL_HOT
 #ifdef __has_cpp_attribute
-#if __has_cpp_attribute(gnu::hot)
-#define SCL_HOT [[gnu::hot]]
-#endif
+#if __has_cpp_attribute(__gnu__::__hot__)
+#define SCL_DETAIL_HOT_GNU [[__gnu__::__hot__]]
 #endif
 #endif
 
-#ifndef SCL_HOT
 #ifdef __has_attribute
-#if __has_attribute(hot)
-#define SCL_HOT __attribute__((hot))
+#if __has_attribute(__hot__)
+#define SCL_DETAIL_HOT_ATTRIBUTE __attribute__((__hot__))
 #endif
 #endif
-#endif
+
+#define SCL_DETAIL_HOT_FALLBACK
 
 #ifndef SCL_HOT
-#define SCL_HOT
+#ifdef SCL_DETAIL_HOT_MSVC
+#define SCL_HOT SCL_DETAIL_HOT_MSVC
+#elif defined(SCL_DETAIL_HOT_GNU)
+#define SCL_HOT SCL_DETAIL_HOT_GNU
+#elif defined(SCL_DETAIL_HOT_ATTRIBUTE)
+#define SCL_HOT SCL_DETAIL_HOT_ATTRIBUTE
+#else
+#define SCL_HOT SCL_DETAIL_HOT_FALLBACK
+#endif
 #endif
 
-#ifndef SCL_COLD
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_HOT),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_HOT_MSVC),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_HOT_GNU),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_HOT_ATTRIBUTE),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_HOT_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_HOT));
+
 #if defined(_MSC_VER) && !defined(__clang__)
-#define SCL_COLD
-#endif
+#define SCL_DETAIL_COLD_MSVC
 #endif
 
-#ifndef SCL_COLD
 #ifdef __has_cpp_attribute
-#if __has_cpp_attribute(gnu::cold)
-#define SCL_COLD [[gnu::cold]]
-#endif
+#if __has_cpp_attribute(__gnu__::__cold__)
+#define SCL_DETAIL_COLD_GNU [[__gnu__::__cold__]]
 #endif
 #endif
 
-#ifndef SCL_COLD
 #ifdef __has_attribute
-#if __has_attribute(cold)
-#define SCL_COLD __attribute__((cold))
-#endif
+#if __has_attribute(__cold__)
+#define SCL_DETAIL_COLD_ATTRIBUTE __attribute__((__cold__))
 #endif
 #endif
 
+#define SCL_DETAIL_COLD_FALLBACK
+
 #ifndef SCL_COLD
-#define SCL_COLD
+#ifdef SCL_DETAIL_COLD_MSVC
+#define SCL_COLD SCL_DETAIL_COLD_MSVC
+#elif defined(SCL_DETAIL_COLD_GNU)
+#define SCL_COLD SCL_DETAIL_COLD_GNU
+#elif defined(SCL_DETAIL_COLD_ATTRIBUTE)
+#define SCL_COLD SCL_DETAIL_COLD_ATTRIBUTE
+#else
+#define SCL_COLD SCL_DETAIL_COLD_FALLBACK
 #endif
+#endif
+
+static_assert(
+    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_COLD),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_MSVC),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_GNU),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_ATTRIBUTE),
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_FALLBACK)),
+    SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_COLD));
