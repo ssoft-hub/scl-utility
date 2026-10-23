@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [preprocessor] Broke a `SCL_FORWARD` defined before its header: the header no longer yields to it
 - [type_traits] Broke `detected_t` of an ill-formed operation, now `scl::nonesuch`
 - [type_traits] Broke operator detection names and `member_property_like_t`, now as std names them
+- [type_traits] Let `SCL_FUNCTION_DETECTION` expand in a class, breaking an export of its traits
 - Marked the entry points of `hash`, `meta`, `forward_like` and `overload_cast` `[[nodiscard]]`
 
 ### Fixed

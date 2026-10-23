@@ -18,7 +18,8 @@ place of the name `add`, and the names of the declared templates are made from i
 
 - Header: `#include <scl/utility/type_traits/detection/method.h>`
 
-The macro may be expanded in a namespace or in a class. The expansion of `SCL_METHOD_DETECTION(add)`
+The macro should be expanded in a separate namespace or in a class, so that the names of the declared
+templates do not collide with other declarations. The expansion of `SCL_METHOD_DETECTION(add)`
 contains the declarations below. The object type `Type`, with its cv-qualifiers and reference, is
 passed to every template of the expansion as the first argument, followed by the types of the call
 arguments. The variable template `has_add_method_v<counter &, int>`, for example, is `true` if
@@ -150,21 +151,24 @@ public:
     static counter zero() { return {}; }
 };
 
-SCL_METHOD_DETECTION(value)
-SCL_METHOD_DETECTION(add)
-SCL_METHOD_DETECTION(zero)
+namespace counter_traits
+{
+    SCL_METHOD_DETECTION(value)
+    SCL_METHOD_DETECTION(add)
+    SCL_METHOD_DETECTION(zero)
+} // namespace counter_traits
 ```
 
 The non-strict match for objects with different qualifiers and value categories:
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp call -->
 ```cpp
-static_assert(has_value_method_v<counter>);
-static_assert(has_value_method_v<counter const &>);
-static_assert(std::is_same_v<value_method_t<counter>, int>);
-static_assert(has_add_method_v<counter &, int>);
-static_assert(has_add_method_v<counter &, short>);
-static_assert(!has_add_method_v<counter, int>);
+static_assert(counter_traits::has_value_method_v<counter>);
+static_assert(counter_traits::has_value_method_v<counter const &>);
+static_assert(std::is_same_v<counter_traits::value_method_t<counter>, int>);
+static_assert(counter_traits::has_add_method_v<counter &, int>);
+static_assert(counter_traits::has_add_method_v<counter &, short>);
+static_assert(!counter_traits::has_add_method_v<counter, int>);
 ```
 
 The strict match of the object qualifiers and the parameter types. The member function `value()` is
@@ -174,17 +178,17 @@ so for an argument type `short` the variable template is `false`:
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp exact -->
 ```cpp
-static_assert(has_value_method_exact_v<counter const>);
-static_assert(!has_value_method_exact_v<counter>);
-static_assert(has_add_method_exact_v<counter &, int>);
-static_assert(!has_add_method_exact_v<counter &, short>);
+static_assert(counter_traits::has_value_method_exact_v<counter const>);
+static_assert(!counter_traits::has_value_method_exact_v<counter>);
+static_assert(counter_traits::has_add_method_exact_v<counter &, int>);
+static_assert(!counter_traits::has_add_method_exact_v<counter &, short>);
 ```
 
 The result type and the specifier `noexcept`, checked apart:
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp properties -->
 ```cpp
-static_assert(std::is_same_v<value_method_exact_t<counter const>, int>);
+static_assert(std::is_same_v<counter_traits::value_method_exact_t<counter const>, int>);
 static_assert(noexcept(std::declval<counter const &>().value()));
 ```
 
@@ -192,9 +196,9 @@ A static member function:
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp static -->
 ```cpp
-static_assert(has_zero_static_method_v<counter>);
-static_assert(has_zero_static_method_exact_v<counter>);
-static_assert(!has_value_static_method_v<counter>);
+static_assert(counter_traits::has_zero_static_method_v<counter>);
+static_assert(counter_traits::has_zero_static_method_exact_v<counter>);
+static_assert(!counter_traits::has_value_static_method_v<counter>);
 ```
 
 ## Notes

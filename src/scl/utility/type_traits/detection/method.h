@@ -16,7 +16,8 @@
  * @ingroup scl_utility_type_traits
  * @brief The templates checking whether the member function @p name can be called with arguments.
  *
- * The macro may be expanded in a namespace or in a class. The object type `Type`, with its
+ * The macro should be expanded in a separate namespace or in a class, so that the names of
+ * the declared templates do not collide with other declarations. The object type `Type`, with its
  * cv-qualifiers and reference, is passed to every template of the expansion as the first argument,
  * followed by the types of the call arguments, for example `has_add_method_v<counter &, int>`.
  * `SCL_METHOD_DETECTION(add)` expands to:

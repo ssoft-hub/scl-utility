@@ -234,3 +234,18 @@ TEST(MethodDetectionTest, Union)
     STATIC_EXPECT_TRUE((has_query_method_exact_v<Variant &, int>));
     STATIC_EXPECT_FALSE((has_query_method_exact_v<Variant, int>));
 }
+
+namespace
+{
+    struct method_traits
+    {
+        SCL_METHOD_DETECTION(query)
+    };
+} // namespace
+
+TEST(MethodDetectionTest, ClassScope)
+{
+    STATIC_EXPECT_TRUE((method_traits::has_query_method_v<Mock, int>));
+    STATIC_EXPECT_TRUE((method_traits::has_query_method_exact_v<Mock, int>));
+    STATIC_EXPECT_FALSE((method_traits::has_query_method_v<Mock const, int>));
+}

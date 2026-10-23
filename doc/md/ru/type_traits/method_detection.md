@@ -18,8 +18,9 @@
 
 - Заголовок: `#include <scl/utility/type_traits/detection/method.h>`
 
-Макрос можно раскрывать в пространстве имён или в классе. Раскрытие `SCL_METHOD_DETECTION(add)`
-содержит объявления ниже. Каждому шаблону раскрытия первым аргументом передаётся тип объекта `Type`
+Макрос следует раскрывать в отдельном пространстве имён или в классе, чтобы имена объявленных
+шаблонов не пересекались с другими объявлениями. Раскрытие `SCL_METHOD_DETECTION(add)` содержит
+объявления ниже. Каждому шаблону раскрытия первым аргументом передаётся тип объекта `Type`
 вместе с его cv-квалификаторами и ссылкой, а за ним передаются типы аргументов вызова. Например,
 шаблонная константа `has_add_method_v<counter &, int>` равна `true`, если метод `add` можно вызвать
 с аргументом типа `int` для lvalue типа `counter`.
@@ -148,21 +149,24 @@ public:
     static counter zero() { return {}; }
 };
 
-SCL_METHOD_DETECTION(value)
-SCL_METHOD_DETECTION(add)
-SCL_METHOD_DETECTION(zero)
+namespace counter_traits
+{
+    SCL_METHOD_DETECTION(value)
+    SCL_METHOD_DETECTION(add)
+    SCL_METHOD_DETECTION(zero)
+} // namespace counter_traits
 ```
 
 Нестрогое соответствие для объектов с разными квалификаторами и категорией значения:
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp call -->
 ```cpp
-static_assert(has_value_method_v<counter>);
-static_assert(has_value_method_v<counter const &>);
-static_assert(std::is_same_v<value_method_t<counter>, int>);
-static_assert(has_add_method_v<counter &, int>);
-static_assert(has_add_method_v<counter &, short>);
-static_assert(!has_add_method_v<counter, int>);
+static_assert(counter_traits::has_value_method_v<counter>);
+static_assert(counter_traits::has_value_method_v<counter const &>);
+static_assert(std::is_same_v<counter_traits::value_method_t<counter>, int>);
+static_assert(counter_traits::has_add_method_v<counter &, int>);
+static_assert(counter_traits::has_add_method_v<counter &, short>);
+static_assert(!counter_traits::has_add_method_v<counter, int>);
 ```
 
 Строгое соответствие квалификаторов объекта и типов параметров. Метод `value()` объявлен
@@ -172,17 +176,17 @@ static_assert(!has_add_method_v<counter, int>);
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp exact -->
 ```cpp
-static_assert(has_value_method_exact_v<counter const>);
-static_assert(!has_value_method_exact_v<counter>);
-static_assert(has_add_method_exact_v<counter &, int>);
-static_assert(!has_add_method_exact_v<counter &, short>);
+static_assert(counter_traits::has_value_method_exact_v<counter const>);
+static_assert(!counter_traits::has_value_method_exact_v<counter>);
+static_assert(counter_traits::has_add_method_exact_v<counter &, int>);
+static_assert(!counter_traits::has_add_method_exact_v<counter &, short>);
 ```
 
 Тип результата и спецификатор `noexcept`, проверенные отдельно:
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp properties -->
 ```cpp
-static_assert(std::is_same_v<value_method_exact_t<counter const>, int>);
+static_assert(std::is_same_v<counter_traits::value_method_exact_t<counter const>, int>);
 static_assert(noexcept(std::declval<counter const &>().value()));
 ```
 
@@ -190,9 +194,9 @@ static_assert(noexcept(std::declval<counter const &>().value()));
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp static -->
 ```cpp
-static_assert(has_zero_static_method_v<counter>);
-static_assert(has_zero_static_method_exact_v<counter>);
-static_assert(!has_value_static_method_v<counter>);
+static_assert(counter_traits::has_zero_static_method_v<counter>);
+static_assert(counter_traits::has_zero_static_method_exact_v<counter>);
+static_assert(!counter_traits::has_value_static_method_v<counter>);
 ```
 
 ## Примечания

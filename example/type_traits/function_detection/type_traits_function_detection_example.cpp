@@ -16,23 +16,26 @@
 int foo(int value, int factor);
 double foo(double value, double factor);
 
-SCL_FUNCTION_DETECTION(foo)
+namespace foo_traits
+{
+    SCL_FUNCTION_DETECTION(foo)
+} // namespace foo_traits
 //! [declare]
 
 //! [call]
-static_assert(has_foo_function_v<int, int>);
-static_assert(has_foo_function_v<int, long>);
-static_assert(!has_foo_function_v<int>);
-static_assert(std::is_same_v<foo_function_t<double, double>, double>);
+static_assert(foo_traits::has_foo_function_v<int, int>);
+static_assert(foo_traits::has_foo_function_v<int, long>);
+static_assert(!foo_traits::has_foo_function_v<int>);
+static_assert(std::is_same_v<foo_traits::foo_function_t<double, double>, double>);
 //! [call]
 
 //! [exact]
-static_assert(has_foo_function_exact_v<int, int>);
-static_assert(!has_foo_function_exact_v<int, long>);
+static_assert(foo_traits::has_foo_function_exact_v<int, int>);
+static_assert(!foo_traits::has_foo_function_exact_v<int, long>);
 //! [exact]
 
 //! [properties]
-static_assert(std::is_same_v<foo_function_exact_t<double, double>, double>);
+static_assert(std::is_same_v<foo_traits::foo_function_exact_t<double, double>, double>);
 static_assert(!noexcept(foo(std::declval<int>(), std::declval<int>())));
 //! [properties]
 
@@ -47,8 +50,8 @@ namespace shapes
     };
 } // namespace shapes
 
-static_assert(has_foo_function_v<shapes::circle, double>);
-static_assert(!has_foo_function_exact_v<shapes::circle, double>);
+static_assert(foo_traits::has_foo_function_v<shapes::circle, double>);
+static_assert(!foo_traits::has_foo_function_exact_v<shapes::circle, double>);
 //! [adl]
 
 int foo(int value, int factor) { return value * factor; }
