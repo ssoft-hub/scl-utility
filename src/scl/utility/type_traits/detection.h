@@ -1,11 +1,9 @@
 /**
  * @file
- * @brief Implementation of C++ Standard Proposal N4502 - Detection Idiom
+ * @brief Whether an expression over given types is well-formed, and which type it yields.
+ *
+ * The templates follow the detection idiom of Library Fundamentals TS v2.
  * @ingroup scl_utility_type_traits
- * @see http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4502.pdf
- * 
- * This header provides utilities for detecting the validity of expressions
- * at compile-time using SFINAE techniques.
  */
 #pragma once
 
@@ -21,7 +19,7 @@ namespace scl::detail
      * @tparam AlwaysVoid Helper parameter for SFINAE (should be void)
      * @tparam Operation Template template parameter to test
      * @tparam Arguments Arguments to pass to Operation
-     * 
+     *
      * This specialization is selected when Operation<Arguments...> is ill-formed.
      */
     template <typename Default, typename AlwaysVoid, template <typename...> class Operation, typename... Arguments>
@@ -38,7 +36,7 @@ namespace scl::detail
      * @tparam Default The default type (unused in this specialization)
      * @tparam Operation Template template parameter to test
      * @tparam Arguments Arguments to pass to Operation
-     * 
+     *
      * This specialization is selected when Operation<Arguments...> is well-formed.
      */
     template <typename Default, template <typename...> class Operation, typename... Arguments>
@@ -52,13 +50,6 @@ namespace scl::detail
 
 namespace scl
 {
-    /**
-     * @brief The type ::scl::detected_t names where `Operation<Arguments...>` is ill-formed
-     * @ingroup scl_utility_type_traits
-     *
-     * No object of the type can be created, copied, moved or destroyed. An operation that yields
-     * `void` gives `void`, so a failed detection and a `void` result read apart.
-     */
     struct nonesuch
     {
         nonesuch() = delete;
@@ -69,124 +60,35 @@ namespace scl
         void operator=(nonesuch &&) = delete;
     };
 
-    /**
-     * @brief Detects whether Operation<Arguments...> is a valid expression
-     * @ingroup scl_utility_type_traits
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     * 
-     * Alias to std::true_type if Operation<Arguments...> is well-formed,
-     * std::false_type otherwise.
-     * 
-     * @code{.cpp}
-     * template <typename T>
-     * using has_foo_t = decltype(std::declval<T>().foo());
-     * 
-     * static_assert(is_detected<has_foo_t, MyClass>::value);
-     * @endcode
-     */
+#ifndef SCL_DOXYGEN
     template <template <typename...> class Operation, typename... Arguments>
     using is_detected = ::scl::detail::detector<void, void, Operation, Arguments...>::value_t;
+#endif
 
-    /**
-     * @brief Variable template version of is_detected
-     * @ingroup scl_utility_type_traits
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     * 
-     * @code{.cpp}
-     * if constexpr (is_detected_v<has_foo_t, MyClass>) { ... }
-     * @endcode
-     */
     template <template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_v = ::scl::is_detected<Operation, Arguments...>::value;
 
-    /**
-     * @brief Gets the type of Operation<Arguments...> or ::scl::nonesuch if ill-formed
-     * @ingroup scl_utility_type_traits
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     *
-     * @code{.cpp}
-     * using result = detected_t<has_foo_t, MyClass>;
-     * @endcode
-     */
+#ifndef SCL_DOXYGEN
     template <template <typename...> class Operation, typename... Arguments>
     using detected_t = ::scl::detail::detector<::scl::nonesuch, void, Operation, Arguments...>::type;
 
-    /**
-     * @brief Helper for getting detected type or a default
-     * @ingroup scl_utility_type_traits
-     * @tparam Default Type to use if detection fails
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     * 
-     * Provides nested type 'type' which is either Operation<Arguments...>
-     * if well-formed, or Default otherwise.
-     */
     template <typename Default, template <typename...> class Operation, typename... Arguments>
     using detected_or = ::scl::detail::detector<Default, void, Operation, Arguments...>;
+#endif
 
-    /**
-     * @brief Gets the type of Operation<Arguments...> or Default if ill-formed
-     * @ingroup scl_utility_type_traits
-     * @tparam Default Type to use if detection fails
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     * 
-     * @code{.cpp}
-     * using result = detected_or_t<int, has_foo_t, MyClass>;
-     * @endcode
-     */
     template <typename Default, template <typename...> class Operation, typename... Arguments>
     using detected_or_t = ::scl::detected_or<Default, Operation, Arguments...>::type;
 
-    /**
-     * @brief Checks if Operation<Arguments...> results in exactly Expected type
-     * @ingroup scl_utility_type_traits
-     * @tparam Expected The type to compare against
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     * 
-     * @code{.cpp}
-     * static_assert(is_detected_exact<int, get_value_type_t, MyClass>::value);
-     * @endcode
-     */
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
     using is_detected_exact = ::std::is_same<Expected, ::scl::detected_t<Operation, Arguments...>>;
 
-    /**
-     * @brief Variable template version of is_detected_exact
-     * @ingroup scl_utility_type_traits
-     * @tparam Expected The type to compare against
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     */
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_exact_v =
         ::scl::is_detected_exact<Expected, Operation, Arguments...>::value;
 
-    /**
-     * @brief Checks if Operation<Arguments... > is convertible to To
-     * @ingroup scl_utility_type_traits
-     * @tparam To Target type for conversion
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     * 
-     * @code{.cpp}
-     * static_assert(is_detected_convertible<double, get_value_t, MyClass>::value);
-     * @endcode
-     */
     template <typename To, template <typename...> class Operation, typename... Arguments>
     using is_detected_convertible = ::std::is_convertible<::scl::detected_t<Operation, Arguments...>, To>;
 
-    /**
-     * @brief Variable template version of is_detected_convertible
-     * @ingroup scl_utility_type_traits
-     * @tparam To Target type for conversion
-     * @tparam Operation Template to instantiate
-     * @tparam Arguments Arguments for the template
-     */
     template <typename To, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_convertible_v =
         ::scl::is_detected_convertible<To, Operation, Arguments...>::value;
@@ -194,8 +96,36 @@ namespace scl
 } // namespace scl
 
 // =============================================================================
+// Documentation-only declarations
+// =============================================================================
+
+#ifdef SCL_DOXYGEN
+namespace scl
+{
+    template <template <typename...> class Operation, typename... Arguments>
+    using is_detected = unspecified;
+
+    template <template <typename...> class Operation, typename... Arguments>
+    using detected_t = unspecified;
+
+    template <typename Default, template <typename...> class Operation, typename... Arguments>
+    using detected_or = unspecified;
+} // namespace scl
+#endif
+
+// =============================================================================
 // Documentation
 // =============================================================================
+
+/**
+ * @struct scl::nonesuch
+ * @ingroup scl_utility_type_traits
+ * @brief The type ::scl::detected_t names where `Operation<Arguments...>` is ill-formed.
+ *
+ * No object of the type can be created, copied, moved or destroyed.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp detected_t
+ */
 
 /**
  * @fn scl::nonesuch::nonesuch()
@@ -225,4 +155,131 @@ namespace scl
 /**
  * @fn scl::nonesuch::operator=(nonesuch &&)
  * @brief Deleted, so no object of ::scl::nonesuch is assigned.
+ */
+
+/**
+ * @typedef scl::is_detected
+ * @ingroup scl_utility_type_traits
+ * @brief Whether `Operation<Arguments...>` is well-formed, as a `std::bool_constant`.
+ *
+ * An operation is an alias template or a class template. The operation is well-formed if
+ * substituting @p Arguments into its declaration succeeds. The declaration of an alias template is
+ * the type it names, such as `decltype(std::declval<T const &>().size())`. The body of a class
+ * template is not checked, so the expression to check should be written in an alias template. If
+ * the expression calls a specialization of a template with a deduced return type, such as of
+ * a function template or a generic lambda expression, the body of that specialization is
+ * instantiated. An error in that body is not a substitution failure, so the build ends with
+ * an error instead of the value `false`.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp operations
+ * @snippet type_traits/detection/type_traits_detection_example.cpp is_detected
+ *
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
+ * @see ::scl::is_detected_v, ::scl::detected_t
+ */
+
+/**
+ * @var scl::is_detected_v
+ * @ingroup scl_utility_type_traits
+ * @brief Whether `Operation<Arguments...>` is well-formed, the value of ::scl::is_detected.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp is_detected
+ * @snippet type_traits/detection/type_traits_detection_example.cpp dispatch
+ *
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
+ */
+
+/**
+ * @typedef scl::detected_t
+ * @ingroup scl_utility_type_traits
+ * @brief The type `Operation<Arguments...>` where it is well-formed, ::scl::nonesuch otherwise.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp detected_t
+ *
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
+ * @see ::scl::detected_or_t
+ */
+
+/**
+ * @typedef scl::detected_or
+ * @ingroup scl_utility_type_traits
+ * @brief A class with the members `type`, the operation or @p Default, and `value_t`.
+ *
+ * The member `type` is `Operation<Arguments...>` where the operation is well-formed and @p Default
+ * otherwise. The member `value_t` is ::scl::is_detected of the same operation.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp detected_or
+ *
+ * @tparam Default Type named where the operation is ill-formed.
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
+ * @see ::scl::detected_or_t
+ */
+
+/**
+ * @typedef scl::detected_or_t
+ * @ingroup scl_utility_type_traits
+ * @brief The type `Operation<Arguments...>` where it is well-formed, @p Default otherwise.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp detected_or
+ *
+ * @tparam Default Type named where the operation is ill-formed.
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
+ */
+
+/**
+ * @typedef scl::is_detected_exact
+ * @ingroup scl_utility_type_traits
+ * @brief Whether ::scl::detected_t of the operation is @p Expected, as `std::is_same`.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp exact
+ *
+ * @tparam Expected Type the operation must yield.
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
+ * @see ::scl::is_detected_exact_v
+ */
+
+/**
+ * @var scl::is_detected_exact_v
+ * @ingroup scl_utility_type_traits
+ * @brief Whether the operation yields @p Expected, the value of ::scl::is_detected_exact.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp exact
+ *
+ * @tparam Expected Type the operation must yield.
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
+ */
+
+/**
+ * @typedef scl::is_detected_convertible
+ * @ingroup scl_utility_type_traits
+ * @brief Whether ::scl::detected_t of the operation converts to @p To, as `std::is_convertible`.
+ *
+ * For an ill-formed operation the value is `true` only if an rvalue of ::scl::nonesuch converts
+ * to @p To.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp exact
+ *
+ * @tparam To Type the result must convert to.
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
+ * @see ::scl::is_detected_convertible_v
+ */
+
+/**
+ * @var scl::is_detected_convertible_v
+ * @ingroup scl_utility_type_traits
+ * @brief Whether the result converts to @p To, the value of ::scl::is_detected_convertible.
+ *
+ * @snippet type_traits/detection/type_traits_detection_example.cpp exact
+ *
+ * @tparam To Type the result must convert to.
+ * @tparam Operation Alias template or class template of the operation.
+ * @tparam Arguments Types the operation is instantiated with.
  */

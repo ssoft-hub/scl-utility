@@ -125,15 +125,15 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 [К группе](preprocessor/index.md)
 
-### Type traits — расширенные свойства типов
+### Type traits - обнаружение выражений и построение типов
 
-| Компонент | Заголовок | Описание |
-|-----------|-----------|----------|
-| [detection](type_traits/detection.md) | `<scl/utility/type_traits/detection.h>` | Идиома обнаружения (is_detected и др.) |
-| [forward_like](type_traits/forward_like.md) | `<scl/utility/type_traits/forward_like.h>` | Проброс с категорией значения другого типа |
-| [member_like](type_traits/member_like.md) | `<scl/utility/type_traits/member_like.h>` | Декомпозиция свойств указателей на члены |
-| [overload_cast](type_traits/overload_cast.md) | `<scl/utility/type_traits/overload_cast.h>` | Разрешение неоднозначности перегруженных функций |
-| [signature](type_traits/signature.md) | `<scl/utility/type_traits/signature.h>` | Свойства вызываемого типа |
+Использование шаблонов группы позволяет во время компиляции программы проверить, допустимо
+ли выражение, можно ли вызвать функцию или метод и применим ли оператор к операндам заданных типов,
+и узнать тип результата. Кроме того, использование шаблонов группы позволяет привести значение
+к виду ссылки и cv-квалификаторам другого типа, построить тип указателя на член по типу объекта,
+выбрать одну перегрузку функции или метода и определить части сигнатуры вызываемого типа.
+
+[К группе](type_traits/index.md)
 
 ## Быстрый старт
 
@@ -333,17 +333,17 @@ int main()
 
 struct widget
 {
-    void update(int) { ::std::cout << "update(int)\n"; }
-    void update(double) { ::std::cout << "update(double)\n"; }
+    void update(int) { std::cout << "update(int)\n"; }
+    void update(double) { std::cout << "update(double)\n"; }
 };
 
 // The value category and cv-qualification of the owner, applied to a member type.
-static_assert(::std::is_same_v<::scl::forward_like_t<widget const &, int>, int const &>);
-static_assert(::std::is_same_v<::scl::forward_like_t<widget &&, int>, int &&>);
+static_assert(std::is_same_v<scl::forward_like_t<widget const &, int>, int const &>);
+static_assert(std::is_same_v<scl::forward_like_t<widget &&, int>, int &&>);
 
 int main()
 {
-    auto const update_int = ::scl::overload_cast<int>(&widget::update);
+    auto const update_int = scl::overload_cast<int>(&widget::update);
 
     widget instance;
     (instance.*update_int)(1); // update(int)

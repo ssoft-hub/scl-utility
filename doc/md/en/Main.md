@@ -122,15 +122,16 @@ per tag type read and advanced at compile time.
 
 [To the group](preprocessor/index.md)
 
-### Type traits — extended traits and helpers
+### Type traits - detection of expressions and building of types
 
-| Component | Header | Description |
-|-----------|--------|-------------|
-| [detection](type_traits/detection.md) | `<scl/utility/type_traits/detection.h>` | Detection idiom (is_detected, etc.) |
-| [forward_like](type_traits/forward_like.md) | `<scl/utility/type_traits/forward_like.h>` | Forward with value category of another type |
-| [member_like](type_traits/member_like.md) | `<scl/utility/type_traits/member_like.h>` | Member pointer trait decomposition |
-| [overload_cast](type_traits/overload_cast.md) | `<scl/utility/type_traits/overload_cast.h>` | Overloaded function disambiguation |
-| [signature](type_traits/signature.md) | `<scl/utility/type_traits/signature.h>` | Properties of a callable type |
+The templates of the group tell, while the program compiles, whether an expression is valid,
+whether a function or a member function can be called and whether an operator applies to operands
+of given types, and what type the result has. The templates of the group also cast a value to
+the kind of reference and the cv-qualifiers of another type, build the type of a pointer
+to a member from the object type, choose one overload of a function or a member
+function, and find the parts of the signature of a callable type.
+
+[To the group](type_traits/index.md)
 
 ## Quick start
 
@@ -330,17 +331,17 @@ Picking an overload and carrying a value category over
 
 struct widget
 {
-    void update(int) { ::std::cout << "update(int)\n"; }
-    void update(double) { ::std::cout << "update(double)\n"; }
+    void update(int) { std::cout << "update(int)\n"; }
+    void update(double) { std::cout << "update(double)\n"; }
 };
 
 // The value category and cv-qualification of the owner, applied to a member type.
-static_assert(::std::is_same_v<::scl::forward_like_t<widget const &, int>, int const &>);
-static_assert(::std::is_same_v<::scl::forward_like_t<widget &&, int>, int &&>);
+static_assert(std::is_same_v<scl::forward_like_t<widget const &, int>, int const &>);
+static_assert(std::is_same_v<scl::forward_like_t<widget &&, int>, int &&>);
 
 int main()
 {
-    auto const update_int = ::scl::overload_cast<int>(&widget::update);
+    auto const update_int = scl::overload_cast<int>(&widget::update);
 
     widget instance;
     (instance.*update_int)(1); // update(int)

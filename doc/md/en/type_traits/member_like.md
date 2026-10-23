@@ -1,190 +1,166 @@
-# Member-like type traits
+# Building the member pointer type from the object type
 
-Utilities for building pointer-to-member types based on an object type’s cv/ref qualifiers and a target descriptor. These traits help you form pointer-to-member-function and pointer-to-data-member types in a uniform, expressive way.
+The alias templates `member_function_like_t`, `member_object_like_t` and `member_like_t` are types
+of a pointer to a member function or a data member of a class, built from the type of the object
+the member is used on. The class of the pointer and the qualifiers of the member come from the type
+of the object. For an object of the type `gauge const &`, for example, a pointer to a member
+function has the qualifiers `const &`, and a pointer to a data member points to a member with
+the qualifier `const`.
+
+Such a type is needed, for example, where the overloads of a member function differ only in their
+qualifiers. The address `&gauge::label` then has no single type, and the overload for a given object
+type is chosen by casting the address to the pointer type built.
 
 - Header: `#include <scl/utility/type_traits/member_like.h>`
 
-Contents:
-- [`member_function_like_t<Type, Signature>`](#member_function_like_ttype-signature)
-- [`member_object_like_t<Type, Member>`](#member_object_like_ttype-member)
-- [`member_like_t<Type, T>`](#member_like_ttype-t)
-
----
-
-## `member_function_like_t<Type, Signature>`
-
-Builds a pointer-to-non-static-member-function type for class `Type` and function `Signature`, mirroring the cv- and ref-qualifiers from `Type` and the `noexcept` from `Signature`.
-
-- Declaration: `template <typename Type, typename Signature> using member_function_like_t = ...;`
-
-### Semantics
-
-- Object type:
-  - The class in the pointer is `std::remove_cvref_t<Type>`.
-- Function qualifiers:
-  - The member function’s `const`/`volatile` and ref-qualifier (`&` or `&&`) are copied from `Type`.
-  - If `Type` has no ref-qualifier (i.e., not a reference), the resulting member function is unqualified with respect to ref (no `&`/`&&`).
-- Noexcept:
-  - If `Signature` is of the form `R(Args...) noexcept`, the resulting member function pointer is `noexcept`; otherwise it is not.
-- Signature:
-  - Return type and parameter types are taken verbatim from `Signature`.
-
-### Examples
-
 ```cpp
-#include <type_traits>
-#include <scl/utility/type_traits/member_like.h>
+namespace scl
+{
+    template <typename Type, typename Signature>
+    using member_function_like_t = unspecified;
 
-struct X {};
+    template <typename Type, typename Member>
+    using member_object_like_t = unspecified;
 
-using ::scl::member_function_like_t;
-
-// No ref-qualifier, no noexcept
-static_assert(std::is_same_v<member_function_like_t<X, void()>, void (X::*)()>);
-static_assert(std::is_same_v<member_function_like_t<X const, void()>, void (X::*)() const>);
-static_assert(std::is_same_v<member_function_like_t<X volatile, void()>, void (X::*)() volatile>);
-static_assert(std::is_same_v<member_function_like_t<X const volatile, void()>, void (X::*)() const volatile>);
-
-// Lvalue-qualified (&), no noexcept
-static_assert(std::is_same_v<member_function_like_t<X&, void()>, void (X::*)() &>);
-static_assert(std::is_same_v<member_function_like_t<X const&, void()>, void (X::*)() const &>);
-static_assert(std::is_same_v<member_function_like_t<X volatile&, void()>, void (X::*)() volatile &>);
-static_assert(std::is_same_v<member_function_like_t<X const volatile&, void()>, void (X::*)() const volatile &>);
-
-// Rvalue-qualified (&&), no noexcept
-static_assert(std::is_same_v<member_function_like_t<X&&, void()>, void (X::*)() &&>);
-static_assert(std::is_same_v<member_function_like_t<X const&&, void()>, void (X::*)() const &&>);
-static_assert(std::is_same_v<member_function_like_t<X volatile&&, void()>, void (X::*)() volatile &&>);
-static_assert(std::is_same_v<member_function_like_t<X const volatile&&, void()>, void (X::*)() const volatile &&>);
-
-// With noexcept
-static_assert(std::is_same_v<member_function_like_t<X, void() noexcept>, void (X::*)() noexcept>);
-static_assert(std::is_same_v<member_function_like_t<X const, void() noexcept>, void (X::*)() const noexcept>);
-
-// With arguments retained
-static_assert(std::is_same_v<member_function_like_t<X const&, int(short)>, int (X::*)(short) const &>);
+    template <typename Type, typename Member>
+    using member_like_t = unspecified;
+}
 ```
 
-### Typical Use Cases
+## Semantics
 
-- Metaprogramming utilities that need to form member function pointers based on an object type’s cv/ref qualifiers (e.g., generating callable traits, adaptors, or reflection-like utilities).
-- Enforcing invocation constraints at compile time by encoding lvalue/rvalue and const/volatile object requirements into the member function pointer type.
+### General rules
 
-### See Also
+- **Class.** Each of the alias templates of this page is the type of a pointer to a member of
+  the class `std::remove_cvref_t<Type>`, that is of the class of the object without cv-qualifiers
+  and reference.
 
-- [`member_object_like_t`](#member_object_like_ttype-member) — Forms pointer-to-data-member types.
-- [`member_like_t`](#member_like_ttype-t) — Generic selector between function and data member pointer formation.
+### Pointer to a member function
 
----
+- **`member_function_like_t<Type, Signature>`.** The alias template is the type of a pointer to
+  a member function. The result type, the parameter types and the specifier `noexcept` of the member
+  function come from the function type `Signature`, written as `Result(Parameters...)` or
+  `Result(Parameters...) noexcept`. The cv-qualifiers of the member function come from the type
+  `Type`, and its ref-qualifier is `&` for the type `X &`, `&&` for the type `X &&`, and none for
+  the type `X` with no reference. The type `member_function_like_t<gauge const &, std::string()>`,
+  for example, is `std::string (gauge::*)() const &`.
+- **Unsuitable type `Signature`.** For a function type whose parameter list ends with a C-style
+  ellipsis `...`, such as `void(int, ...)`, and for a function type with cv- or ref-qualifiers, such
+  as `void() const`, the alias template `member_function_like_t` is not defined. For such a type
+  the substitution fails without a build error, so this can be checked with the templates of
+  [expression presence detection](detection.md). If the type `Signature` is not a function type at
+  all, or the type `std::remove_cvref_t<Type>` is not a class, the build ends with an error.
 
-## `member_object_like_t<Type, Member>`
+### Pointer to a data member
 
-Builds a pointer-to-data-member type for class `Type` and member type `Member`, overlaying the object’s cv-qualifiers onto the member type.
+- **`member_object_like_t<Type, Member>`.** The alias template is the type of a pointer to a data
+  member whose type is the type `Member` with the qualifiers `const` and `volatile` of the type
+  `Type` added. The cv-qualifiers of the type `Member` itself stay, and the reference of the type
+  `Type` does not affect the result. The type `member_object_like_t<gauge volatile, int const>`, for
+  example, is `int const volatile gauge::*`. The build ends with an error if the type `Member` is
+  not an object type, or the type `std::remove_cvref_t<Type>` is neither a class nor a union.
 
-- Declaration: `template <typename Type, typename Member> using member_object_like_t = ...;`
+### Choice between a member function and a data member
 
-### Semantics
+- **`member_like_t<Type, Member>`.** If the type `Member` is a function type, the alias template
+  `member_like_t` is the type `member_function_like_t<Type, Member>`, and otherwise it is the type
+  `member_object_like_t<Type, Member>`. The build ends with an error if the type `Member` is
+  a reference, a reference to a function included.
 
-- Object type:
-  - The class in the pointer is `std::remove_cvref_t<Type>`.
-- Member qualifiers:
-  - The `const`/`volatile` qualifiers from `Type` are added to `Member` (preserving any qualifiers already on `Member`).
-  - Reference qualifiers on `Type` are ignored (data members are not ref-qualified).
-- Result:
-  - Forms `MemberLikeCv (std::remove_cvref_t<Type>::*)`, where `MemberLikeCv` is `Member` with `const` and/or `volatile` added if present on `Type`.
+## Examples
 
-### Examples
+The type of the examples:
 
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp types -->
 ```cpp
-#include <scl/utility/type_traits/member_like.h>
+struct gauge
+{
+    int level;
+    std::string unit;
 
-struct X { int a = 0; int const b = 1; };
-
-using ::scl::member_object_like_t;
-
-// Object qualifiers overlay onto Member
-static_assert(std::is_same_v<member_object_like_t<X, int>, int X::*>);
-static_assert(std::is_same_v<member_object_like_t<X const, int>, int const X::*>);
-static_assert(std::is_same_v<member_object_like_t<X volatile, int>, int volatile X::*>);
-static_assert(std::is_same_v<member_object_like_t<X const volatile, int>, int const volatile X::*>);
-
-// References on Type do not matter for data members
-static_assert(std::is_same_v<member_object_like_t<X&, int>, int X::*>);
-static_assert(std::is_same_v<member_object_like_t<X const&, int>, int const X::*>);
-
-// Member’s own cv is preserved (and overlaid with object’s cv)
-static_assert(std::is_same_v<member_object_like_t<X, int const>, int const X::*>);
-static_assert(std::is_same_v<member_object_like_t<X const, int volatile>, int const volatile X::*>);
+    std::string label() const & { return unit; }
+    std::string label() && { return std::move(unit); }
+    void set(int value) noexcept { level = value; }
+};
 ```
 
-### Typical Use Cases
+A pointer to a member function with the cv-qualifiers and the reference of the object type:
 
-- Generating type-correct pointers to data members that reflect const- or volatile-qualified object access, aiding generic code which must differentiate readable vs. writable member access.
-- Building traits or reflection helpers that operate on data member types.
-
-### See Also
-
-- [`member_function_like_t`](#member_function_like_ttype-signature) — Forms pointer-to-member-function types.
-- [`member_like_t`](#member_like_ttype-t) — Generic selector between function and data member pointer formation.
-
----
-
-## `member_like_t<Type, T>`
-
-Generic selector that produces a pointer-to-member type for class `Type` and a descriptor `T`:
-- If `T` is a function type (`R(Args...)` or `R(Args...) noexcept`), behaves like `member_function_like_t<Type, T>`.
-- Otherwise, behaves like `member_object_like_t<Type, T>`.
-
-- Declaration: `template <typename Type, typename T> using member_like_t = ...;`
-
-### Semantics
-
-- Function case:
-  - `member_like_t<Type, R(Args...) [noexcept]>` yields  
-    `R (std::remove_cvref_t<Type>::*)(Args...) [cv from Type] [ref from Type] [noexcept from T]`.
-- Data case:
-  - `member_like_t<Type, Member>` yields  
-    `MemberLikeCv (std::remove_cvref_t<Type>::*)`, where `MemberLikeCv` overlays `const`/`volatile` from `Type` onto `Member`.
-- Detection:
-  - `T` must be a pure function type (not a pointer or reference to function) to select the function branch.
-  - If you need to accept `R(*)(Args...)` or `R(&)(Args...)`, strip pointer/reference first.
-
-### Examples
-
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp function -->
 ```cpp
-#include <type_traits>
-#include <scl/utility/type_traits/member_like.h>
-
-struct X { int a = 0; int const b = 1; };
-
-using ::scl::member_like_t;
-
-// Function members
-static_assert(std::is_same_v<member_like_t<X, void()>, void (X::*)()>);
-static_assert(std::is_same_v<member_like_t<X const&, int(short)>, int (X::*)(short) const &>);
-static_assert(std::is_same_v<member_like_t<X const volatile, void(int) noexcept>, void (X::*)(int) const volatile noexcept>);
-
-// Data members
-static_assert(std::is_same_v<member_like_t<X, int>, int X::*>);
-static_assert(std::is_same_v<member_like_t<X const, int>, int const X::*>);
-static_assert(std::is_same_v<member_like_t<X, int const>, int const X::*>);
+static_assert(std::is_same_v<
+    scl::member_function_like_t<gauge const &, std::string()>, std::string (gauge::*)() const &>);
+static_assert(
+    std::is_same_v<scl::member_function_like_t<gauge &&, std::string()>, std::string (gauge::*)() &&>);
+static_assert(
+    std::is_same_v<scl::member_function_like_t<gauge, void(int) noexcept>, void (gauge::*)(int) noexcept>);
 ```
 
-### Typical Use Cases
+A pointer to a data member with the cv-qualifiers of the object type:
 
-- Single entry point for building either member-function or data-member pointers in generic libraries and meta-algorithms, avoiding partial specializations at the call site.
-- Bridging APIs that accept either function- or data-member descriptors and need a unified trait to form the corresponding pointer type.
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp object -->
+```cpp
+static_assert(std::is_same_v<scl::member_object_like_t<gauge, int>, int gauge::*>);
+static_assert(std::is_same_v<scl::member_object_like_t<gauge const &, int>, int const gauge::*>);
+static_assert(
+    std::is_same_v<scl::member_object_like_t<gauge volatile, int const>, int const volatile gauge::*>);
+```
 
-### See Also
+The kind of pointer in the alias template `member_like_t` depends on the type of the member:
 
-- [`member_function_like_t`](#member_function_like_ttype-signature) — Pointer-to-member-function builder.
-- [`member_object_like_t`](#member_object_like_ttype-member) — Pointer-to-data-member builder.
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp member_like -->
+```cpp
+static_assert(std::is_same_v<scl::member_like_t<gauge, void(int) noexcept>, decltype(&gauge::set)>);
+static_assert(std::is_same_v<scl::member_like_t<gauge, int>, decltype(&gauge::level)>);
+```
 
----
+An overload chosen by the object type. The member functions `label` differ only in their qualifiers,
+so a variable declared with the specifier `auto` cannot be initialized with the address
+`&gauge::label`. The address is cast to the pointer type built from the object type, so the overload
+`const &` is chosen for a constant lvalue, and the overload `&&` for a non-constant rvalue. For
+a non-constant lvalue the type `std::string (gauge::*)() &` is built, and for a constant rvalue
+the type `std::string (gauge::*)() const &&`. No overload has such qualifiers, so the cast does not
+compile, although the member function `label` can be called on a non-constant lvalue.
+
+The type `Object &&`, not the type `Object`, is passed to the alias template `member_like_t` as its
+first argument. For an lvalue argument the parameter `Object` is deduced as an lvalue reference, and
+for an rvalue argument as a type with no reference. The type `Object &&` keeps the value category of
+the argument in both cases.
+
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp overload -->
+```cpp
+template <typename Object>
+std::string label_of(Object && object)
+{
+    auto const label = static_cast<scl::member_like_t<Object &&, std::string()>>(&gauge::label);
+    return (std::forward<Object>(object).*label)();
+}
+```
+
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp use -->
+```cpp
+    gauge tank{7, "litre"};
+    gauge const & view = tank;
+
+    std::string const copied = label_of(view);
+    std::string const moved = label_of(std::move(tank));
+    std::cout << copied << ' ' << moved << '\n'; // litre litre
+```
 
 ## Notes
 
-- Constraints:
-  - For `member_function_like_t`, `Type` must be a class type; `Signature` must be a function type (`R(Args...)` or `R(Args...) noexcept`).
-  - For `member_object_like_t`, `Type` must be a class or union type; `Member` must not be a function type.
-- As usual for pointer-to-member types, invocation and access require objects of compatible cv/ref categories, enforced by the formed type at compile time.
+- The type of a pointer to a function is not a function type. So for a type `Member` such as
+  `void (*)(int)` the alias template `member_like_t` is the type of a pointer to a data member whose
+  type is that pointer to a function.
+
+## See also
+
+- [Finding the signature of a callable type](signature.md) - the alias template
+  `scl::signature::object_t`, which fits as the first argument of the alias template `member_like_t`
+- [`example/type_traits/member_like/type_traits_member_like_example.cpp`](../../../../example/type_traits/member_like/type_traits_member_like_example.cpp)
+
+---
+
+Previous: [Cast of a value to the category and cv-qualifiers of a given type](forward_like.md) |
+Next: [Choosing an overload of a function or a member function by parameter types](overload_cast.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)

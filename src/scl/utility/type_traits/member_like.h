@@ -4,17 +4,8 @@
 
 /**
  * @file
- * @brief Traits to build pointers to class members (C++20).
+ * @brief The type of a pointer to a member, qualified as the type of the object it is used on.
  * @ingroup scl_utility_type_traits
- * @details
- * - scl::member_function_like_t<Type, Signature>:
- *     Builds a pointer-to-member-function type:
- *       Result (::std::remove_cvref_t<Type>::*)(Arguments...) [cv] [ref] [noexcept]
- *     where [cv]/[ref] are mirrored from Type and [noexcept] is mirrored from Signature.
- * - scl::member_object_like_t<Type, Member>:
- *     Builds a pointer-to-data-member type:
- *       Member (::std::remove_cvref_t<Type>::*)
- *     Object cv/ref qualifiers do not affect the pointer type for data members.
  */
 
 namespace scl::detail
@@ -182,80 +173,103 @@ namespace scl::detail
 
 namespace scl
 {
-    /**
-     * @brief Pointer-to-member-function type for class Type and function Signature,
-     *        where the member function's cv/ref qualifiers are copied from Type.
-     * @ingroup scl_utility_type_traits
-     *
-     * @tparam Type      Object type whose cv/ref qualifiers will be mirrored onto
-     *                   the member function. The class type itself is decayed with
-     *                   ::::std::remove_cvref_t before forming the pointer-to-member.
-     * @tparam Signature Non-static member function signature as a function type,
-     *                   e.g. `Result(Arguments...)` or `Result(Arguments...) noexcept`.
-     *
-     * @par Examples
-     * @code{.cpp}
-     *     struct Foo {};
-     *     using P0 = scl::member_function_like_t<Foo, void(int)>;           // void (Foo::*)(int)
-     *     using P1 = scl::member_function_like_t<Foo&, void(int)>;          // void (Foo::*)(int) &
-     *     using P2 = scl::member_function_like_t<Foo const, void(int)>;     // void (Foo::*)(int) const
-     *     using P3 = scl::member_function_like_t<Foo const&&, void() noexcept>; // void (Foo::*)() const && noexcept
-     * @endcode
-     */
+#ifndef SCL_DOXYGEN
     template <typename Type, typename Signature>
     using member_function_like_t = ::scl::detail::member_function_like<Type, Signature>::type;
 
-    /**
-     * @brief Pointer-to-data-member type for class Type and member type Member.
-     * @ingroup scl_utility_type_traits
-     *
-     * @details
-     * Forms the type `Member (::std::remove_cvref_t<Type>::*)`. Object cv/ref qualifiers
-     * do not change the pointer type for data members; they only affect access expressions.
-     *
-     * @par Examples
-     * @code{.cpp}
-     *   using P0 = scl::member_object_like_t<Foo, int>;         // int Foo::*
-     *   using P1 = scl::member_object_like_t<Foo const&, int>;  // int const & Foo::*
-     *   using P2 = scl::member_object_like_t<Foo, int const>;   // int Foo::*
-     * @endcode
-     */
     template <typename Type, typename Member>
     using member_object_like_t = ::scl::detail::member_object_like<Type, Member>::type;
 
-    /**
-     * @brief Generic pointer-to-member type selector for class Type and Member.
-     * @ingroup scl_utility_type_traits
-     *
-     * @details
-     * Selects the appropriate pointer-to-member type based on whether Member is a function type.
-     * - If Member is a function type like `Result(Arguments...)` or `Result(Arguments...) noexcept`,
-     *   this aliases to scl::member_function_like_t<Type, Member>, producing:
-     *     `Result (::std::remove_cvref_t<Type>::*)(Arguments...) [cv] [ref] [noexcept]`
-     *   where:
-     *   - [cv]/[ref] are mirrored from Type (const/volatile and &/&&),
-     *   - [noexcept] is mirrored from T.
-     * - Otherwise, it aliases to scl::member_object_like_t<Type, Member>, producing:
-     *     `Member (::std::remove_cvref_t<Type>::*)`
-     *   (see member_object_like_t for details on how object qualifiers may affect Member).
-     *
-     * @tparam Type   Class (object) type whose cv/ref qualifiers are mirrored for member functions.
-     *                The class itself is decayed with ::std::remove_cvref_t before forming the pointer type.
-     * @tparam Member Either a function type (for member functions) or a non-function type (for data members).
-     *
-     * @par Examples
-     * @code{.cpp}
-     *     struct Foo {};
-     *
-     *     // Function members
-     *     using M0 = scl::member_like_t<Foo, void(int)>;              // void (Foo::*)(int)
-     *     using M1 = scl::member_like_t<Foo const&, void() noexcept>; // void (Foo::*)() const & noexcept
-     *
-     *     // Data members
-     *     using M2 = scl::member_like_t<Foo, int>;        // int Foo::*
-     *     using M3 = scl::member_like_t<Foo const, int>;  // int const Foo::*
-     * @endcode
-     */
     template <typename Type, typename Member>
     using member_like_t = ::scl::detail::member_like<Type, Member>::type;
+#endif
 } // namespace scl
+
+// =============================================================================
+// Documentation-only declarations
+// =============================================================================
+
+#ifdef SCL_DOXYGEN
+namespace scl
+{
+    template <typename Type, typename Signature>
+    using member_function_like_t = unspecified;
+
+    template <typename Type, typename Member>
+    using member_object_like_t = unspecified;
+
+    template <typename Type, typename Member>
+    using member_like_t = unspecified;
+} // namespace scl
+#endif
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @typedef scl::member_function_like_t
+ * @ingroup scl_utility_type_traits
+ * @brief The pointer to a member function of @p Signature, qualified as the object type @p Type.
+ *
+ * The class is `std::remove_cvref_t<Type>`. The member function has the result and the parameters
+ * of @p Signature, the cv-qualifiers and the ref-qualifier of @p Type and the `noexcept` of
+ * @p Signature. For a @p Type that is not a reference the member function has no ref-qualifier.
+ * @p Signature is `Result(Parameters...)` or `Result(Parameters...) noexcept`. The alias template
+ * is not defined for another function type, a C-style variadic one or one with cv- or
+ * ref-qualifiers, and the substitution of such a type fails without a build error. For
+ * a @p Signature of one of these two forms the build ends with an error if
+ * `std::remove_cvref_t<Type>` is not a class. The build also ends with an error if @p Signature is
+ * not a function type.
+ *
+ * @snippet type_traits/member_like/type_traits_member_like_example.cpp types
+ * @snippet type_traits/member_like/type_traits_member_like_example.cpp function
+ *
+ * @tparam Type Type of the object the member function is called on.
+ * @tparam Signature Function type of the member function.
+ * @see ::scl::member_like_t, ::scl::signature::object_t
+ */
+
+/**
+ * @typedef scl::member_object_like_t
+ * @ingroup scl_utility_type_traits
+ * @brief The pointer to a data member of the type @p Member, qualified as the object type @p Type.
+ *
+ * The class is `std::remove_cvref_t<Type>`, and the data member has the type @p Member with
+ * the `const` and `volatile` of @p Type added. The cv-qualifiers of @p Member stay, and
+ * the reference of @p Type is dropped. The build ends with an error unless @p Member is an object
+ * type and `std::remove_cvref_t<Type>` is a class or a union.
+ *
+ * @snippet type_traits/member_like/type_traits_member_like_example.cpp types
+ * @snippet type_traits/member_like/type_traits_member_like_example.cpp object
+ *
+ * @tparam Type Type of the object the data member is read through.
+ * @tparam Member Type of the data member.
+ * @see ::scl::member_like_t
+ */
+
+/**
+ * @typedef scl::member_like_t
+ * @ingroup scl_utility_type_traits
+ * @brief The pointer to a member function or a data member, chosen by the type @p Member.
+ *
+ * The alias template is ::scl::member_function_like_t<Type, Member> where @p Member is a function
+ * type, and ::scl::member_object_like_t<Type, Member> otherwise. The type of a pointer to
+ * a function is not a function type, so for it the alias template is the type of a pointer to
+ * a data member. The build ends with an error if @p Member is a reference, a reference to
+ * a function included.
+ *
+ * A variable declared `auto` cannot be initialized with the address of member functions that differ
+ * only in their qualifiers. The overload for the type of the object is chosen by casting
+ * the address to this pointer type. In a function template the type `Object &&` of a forwarded
+ * object is passed as @p Type.
+ *
+ * @snippet type_traits/member_like/type_traits_member_like_example.cpp types
+ * @snippet type_traits/member_like/type_traits_member_like_example.cpp member_like
+ * @snippet type_traits/member_like/type_traits_member_like_example.cpp overload
+ * @snippet type_traits/member_like/type_traits_member_like_example.cpp use
+ *
+ * @tparam Type Type of the object the member is used on.
+ * @tparam Member Function type of a member function or type of a data member.
+ * @see ::scl::signature::object_t
+ */

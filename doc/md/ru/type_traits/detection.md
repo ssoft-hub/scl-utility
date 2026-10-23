@@ -1,232 +1,187 @@
-# Идиома Обнаружения (Detection Idiom)
+# Обнаружение наличия выражения
 
-Реализация идиомы обнаружения для C++20, основанная на предложении
-[N4502](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4502.pdf).
+Использование шаблонов идиомы обнаружения позволяет при компиляции программы проверить, корректно
+ли выражение с аргументами заданных типов, определить тип его результата и сравнить этот тип
+с ожидаемым.
+
+Проверяемое выражение записывается в шаблонном типе, параметрами которого служат типы аргументов.
+Такой шаблонный тип называется операцией. Операцией может быть и шаблон класса, об этом сказано
+в подразделе "Корректная операция" раздела "Семантика". Например, операция `size_operation` ниже
+описывает вызов метода `size()` для константной ссылки на контейнер. Операция передаётся каждому
+шаблону страницы параметром `Operation`, а типы, которые подставляются в операцию, передаются за ней
+как `Arguments...`.
+
+Имена шаблонов взяты из Library Fundamentals TS v2.
 
 - Заголовок: `#include <scl/utility/type_traits/detection.h>`
 
-## Обзор
-
-Идиома обнаружения предоставляет чистый и стандартизированный способ проверки
-корректности выражений на этапе компиляции с использованием техники SFINAE
-(Substitution Failure Is Not An Error — ошибка подстановки не является ошибкой).
-Это особенно полезно для: 
-
-- Обнаружения функций-членов, типов или переменных
-- Реализации ограничений, подобных концептам, до появления концептов в C++20
-- Написания обобщённого кода, адаптирующегося к свойствам типов
-- Определения свойств типов и интроспекции
-
-## Возможности
-
-- Полное соответствие стандарту N4502
-- Совместимость с C++20
-- Библиотека, состоящая только из заголовочных файлов
-- Нулевые накладные расходы во время выполнения
-
-## Справочник API
-
-### Базовое обнаружение
-
-#### `is_detected<Operation, Arguments... >`
-
-Проверяет, является ли `Operation<Arguments...>` корректным выражением.
-
-**Возвращает:** `std::true_type` или `std::false_type`
-
 ```cpp
-template <typename T>
-using has_size_t = decltype(std:: declval<T>().size());
+namespace scl
+{
+    struct nonesuch;
 
-static_assert(scl::is_detected<has_size_t, std::vector<int>>::value);
-```
+    template <template <typename...> class Operation, typename... Arguments>
+    using is_detected = unspecified;
+    template <template <typename...> class Operation, typename... Arguments>
+    inline constexpr bool is_detected_v = is_detected<Operation, Arguments...>::value;
 
-#### `is_detected_v<Operation, Arguments...>` (C++17)
+    template <template <typename...> class Operation, typename... Arguments>
+    using detected_t = unspecified;
 
-Вариабельный шаблон для `is_detected`.
+    template <typename Default, template <typename...> class Operation, typename... Arguments>
+    using detected_or = unspecified;
+    template <typename Default, template <typename...> class Operation, typename... Arguments>
+    using detected_or_t = detected_or<Default, Operation, Arguments...>::type;
 
-**Возвращает:** `bool`
+    template <typename Expected, template <typename...> class Operation, typename... Arguments>
+    using is_detected_exact = std::is_same<Expected, detected_t<Operation, Arguments...>>;
+    template <typename Expected, template <typename...> class Operation, typename... Arguments>
+    inline constexpr bool is_detected_exact_v = is_detected_exact<Expected, Operation, Arguments...>::value;
 
-```cpp
-if constexpr (scl::is_detected_v<has_size_t, MyType>) {
-    // Тип имеет член size()
+    template <typename To, template <typename...> class Operation, typename... Arguments>
+    using is_detected_convertible = std::is_convertible<detected_t<Operation, Arguments...>, To>;
+    template <typename To, template <typename...> class Operation, typename... Arguments>
+    inline constexpr bool is_detected_convertible_v =
+        is_detected_convertible<To, Operation, Arguments...>::value;
 }
 ```
 
-### Извлечение типов
+## Семантика
 
-#### `detected_t<Operation, Arguments... >`
+### Корректная операция
 
-Извлекает тип `Operation<Arguments...>` или возвращает `scl::nonesuch`, если выражение некорректно.
+- **Операция.** Операцией служит шаблонный тип или шаблон класса. Операция называется корректной
+  для типов `Arguments...`, если подстановка этих типов в объявление операции удаётся.
+  Для шаблонного типа объявлением является тип, которым он определён. Например, операция
+  `size_operation<Container>` определена типом `decltype(std::declval<Container const &>().size())`
+  и корректна для `std::vector<int>`, но не для `int`, потому что у типа `int` нет метода `size()`.
+  Операция `value_type_operation<Container>` определена типом `typename Container::value_type`
+  и корректна только для типа, в котором объявлен вложенный тип `value_type`.
+- **Шаблон класса как операция.** Для шаблона класса проверяется только подстановка в его
+  объявление, то есть в параметры шаблона и ограничение `requires`, а тело класса не проверяется.
+  Поэтому ошибка в теле класса не делает операцию некорректной. Проверяемое выражение следует
+  записывать в шаблонном типе.
+- **Ошибка в теле функции.** Если операция вызывает функцию, тип результата которой выводится
+  из тела, например шаблон функции с типом результата `auto` или `decltype(auto)` или обобщённое
+  лямбда-выражение, то для определения типа результата тело функции инстанцируется. При ошибке
+  в этом теле операция не становится некорректной, и сборка завершается сообщением об этой ошибке.
+  Если тип результата записан в объявлении функции, тело для проверки не нужно и не инстанцируется.
+  Чтобы операция была некорректной для неподходящих аргументов, условие следует записать
+  в объявлении функции, то есть в типе результата или в ограничении `requires`.
 
+### Шаблоны и маркерный тип `nonesuch`
+
+- **`is_detected`.** Шаблонный тип `is_detected<Operation, Arguments...>` является типом
+  `std::true_type`, если операция корректна для типов `Arguments...`, и типом `std::false_type`
+  в остальных случаях. Шаблонная константа `is_detected_v` равна
+  `is_detected<Operation, Arguments...>::value`.
+- **`detected_t`.** Шаблонный тип `detected_t<Operation, Arguments...>` является типом
+  `Operation<Arguments...>`, если операция корректна. Если операция записана
+  как `decltype(выражение)`, это тип самого выражения. Например,
+  для `size_operation<std::vector<int>>` это тип `std::size_t`. Если операция некорректна, шаблонный
+  тип `detected_t` является маркерным типом `scl::nonesuch`.
+- **`nonesuch`.** Маркерный тип `nonesuch` обозначает результат некорректной операции и ни для чего
+  другого не предназначен. Объект этого типа нельзя создать, скопировать, переместить
+  или уничтожить.
+- **`detected_or`.** Шаблонный тип `detected_or<Default, Operation, Arguments...>` является классом
+  с членами `type` и `value_t`. Член `type` является типом `Operation<Arguments...>`, если операция
+  корректна, и типом `Default` в остальных случаях. Член `value_t` является типом
+  `is_detected<Operation, Arguments...>`. Шаблонный тип `detected_or_t` является типом
+  `detected_or<Default, Operation, Arguments...>::type`, то есть совпадает с шаблонным типом
+  `detected_t`, в котором маркерный тип `nonesuch` заменён типом `Default`.
+- **`is_detected_exact`.** Шаблонный тип `is_detected_exact<Expected, Operation, Arguments...>`
+  является типом `std::true_type`, если тип `detected_t<Operation, Arguments...>` в точности
+  совпадает с типом `Expected`, и типом `std::false_type` в остальных случаях. Для некорректной
+  операции этот тип является маркерным типом `nonesuch`, поэтому шаблонная константа
+  `is_detected_exact_v<nonesuch, Operation, Arguments...>` для некорректной операции равна `true`.
+- **`is_detected_convertible`.** Шаблонный тип
+  `is_detected_convertible<To, Operation, Arguments...>` является типом `std::true_type`, если тип
+  `detected_t<Operation, Arguments...>` неявно преобразуется в тип `To`, и типом `std::false_type`
+  в остальных случаях. Поэтому для некорректной операции он равен `std::true_type` для типа `To`,
+  в который преобразуется маркерный тип `nonesuch`, например для типа `nonesuch const &`
+  или для класса с конструктором `template <typename T> To(T &&)`, принимающим аргумент любого типа.
+
+
+## Примеры
+
+Операции, которые используются в примерах ниже:
+
+<!-- snippet: example/type_traits/detection/type_traits_detection_example.cpp operations -->
 ```cpp
-template <typename T>
-using value_type_t = T::value_type;
-
-using VecValueType = scl::detected_t<value_type_t, std::vector<int>>;
-// VecValueType — это int
-```
-
-#### `detected_or_t<Default, Operation, Arguments...>`
-
-Извлекает тип `Operation<Arguments...>` или возвращает `Default`, если выражение некорректно.
-
-```cpp
-using ValueType = scl::detected_or_t<void, value_type_t, MyType>;
-// ValueType — это MyType:: value_type, если он существует, иначе void
-```
-
-### Расширенное обнаружение
-
-#### `is_detected_exact<Expected, Operation, Arguments...>`
-
-Проверяет, что `Operation<Arguments...>` возвращает в точности тип `Expected`.
-
-```cpp
-static_assert(
-    scl::is_detected_exact_v<int, value_type_t, std::vector<int>>
-);
-```
-
-#### `is_detected_convertible<To, Operation, Arguments...>`
-
-Проверяет, что `Operation<Arguments...>` приводится к типу `To`.
-
-```cpp
-static_assert(
-    scl::is_detected_convertible_v<double, value_type_t, std::vector<int>>
-);
-```
-
-## Примеры использования
-
-### Пример 1: Обнаружение функций-членов
-
-```cpp
-template <typename T>
-using has_serialize_t = decltype(std::declval<T>().serialize());
-
-template <typename T>
-void process(const T& obj) {
-    if constexpr (scl::is_detected_v<has_serialize_t, T>) {
-        obj.serialize();
-    } else {
-        // Запасное поведение
-    }
-}
-```
-
-### Пример 2: Обнаружение типов-членов
-
-```cpp
-template <typename T>
-using value_type_t = T::value_type;
+template <typename Container>
+using size_operation = decltype(std::declval<Container const &>().size());
 
 template <typename Container>
-auto sum(const Container& c) {
-    using ValueType = scl::detected_or_t<int, value_type_t, Container>;
-    ValueType result{};
-    for (const auto& elem : c) {
-        result += elem;
-    }
-    return result;
+using value_type_operation = typename Container::value_type;
+```
+
+Проверка того, корректна ли операция:
+
+<!-- snippet: example/type_traits/detection/type_traits_detection_example.cpp is_detected -->
+```cpp
+static_assert(scl::is_detected_v<size_operation, std::vector<int>>);
+static_assert(!scl::is_detected_v<size_operation, int>);
+static_assert(std::is_same_v<scl::is_detected<size_operation, int>, std::false_type>);
+```
+
+Тип результата корректной операции и маркерный тип `scl::nonesuch` для некорректной:
+
+<!-- snippet: example/type_traits/detection/type_traits_detection_example.cpp detected_t -->
+```cpp
+static_assert(std::is_same_v<scl::detected_t<value_type_operation, std::vector<long>>, long>);
+static_assert(std::is_same_v<scl::detected_t<value_type_operation, int>, scl::nonesuch>);
+```
+
+Тип `Default` вместо результата некорректной операции:
+
+<!-- snippet: example/type_traits/detection/type_traits_detection_example.cpp detected_or -->
+```cpp
+static_assert(std::is_same_v<scl::detected_or_t<int, value_type_operation, std::string>, char>);
+static_assert(std::is_same_v<scl::detected_or_t<int, value_type_operation, double>, int>);
+static_assert(scl::detected_or<int, value_type_operation, std::string>::value_t::value);
+static_assert(!scl::detected_or<int, value_type_operation, double>::value_t::value);
+```
+
+Сравнение типа результата с ожидаемым типом и проверка его преобразования в другой тип:
+
+<!-- snippet: example/type_traits/detection/type_traits_detection_example.cpp exact -->
+```cpp
+static_assert(scl::is_detected_exact_v<std::size_t, size_operation, std::vector<int>>);
+static_assert(!scl::is_detected_exact_v<int, size_operation, std::vector<int>>);
+static_assert(scl::is_detected_convertible_v<double, size_operation, std::vector<int>>);
+static_assert(!scl::is_detected_convertible_v<std::string, size_operation, std::vector<int>>);
+```
+
+Выбор ветви программы по результату проверки. Функция `count_of` возвращает размер контейнера,
+если у аргумента есть метод `size()`, и `1` для любого другого аргумента:
+
+<!-- snippet: example/type_traits/detection/type_traits_detection_example.cpp dispatch -->
+```cpp
+template <typename Container>
+std::size_t count_of(Container const & container)
+{
+    if constexpr (scl::is_detected_v<size_operation, Container>)
+        return container.size();
+    else
+        return 1;
 }
 ```
 
-### Пример 3: Определение типовых свойств
-
+<!-- snippet: example/type_traits/detection/type_traits_detection_example.cpp run -->
 ```cpp
-template <typename T>
-using has_begin_end_t = decltype(
-    std::declval<T>().begin(),
-    std::declval<T>().end()
-);
-
-template <typename T>
-inline constexpr bool is_iterable_v = scl::is_detected_v<has_begin_end_t, T>;
-
-template <typename T>
-requires is_iterable_v<T>
-void print(const T& container) {
-    for (const auto& elem : container) {
-        std::cout << elem << " ";
-    }
-}
+    std::cout << count_of(std::array<int, 3>{1, 2, 3}) << '\n'; // 3
+    std::cout << count_of(42) << '\n';                          // 1
 ```
 
-### Пример 4: Обнаружение операторов
+## Смотрите также
 
-```cpp
-template <typename T, typename U>
-using has_plus_t = decltype(std::declval<T>() + std::declval<U>());
+- [Обнаружение наличия функции](function_detection.md),
+  [обнаружение наличия метода](method_detection.md)
+  и [обнаружение наличия оператора](operator_detection.md) - операции для вызова функции и метода,
+  объявляемые макросами, и готовые операции для каждого оператора
+- [`example/type_traits/detection/type_traits_detection_example.cpp`](../../../../example/type_traits/detection/type_traits_detection_example.cpp)
 
-template <typename T, typename U>
-inline constexpr bool is_addable_v = scl::is_detected_v<has_plus_t, T, U>;
+---
 
-template <typename T, typename U>
-auto safe_add(const T& a, const U& b) {
-    if constexpr (is_addable_v<T, U>) {
-        return a + b;
-    } else {
-        return T{};
-    }
-}
-```
-
-### Пример 5: Ограничения в стиле концептов (до C++20)
-
-```cpp
-template <typename T>
-using is_container = std::conjunction<
-    scl::is_detected<has_begin_end_t, T>,
-    scl::is_detected<value_type_t, T>,
-    scl::is_detected<has_size_t, T>
->;
-
-template <typename T>
-inline constexpr bool is_container_v = is_container<T>::value;
-
-template <typename T, std::enable_if_t<is_container_v<T>, int> = 0>
-void process_container(const T& container) {
-    // Реализация
-}
-```
-
-## Производительность
-
-Идиома обнаружения — это средство **исключительно времени компиляции**,
-для которого характерно:
-
-- Нулевые накладные расходы во время выполнения
-- Отсутствие генерации кода
-- Полное разрешение на этапе компиляции
-
-## Сравнение с концептами C++20
-
-Хотя концепты C++20 предоставляют более мощный и выразительный способ наложения 
-ограничений на шаблоны, идиома обнаружения остаётся полезной для: 
-
-- **Интроспекции типов**: извлечение типов с помощью `detected_t`
-- **Обратной совместимости**: поддержка кодовых баз до C++20
-- **Метапрограммирования**: сложные паттерны SFINAE
-
-```cpp
-// Версия с концептами (C++20)
-template <typename T>
-concept HasSize = requires(T t) {
-    { t.size() } -> std::convertible_to<std::size_t>;
-};
-
-// Версия с идиомой обнаружения
-template <typename T>
-using has_size_t = decltype(std::declval<T>().size());
-
-template <typename T>
-inline constexpr bool has_size_v = 
-    scl::is_detected_convertible_v<std::size_t, has_size_t, T>;
-```
-
-## Ссылки
-
-- [N4502 — The Detection Idiom](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4502.pdf)
-- [Library Fundamentals TS v2](https://en.cppreference.com/w/cpp/experimental/lib_extensions_2)
+Назад: [Type traits](index.md) | Далее: [Обнаружение наличия функции](function_detection.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

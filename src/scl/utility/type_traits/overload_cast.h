@@ -3,24 +3,9 @@
 #include <type_traits>
 
 /**
- * @file overload_cast.h
- * @brief Utility for disambiguating function and member function overloads.
+ * @file
+ * @brief The pointer to one overload of a function, chosen by its parameter types.
  * @ingroup scl_utility_type_traits
- * @details
- * This file provides the `overload_cast` variable template, which simplifies 
- * the process of selecting a specific signature from a set of overloaded 
- * functions or member functions. 
- * 
- * It is particularly useful when taking the address of a function that has 
- * multiple overloads differing by:
- * - Argument types.
- * - Const, volatile, or const-qualifiers volatile.
- * - Reference qualifiers (lvalue & or rvalue &&).
- * - Noexcept specifications.
- * 
- * By using `overload_cast<Args...>(ptr)`, the compiler can explicitly identify 
- * the intended overload without the need for verbose and error-prone 
- * manual `static_cast` to function pointer types.
  */
 
 namespace scl::detail
@@ -228,36 +213,38 @@ namespace scl
 // Documentation-only declarations
 // =============================================================================
 
-// The real declaration names its type in `scl::detail`, which the reference excludes: a
-// reader would be given a type they cannot reach. Doxygen sees the type unspecified instead.
 #ifdef SCL_DOXYGEN
 namespace scl
 {
     /**
-     * @brief A helper utility to select a specific overload of a function or member function.
+     * @brief A function object returning the pointer to the overload whose parameters are @p Args.
      * @ingroup scl_utility_type_traits
      *
-     * Its call operators disambiguate overloaded functions by their argument types
-     * (`Args...`) and their qualifiers — `const`, `volatile`, lvalue and rvalue reference,
-     * and `noexcept`.
+     * A call with the address of an overload set, `&f` or `&Class::f`, returns the pointer to
+     * the overload whose parameters are exactly @p Args, whatever its result and `noexcept`.
+     * The top-level `const` and `volatile` of @p Args are not compared, since they are not part of
+     * a function type. A member function may have any cv-qualifiers and ref-qualifier. The returned
+     * pointer has the type of that overload, and the call operator is declared `constexpr`,
+     * `noexcept` and `[[nodiscard]]`.
      *
-     * @tparam Args  The exact argument types used to identify the desired overload.
+     * The qualifiers of the member function itself do not count in the choice. So the call does not
+     * compile where two member functions with the parameters @p Args differ only in their
+     * cv-qualifiers or their ref-qualifier, such as `int f(int)` and `int f(int) const`, nor where
+     * no overload has the parameters @p Args. Nor does the call compile where the overload set
+     * holds a function template, even if the overload with the parameters @p Args is not
+     * a template.
      *
-     * @code
-     * struct X {
-     *   void foo(int) &;
-     *   void foo(double) const &;
-     *   void foo(int) const &&;
-     * };
+     * A C-style variadic overload, one whose parameter list ends with `...`, is never selected.
+     * An overload set that holds, beside the overload with the parameters @p Args, an overload with
+     * the same parameters and `...` is not supported, and the outcome of the call for it depends on
+     * the compiler.
      *
-     * void bar(int);
-     * void bar(double) noexcept;
+     * @snippet type_traits/overload_cast/type_traits_overload_cast_example.cpp types
+     * @snippet type_traits/overload_cast/type_traits_overload_cast_example.cpp member
+     * @snippet type_traits/overload_cast/type_traits_overload_cast_example.cpp function
      *
-     * auto pf1 = overload_cast<int>(&X::foo);        // selects void foo(int) &
-     * auto pf2 = overload_cast<double>(&X::foo);     // selects void foo(double) const &
-     * auto f1  = overload_cast<int>(&bar);           // selects void bar(int)
-     * auto f2  = overload_cast<double>(&bar);        // selects void bar(double) noexcept
-     * @endcode
+     * @tparam Args Parameter types of the overload to select.
+     * @see ::scl::signature_t
      */
     template <typename... Args>
     inline constexpr auto overload_cast;

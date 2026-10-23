@@ -1,48 +1,8 @@
 /**
-     * @file
-     * @ingroup scl_utility_type_traits
-     * @brief Operator detection traits: compile-time aliases and value checks (Detection Idiom)
-     * @details
-     * This header declares a comprehensive suite of compile-time detection aliases and constexpr values
-     * for C++ operators using the Detection Idiom (N4502), implemented with `decltype` and `std::declval`.
- *
-     * For each supported operator, the following symbols are provided (expanded via internal macros in the
-     * non-Doxygen branch of this header; documented here for Doxygen users):
- *
-     * - Operation (expression) aliases:
-     *   - `name_operation<...>`: SFINAE-friendly alias representing the operator expression (built-in or free function).
-     *   - `has_name_v<...>`: constexpr boolean; true if `name_operation<...>` is well-formed.
-     *   - `name_t<...>`: alias to the detected expression type, or `scl::nonesuch` on failure.
- *
-     * - Member detection aliases:
-     *   - `name_member_operation<Type, ...>`: alias representing `std::declval<Type>().operator op(...)`.
-     *   - `has_name_member_v<...>`: constexpr boolean; true if the member-form expression is well-formed.
-     *   - `name_member_t<...>`: alias to the detected result type for the member-form expression, or `scl::nonesuch`.
- *
-     * - Exact member detection aliases:
-     *   - `name_member_exact_operation<Type, ...>`: alias using pointer-to-member to require an actual class member with the
-     *     exact signature implied by the non-exact member operation (including ref-qualifiers via `scl::member_function_like_t`).
-     *   - `has_name_member_exact_v<...>`: constexpr boolean; true if the pointer-to-member expression is well-formed.
-     *   - `name_member_exact_t<...>`: alias to the detected result type for the exact member expression, or `scl::nonesuch`.
- *
-     * Operators covered:
-     * - Prefix unary: `&` (address_of), `*` (indirection), `+` (unary_plus), `-` (negate),
-     *   `++` (prefix_increment), `--` (prefix_decrement), `~` (bit_not), `!` (logical_not)
-     * - Postfix unary: `++` (postfix_increment), `--` (postfix_decrement)
-     * - Binary comparisons: `==` (equal_to), `!=` (not_equal_to), `<` (less), `<=` (less_equal), `>` (greater), `>=` (greater_equal)
-     * - Binary arithmetic/bitwise: `*` (multiplies), `/` (divides), `%` (modulus), `+` (plus), `-` (minus),
-     *   `<<` (left_shift), `>>` (right_shift), `&` (bit_and), `|` (bit_or), `^` (bit_xor)
-     * - Logical binary: `&&` (logical_and), `||` (logical_or)
-     * - Assignment: `=` (assign), `+=` (plus_assign), `-=` (minus_assign), `*=` (multiplies_assign), `/=` (divides_assign),
-     *   `%=` (modulus_assign), `<<=` (left_shift_assign), `>>=` (right_shift_assign), `&=` (bit_and_assign),
-     *   `|=` (bit_or_assign), `^=` (bit_xor_assign)
-     * - Special: `->*` (arrow_to_pointer), `->` (arrow), `,` (comma), `[]` (subscript), `()` (call)
- *
-     * Implementation notes:
-     * - All public symbols live in the `scl` namespace.
-     * - Detection is implemented via alias templates using `decltype` and `std::declval`.
-     * - Exact member detection uses pointer-to-member and `scl::member_function_like_t` to enforce exact signature and ref-qualifiers.
-     */
+ * @file
+ * @brief Traits telling at compile time whether an operator applies to given operand types.
+ * @ingroup scl_utility_type_traits
+ */
 
 #pragma once
 
@@ -235,3573 +195,4650 @@ SCL_DETAIL_BINARY_OPERATOR_DETECTION(^=, bit_xor_assign)
 namespace scl
 {
     /**
-     * @defgroup scl_utility_operator_detection Operator Detection
+     * @defgroup scl_utility_operator_detection Operator detection
      * @ingroup scl_utility_type_traits
-     * @brief Compile-time traits for detecting overloaded operators using the Detection Idiom.
-     * 
-     * This module provides a mechanism to check at compile-time if a specific operator usage is valid for given types.
-     * 
-     * ### Naming Conventions
-     * For an operator named `name` (e.g., `plus`, `address_of`), the following traits are generated:
-     * 
-     * - `has_name_v<Args...>`: Checks if the operator expression is valid (Unstrict). Supports implicit conversions, free functions, and members.
-     * - `has_name_member_v<T, Args...>`: Checks if the member function `operator op` exists (Unstrict). Allows implicit conversions.
-     * - `has_name_member_exact_v<T, Args...>`: Checks if the member function `operator op` exists with **exact** argument types (Strict).
-     * 
-     * @{
-     */
-
-    // ============================================================================
-    // PREFIX UNARY OPERATORS: &, *, +, -, ++, --, ~, !
-    // ============================================================================
-
-    /**
-     * @defgroup op_det_unary_prefix Prefix Unary Operators
-     * @brief Detection for operators: `&`, `*`, `+`, `-`, `++`, `--`, `~`, `!`
+     * @brief Whether an operator applies to given operands, as an expression or a member function.
+     *
+     * For each operator `name` the templates `name_operation`, `has_name_v` and `name_t` are declared
+     * for the expression, `name_member_operation`, `has_name_member_v` and `name_member_t` for
+     * the member function, and `name_member_exact_operation`, `has_name_member_exact_v` and
+     * `name_member_exact_t` for the member function declared with exactly the given parameters.
+     * In the exact form the top-level `const` and `volatile` of a parameter are not compared, since
+     * they are not part of a function type, and a member function that is deleted or inaccessible is
+     * not found. The specifier `noexcept` is not compared either. On MSVC a private or a protected
+     * operator is found by the expression form and the member form.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp types
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp expression
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member
      * @{
      */
 
     /**
-     * @brief Alias for the address-of expression `&std::declval<Type>()`.
-     * @details
-     * Represents the unevaluated expression used to probe address-of support for a type.
-     * Suitable for SFINAE; no runtime evaluation occurs.
-     * @tparam Type The operand type.
+     * @defgroup scl_utility_operator_detection_prefix Prefix unary operators
+     * @{
      */
-    template <typename Type>
-    using address_of_operation = /* implementation defined */;
-    /**
-     * @brief Detects address-of operator (`&obj`).
-     * @details
-     * True if `&std::declval<Type>()` is a well-formed expression (built-in or overloaded).
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    inline constexpr bool has_address_of_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of address-of, or `scl::nonesuch`.
-     * @details
-     * Yields the type produced by `&std::declval<Type>()` if available; otherwise `scl::nonesuch`.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using address_of_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member address-of `std::declval<Type>().operator&()`.
-     * @details
-     * Probes the availability of a class member `operator&` with arguments convertible from `Arguments...`.
-     * @tparam Type The class type.
-     * @tparam Arguments The operator argument types (if any).
-     */
-    template <typename Type, typename... Arguments>
-    using address_of_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member address-of operator (`obj.operator&()`).
-     * @details
-     * True if `address_of_member_operation<Type, Arguments...>` is well-formed. Implicit conversions are allowed.
-     * @tparam Arguments First type is the class type, followed by argument types.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_address_of_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member address-of, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator&(Arguments...)` if present; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type, followed by argument types.
-     */
-    template <typename... Arguments>
-    using address_of_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member address-of detection.
-     * @details
-     * Uses pointer-to-member semantics and `member_function_like_t` to constrain lookup to an exact member signature
-     * (including cv- and ref-qualifiers). Implicit conversions are not considered.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact operator argument types.
-     */
-    template <typename Type, typename... Arguments>
-    using address_of_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member address-of operator (exact).
-     * @details
-     * True if `address_of_member_exact_operation<Type, Arguments...>` is well-formed under exact signature matching.
-     * @tparam Arguments First type is the class type, followed by exact argument types.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_address_of_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member address-of, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact member `operator&` return type under signature equality; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type, followed by exact argument types.
-     */
-    template <typename... Arguments>
-    using address_of_member_exact_t = /* implementation defined */;
 
     /**
-     * @brief Alias for the indirection expression `*std::declval<Type>()`.
-     * @details
-     * Represents the unevaluated unary dereference expression used for detection.
-     * @tparam Type The operand type.
+     * @brief The type of `&std::declval<Type>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Type Operand type.
      */
     template <typename Type>
-    using indirection_operation = /* implementation defined */;
+    using address_of_operation = decltype(&::std::declval<Type>());
     /**
-     * @brief Detects indirection operator (`*ptr`).
-     * @details
-     * Checks if the expression `*std::declval<Type>()` is well-formed (built-in or overloaded).
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    inline constexpr bool has_indirection_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of indirection, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `*std::declval<Type>()` when valid; `scl::nonesuch` otherwise.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using indirection_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member indirection `std::declval<Type>().operator*()`.
-     * @details
-     * Probes a class member `operator*` without enforcing exact signature (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Arguments The operator argument types (none for unary `*`).
-     */
-    template <typename Type, typename... Arguments>
-    using indirection_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member indirection operator (`obj.operator*()`).
-     * @details
-     * True if `indirection_member_operation<Type, Arguments...>` is well-formed. Useful for ref-qualified members.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether ::scl::address_of_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Arguments Template arguments of ::scl::address_of_operation.
      */
     template <typename... Arguments>
-    inline constexpr bool has_indirection_member_v = /* implementation defined */;
+    inline constexpr auto has_address_of_v = ::scl::is_detected_v<::scl::address_of_operation, Arguments...>;
     /**
-     * @brief Detected result type of member indirection, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator*()` if present; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::address_of_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Arguments Template arguments of ::scl::address_of_operation.
      */
     template <typename... Arguments>
-    using indirection_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member indirection detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers when checking for `operator*` as a true class member.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact operator argument types (none for unary `*`).
-     */
-    template <typename Type, typename... Arguments>
-    using indirection_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member indirection operator (`obj.operator*()` exact).
-     * @details
-     * True if a precisely matching member `operator*` exists; implicit conversions are not considered.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_indirection_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member indirection, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact member dereference return type; `scl::nonesuch` if not found.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    using indirection_member_exact_t = /* implementation defined */;
+    using address_of_t = ::scl::detected_t<::scl::address_of_operation, Arguments...>;
 
     /**
-     * @brief Alias for the unary plus expression `+std::declval<Type>()`.
-     * @details
-     * Represents the unevaluated expression to test unary `+` availability (built-in or overloaded).
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using unary_plus_operation = /* implementation defined */;
-    /**
-     * @brief Detects unary plus operator (`+obj`).
-     * @details
-     * True if `+std::declval<Type>()` is a well-formed expression.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    inline constexpr bool has_unary_plus_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of unary plus, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of unary plus for `Type` when available.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using unary_plus_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member unary plus `std::declval<Type>().operator+()`.
-     * @details
-     * Detects a member `operator+` on `Type` without enforcing exact signature.
-     * @tparam Type The class type.
-     * @tparam Arguments The operator argument types (none).
+     * @brief The type of `std::declval<Type>().operator&(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using unary_plus_member_operation = /* implementation defined */;
+    using address_of_member_operation = decltype(::std::declval<Type>().operator&(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects member unary plus operator (`obj.operator+()`).
-     * @details
-     * True if `unary_plus_member_operation<Type>` is well-formed.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether ::scl::address_of_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_unary_plus_member_v = /* implementation defined */;
+    inline constexpr auto has_address_of_member_v =
+        ::scl::is_detected_v<::scl::address_of_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of member unary plus, or `scl::nonesuch`.
-     * @details
-     * Exposes the member unary plus return type for `Type`, else `scl::nonesuch`.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::address_of_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    using unary_plus_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member unary plus detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for `Type::operator+`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact operator argument types (none).
-     */
-    template <typename Type, typename... Arguments>
-    using unary_plus_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member unary plus operator (`obj.operator+()` exact).
-     * @details
-     * True if an exactly matching member `operator+` exists.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_unary_plus_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member unary plus, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type under exact signature match; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    using unary_plus_member_exact_t = /* implementation defined */;
+    using address_of_member_t = ::scl::detected_t<::scl::address_of_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for the unary minus expression `-std::declval<Type>()`.
-     * @details
-     * Represents the unevaluated expression to test unary `-` availability (built-in or overloaded).
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using negate_operation = /* implementation defined */;
-    /**
-     * @brief Detects unary minus operator (`-obj`).
-     * @details
-     * True if `-std::declval<Type>()` is well-formed.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    inline constexpr bool has_negate_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of unary minus, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of unary minus for `Type` when available.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using negate_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member unary minus `std::declval<Type>().operator-()`.
-     * @details
-     * Detects a member `operator-` on `Type` without enforcing exact signature.
-     * @tparam Type The class type.
-     * @tparam Arguments The operator argument types (none).
+     * @brief The type of the same call through a pointer to the member function `operator&`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::address_of_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator&`
+     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
+     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
+     * result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using negate_member_operation = /* implementation defined */;
+    using address_of_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::address_of_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator&))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects member unary minus operator (`obj.operator-()`).
-     * @details
-     * True if `negate_member_operation<Type>` is well-formed.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether `operator&` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_negate_member_v = /* implementation defined */;
+    inline constexpr auto has_address_of_member_exact_v =
+        ::scl::is_detected_v<::scl::address_of_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of member unary minus, or `scl::nonesuch`.
-     * @details
-     * Exposes the member unary minus return type for `Type`, else `scl::nonesuch`.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::address_of_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    using negate_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member unary minus detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for `Type::operator-`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact operator argument types (none).
-     */
-    template <typename Type, typename... Arguments>
-    using negate_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member unary minus operator (`obj.operator-()` exact).
-     * @details
-     * True if an exactly matching member `operator-` exists on `Type`.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_negate_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member unary minus, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type under exact signature match; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    using negate_member_exact_t = /* implementation defined */;
+    using address_of_member_exact_t =
+        ::scl::detected_t<::scl::address_of_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for the prefix increment expression `++std::declval<Type>()`.
-     * @details
-     * Represents the unevaluated expression to test prefix `++` (built-in or overloaded).
-     * @tparam Type The operand type.
+     * @brief The type of `*std::declval<Type>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Type Operand type.
      */
     template <typename Type>
-    using prefix_increment_operation = /* implementation defined */;
+    using indirection_operation = decltype(*::std::declval<Type>());
     /**
-     * @brief Detects prefix increment operator (`++obj`).
-     * @details
-     * True if `++std::declval<Type>()` is a well-formed expression.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    inline constexpr bool has_prefix_increment_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of prefix increment, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by prefix increment for `Type`, else `scl::nonesuch`.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using prefix_increment_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member prefix increment `std::declval<Type>().operator++()`.
-     * @details
-     * Probes for `Type::operator++()` (implicit conversions allowed in non-exact detection).
-     * @tparam Type The class type.
-     * @tparam Arguments The operator argument types (none).
-     */
-    template <typename Type, typename... Arguments>
-    using prefix_increment_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member prefix increment operator (`obj.operator++()`).
-     * @details
-     * True if `prefix_increment_member_operation<Type>` is well-formed. Ref-qualification is honored by the compiler.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether ::scl::indirection_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Arguments Template arguments of ::scl::indirection_operation.
      */
     template <typename... Arguments>
-    inline constexpr bool has_prefix_increment_member_v = /* implementation defined */;
+    inline constexpr auto has_indirection_v =
+        ::scl::is_detected_v<::scl::indirection_operation, Arguments...>;
     /**
-     * @brief Detected result type of member prefix increment, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator++()`; `scl::nonesuch` if unavailable.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::indirection_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Arguments Template arguments of ::scl::indirection_operation.
      */
     template <typename... Arguments>
-    using prefix_increment_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member prefix increment detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for `Type::operator++()`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact operator argument types (none).
-     */
-    template <typename Type, typename... Arguments>
-    using prefix_increment_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member prefix increment operator (`obj.operator++()` exact).
-     * @details
-     * True if an exactly matching `operator++()` exists on `Type`.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_prefix_increment_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member prefix increment, or `scl::nonesuch`.
-     * @details
-     * Useful to validate ref-qualified overloads (e.g., `&` vs `&&`).
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    using prefix_increment_member_exact_t = /* implementation defined */;
+    using indirection_t = ::scl::detected_t<::scl::indirection_operation, Arguments...>;
 
     /**
-     * @brief Alias for the prefix decrement expression `--std::declval<Type>()`.
-     * @details
-     * Represents the unevaluated expression to test prefix `--` (built-in or overloaded).
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using prefix_decrement_operation = /* implementation defined */;
-    /**
-     * @brief Detects prefix decrement operator (`--obj`).
-     * @details
-     * True if `--std::declval<Type>()` is a well-formed expression.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    inline constexpr bool has_prefix_decrement_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of prefix decrement, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by prefix decrement for `Type`, else `scl::nonesuch`.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using prefix_decrement_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member prefix decrement `std::declval<Type>().operator--()`.
-     * @details
-     * Probes for `Type::operator--()` without exact matching requirements.
-     * @tparam Type The class type.
-     * @tparam Arguments The operator argument types (none).
+     * @brief The type of `std::declval<Type>().operator*(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using prefix_decrement_member_operation = /* implementation defined */;
+    using indirection_member_operation = decltype(::std::declval<Type>().operator*(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects member prefix decrement operator (`obj.operator--()`).
-     * @details
-     * True if `prefix_decrement_member_operation<Type>` is well-formed.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether ::scl::indirection_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_prefix_decrement_member_v = /* implementation defined */;
+    inline constexpr auto has_indirection_member_v =
+        ::scl::is_detected_v<::scl::indirection_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of member prefix decrement, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator--()` if present.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::indirection_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    using prefix_decrement_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member prefix decrement detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for `Type::operator--()`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact operator argument types (none).
-     */
-    template <typename Type, typename... Arguments>
-    using prefix_decrement_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member prefix decrement operator (`obj.operator--()` exact).
-     * @details
-     * True if an exactly matching `operator--()` exists on `Type`.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_prefix_decrement_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member prefix decrement, or `scl::nonesuch`.
-     * @details
-     * Ensures distinction between ref-qualified members is respected.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    using prefix_decrement_member_exact_t = /* implementation defined */;
+    using indirection_member_t = ::scl::detected_t<::scl::indirection_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for the bitwise NOT expression `~std::declval<Type>()`.
-     * @details
-     * Represents the unevaluated expression to test `~` availability (built-in or overloaded).
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using bit_not_operation = /* implementation defined */;
-    /**
-     * @brief Detects bitwise NOT operator (`~obj`).
-     * @details
-     * True if `~std::declval<Type>()` is well-formed.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    inline constexpr bool has_bit_not_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of bitwise NOT, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `~obj` when available.
-     * @tparam Type The operand type.
-     */
-    template <typename Type>
-    using bit_not_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member bitwise NOT `std::declval<Type>().operator~()`.
-     * @details
-     * Detects a member `operator~` on `Type` without enforcing exact signature.
-     * @tparam Type The class type.
-     * @tparam Arguments The operator argument types (none).
+     * @brief The type of the same call through a pointer to the member function `operator*`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::indirection_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator*`
+     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
+     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
+     * result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using bit_not_member_operation = /* implementation defined */;
+    using indirection_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::indirection_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator*))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects member bitwise NOT operator (`obj.operator~()`).
-     * @details
-     * True if `bit_not_member_operation<Type>` is well-formed; useful for ref-qualified overloads.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether `operator*` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_bit_not_member_v = /* implementation defined */;
+    inline constexpr auto has_indirection_member_exact_v =
+        ::scl::is_detected_v<::scl::indirection_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of member bitwise NOT, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator~()` if available; else `scl::nonesuch`.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::indirection_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    using bit_not_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member bitwise NOT detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for `Type::operator~`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact operator argument types (none).
-     */
-    template <typename Type, typename... Arguments>
-    using bit_not_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member bitwise NOT operator (`obj.operator~()` exact).
-     * @details
-     * True if an exact member `operator~` exists; implicit conversions are not considered.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_bit_not_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member bitwise NOT, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact member `operator~` return type; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    using bit_not_member_exact_t = /* implementation defined */;
+    using indirection_member_exact_t =
+        ::scl::detected_t<::scl::indirection_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for the logical NOT expression `!std::declval<Type>()`.
-     * @details
-     * Represents the unevaluated expression to test `!` availability (built-in or overloaded).
-     * @tparam Type The operand type.
+     * @brief The type of `+std::declval<Type>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Type Operand type.
      */
     template <typename Type>
-    using logical_not_operation = /* implementation defined */;
+    using unary_plus_operation = decltype(+::std::declval<Type>());
     /**
-     * @brief Detects logical NOT operator (`!obj`).
-     * @details
-     * True if `!std::declval<Type>()` is well-formed.
-     * @tparam Type The operand type.
+     * @brief Whether ::scl::unary_plus_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Arguments Template arguments of ::scl::unary_plus_operation.
      */
-    template <typename Type>
-    inline constexpr bool has_logical_not_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_unary_plus_v = ::scl::is_detected_v<::scl::unary_plus_operation, Arguments...>;
     /**
-     * @brief Detected result type of logical NOT, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `!obj` when available.
-     * @tparam Type The operand type.
+     * @brief ::scl::unary_plus_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Arguments Template arguments of ::scl::unary_plus_operation.
      */
-    template <typename Type>
-    using logical_not_t = /* implementation defined */;
+    template <typename... Arguments>
+    using unary_plus_t = ::scl::detected_t<::scl::unary_plus_operation, Arguments...>;
+
     /**
-     * @brief Alias for invoking member logical NOT `std::declval<Type>().operator!()`.
-     * @details
-     * Detects a member `operator!` on `Type` without enforcing exact signature.
-     * @tparam Type The class type.
-     * @tparam Arguments The operator argument types (none).
+     * @brief The type of `std::declval<Type>().operator+(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using logical_not_member_operation = /* implementation defined */;
+    using unary_plus_member_operation = decltype(::std::declval<Type>().operator+(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects member logical NOT operator (`obj.operator!()`).
-     * @details
-     * True if `logical_not_member_operation<Type>` is well-formed; ref-qualifiers respected.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether ::scl::unary_plus_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_logical_not_member_v = /* implementation defined */;
+    inline constexpr auto has_unary_plus_member_v =
+        ::scl::is_detected_v<::scl::unary_plus_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of member logical NOT, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator!()`; `scl::nonesuch` if unavailable.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::unary_plus_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    using logical_not_member_t = /* implementation defined */;
+    using unary_plus_member_t = ::scl::detected_t<::scl::unary_plus_member_operation, Arguments...>;
+
     /**
-     * @brief Alias for strict member logical NOT detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for `Type::operator!`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact operator argument types (none).
+     * @brief The type of the same call through a pointer to the member function `operator+`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::unary_plus_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator+`
+     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
+     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
+     * result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using logical_not_member_exact_operation = /* implementation defined */;
+    using unary_plus_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::unary_plus_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator+))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects strict member logical NOT operator (`obj.operator!()` exact).
-     * @details
-     * True if an exact member `operator!` exists on `Type`.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether `operator+` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_logical_not_member_exact_v = /* implementation defined */;
+    inline constexpr auto has_unary_plus_member_exact_v =
+        ::scl::is_detected_v<::scl::unary_plus_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of strict member logical NOT, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact member `operator!` return type; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::unary_plus_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    using logical_not_member_exact_t = /* implementation defined */;
+    using unary_plus_member_exact_t =
+        ::scl::detected_t<::scl::unary_plus_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `-std::declval<Type>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Type Operand type.
+     */
+    template <typename Type>
+    using negate_operation = decltype(-::std::declval<Type>());
+    /**
+     * @brief Whether ::scl::negate_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Arguments Template arguments of ::scl::negate_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_negate_v = ::scl::is_detected_v<::scl::negate_operation, Arguments...>;
+    /**
+     * @brief ::scl::negate_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Arguments Template arguments of ::scl::negate_operation.
+     */
+    template <typename... Arguments>
+    using negate_t = ::scl::detected_t<::scl::negate_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator-(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using negate_member_operation = decltype(::std::declval<Type>().operator-(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::negate_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_negate_member_v =
+        ::scl::is_detected_v<::scl::negate_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::negate_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using negate_member_t = ::scl::detected_t<::scl::negate_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator-`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::negate_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator-` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using negate_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::negate_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator-))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator-` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_negate_member_exact_v =
+        ::scl::is_detected_v<::scl::negate_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::negate_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using negate_member_exact_t = ::scl::detected_t<::scl::negate_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `++std::declval<Type>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Type Operand type.
+     */
+    template <typename Type>
+    using prefix_increment_operation = decltype(++::std::declval<Type>());
+    /**
+     * @brief Whether ::scl::prefix_increment_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Arguments Template arguments of ::scl::prefix_increment_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_prefix_increment_v =
+        ::scl::is_detected_v<::scl::prefix_increment_operation, Arguments...>;
+    /**
+     * @brief ::scl::prefix_increment_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Arguments Template arguments of ::scl::prefix_increment_operation.
+     */
+    template <typename... Arguments>
+    using prefix_increment_t = ::scl::detected_t<::scl::prefix_increment_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator++(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using prefix_increment_member_operation = decltype(::std::declval<Type>().operator++(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::prefix_increment_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_prefix_increment_member_v =
+        ::scl::is_detected_v<::scl::prefix_increment_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::prefix_increment_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using prefix_increment_member_t =
+        ::scl::detected_t<::scl::prefix_increment_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator++`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::prefix_increment_member_operation<Type, Arguments...>. The operation is well-formed
+     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator++` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using prefix_increment_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::prefix_increment_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator++))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator++` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_prefix_increment_member_exact_v =
+        ::scl::is_detected_v<::scl::prefix_increment_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::prefix_increment_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using prefix_increment_member_exact_t =
+        ::scl::detected_t<::scl::prefix_increment_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `--std::declval<Type>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Type Operand type.
+     */
+    template <typename Type>
+    using prefix_decrement_operation = decltype(--::std::declval<Type>());
+    /**
+     * @brief Whether ::scl::prefix_decrement_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Arguments Template arguments of ::scl::prefix_decrement_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_prefix_decrement_v =
+        ::scl::is_detected_v<::scl::prefix_decrement_operation, Arguments...>;
+    /**
+     * @brief ::scl::prefix_decrement_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Arguments Template arguments of ::scl::prefix_decrement_operation.
+     */
+    template <typename... Arguments>
+    using prefix_decrement_t = ::scl::detected_t<::scl::prefix_decrement_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator--(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using prefix_decrement_member_operation = decltype(::std::declval<Type>().operator--(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::prefix_decrement_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_prefix_decrement_member_v =
+        ::scl::is_detected_v<::scl::prefix_decrement_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::prefix_decrement_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using prefix_decrement_member_t =
+        ::scl::detected_t<::scl::prefix_decrement_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator--`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::prefix_decrement_member_operation<Type, Arguments...>. The operation is well-formed
+     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator--` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using prefix_decrement_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::prefix_decrement_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator--))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator--` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_prefix_decrement_member_exact_v =
+        ::scl::is_detected_v<::scl::prefix_decrement_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::prefix_decrement_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using prefix_decrement_member_exact_t =
+        ::scl::detected_t<::scl::prefix_decrement_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `~std::declval<Type>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Type Operand type.
+     */
+    template <typename Type>
+    using bit_not_operation = decltype(~::std::declval<Type>());
+    /**
+     * @brief Whether ::scl::bit_not_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_not_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_not_v = ::scl::is_detected_v<::scl::bit_not_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_not_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_not_operation.
+     */
+    template <typename... Arguments>
+    using bit_not_t = ::scl::detected_t<::scl::bit_not_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator~(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_not_member_operation = decltype(::std::declval<Type>().operator~(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::bit_not_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_not_member_v =
+        ::scl::is_detected_v<::scl::bit_not_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_not_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using bit_not_member_t = ::scl::detected_t<::scl::bit_not_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator~`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::bit_not_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator~` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_not_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::bit_not_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator~))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator~` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_not_member_exact_v =
+        ::scl::is_detected_v<::scl::bit_not_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_not_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using bit_not_member_exact_t = ::scl::detected_t<::scl::bit_not_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `!std::declval<Type>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Type Operand type.
+     */
+    template <typename Type>
+    using logical_not_operation = decltype(!::std::declval<Type>());
+    /**
+     * @brief Whether ::scl::logical_not_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Arguments Template arguments of ::scl::logical_not_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_logical_not_v =
+        ::scl::is_detected_v<::scl::logical_not_operation, Arguments...>;
+    /**
+     * @brief ::scl::logical_not_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Arguments Template arguments of ::scl::logical_not_operation.
+     */
+    template <typename... Arguments>
+    using logical_not_t = ::scl::detected_t<::scl::logical_not_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator!(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using logical_not_member_operation = decltype(::std::declval<Type>().operator!(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::logical_not_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_logical_not_member_v =
+        ::scl::is_detected_v<::scl::logical_not_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::logical_not_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using logical_not_member_t = ::scl::detected_t<::scl::logical_not_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator!`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::logical_not_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator!`
+     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
+     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
+     * result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using logical_not_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::logical_not_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator!))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator!` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_logical_not_member_exact_v =
+        ::scl::is_detected_v<::scl::logical_not_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::logical_not_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using logical_not_member_exact_t =
+        ::scl::detected_t<::scl::logical_not_member_exact_operation, Arguments...>;
 
     /** @} */
 
-    // ============================================================================
-    // POSTFIX UNARY OPERATORS: ++, -- (postfix)
-    // ============================================================================
-
     /**
-     * @defgroup op_det_unary_postfix Postfix Unary Operators
-     * @brief Detection for operators: `++`, `--` (postfix versions)
+     * @defgroup scl_utility_operator_detection_postfix Postfix unary operators
      * @{
      */
 
     /**
-     * @brief Alias for the postfix increment expression `std::declval<Type>()++`.
-     * @details
-     * Represents the unevaluated expression to test postfix `++` (built-in or overloaded).
-     * @tparam Type The operand type.
+     * @brief The type of `std::declval<Type>()++`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Type Operand type.
      */
     template <typename Type>
-    using postfix_increment_operation = /* implementation defined */;
+    using postfix_increment_operation = decltype(::std::declval<Type>()++);
     /**
-     * @brief Detects postfix increment operator (`obj++`).
-     * @details
-     * True if `std::declval<Type>()++` is well-formed.
-     * @tparam Type The operand type.
+     * @brief Whether ::scl::postfix_increment_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Arguments Template arguments of ::scl::postfix_increment_operation.
      */
-    template <typename Type>
-    inline constexpr bool has_postfix_increment_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_postfix_increment_v =
+        ::scl::is_detected_v<::scl::postfix_increment_operation, Arguments...>;
     /**
-     * @brief Detected result type of postfix increment, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by postfix increment; `scl::nonesuch` if not available.
-     * @tparam Type The operand type.
+     * @brief ::scl::postfix_increment_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Arguments Template arguments of ::scl::postfix_increment_operation.
      */
-    template <typename Type>
-    using postfix_increment_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member postfix increment `std::declval<Type>().operator++(int)`.
-     * @details
-     * Detects a member postfix `operator++(int)` on `Type` without exact signature enforcement.
-     * @tparam Type The class type.
-     */
-    template <typename Type>
-    using postfix_increment_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member postfix increment operator (`obj.operator++(int)`).
-     * @details
-     * True if `postfix_increment_member_operation<Type>` is well-formed.
-     * @tparam Type The class type.
-     */
-    template <typename Type>
-    inline constexpr bool has_postfix_increment_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member postfix increment, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator++(int)`, else `scl::nonesuch`.
-     * @tparam Type The class type.
-     */
-    template <typename Type>
-    using postfix_increment_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member postfix increment detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for `Type::operator++(int)`.
-     * @tparam Type The class type.
-     */
-    template <typename Type>
-    using postfix_increment_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member postfix increment operator (`obj.operator++(int)` exact).
-     * @details
-     * True if an exactly matching postfix increment member exists.
-     * @tparam Type The class type.
-     */
-    template <typename Type>
-    inline constexpr bool has_postfix_increment_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member postfix increment, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact postfix increment return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     */
-    template <typename Type>
-    using postfix_increment_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using postfix_increment_t = ::scl::detected_t<::scl::postfix_increment_operation, Arguments...>;
 
     /**
-     * @brief Alias for the postfix decrement expression `std::declval<Type>()--`.
-     * @details
-     * Represents the unevaluated expression to test postfix `--`.
-     * @tparam Type The operand type.
+     * @brief The type of `std::declval<Type>().operator++(0)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Type Type of the object.
      */
     template <typename Type>
-    using postfix_decrement_operation = /* implementation defined */;
+    using postfix_increment_member_operation = decltype(::std::declval<Type>().operator++(
+        ::std::declval<int>()));
     /**
-     * @brief Detects postfix decrement operator (`obj--`).
-     * @details
-     * True if `std::declval<Type>()--` is well-formed.
-     * @tparam Type The operand type.
+     * @brief Whether ::scl::postfix_increment_member_operation is well-formed for @p Type.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Type Type of the object.
      */
     template <typename Type>
-    inline constexpr bool has_postfix_decrement_v = /* implementation defined */;
+    inline constexpr auto has_postfix_increment_member_v =
+        ::scl::is_detected_v<::scl::postfix_increment_member_operation, Type>;
     /**
-     * @brief Detected result type of postfix decrement, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by postfix decrement; `scl::nonesuch` if not available.
-     * @tparam Type The operand type.
+     * @brief ::scl::postfix_increment_member_operation for @p Type, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Type Type of the object.
      */
     template <typename Type>
-    using postfix_decrement_t = /* implementation defined */;
+    using postfix_increment_member_t = ::scl::detected_t<::scl::postfix_increment_member_operation, Type>;
+
     /**
-     * @brief Alias for invoking member postfix decrement `std::declval<Type>().operator--(int)`.
-     * @details
-     * Detects a member postfix `operator--(int)` on `Type` without exact signature enforcement.
-     * @tparam Type The class type.
+     * @brief The type of the same call through a pointer to the member function `operator++`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(int)>, `R` being
+     * ::scl::postfix_increment_member_operation<Type>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator++` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Type Type of the object.
      */
     template <typename Type>
-    using postfix_decrement_member_operation = /* implementation defined */;
+    using postfix_increment_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<Type, ::scl::postfix_increment_member_operation<Type>(int)>>(
+            &::std::remove_cvref_t<Type>::operator++))(::std::declval<int>()));
     /**
-     * @brief Detects member postfix decrement operator (`obj.operator--(int)`).
-     * @details
-     * True if `postfix_decrement_member_operation<Type>` is well-formed.
-     * @tparam Type The class type.
+     * @brief Whether `operator++` is declared exactly for the object type @p Type.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Type Type of the object.
      */
     template <typename Type>
-    inline constexpr bool has_postfix_decrement_member_v = /* implementation defined */;
+    inline constexpr auto has_postfix_increment_member_exact_v =
+        ::scl::is_detected_v<::scl::postfix_increment_member_exact_operation, Type>;
     /**
-     * @brief Detected result type of member postfix decrement, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator--(int)`; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
+     * @brief ::scl::postfix_increment_member_exact_operation for @p Type, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
+     *
+     * @tparam Type Type of the object.
      */
     template <typename Type>
-    using postfix_decrement_member_t = /* implementation defined */;
+    using postfix_increment_member_exact_t =
+        ::scl::detected_t<::scl::postfix_increment_member_exact_operation, Type>;
+
     /**
-     * @brief Alias for strict member postfix decrement detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for `Type::operator--(int)`.
-     * @tparam Type The class type.
+     * @brief The type of `std::declval<Type>()--`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Type Operand type.
      */
     template <typename Type>
-    using postfix_decrement_member_exact_operation = /* implementation defined */;
+    using postfix_decrement_operation = decltype(::std::declval<Type>()--);
     /**
-     * @brief Detects strict member postfix decrement operator (`obj.operator--(int)` exact).
-     * @details
-     * True if an exactly matching postfix decrement member exists on `Type`.
-     * @tparam Type The class type.
+     * @brief Whether ::scl::postfix_decrement_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Arguments Template arguments of ::scl::postfix_decrement_operation.
      */
-    template <typename Type>
-    inline constexpr bool has_postfix_decrement_member_exact_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_postfix_decrement_v =
+        ::scl::is_detected_v<::scl::postfix_decrement_operation, Arguments...>;
     /**
-     * @brief Detected result type of strict member postfix decrement, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact postfix decrement return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
+     * @brief ::scl::postfix_decrement_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Arguments Template arguments of ::scl::postfix_decrement_operation.
+     */
+    template <typename... Arguments>
+    using postfix_decrement_t = ::scl::detected_t<::scl::postfix_decrement_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator--(0)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Type Type of the object.
      */
     template <typename Type>
-    using postfix_decrement_member_exact_t = /* implementation defined */;
+    using postfix_decrement_member_operation = decltype(::std::declval<Type>().operator--(
+        ::std::declval<int>()));
+    /**
+     * @brief Whether ::scl::postfix_decrement_member_operation is well-formed for @p Type.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Type Type of the object.
+     */
+    template <typename Type>
+    inline constexpr auto has_postfix_decrement_member_v =
+        ::scl::is_detected_v<::scl::postfix_decrement_member_operation, Type>;
+    /**
+     * @brief ::scl::postfix_decrement_member_operation for @p Type, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Type Type of the object.
+     */
+    template <typename Type>
+    using postfix_decrement_member_t = ::scl::detected_t<::scl::postfix_decrement_member_operation, Type>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator--`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(int)>, `R` being
+     * ::scl::postfix_decrement_member_operation<Type>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator--` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Type Type of the object.
+     */
+    template <typename Type>
+    using postfix_decrement_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<Type, ::scl::postfix_decrement_member_operation<Type>(int)>>(
+            &::std::remove_cvref_t<Type>::operator--))(::std::declval<int>()));
+    /**
+     * @brief Whether `operator--` is declared exactly for the object type @p Type.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Type Type of the object.
+     */
+    template <typename Type>
+    inline constexpr auto has_postfix_decrement_member_exact_v =
+        ::scl::is_detected_v<::scl::postfix_decrement_member_exact_operation, Type>;
+    /**
+     * @brief ::scl::postfix_decrement_member_exact_operation for @p Type, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
+     *
+     * @tparam Type Type of the object.
+     */
+    template <typename Type>
+    using postfix_decrement_member_exact_t =
+        ::scl::detected_t<::scl::postfix_decrement_member_exact_operation, Type>;
 
     /** @} */
 
-    // ============================================================================
-    // BINARY COMPARISON OPERATORS: ==, !=, <, <=, >, >=
-    // ============================================================================
-
     /**
-     * @defgroup op_det_binary_comp Comparison Operators
-     * @brief Detection for operators: `==`, `!=`, `<`, `<=`, `>`, `>=`
+     * @defgroup scl_utility_operator_detection_comparison Comparison operators
      * @{
      */
 
     /**
-     * @brief Alias for equality expression `std::declval<Left>() == std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated comparison expression (built-in or overloaded).
+     * @brief The type of `std::declval<Left>() == std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using equal_to_operation = /* implementation defined */;
+    using equal_to_operation = decltype(::std::declval<Left>() == ::std::declval<Right>());
     /**
-     * @brief Detects equality operator (`x == y`).
-     * @details
-     * True if the equality expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::equal_to_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
+     * @tparam Arguments Template arguments of ::scl::equal_to_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_equal_to_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_equal_to_v = ::scl::is_detected_v<::scl::equal_to_operation, Arguments...>;
     /**
-     * @brief Detected result type of equality, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Left == Right` (typically `bool`) when available.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::equal_to_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
+     * @tparam Arguments Template arguments of ::scl::equal_to_operation.
      */
-    template <typename Left, typename Right>
-    using equal_to_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member equality `std::declval<Type>().operator==(std::declval<Argument>())`.
-     * @details
-     * Probes for a member `operator==` with `Argument` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using equal_to_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member equality operator (`obj.operator==(arg)`).
-     * @details
-     * True if `Type::operator==(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_equal_to_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member equality, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of the member equality operator if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using equal_to_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member equality detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator==`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using equal_to_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member equality operator (`obj.operator==(arg)` exact).
-     * @details
-     * True if an exactly matching `operator==` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_equal_to_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member equality, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact comparison return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using equal_to_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using equal_to_t = ::scl::detected_t<::scl::equal_to_operation, Arguments...>;
 
     /**
-     * @brief Alias for inequality expression `std::declval<Left>() != std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `!=` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of `std::declval<Type>().operator==(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using not_equal_to_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using equal_to_member_operation = decltype(::std::declval<Type>().operator==(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects inequality operator (`x != y`).
-     * @details
-     * True if the inequality expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::equal_to_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_not_equal_to_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_equal_to_member_v =
+        ::scl::is_detected_v<::scl::equal_to_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of inequality, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Left != Right` (typically `bool`) when available.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::equal_to_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    using not_equal_to_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member inequality `std::declval<Type>().operator!=(std::declval<Argument>())`.
-     * @details
-     * Probes for a member `operator!=` with `Argument` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using not_equal_to_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member inequality operator (`obj.operator!=(arg)`).
-     * @details
-     * True if `Type::operator!=(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_not_equal_to_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member inequality, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of the member inequality operator if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using not_equal_to_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member inequality detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator!=`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using not_equal_to_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member inequality operator (`obj.operator!=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator!=` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_not_equal_to_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member inequality, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact comparison return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using not_equal_to_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using equal_to_member_t = ::scl::detected_t<::scl::equal_to_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for less-than expression `std::declval<Left>() < std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `<` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of the same call through a pointer to the member function `operator==`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::equal_to_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator==` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using less_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using equal_to_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::equal_to_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator==))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects less-than operator (`x < y`).
-     * @details
-     * True if the less-than expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether `operator==` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_less_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_equal_to_member_exact_v =
+        ::scl::is_detected_v<::scl::equal_to_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of less-than, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Left < Right` (typically `bool`) when available.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::equal_to_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    using less_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member less-than `std::declval<Type>().operator<(std::declval<Argument>())`.
-     * @details
-     * Probes for a member `operator<` with `Argument` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using less_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member less-than operator (`obj.operator<(arg)`).
-     * @details
-     * True if `Type::operator<(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_less_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member less-than, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of the member `operator<` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using less_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member less-than detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator<`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using less_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member less-than operator (`obj.operator<(arg)` exact).
-     * @details
-     * True if an exactly matching `operator<` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_less_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member less-than, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact comparison return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using less_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using equal_to_member_exact_t = ::scl::detected_t<::scl::equal_to_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for less-equal expression `std::declval<Left>() <= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `<=` expression (built-in or overloaded).
+     * @brief The type of `std::declval<Left>() != std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using less_equal_operation = /* implementation defined */;
+    using not_equal_to_operation = decltype(::std::declval<Left>() != ::std::declval<Right>());
     /**
-     * @brief Detects less-equal operator (`x <= y`).
-     * @details
-     * True if the less-equal expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::not_equal_to_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
+     * @tparam Arguments Template arguments of ::scl::not_equal_to_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_less_equal_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_not_equal_to_v =
+        ::scl::is_detected_v<::scl::not_equal_to_operation, Arguments...>;
     /**
-     * @brief Detected result type of less-equal, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Left <= Right` (typically `bool`) when available.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::not_equal_to_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
+     * @tparam Arguments Template arguments of ::scl::not_equal_to_operation.
      */
-    template <typename Left, typename Right>
-    using less_equal_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member less-equal `std::declval<Type>().operator<=(std::declval<Argument>())`.
-     * @details
-     * Probes for a member `operator<=` with `Argument` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using less_equal_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member less-equal operator (`obj.operator<=(arg)`).
-     * @details
-     * True if `Type::operator<=(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_less_equal_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member less-equal, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of the member `operator<=` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using less_equal_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member less-equal detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator<=`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using less_equal_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member less-equal operator (`obj.operator<=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator<=` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_less_equal_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member less-equal, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact comparison return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using less_equal_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using not_equal_to_t = ::scl::detected_t<::scl::not_equal_to_operation, Arguments...>;
 
     /**
-     * @brief Alias for greater-than expression `std::declval<Left>() > std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `>` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of `std::declval<Type>().operator!=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using greater_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using not_equal_to_member_operation = decltype(::std::declval<Type>().operator!=(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects greater-than operator (`x > y`).
-     * @details
-     * True if the greater-than expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::not_equal_to_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_greater_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_not_equal_to_member_v =
+        ::scl::is_detected_v<::scl::not_equal_to_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of greater-than, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Left > Right` (typically `bool`) when available.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::not_equal_to_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    using greater_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member greater-than `std::declval<Type>().operator>(std::declval<Argument>())`.
-     * @details
-     * Probes for a member `operator>` with `Argument` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using greater_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member greater-than operator (`obj.operator>(arg)`).
-     * @details
-     * True if `Type::operator>(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_greater_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member greater-than, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of the member `operator>` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using greater_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member greater-than detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator>`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using greater_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member greater-than operator (`obj.operator>(arg)` exact).
-     * @details
-     * True if an exactly matching `operator>` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_greater_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member greater-than, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact comparison return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using greater_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using not_equal_to_member_t = ::scl::detected_t<::scl::not_equal_to_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for greater-equal expression `std::declval<Left>() >= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `>=` expression (built-in or overloaded).
+     * @brief The type of the same call through a pointer to the member function `operator!=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::not_equal_to_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator!=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using not_equal_to_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::not_equal_to_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator!=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator!=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_not_equal_to_member_exact_v =
+        ::scl::is_detected_v<::scl::not_equal_to_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::not_equal_to_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using not_equal_to_member_exact_t =
+        ::scl::detected_t<::scl::not_equal_to_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() < std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using greater_equal_operation = /* implementation defined */;
+    using less_operation = decltype(::std::declval<Left>() < ::std::declval<Right>());
     /**
-     * @brief Detects greater-equal operator (`x >= y`).
-     * @details
-     * True if the greater-equal expression is well-formed for the given operands.
+     * @brief Whether ::scl::less_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
+     * @tparam Arguments Template arguments of ::scl::less_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_less_v = ::scl::is_detected_v<::scl::less_operation, Arguments...>;
+    /**
+     * @brief ::scl::less_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
+     * @tparam Arguments Template arguments of ::scl::less_operation.
+     */
+    template <typename... Arguments>
+    using less_t = ::scl::detected_t<::scl::less_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator<(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using less_member_operation = decltype(::std::declval<Type>().operator<(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::less_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_less_member_v =
+        ::scl::is_detected_v<::scl::less_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::less_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using less_member_t = ::scl::detected_t<::scl::less_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator<`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::less_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator<` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using less_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::less_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator<))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator<` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_less_member_exact_v =
+        ::scl::is_detected_v<::scl::less_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::less_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using less_member_exact_t = ::scl::detected_t<::scl::less_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() <= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_greater_equal_v = /* implementation defined */;
+    using less_equal_operation = decltype(::std::declval<Left>() <= ::std::declval<Right>());
     /**
-     * @brief Detected result type of greater-equal, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Left >= Right` (typically `bool`) when available.
+     * @brief Whether ::scl::less_equal_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
+     * @tparam Arguments Template arguments of ::scl::less_equal_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_less_equal_v = ::scl::is_detected_v<::scl::less_equal_operation, Arguments...>;
+    /**
+     * @brief ::scl::less_equal_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
+     * @tparam Arguments Template arguments of ::scl::less_equal_operation.
+     */
+    template <typename... Arguments>
+    using less_equal_t = ::scl::detected_t<::scl::less_equal_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator<=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using less_equal_member_operation = decltype(::std::declval<Type>().operator<=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::less_equal_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_less_equal_member_v =
+        ::scl::is_detected_v<::scl::less_equal_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::less_equal_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using less_equal_member_t = ::scl::detected_t<::scl::less_equal_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator<=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::less_equal_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator<=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using less_equal_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::less_equal_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator<=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator<=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_less_equal_member_exact_v =
+        ::scl::is_detected_v<::scl::less_equal_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::less_equal_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using less_equal_member_exact_t =
+        ::scl::detected_t<::scl::less_equal_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() > std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using greater_equal_t = /* implementation defined */;
+    using greater_operation = decltype(::std::declval<Left>() > ::std::declval<Right>());
     /**
-     * @brief Alias for invoking member greater-equal `std::declval<Type>().operator>=(std::declval<Argument>())`.
-     * @details
-     * Probes for a member `operator>=` with `Argument` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief Whether ::scl::greater_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
+     * @tparam Arguments Template arguments of ::scl::greater_operation.
      */
-    template <typename Type, typename Argument>
-    using greater_equal_member_operation = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_greater_v = ::scl::is_detected_v<::scl::greater_operation, Arguments...>;
     /**
-     * @brief Detects member greater-equal operator (`obj.operator>=(arg)`).
-     * @details
-     * True if `Type::operator>=(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief ::scl::greater_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
+     * @tparam Arguments Template arguments of ::scl::greater_operation.
      */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_greater_equal_member_v = /* implementation defined */;
+    template <typename... Arguments>
+    using greater_t = ::scl::detected_t<::scl::greater_operation, Arguments...>;
+
     /**
-     * @brief Detected result type of member greater-equal, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of the member `operator>=` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief The type of `std::declval<Type>().operator>(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Type, typename Argument>
-    using greater_equal_member_t = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using greater_member_operation = decltype(::std::declval<Type>().operator>(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Alias for strict member greater-equal detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator>=`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief Whether ::scl::greater_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Type, typename Argument>
-    using greater_equal_member_exact_operation = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_greater_member_v =
+        ::scl::is_detected_v<::scl::greater_member_operation, Arguments...>;
     /**
-     * @brief Detects strict member greater-equal operator (`obj.operator>=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator>=` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief ::scl::greater_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_greater_equal_member_exact_v = /* implementation defined */;
+    template <typename... Arguments>
+    using greater_member_t = ::scl::detected_t<::scl::greater_member_operation, Arguments...>;
+
     /**
-     * @brief Detected result type of strict member greater-equal, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact comparison return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief The type of the same call through a pointer to the member function `operator>`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::greater_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator>` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Type, typename Argument>
-    using greater_equal_member_exact_t = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using greater_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::greater_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator>))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator>` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_greater_member_exact_v =
+        ::scl::is_detected_v<::scl::greater_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::greater_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using greater_member_exact_t = ::scl::detected_t<::scl::greater_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() >= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using greater_equal_operation = decltype(::std::declval<Left>() >= ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::greater_equal_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Arguments Template arguments of ::scl::greater_equal_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_greater_equal_v =
+        ::scl::is_detected_v<::scl::greater_equal_operation, Arguments...>;
+    /**
+     * @brief ::scl::greater_equal_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Arguments Template arguments of ::scl::greater_equal_operation.
+     */
+    template <typename... Arguments>
+    using greater_equal_t = ::scl::detected_t<::scl::greater_equal_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator>=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using greater_equal_member_operation = decltype(::std::declval<Type>().operator>=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::greater_equal_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_greater_equal_member_v =
+        ::scl::is_detected_v<::scl::greater_equal_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::greater_equal_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using greater_equal_member_t = ::scl::detected_t<::scl::greater_equal_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator>=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::greater_equal_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator>=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using greater_equal_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::greater_equal_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator>=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator>=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_greater_equal_member_exact_v =
+        ::scl::is_detected_v<::scl::greater_equal_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::greater_equal_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using greater_equal_member_exact_t =
+        ::scl::detected_t<::scl::greater_equal_member_exact_operation, Arguments...>;
 
     /** @} */
 
-    // ============================================================================
-    // BINARY ARITHMETIC & BITWISE: *, /, %, +, -, <<, >>, &, |, ^
-    // ============================================================================
-
     /**
-     * @defgroup op_det_binary_arith Arithmetic and Bitwise Operators
-     * @brief Detection for operators: `*`, `/`, `%`, `+`, `-`, `<<`, `>>`, `&`, `|`, `^`
+     * @defgroup scl_utility_operator_detection_arithmetic Arithmetic and bitwise operators
      * @{
      */
 
     /**
-     * @brief Alias for multiplication expression `std::declval<Left>()     * std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `*` expression (built-in or overloaded).
+     * @brief The type of `std::declval<Left>() * std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using multiplies_operation = /* implementation defined */;
+    using multiplies_operation = decltype(::std::declval<Left>() * ::std::declval<Right>());
     /**
-     * @brief Detects multiplication operator (`x     * y`).
-     * @details
-     * True if the product expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::multiplies_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
+     * @tparam Arguments Template arguments of ::scl::multiplies_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_multiplies_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_multiplies_v = ::scl::is_detected_v<::scl::multiplies_operation, Arguments...>;
     /**
-     * @brief Detected result type of multiplication, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left     * Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::multiplies_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
+     * @tparam Arguments Template arguments of ::scl::multiplies_operation.
      */
-    template <typename Left, typename Right>
-    using multiplies_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member multiplication `std::declval<Type>().operator*(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator*(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using multiplies_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member multiplication operator (`obj.operator*(arg)`).
-     * @details
-     * True if `Type::operator*(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_multiplies_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member multiplication, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator*` if available.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using multiplies_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member multiplication detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator*`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using multiplies_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member multiplication operator (`obj.operator*(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator*` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_multiplies_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member multiplication, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact multiplication return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using multiplies_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using multiplies_t = ::scl::detected_t<::scl::multiplies_operation, Arguments...>;
 
     /**
-     * @brief Alias for division expression `std::declval<Left>() / std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `/` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of `std::declval<Type>().operator*(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using divides_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using multiplies_member_operation = decltype(::std::declval<Type>().operator*(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects division operator (`x / y`).
-     * @details
-     * True if the quotient expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::multiplies_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_divides_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_multiplies_member_v =
+        ::scl::is_detected_v<::scl::multiplies_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of division, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left / Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::multiplies_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    using divides_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member division `std::declval<Type>().operator/(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator/(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using divides_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member division operator (`obj.operator/(arg)`).
-     * @details
-     * True if `Type::operator/(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_divides_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member division, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator/` if available.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using divides_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member division detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator/`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using divides_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member division operator (`obj.operator/(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator/` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_divides_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member division, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact division return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using divides_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using multiplies_member_t = ::scl::detected_t<::scl::multiplies_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for modulus expression `std::declval<Left>() % std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `%` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of the same call through a pointer to the member function `operator*`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::multiplies_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator*`
+     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
+     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
+     * result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using modulus_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using multiplies_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::multiplies_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator*))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects modulus operator (`x % y`).
-     * @details
-     * True if the remainder expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether `operator*` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_modulus_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_multiplies_member_exact_v =
+        ::scl::is_detected_v<::scl::multiplies_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of modulus, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left % Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::multiplies_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    using modulus_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member modulus `std::declval<Type>().operator%(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator%(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using modulus_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member modulus operator (`obj.operator%(arg)`).
-     * @details
-     * True if `Type::operator%(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_modulus_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member modulus, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator%` if available.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using modulus_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member modulus detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator%`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using modulus_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member modulus operator (`obj.operator%(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator%` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_modulus_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member modulus, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact modulus return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using modulus_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using multiplies_member_exact_t =
+        ::scl::detected_t<::scl::multiplies_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for addition expression `std::declval<Left>() + std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `+` expression (built-in or overloaded).
+     * @brief The type of `std::declval<Left>() / std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using plus_operation = /* implementation defined */;
+    using divides_operation = decltype(::std::declval<Left>() / ::std::declval<Right>());
     /**
-     * @brief Detects addition operator (`x + y`).
-     * @details
-     * True if the sum expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::divides_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
+     * @tparam Arguments Template arguments of ::scl::divides_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_plus_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_divides_v = ::scl::is_detected_v<::scl::divides_operation, Arguments...>;
     /**
-     * @brief Detected result type of addition, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left + Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::divides_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
+     * @tparam Arguments Template arguments of ::scl::divides_operation.
      */
-    template <typename Left, typename Right>
-    using plus_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member addition `std::declval<Type>().operator+(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator+(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using plus_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member addition operator (`obj.operator+(arg)`).
-     * @details
-     * True if `Type::operator+(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_plus_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member addition, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator+` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using plus_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member addition detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator+`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using plus_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member addition operator (`obj.operator+(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator+` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_plus_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member addition, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact addition return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using plus_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using divides_t = ::scl::detected_t<::scl::divides_operation, Arguments...>;
 
     /**
-     * @brief Alias for subtraction expression `std::declval<Left>() - std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `-` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of `std::declval<Type>().operator/(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using minus_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using divides_member_operation = decltype(::std::declval<Type>().operator/(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects subtraction operator (`x - y`).
-     * @details
-     * True if the difference expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::divides_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_minus_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_divides_member_v =
+        ::scl::is_detected_v<::scl::divides_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of subtraction, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left - Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::divides_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    using minus_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member subtraction `std::declval<Type>().operator-(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator-(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using minus_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member subtraction operator (`obj.operator-(arg)`).
-     * @details
-     * True if `Type::operator-(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_minus_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member subtraction, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator-` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using minus_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member subtraction detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator-`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using minus_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member subtraction operator (`obj.operator-(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator-` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_minus_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member subtraction, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact subtraction return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using minus_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using divides_member_t = ::scl::detected_t<::scl::divides_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for left-shift expression `std::declval<Left>() << std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `<<` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of the same call through a pointer to the member function `operator/`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::divides_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator/` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using left_shift_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using divides_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::divides_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator/))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects left-shift operator (`x << y`).
-     * @details
-     * True if the shift expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether `operator/` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_left_shift_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_divides_member_exact_v =
+        ::scl::is_detected_v<::scl::divides_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of left-shift, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left << Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::divides_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    using left_shift_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member left-shift `std::declval<Type>().operator<<(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator<<(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using left_shift_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member left-shift operator (`obj.operator<<(arg)`).
-     * @details
-     * True if `Type::operator<<(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_left_shift_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member left-shift, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator<<` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using left_shift_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member left-shift detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator<<`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using left_shift_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member left-shift operator (`obj.operator<<(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator<<` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_left_shift_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member left-shift, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact shift return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using left_shift_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using divides_member_exact_t = ::scl::detected_t<::scl::divides_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for right-shift expression `std::declval<Left>() >> std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `>>` expression (built-in or overloaded).
+     * @brief The type of `std::declval<Left>() % std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using right_shift_operation = /* implementation defined */;
+    using modulus_operation = decltype(::std::declval<Left>() % ::std::declval<Right>());
     /**
-     * @brief Detects right-shift operator (`x >> y`).
-     * @details
-     * True if the shift expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::modulus_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
+     * @tparam Arguments Template arguments of ::scl::modulus_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_right_shift_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_modulus_v = ::scl::is_detected_v<::scl::modulus_operation, Arguments...>;
     /**
-     * @brief Detected result type of right-shift, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left >> Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::modulus_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
+     * @tparam Arguments Template arguments of ::scl::modulus_operation.
      */
-    template <typename Left, typename Right>
-    using right_shift_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member right-shift `std::declval<Type>().operator>>(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator>>(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using right_shift_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member right-shift operator (`obj.operator>>(arg)`).
-     * @details
-     * True if `Type::operator>>(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_right_shift_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member right-shift, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator>>` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using right_shift_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member right-shift detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator>>`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using right_shift_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member right-shift operator (`obj.operator>>(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator>>` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_right_shift_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member right-shift, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact shift return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using right_shift_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using modulus_t = ::scl::detected_t<::scl::modulus_operation, Arguments...>;
 
     /**
-     * @brief Alias for bitwise AND expression `std::declval<Left>() & std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `&` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of `std::declval<Type>().operator%(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using bit_and_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using modulus_member_operation = decltype(::std::declval<Type>().operator%(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects bitwise AND operator (`x & y`).
-     * @details
-     * True if the bitwise AND expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::modulus_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_bit_and_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_modulus_member_v =
+        ::scl::is_detected_v<::scl::modulus_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of bitwise AND, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left & Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::modulus_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    using bit_and_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member bitwise AND `std::declval<Type>().operator&(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator&(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using bit_and_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member bitwise AND operator (`obj.operator&(arg)`).
-     * @details
-     * True if `Type::operator&(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_and_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member bitwise AND, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator&` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using bit_and_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member bitwise AND detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator&`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using bit_and_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member bitwise AND operator (`obj.operator&(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator&` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_and_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member bitwise AND, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact bitwise AND return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using bit_and_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using modulus_member_t = ::scl::detected_t<::scl::modulus_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for bitwise OR expression `std::declval<Left>() | std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `|` expression (built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief The type of the same call through a pointer to the member function `operator%`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::modulus_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator%` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using bit_or_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using modulus_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::modulus_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator%))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects bitwise OR operator (`x | y`).
-     * @details
-     * True if the bitwise OR expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether `operator%` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_bit_or_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_modulus_member_exact_v =
+        ::scl::is_detected_v<::scl::modulus_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of bitwise OR, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left | Right`, else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::modulus_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    using bit_or_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member bitwise OR `std::declval<Type>().operator|(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator|(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using bit_or_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member bitwise OR operator (`obj.operator|(arg)`).
-     * @details
-     * True if `Type::operator|(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_or_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member bitwise OR, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator|` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using bit_or_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member bitwise OR detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator|`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using bit_or_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member bitwise OR operator (`obj.operator|(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator|` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_or_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member bitwise OR, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact bitwise OR return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using bit_or_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using modulus_member_exact_t = ::scl::detected_t<::scl::modulus_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for bitwise XOR expression `std::declval<Left>() ^ std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `^` expression (built-in or overloaded).
+     * @brief The type of `std::declval<Left>() + std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bit_xor_operation = /* implementation defined */;
+    using plus_operation = decltype(::std::declval<Left>() + ::std::declval<Right>());
     /**
-     * @brief Detects bitwise XOR operator (`x ^ y`).
-     * @details
-     * True if the bitwise XOR expression is well-formed for the given operands.
+     * @brief Whether ::scl::plus_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
+     * @tparam Arguments Template arguments of ::scl::plus_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_plus_v = ::scl::is_detected_v<::scl::plus_operation, Arguments...>;
+    /**
+     * @brief ::scl::plus_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
+     * @tparam Arguments Template arguments of ::scl::plus_operation.
+     */
+    template <typename... Arguments>
+    using plus_t = ::scl::detected_t<::scl::plus_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator+(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using plus_member_operation = decltype(::std::declval<Type>().operator+(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::plus_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_plus_member_v =
+        ::scl::is_detected_v<::scl::plus_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::plus_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using plus_member_t = ::scl::detected_t<::scl::plus_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator+`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::plus_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator+` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using plus_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::plus_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator+))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator+` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_plus_member_exact_v =
+        ::scl::is_detected_v<::scl::plus_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::plus_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using plus_member_exact_t = ::scl::detected_t<::scl::plus_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() - std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_bit_xor_v = /* implementation defined */;
+    using minus_operation = decltype(::std::declval<Left>() - ::std::declval<Right>());
     /**
-     * @brief Detected result type of bitwise XOR, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left ^ Right`, else `scl::nonesuch`.
+     * @brief Whether ::scl::minus_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
+     * @tparam Arguments Template arguments of ::scl::minus_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_minus_v = ::scl::is_detected_v<::scl::minus_operation, Arguments...>;
+    /**
+     * @brief ::scl::minus_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
+     * @tparam Arguments Template arguments of ::scl::minus_operation.
+     */
+    template <typename... Arguments>
+    using minus_t = ::scl::detected_t<::scl::minus_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator-(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using minus_member_operation = decltype(::std::declval<Type>().operator-(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::minus_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_minus_member_v =
+        ::scl::is_detected_v<::scl::minus_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::minus_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using minus_member_t = ::scl::detected_t<::scl::minus_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator-`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::minus_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator-` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using minus_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::minus_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator-))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator-` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_minus_member_exact_v =
+        ::scl::is_detected_v<::scl::minus_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::minus_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using minus_member_exact_t = ::scl::detected_t<::scl::minus_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() << std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bit_xor_t = /* implementation defined */;
+    using left_shift_operation = decltype(::std::declval<Left>() << ::std::declval<Right>());
     /**
-     * @brief Alias for invoking member bitwise XOR `std::declval<Type>().operator^(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator^(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief Whether ::scl::left_shift_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
+     * @tparam Arguments Template arguments of ::scl::left_shift_operation.
      */
-    template <typename Type, typename Argument>
-    using bit_xor_member_operation = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_left_shift_v = ::scl::is_detected_v<::scl::left_shift_operation, Arguments...>;
     /**
-     * @brief Detects member bitwise XOR operator (`obj.operator^(arg)`).
-     * @details
-     * True if `Type::operator^(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief ::scl::left_shift_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
+     * @tparam Arguments Template arguments of ::scl::left_shift_operation.
      */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_xor_member_v = /* implementation defined */;
+    template <typename... Arguments>
+    using left_shift_t = ::scl::detected_t<::scl::left_shift_operation, Arguments...>;
+
     /**
-     * @brief Detected result type of member bitwise XOR, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator^` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief The type of `std::declval<Type>().operator<<(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Type, typename Argument>
-    using bit_xor_member_t = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using left_shift_member_operation = decltype(::std::declval<Type>().operator<<(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Alias for strict member bitwise XOR detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator^`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief Whether ::scl::left_shift_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Type, typename Argument>
-    using bit_xor_member_exact_operation = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_left_shift_member_v =
+        ::scl::is_detected_v<::scl::left_shift_member_operation, Arguments...>;
     /**
-     * @brief Detects strict member bitwise XOR operator (`obj.operator^(arg)` exact).
-     * @details
-     * True if an exactly matching member `operator^` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief ::scl::left_shift_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_xor_member_exact_v = /* implementation defined */;
+    template <typename... Arguments>
+    using left_shift_member_t = ::scl::detected_t<::scl::left_shift_member_operation, Arguments...>;
+
     /**
-     * @brief Detected result type of strict member bitwise XOR, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact bitwise XOR return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief The type of the same call through a pointer to the member function `operator<<`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::left_shift_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator<<` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Type, typename Argument>
-    using bit_xor_member_exact_t = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using left_shift_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::left_shift_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator<<))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator<<` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_left_shift_member_exact_v =
+        ::scl::is_detected_v<::scl::left_shift_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::left_shift_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using left_shift_member_exact_t =
+        ::scl::detected_t<::scl::left_shift_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() >> std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using right_shift_operation = decltype(::std::declval<Left>() >> ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::right_shift_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Arguments Template arguments of ::scl::right_shift_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_right_shift_v =
+        ::scl::is_detected_v<::scl::right_shift_operation, Arguments...>;
+    /**
+     * @brief ::scl::right_shift_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Arguments Template arguments of ::scl::right_shift_operation.
+     */
+    template <typename... Arguments>
+    using right_shift_t = ::scl::detected_t<::scl::right_shift_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator>>(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using right_shift_member_operation = decltype(::std::declval<Type>().operator>>(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::right_shift_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_right_shift_member_v =
+        ::scl::is_detected_v<::scl::right_shift_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::right_shift_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using right_shift_member_t = ::scl::detected_t<::scl::right_shift_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator>>`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::right_shift_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator>>` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using right_shift_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::right_shift_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator>>))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator>>` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_right_shift_member_exact_v =
+        ::scl::is_detected_v<::scl::right_shift_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::right_shift_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using right_shift_member_exact_t =
+        ::scl::detected_t<::scl::right_shift_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() & std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using bit_and_operation = decltype(::std::declval<Left>() & ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::bit_and_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_and_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_and_v = ::scl::is_detected_v<::scl::bit_and_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_and_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_and_operation.
+     */
+    template <typename... Arguments>
+    using bit_and_t = ::scl::detected_t<::scl::bit_and_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator&(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_and_member_operation = decltype(::std::declval<Type>().operator&(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::bit_and_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_and_member_v =
+        ::scl::is_detected_v<::scl::bit_and_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_and_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using bit_and_member_t = ::scl::detected_t<::scl::bit_and_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator&`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::bit_and_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator&` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_and_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::bit_and_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator&))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator&` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_and_member_exact_v =
+        ::scl::is_detected_v<::scl::bit_and_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_and_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using bit_and_member_exact_t = ::scl::detected_t<::scl::bit_and_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() | std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using bit_or_operation = decltype(::std::declval<Left>() | ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::bit_or_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_or_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_or_v = ::scl::is_detected_v<::scl::bit_or_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_or_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_or_operation.
+     */
+    template <typename... Arguments>
+    using bit_or_t = ::scl::detected_t<::scl::bit_or_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator|(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_or_member_operation = decltype(::std::declval<Type>().operator|(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::bit_or_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_or_member_v =
+        ::scl::is_detected_v<::scl::bit_or_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_or_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using bit_or_member_t = ::scl::detected_t<::scl::bit_or_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator|`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::bit_or_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator|` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_or_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::bit_or_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator|))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator|` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_or_member_exact_v =
+        ::scl::is_detected_v<::scl::bit_or_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_or_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using bit_or_member_exact_t = ::scl::detected_t<::scl::bit_or_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() ^ std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using bit_xor_operation = decltype(::std::declval<Left>() ^ ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::bit_xor_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_xor_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_xor_v = ::scl::is_detected_v<::scl::bit_xor_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_xor_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_xor_operation.
+     */
+    template <typename... Arguments>
+    using bit_xor_t = ::scl::detected_t<::scl::bit_xor_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator^(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_xor_member_operation = decltype(::std::declval<Type>().operator^(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::bit_xor_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_xor_member_v =
+        ::scl::is_detected_v<::scl::bit_xor_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_xor_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using bit_xor_member_t = ::scl::detected_t<::scl::bit_xor_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator^`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::bit_xor_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator^` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_xor_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::bit_xor_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator^))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator^` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_xor_member_exact_v =
+        ::scl::is_detected_v<::scl::bit_xor_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_xor_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using bit_xor_member_exact_t = ::scl::detected_t<::scl::bit_xor_member_exact_operation, Arguments...>;
 
     /** @} */
 
-    // ============================================================================
-    // LOGICAL BINARY: &&, ||
-    // ============================================================================
-
     /**
-     * @defgroup op_det_logical Logical Operators
-     * @brief Detection for operators: `&&`, `||`
+     * @defgroup scl_utility_operator_detection_logical Logical operators
      * @{
      */
 
     /**
-     * @brief Alias for logical AND expression `std::declval<Left>() && std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `&&` expression (built-in or overloaded).
+     * @brief The type of `std::declval<Left>() && std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using logical_and_operation = /* implementation defined */;
+    using logical_and_operation = decltype(::std::declval<Left>() && ::std::declval<Right>());
     /**
-     * @brief Detects logical AND operator (`x && y`).
-     * @details
-     * True if the logical AND expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::logical_and_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
+     * @tparam Arguments Template arguments of ::scl::logical_and_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_logical_and_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_logical_and_v =
+        ::scl::is_detected_v<::scl::logical_and_operation, Arguments...>;
     /**
-     * @brief Detected result type of logical AND, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left && Right` when available.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::logical_and_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
+     * @tparam Arguments Template arguments of ::scl::logical_and_operation.
      */
-    template <typename Left, typename Right>
-    using logical_and_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member logical AND `std::declval<Type>().operator&&(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator&&(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using logical_and_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member logical AND operator (`obj.operator&&(arg)`).
-     * @details
-     * True if `Type::operator&&(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_logical_and_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member logical AND, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator&&` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using logical_and_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member logical AND detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator&&`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using logical_and_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member logical AND operator (`obj.operator&&(arg)` exact).
-     * @details
-     * True if an exactly matching `operator&&` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_logical_and_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member logical AND, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact logical AND return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using logical_and_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using logical_and_t = ::scl::detected_t<::scl::logical_and_operation, Arguments...>;
 
     /**
-     * @brief Alias for logical OR expression `std::declval<Left>() || std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `||` expression (built-in or overloaded).
+     * @brief The type of `std::declval<Type>().operator&&(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using logical_and_member_operation = decltype(::std::declval<Type>().operator&&(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::logical_and_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_logical_and_member_v =
+        ::scl::is_detected_v<::scl::logical_and_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::logical_and_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using logical_and_member_t = ::scl::detected_t<::scl::logical_and_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator&&`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::logical_and_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator&&` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using logical_and_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::logical_and_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator&&))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator&&` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_logical_and_member_exact_v =
+        ::scl::is_detected_v<::scl::logical_and_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::logical_and_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using logical_and_member_exact_t =
+        ::scl::detected_t<::scl::logical_and_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() || std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using logical_or_operation = /* implementation defined */;
+    using logical_or_operation = decltype(::std::declval<Left>() || ::std::declval<Right>());
     /**
-     * @brief Detects logical OR operator (`x || y`).
-     * @details
-     * True if the logical OR expression is well-formed for the given operands.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::logical_or_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
+     * @tparam Arguments Template arguments of ::scl::logical_or_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_logical_or_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_logical_or_v = ::scl::is_detected_v<::scl::logical_or_operation, Arguments...>;
     /**
-     * @brief Detected result type of logical OR, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left || Right` when available.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::logical_or_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
+     * @tparam Arguments Template arguments of ::scl::logical_or_operation.
      */
-    template <typename Left, typename Right>
-    using logical_or_t = /* implementation defined */;
+    template <typename... Arguments>
+    using logical_or_t = ::scl::detected_t<::scl::logical_or_operation, Arguments...>;
+
     /**
-     * @brief Alias for invoking member logical OR `std::declval<Type>().operator||(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator||(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief The type of `std::declval<Type>().operator||(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Type, typename Argument>
-    using logical_or_member_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using logical_or_member_operation = decltype(::std::declval<Type>().operator||(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects member logical OR operator (`obj.operator||(arg)`).
-     * @details
-     * True if `Type::operator||(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief Whether ::scl::logical_or_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_logical_or_member_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_logical_or_member_v =
+        ::scl::is_detected_v<::scl::logical_or_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of member logical OR, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator||` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
+     * @brief ::scl::logical_or_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Type, typename Argument>
-    using logical_or_member_t = /* implementation defined */;
+    template <typename... Arguments>
+    using logical_or_member_t = ::scl::detected_t<::scl::logical_or_member_operation, Arguments...>;
+
     /**
-     * @brief Alias for strict member logical OR detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator||`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief The type of the same call through a pointer to the member function `operator||`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::logical_or_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator||` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Type, typename Argument>
-    using logical_or_member_exact_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using logical_or_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::logical_or_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator||))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects strict member logical OR operator (`obj.operator||(arg)` exact).
-     * @details
-     * True if an exactly matching `operator||` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief Whether `operator||` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_logical_or_member_exact_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_logical_or_member_exact_v =
+        ::scl::is_detected_v<::scl::logical_or_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of strict member logical OR, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact logical OR return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
+     * @brief ::scl::logical_or_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Type, typename Argument>
-    using logical_or_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using logical_or_member_exact_t =
+        ::scl::detected_t<::scl::logical_or_member_exact_operation, Arguments...>;
 
     /** @} */
 
-    // ============================================================================
-    // ASSIGNMENT OPERATORS: =, +=, -=, *=, /=, %=, <<=, >>=, &=, |=, ^=
-    // ============================================================================
-
     /**
-     * @defgroup op_det_assign Assignment Operators
-     * @brief Detection for operators: `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `<<=`, `>>=`, `&=`, `|=`, `^=`
+     * @defgroup scl_utility_operator_detection_assignment Assignment operators
      * @{
      */
 
     /**
-     * @brief Alias for assignment expression `std::declval<Left>() = std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated assignment expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of `std::declval<Left>() = std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using assign_operation = /* implementation defined */;
+    using assign_operation = decltype(::std::declval<Left>() = ::std::declval<Right>());
     /**
-     * @brief Detects assignment operator (`x = y`).
-     * @details
-     * True if the assignment expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Arguments Template arguments of ::scl::assign_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_assign_v = ::scl::is_detected_v<::scl::assign_operation, Arguments...>;
     /**
-     * @brief Detected result type of assignment, or `scl::nonesuch`.
-     * @details
-     * Exposes the type produced by `Left = Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Arguments Template arguments of ::scl::assign_operation.
      */
-    template <typename Left, typename Right>
-    using assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member assignment `std::declval<Type>().operator=(std::declval<Argument>())`.
-     * @details
-     * Probes for a member `operator=` on `Type` with `Argument` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member assignment operator (`obj.operator=(arg)`).
-     * @details
-     * True if `Type::operator=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member assignment, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member assignment detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member assignment operator (`obj.operator=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member assignment, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact assignment return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using assign_t = ::scl::detected_t<::scl::assign_operation, Arguments...>;
 
     /**
-     * @brief Alias for plus-assign expression `std::declval<Left>() += std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `+=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of `std::declval<Type>().operator=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using plus_assign_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using assign_member_operation = decltype(::std::declval<Type>().operator=(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects plus-assign operator (`x += y`).
-     * @details
-     * True if the compound addition expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_plus_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_assign_member_v =
+        ::scl::is_detected_v<::scl::assign_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of plus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left += Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    using plus_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member plus-assign `std::declval<Type>().operator+=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator+=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using plus_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member plus-assign operator (`obj.operator+=(arg)`).
-     * @details
-     * True if `Type::operator+=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_plus_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member plus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator+=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using plus_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member plus-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator+=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using plus_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member plus-assign operator (`obj.operator+=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator+=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_plus_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member plus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact plus-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using plus_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using assign_member_t = ::scl::detected_t<::scl::assign_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for minus-assign expression `std::declval<Left>() -= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `-=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of the same call through a pointer to the member function `operator=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::assign_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator=` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using minus_assign_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator=))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects minus-assign operator (`x -= y`).
-     * @details
-     * True if the compound subtraction expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether `operator=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_minus_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::assign_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of minus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left -= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    using minus_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member minus-assign `std::declval<Type>().operator-=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator-=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using minus_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member minus-assign operator (`obj.operator-=(arg)`).
-     * @details
-     * True if `Type::operator-=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_minus_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member minus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator-=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using minus_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member minus-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator-=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using minus_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member minus-assign operator (`obj.operator-=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator-=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_minus_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member minus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact minus-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using minus_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using assign_member_exact_t = ::scl::detected_t<::scl::assign_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for multiplies-assign expression `std::declval<Left>() *= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `*=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of `std::declval<Left>() *= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using multiplies_assign_operation = /* implementation defined */;
+    using multiplies_assign_operation = decltype(::std::declval<Left>() *= ::std::declval<Right>());
     /**
-     * @brief Detects multiplies-assign operator (`x *= y`).
-     * @details
-     * True if the compound multiplication expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::multiplies_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::multiplies_assign_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_multiplies_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_multiplies_assign_v =
+        ::scl::is_detected_v<::scl::multiplies_assign_operation, Arguments...>;
     /**
-     * @brief Detected result type of multiplies-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left *= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::multiplies_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::multiplies_assign_operation.
      */
-    template <typename Left, typename Right>
-    using multiplies_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member multiplies-assign `std::declval<Type>().operator*=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator*=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using multiplies_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member multiplies-assign operator (`obj.operator*=(arg)`).
-     * @details
-     * True if `Type::operator*=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_multiplies_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member multiplies-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator*=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using multiplies_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member multiplies-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator*=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using multiplies_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member multiplies-assign operator (`obj.operator*=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator*=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_multiplies_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member multiplies-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact multiplies-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using multiplies_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using multiplies_assign_t = ::scl::detected_t<::scl::multiplies_assign_operation, Arguments...>;
 
     /**
-     * @brief Alias for divides-assign expression `std::declval<Left>() /= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `/=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of `std::declval<Type>().operator*=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using divides_assign_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using multiplies_assign_member_operation = decltype(::std::declval<Type>().operator*=(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects divides-assign operator (`x /= y`).
-     * @details
-     * True if the compound division expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::multiplies_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_divides_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_multiplies_assign_member_v =
+        ::scl::is_detected_v<::scl::multiplies_assign_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of divides-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left /= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::multiplies_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    using divides_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member divides-assign `std::declval<Type>().operator/=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator/=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using divides_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member divides-assign operator (`obj.operator/=(arg)`).
-     * @details
-     * True if `Type::operator/=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_divides_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member divides-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator/=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using divides_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member divides-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator/=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using divides_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member divides-assign operator (`obj.operator/=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator/=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_divides_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member divides-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact divides-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using divides_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using multiplies_assign_member_t =
+        ::scl::detected_t<::scl::multiplies_assign_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for modulus-assign expression `std::declval<Left>() %= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `%=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of the same call through a pointer to the member function `operator*=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::multiplies_assign_member_operation<Type, Arguments...>. The operation is well-formed
+     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator*=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using modulus_assign_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using multiplies_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::multiplies_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator*=))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects modulus-assign operator (`x %= y`).
-     * @details
-     * True if the compound modulus expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether `operator*=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_modulus_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_multiplies_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::multiplies_assign_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of modulus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left %= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::multiplies_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    using modulus_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member modulus-assign `std::declval<Type>().operator%=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator%=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using modulus_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member modulus-assign operator (`obj.operator%=(arg)`).
-     * @details
-     * True if `Type::operator%=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_modulus_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member modulus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator%=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using modulus_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member modulus-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator%=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using modulus_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member modulus-assign operator (`obj.operator%=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator%=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_modulus_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member modulus-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact modulus-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using modulus_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using multiplies_assign_member_exact_t =
+        ::scl::detected_t<::scl::multiplies_assign_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for left-shift-assign expression `std::declval<Left>() <<= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `<<=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of `std::declval<Left>() /= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using left_shift_assign_operation = /* implementation defined */;
+    using divides_assign_operation = decltype(::std::declval<Left>() /= ::std::declval<Right>());
     /**
-     * @brief Detects left-shift-assign operator (`x <<= y`).
-     * @details
-     * True if the compound shift expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::divides_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::divides_assign_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_left_shift_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_divides_assign_v =
+        ::scl::is_detected_v<::scl::divides_assign_operation, Arguments...>;
     /**
-     * @brief Detected result type of left-shift-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left <<= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::divides_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::divides_assign_operation.
      */
-    template <typename Left, typename Right>
-    using left_shift_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member left-shift-assign `std::declval<Type>().operator<<=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator<<=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using left_shift_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member left-shift-assign operator (`obj.operator<<=(arg)`).
-     * @details
-     * True if `Type::operator<<=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_left_shift_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member left-shift-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator<<=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using left_shift_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member left-shift-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator<<=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using left_shift_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member left-shift-assign operator (`obj.operator<<=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator<<=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_left_shift_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member left-shift-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact left-shift-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using left_shift_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using divides_assign_t = ::scl::detected_t<::scl::divides_assign_operation, Arguments...>;
 
     /**
-     * @brief Alias for right-shift-assign expression `std::declval<Left>() >>= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `>>=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of `std::declval<Type>().operator/=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using right_shift_assign_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using divides_assign_member_operation = decltype(::std::declval<Type>().operator/=(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects right-shift-assign operator (`x >>= y`).
-     * @details
-     * True if the compound shift expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::divides_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_right_shift_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_divides_assign_member_v =
+        ::scl::is_detected_v<::scl::divides_assign_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of right-shift-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left >>= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::divides_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Left, typename Right>
-    using right_shift_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member right-shift-assign `std::declval<Type>().operator>>=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator>>=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using right_shift_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member right-shift-assign operator (`obj.operator>>=(arg)`).
-     * @details
-     * True if `Type::operator>>=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_right_shift_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member right-shift-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator>>=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using right_shift_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member right-shift-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator>>=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using right_shift_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member right-shift-assign operator (`obj.operator>>=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator>>=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_right_shift_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member right-shift-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact right-shift-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using right_shift_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using divides_assign_member_t = ::scl::detected_t<::scl::divides_assign_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for bitwise AND-assign expression `std::declval<Left>() &= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `&=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of the same call through a pointer to the member function `operator/=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::divides_assign_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator/=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Left, typename Right>
-    using bit_and_assign_operation = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using divides_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::divides_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator/=))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects bitwise AND-assign operator (`x &= y`).
-     * @details
-     * True if the compound bitwise AND expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether `operator/=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_bit_and_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_divides_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::divides_assign_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of bitwise AND-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left &= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::divides_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
-    template <typename Left, typename Right>
-    using bit_and_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member bitwise AND-assign `std::declval<Type>().operator&=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator&=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using bit_and_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member bitwise AND-assign operator (`obj.operator&=(arg)`).
-     * @details
-     * True if `Type::operator&=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_and_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member bitwise AND-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator&=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using bit_and_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member bitwise AND-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator&=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using bit_and_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member bitwise AND-assign operator (`obj.operator&=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator&=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_and_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member bitwise AND-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact bitwise AND-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using bit_and_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using divides_assign_member_exact_t =
+        ::scl::detected_t<::scl::divides_assign_member_exact_operation, Arguments...>;
 
     /**
-     * @brief Alias for bitwise OR-assign expression `std::declval<Left>() |= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `|=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of `std::declval<Left>() %= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bit_or_assign_operation = /* implementation defined */;
+    using modulus_assign_operation = decltype(::std::declval<Left>() %= ::std::declval<Right>());
     /**
-     * @brief Detects bitwise OR-assign operator (`x |= y`).
-     * @details
-     * True if the compound bitwise OR expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::modulus_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::modulus_assign_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_bit_or_assign_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_modulus_assign_v =
+        ::scl::is_detected_v<::scl::modulus_assign_operation, Arguments...>;
     /**
-     * @brief Detected result type of bitwise OR-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left |= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief ::scl::modulus_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::modulus_assign_operation.
      */
-    template <typename Left, typename Right>
-    using bit_or_assign_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member bitwise OR-assign `std::declval<Type>().operator|=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator|=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using bit_or_assign_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member bitwise OR-assign operator (`obj.operator|=(arg)`).
-     * @details
-     * True if `Type::operator|=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_or_assign_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member bitwise OR-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator|=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using bit_or_assign_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member bitwise OR-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator|=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using bit_or_assign_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member bitwise OR-assign operator (`obj.operator|=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator|=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_or_assign_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member bitwise OR-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact bitwise OR-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
-     */
-    template <typename Type, typename Argument>
-    using bit_or_assign_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using modulus_assign_t = ::scl::detected_t<::scl::modulus_assign_operation, Arguments...>;
 
     /**
-     * @brief Alias for bitwise XOR-assign expression `std::declval<Left>() ^= std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `^=` expression (built-in or overloaded).
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief The type of `std::declval<Type>().operator%=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using modulus_assign_member_operation = decltype(::std::declval<Type>().operator%=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::modulus_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_modulus_assign_member_v =
+        ::scl::is_detected_v<::scl::modulus_assign_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::modulus_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using modulus_assign_member_t = ::scl::detected_t<::scl::modulus_assign_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator%=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::modulus_assign_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator%=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using modulus_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::modulus_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator%=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator%=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_modulus_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::modulus_assign_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::modulus_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using modulus_assign_member_exact_t =
+        ::scl::detected_t<::scl::modulus_assign_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() += std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bit_xor_assign_operation = /* implementation defined */;
+    using plus_assign_operation = decltype(::std::declval<Left>() += ::std::declval<Right>());
     /**
-     * @brief Detects bitwise XOR-assign operator (`x ^= y`).
-     * @details
-     * True if the compound bitwise XOR expression is well-formed for the given operands.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::plus_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::plus_assign_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_plus_assign_v =
+        ::scl::is_detected_v<::scl::plus_assign_operation, Arguments...>;
+    /**
+     * @brief ::scl::plus_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::plus_assign_operation.
+     */
+    template <typename... Arguments>
+    using plus_assign_t = ::scl::detected_t<::scl::plus_assign_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator+=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using plus_assign_member_operation = decltype(::std::declval<Type>().operator+=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::plus_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_plus_assign_member_v =
+        ::scl::is_detected_v<::scl::plus_assign_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::plus_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using plus_assign_member_t = ::scl::detected_t<::scl::plus_assign_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator+=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::plus_assign_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator+=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using plus_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::plus_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator+=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator+=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_plus_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::plus_assign_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::plus_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using plus_assign_member_exact_t =
+        ::scl::detected_t<::scl::plus_assign_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() -= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_bit_xor_assign_v = /* implementation defined */;
+    using minus_assign_operation = decltype(::std::declval<Left>() -= ::std::declval<Right>());
     /**
-     * @brief Detected result type of bitwise XOR-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the type returned by `Left ^= Right` (typically `Left&`) when available.
-     * @tparam Left Left operand type (LHS).
-     * @tparam Right Right operand type (RHS).
+     * @brief Whether ::scl::minus_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::minus_assign_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_minus_assign_v =
+        ::scl::is_detected_v<::scl::minus_assign_operation, Arguments...>;
+    /**
+     * @brief ::scl::minus_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::minus_assign_operation.
+     */
+    template <typename... Arguments>
+    using minus_assign_t = ::scl::detected_t<::scl::minus_assign_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator-=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using minus_assign_member_operation = decltype(::std::declval<Type>().operator-=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::minus_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_minus_assign_member_v =
+        ::scl::is_detected_v<::scl::minus_assign_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::minus_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using minus_assign_member_t = ::scl::detected_t<::scl::minus_assign_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator-=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::minus_assign_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator-=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using minus_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::minus_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator-=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator-=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_minus_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::minus_assign_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::minus_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using minus_assign_member_exact_t =
+        ::scl::detected_t<::scl::minus_assign_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() <<= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bit_xor_assign_t = /* implementation defined */;
+    using left_shift_assign_operation = decltype(::std::declval<Left>() <<= ::std::declval<Right>());
     /**
-     * @brief Alias for invoking member bitwise XOR-assign `std::declval<Type>().operator^=(std::declval<Argument>())`.
-     * @details
-     * Probes for `Type::operator^=(Argument)` (implicit conversions allowed).
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
+     * @brief Whether ::scl::left_shift_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::left_shift_assign_operation.
      */
-    template <typename Type, typename Argument>
-    using bit_xor_assign_member_operation = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_left_shift_assign_v =
+        ::scl::is_detected_v<::scl::left_shift_assign_operation, Arguments...>;
     /**
-     * @brief Detects member bitwise XOR-assign operator (`obj.operator^=(arg)`).
-     * @details
-     * True if `Type::operator^=(Argument)` is callable.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
+     * @brief ::scl::left_shift_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::left_shift_assign_operation.
      */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_xor_assign_member_v = /* implementation defined */;
+    template <typename... Arguments>
+    using left_shift_assign_t = ::scl::detected_t<::scl::left_shift_assign_operation, Arguments...>;
+
     /**
-     * @brief Detected result type of member bitwise XOR-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator^=` if present.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Right-hand argument type (RHS).
+     * @brief The type of `std::declval<Type>().operator<<=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Type, typename Argument>
-    using bit_xor_assign_member_t = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using left_shift_assign_member_operation = decltype(::std::declval<Type>().operator<<=(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Alias for strict member bitwise XOR-assign detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator^=`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
+     * @brief Whether ::scl::left_shift_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Type, typename Argument>
-    using bit_xor_assign_member_exact_operation = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_left_shift_assign_member_v =
+        ::scl::is_detected_v<::scl::left_shift_assign_member_operation, Arguments...>;
     /**
-     * @brief Detects strict member bitwise XOR-assign operator (`obj.operator^=(arg)` exact).
-     * @details
-     * True if an exactly matching `operator^=` exists on `Type`.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
+     * @brief ::scl::left_shift_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_bit_xor_assign_member_exact_v = /* implementation defined */;
+    template <typename... Arguments>
+    using left_shift_assign_member_t =
+        ::scl::detected_t<::scl::left_shift_assign_member_operation, Arguments...>;
+
     /**
-     * @brief Detected result type of strict member bitwise XOR-assign, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact bitwise XOR-assign return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type (LHS).
-     * @tparam Argument Exact right-hand argument type (RHS).
+     * @brief The type of the same call through a pointer to the member function `operator<<=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::left_shift_assign_member_operation<Type, Arguments...>. The operation is well-formed
+     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator<<=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
-    template <typename Type, typename Argument>
-    using bit_xor_assign_member_exact_t = /* implementation defined */;
+    template <typename Type, typename... Arguments>
+    using left_shift_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::left_shift_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator<<=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator<<=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_left_shift_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::left_shift_assign_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::left_shift_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using left_shift_assign_member_exact_t =
+        ::scl::detected_t<::scl::left_shift_assign_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() >>= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using right_shift_assign_operation = decltype(::std::declval<Left>() >>= ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::right_shift_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::right_shift_assign_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_right_shift_assign_v =
+        ::scl::is_detected_v<::scl::right_shift_assign_operation, Arguments...>;
+    /**
+     * @brief ::scl::right_shift_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::right_shift_assign_operation.
+     */
+    template <typename... Arguments>
+    using right_shift_assign_t = ::scl::detected_t<::scl::right_shift_assign_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator>>=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using right_shift_assign_member_operation = decltype(::std::declval<Type>().operator>>=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::right_shift_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_right_shift_assign_member_v =
+        ::scl::is_detected_v<::scl::right_shift_assign_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::right_shift_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using right_shift_assign_member_t =
+        ::scl::detected_t<::scl::right_shift_assign_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator>>=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::right_shift_assign_member_operation<Type, Arguments...>. The operation is well-formed
+     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator>>=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using right_shift_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::right_shift_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator>>=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator>>=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_right_shift_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::right_shift_assign_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::right_shift_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using right_shift_assign_member_exact_t =
+        ::scl::detected_t<::scl::right_shift_assign_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() &= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using bit_and_assign_operation = decltype(::std::declval<Left>() &= ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::bit_and_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_and_assign_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_and_assign_v =
+        ::scl::is_detected_v<::scl::bit_and_assign_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_and_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_and_assign_operation.
+     */
+    template <typename... Arguments>
+    using bit_and_assign_t = ::scl::detected_t<::scl::bit_and_assign_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator&=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_and_assign_member_operation = decltype(::std::declval<Type>().operator&=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::bit_and_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_and_assign_member_v =
+        ::scl::is_detected_v<::scl::bit_and_assign_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_and_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using bit_and_assign_member_t = ::scl::detected_t<::scl::bit_and_assign_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator&=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::bit_and_assign_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator&=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_and_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::bit_and_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator&=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator&=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_and_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::bit_and_assign_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_and_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using bit_and_assign_member_exact_t =
+        ::scl::detected_t<::scl::bit_and_assign_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() |= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using bit_or_assign_operation = decltype(::std::declval<Left>() |= ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::bit_or_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_or_assign_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_or_assign_v =
+        ::scl::is_detected_v<::scl::bit_or_assign_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_or_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_or_assign_operation.
+     */
+    template <typename... Arguments>
+    using bit_or_assign_t = ::scl::detected_t<::scl::bit_or_assign_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator|=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_or_assign_member_operation = decltype(::std::declval<Type>().operator|=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::bit_or_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_or_assign_member_v =
+        ::scl::is_detected_v<::scl::bit_or_assign_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_or_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using bit_or_assign_member_t = ::scl::detected_t<::scl::bit_or_assign_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator|=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::bit_or_assign_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator|=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_or_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::bit_or_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator|=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator|=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_or_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::bit_or_assign_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_or_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using bit_or_assign_member_exact_t =
+        ::scl::detected_t<::scl::bit_or_assign_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() ^= std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using bit_xor_assign_operation = decltype(::std::declval<Left>() ^= ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::bit_xor_assign_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_xor_assign_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_xor_assign_v =
+        ::scl::is_detected_v<::scl::bit_xor_assign_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_xor_assign_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Arguments Template arguments of ::scl::bit_xor_assign_operation.
+     */
+    template <typename... Arguments>
+    using bit_xor_assign_t = ::scl::detected_t<::scl::bit_xor_assign_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator^=(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_xor_assign_member_operation = decltype(::std::declval<Type>().operator^=(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::bit_xor_assign_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_xor_assign_member_v =
+        ::scl::is_detected_v<::scl::bit_xor_assign_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_xor_assign_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using bit_xor_assign_member_t = ::scl::detected_t<::scl::bit_xor_assign_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator^=`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::bit_xor_assign_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator^=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using bit_xor_assign_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::bit_xor_assign_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator^=))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator^=` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_bit_xor_assign_member_exact_v =
+        ::scl::is_detected_v<::scl::bit_xor_assign_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::bit_xor_assign_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using bit_xor_assign_member_exact_t =
+        ::scl::detected_t<::scl::bit_xor_assign_member_exact_operation, Arguments...>;
 
     /** @} */
 
-    // ============================================================================
-    // SPECIAL OPERATORS: ->*, ->, ,, [], ()
-    // ============================================================================
-
     /**
-     * @defgroup op_det_special Special Operators
-     * @brief Detection for operators: `->*`, `->`, `,`, `[]`, `()`
+     * @defgroup scl_utility_operator_detection_special Arrow, comma, subscript and call operators
      * @{
      */
 
     /**
-     * @brief Alias for member pointer access `std::declval<Type>().operator->*(std::declval<Arguments>()...)`.
-     * @details
-     * Probes member pointer access (`->*`) as a class member function; detects appropriate overloads.
-     * @tparam Type The object type.
-     * @tparam Arguments Pointer-to-member and additional arguments (if any).
+     * @brief The type of `std::declval<Type>().operator->*(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_to_pointer_member_operation = /* implementation defined */;
+    using arrow_to_pointer_operation = decltype(::std::declval<Type>().operator->*(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects member pointer access operator (`obj.operator->*(pm)`).
-     * @details
-     * True if the member pointer access expression is well-formed for the given arguments.
-     * @tparam Arguments First type is the class type, followed by pointer-to-member type.
+     * @brief Whether ::scl::arrow_to_pointer_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Arguments Template arguments of ::scl::arrow_to_pointer_operation.
      */
     template <typename... Arguments>
-    inline constexpr bool has_arrow_to_pointer_member_v = /* implementation defined */;
+    inline constexpr auto has_arrow_to_pointer_v =
+        ::scl::is_detected_v<::scl::arrow_to_pointer_operation, Arguments...>;
     /**
-     * @brief Detected result type of member pointer access, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `operator->*` when implemented as a member.
-     * @tparam Arguments First type is the class type, followed by pointer-to-member type.
+     * @brief ::scl::arrow_to_pointer_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Arguments Template arguments of ::scl::arrow_to_pointer_operation.
      */
     template <typename... Arguments>
-    using arrow_to_pointer_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member pointer access detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator->*`.
-     * @tparam Type The object type.
-     * @tparam Arguments Pointer-to-member type.
-     */
-    template <typename Type, typename... Arguments>
-    using arrow_to_pointer_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member pointer access operator (`obj.operator->*(pm)` exact).
-     * @details
-     * True if an exactly matching `operator->*` exists on `Type`.
-     * @tparam Arguments First type is the class type, followed by pointer-to-member type.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_arrow_to_pointer_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member pointer access, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact `operator->*` return type; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type, followed by pointer-to-member type.
-     */
-    template <typename... Arguments>
-    using arrow_to_pointer_member_exact_t = /* implementation defined */;
+    using arrow_to_pointer_t = ::scl::detected_t<::scl::arrow_to_pointer_operation, Arguments...>;
 
     /**
-     * @brief Alias for arrow operator `std::declval<Type>().operator->()`.
-     * @details
-     * Probes arrow (`->`) as a class member function; detects appropriate overloads.
-     * @tparam Type The object type.
-     * @tparam Arguments The operator argument types (none).
+     * @brief The type of `std::declval<Type>().operator->*(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_member_operation = /* implementation defined */;
+    using arrow_to_pointer_member_operation = decltype(::std::declval<Type>().operator->*(
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects member arrow operator (`obj.operator->()`).
-     * @details
-     * True if `Type::operator->()` is callable.
-     * @tparam Arguments First type is the class type.
+     * @brief Whether ::scl::arrow_to_pointer_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_arrow_member_v = /* implementation defined */;
+    inline constexpr auto has_arrow_to_pointer_member_v =
+        ::scl::is_detected_v<::scl::arrow_to_pointer_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of member arrow operator, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `operator->` when implemented as a member.
-     * @tparam Arguments First type is the class type.
+     * @brief ::scl::arrow_to_pointer_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    using arrow_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member arrow detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator->`.
-     * @tparam Type The object type.
-     */
-    template <typename Type, typename... Arguments>
-    using arrow_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member arrow operator (`obj.operator->()` exact).
-     * @details
-     * True if an exactly matching `operator->` exists on `Type`.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_arrow_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member arrow operator, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact `operator->` return type; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type.
-     */
-    template <typename... Arguments>
-    using arrow_member_exact_t = /* implementation defined */;
+    using arrow_to_pointer_member_t =
+        ::scl::detected_t<::scl::arrow_to_pointer_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for comma expression `std::declval<Left>(), std::declval<Right>()`.
-     * @details
-     * Represents the unevaluated `,` expression (built-in or overloaded), capturing the result type of the RHS.
+     * @brief The type of the same call through a pointer to the member function `operator->*`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::arrow_to_pointer_member_operation<Type, Arguments...>. The operation is well-formed
+     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator->*` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using arrow_to_pointer_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::arrow_to_pointer_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator->*))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator->*` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_arrow_to_pointer_member_exact_v =
+        ::scl::is_detected_v<::scl::arrow_to_pointer_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::arrow_to_pointer_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using arrow_to_pointer_member_exact_t =
+        ::scl::detected_t<::scl::arrow_to_pointer_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator->(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using arrow_operation = decltype(::std::declval<Type>().operator->(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::arrow_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Arguments Template arguments of ::scl::arrow_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_arrow_v = ::scl::is_detected_v<::scl::arrow_operation, Arguments...>;
+    /**
+     * @brief ::scl::arrow_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Arguments Template arguments of ::scl::arrow_operation.
+     */
+    template <typename... Arguments>
+    using arrow_t = ::scl::detected_t<::scl::arrow_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator->(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using arrow_member_operation = decltype(::std::declval<Type>().operator->(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::arrow_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_arrow_member_v =
+        ::scl::is_detected_v<::scl::arrow_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::arrow_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using arrow_member_t = ::scl::detected_t<::scl::arrow_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator->`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::arrow_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator->` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using arrow_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::arrow_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator->))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator->` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_arrow_member_exact_v =
+        ::scl::is_detected_v<::scl::arrow_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::arrow_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using arrow_member_exact_t = ::scl::detected_t<::scl::arrow_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>(), std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using comma_operation = /* implementation defined */;
+    using comma_operation = decltype(::std::declval<Left>(), ::std::declval<Right>());
     /**
-     * @brief Detects comma operator (`x, y`).
-     * @details
-     * True if the comma expression is well-formed for the given operands (either built-in or overloaded).
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief Whether ::scl::comma_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
+     * @tparam Arguments Template arguments of ::scl::comma_operation.
      */
-    template <typename Left, typename Right>
-    inline constexpr bool has_comma_v = /* implementation defined */;
+    template <typename... Arguments>
+    inline constexpr auto has_comma_v = ::scl::is_detected_v<::scl::comma_operation, Arguments...>;
     /**
-     * @brief Detected result type of comma operator, or `scl::nonesuch`.
-     * @details
-     * Exposes the type of the comma expression (typically the RHS type), else `scl::nonesuch`.
-     * @tparam Left Left operand type.
-     * @tparam Right Right operand type.
+     * @brief ::scl::comma_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
+     * @tparam Arguments Template arguments of ::scl::comma_operation.
      */
-    template <typename Left, typename Right>
-    using comma_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member comma `std::declval<Type>().operator,(std::declval<Argument>())`.
-     * @details
-     * Probes for a member `operator,` on `Type` (implicit conversions allowed).
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using comma_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member comma operator (`obj.operator,(arg)`).
-     * @details
-     * True if `Type::operator,(Argument)` is callable.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_comma_member_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of member comma operator, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of member `operator,` if present.
-     * @tparam Type The class type.
-     * @tparam Argument Right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using comma_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member comma detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator,`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using comma_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member comma operator (`obj.operator,(arg)` exact).
-     * @details
-     * True if an exactly matching `operator,` exists on `Type`.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_comma_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member comma operator, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact comma operator return type; `scl::nonesuch` otherwise.
-     * @tparam Type The class type.
-     * @tparam Argument Exact right-hand argument type.
-     */
-    template <typename Type, typename Argument>
-    using comma_member_exact_t = /* implementation defined */;
+    template <typename... Arguments>
+    using comma_t = ::scl::detected_t<::scl::comma_operation, Arguments...>;
 
     /**
-     * @brief Alias for subscript expression `std::declval<Type>()[std::declval<Argument>()]`.
-     * @details
-     * Represents the unevaluated `[]` expression; detects array-like or custom indexers.
-     * @tparam Type The container or operand type.
-     * @tparam Argument The index type.
-     */
-    template <typename Type, typename Argument>
-    using subscript_operation = /* implementation defined */;
-    /**
-     * @brief Detects subscript operator (`obj[index]`).
-     * @details
-     * True if the subscript expression is well-formed for the given `Type` and `Argument`.
-     * @tparam Type The container or operand type.
-     * @tparam Argument The index type.
-     */
-    template <typename Type, typename Argument>
-    inline constexpr bool has_subscript_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of subscript operator, or `scl::nonesuch`.
-     * @details
-     * Exposes the element access result type; `scl::nonesuch` if unavailable.
-     * @tparam Type The container or operand type.
-     * @tparam Argument The index type.
-     */
-    template <typename Type, typename Argument>
-    using subscript_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member subscript `std::declval<Type>().operator[](std::declval<Arguments>()...)`.
-     * @details
-     * Probes for `Type::operator[]` with arguments convertible from `Arguments...`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact index argument types.
+     * @brief The type of `std::declval<Type>().operator ,(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using subscript_member_operation = /* implementation defined */;
+    using comma_member_operation =
+        decltype(::std::declval<Type>().operator,(::std::declval<Arguments>()...));
     /**
-     * @brief Detects member subscript operator (`obj.operator[](index)`).
-     * @details
-     * True if `Type::operator[](Arguments...)` is callable.
-     * @tparam Arguments First type is the class type, followed by index types.
+     * @brief Whether ::scl::comma_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_subscript_member_v = /* implementation defined */;
+    inline constexpr auto has_comma_member_v =
+        ::scl::is_detected_v<::scl::comma_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of member subscript, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator[]` if present.
-     * @tparam Arguments First type is the class type, followed by index types.
+     * @brief ::scl::comma_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    using subscript_member_t = /* implementation defined */;
-    /**
-     * @brief Alias for strict member subscript detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator[]`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact index argument types.
-     */
-    template <typename Type, typename... Arguments>
-    using subscript_member_exact_operation = /* implementation defined */;
-    /**
-     * @brief Detects strict member subscript operator (`obj.operator[](index)` exact).
-     * @details
-     * True if an exactly matching `operator[]` exists on `Type`.
-     * @tparam Arguments First type is the class type, followed by exact index types.
-     */
-    template <typename... Arguments>
-    inline constexpr bool has_subscript_member_exact_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of strict member subscript, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact subscript return type; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type, followed by exact index types.
-     */
-    template <typename... Arguments>
-    using subscript_member_exact_t = /* implementation defined */;
+    using comma_member_t = ::scl::detected_t<::scl::comma_member_operation, Arguments...>;
 
     /**
-     * @brief Alias for function-call expression `std::declval<Type>()(std::declval<Arguments>()...)`.
-     * @details
-     * Represents the unevaluated `()` expression; detects callability of functors or call operators.
-     * @tparam Type The callable or functor type.
-     * @tparam Arguments The call argument types.
+     * @brief The type of the same call through a pointer to the member function `operator ,`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::comma_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator ,` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using call_operation = /* implementation defined */;
+    using comma_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::comma_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator, ))(::std::declval<Arguments>()...));
     /**
-     * @brief Detects function call operator (`obj(args...)`).
-     * @details
-     * True if the call expression is well-formed for the given `Type` and `Arguments...`.
-     * @tparam Type The callable or functor type.
-     * @tparam Arguments The call argument types.
-     */
-    template <typename Type, typename... Arguments>
-    inline constexpr bool has_call_v = /* implementation defined */;
-    /**
-     * @brief Detected result type of function call, or `scl::nonesuch`.
-     * @details
-     * Exposes the result type of `Type(Arguments...)`, else `scl::nonesuch`.
-     * @tparam Type The callable or functor type.
-     * @tparam Arguments The call argument types.
-     */
-    template <typename Type, typename... Arguments>
-    using call_t = /* implementation defined */;
-    /**
-     * @brief Alias for invoking member function call `std::declval<Type>().operator()(std::declval<Arguments>()...)`.
-     * @details
-     * Probes for a member `operator()` with arguments convertible from `Arguments...`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact call argument types.
-     */
-    template <typename Type, typename... Arguments>
-    using call_member_operation = /* implementation defined */;
-    /**
-     * @brief Detects member function call operator (`obj.operator()(args...)`).
-     * @details
-     * True if `Type::operator()(Arguments...)` is callable.
-     * @tparam Arguments First type is the class type, followed by exact call argument types.
+     * @brief Whether `operator ,` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_call_member_v = /* implementation defined */;
+    inline constexpr auto has_comma_member_exact_v =
+        ::scl::is_detected_v<::scl::comma_member_exact_operation, Arguments...>;
     /**
-     * @brief Detected result type of member function call, or `scl::nonesuch`.
-     * @details
-     * Exposes the return type of `Type::operator()` if present.
-     * @tparam Arguments First type is the class type, followed by exact call argument types.
+     * @brief ::scl::comma_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
+     *
+     * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    using call_member_t = /* implementation defined */;
+    using comma_member_exact_t = ::scl::detected_t<::scl::comma_member_exact_operation, Arguments...>;
+
     /**
-     * @brief Alias for strict member function call detection.
-     * @details
-     * Enforces exact signature and cv/ref-qualifiers for a true member `operator()`.
-     * @tparam Type The class type.
-     * @tparam Arguments Exact call argument types.
+     * @brief The type of `std::declval<Type>()[std::declval<Argument>()]`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Type Type of the object.
+     * @tparam Argument Type of the index.
+     */
+    template <typename Type, typename Argument>
+    using subscript_operation = decltype(::std::declval<Type>()[::std::declval<Argument>()]);
+    /**
+     * @brief Whether ::scl::subscript_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Arguments Template arguments of ::scl::subscript_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_subscript_v = ::scl::is_detected_v<::scl::subscript_operation, Arguments...>;
+    /**
+     * @brief ::scl::subscript_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Arguments Template arguments of ::scl::subscript_operation.
+     */
+    template <typename... Arguments>
+    using subscript_t = ::scl::detected_t<::scl::subscript_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator[](std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using call_member_exact_operation = /* implementation defined */;
+    using subscript_member_operation = decltype(::std::declval<Type>().operator[](
+        ::std::declval<Arguments>()...));
     /**
-     * @brief Detects strict member function call operator (`obj.operator()(args...)` exact).
-     * @details
-     * True if an exactly matching `operator()` exists on `Type`.
-     * @tparam Arguments First type is the class type, followed by exact call argument types.
+     * @brief Whether ::scl::subscript_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    inline constexpr bool has_call_member_exact_v = /* implementation defined */;
+    inline constexpr auto has_subscript_member_v =
+        ::scl::is_detected_v<::scl::subscript_member_operation, Arguments...>;
     /**
-     * @brief Detected result type of strict member function call, or `scl::nonesuch`.
-     * @details
-     * Exposes the exact call operator return type; `scl::nonesuch` otherwise.
-     * @tparam Arguments First type is the class type, followed by exact call argument types.
+     * @brief ::scl::subscript_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    using call_member_exact_t = /* implementation defined */;
+    using subscript_member_t = ::scl::detected_t<::scl::subscript_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator[]`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::subscript_member_operation<Type, Arguments...>. The operation is well-formed only
+     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
+     * `operator[]` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
+     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
+     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using subscript_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::subscript_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator[]))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator[]` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_subscript_member_exact_v =
+        ::scl::is_detected_v<::scl::subscript_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::subscript_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using subscript_member_exact_t = ::scl::detected_t<::scl::subscript_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>()(std::declval<Arguments>()...)`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using call_operation = decltype(::std::declval<Type>()(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::call_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Arguments Template arguments of ::scl::call_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_call_v = ::scl::is_detected_v<::scl::call_operation, Arguments...>;
+    /**
+     * @brief ::scl::call_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Arguments Template arguments of ::scl::call_operation.
+     */
+    template <typename... Arguments>
+    using call_t = ::scl::detected_t<::scl::call_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator()(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using call_member_operation = decltype(::std::declval<Type>().operator()(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::call_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_call_member_v =
+        ::scl::is_detected_v<::scl::call_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::call_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using call_member_t = ::scl::detected_t<::scl::call_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the same call through a pointer to the member function `operator()`.
+     *
+     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
+     * ::scl::call_member_operation<Type, Arguments...>. The operation is well-formed only where
+     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator()` with
+     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
+     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
+     * type and the `noexcept` of the member function are not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using call_member_exact_operation = decltype((
+        ::std::declval<Type>().*
+        static_cast<::scl::member_function_like_t<
+            Type, ::scl::call_member_operation<Type, Arguments...>(Arguments...)>>(
+            &::std::remove_cvref_t<Type>::operator()))(::std::declval<Arguments>()...));
+    /**
+     * @brief Whether `operator()` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_call_member_exact_v =
+        ::scl::is_detected_v<::scl::call_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::call_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using call_member_exact_t = ::scl::detected_t<::scl::call_member_exact_operation, Arguments...>;
 
     /** @} */
 
-    /** @} */ // end of scl_utility_operator_detection
-
+    /** @} */
 } // namespace scl
 
-#endif // SCL_DOXYGEN
+#endif

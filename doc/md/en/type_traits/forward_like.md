@@ -1,127 +1,104 @@
-# Forward-like type traits
+# Cast of a value to the category and cv-qualifiers of a given type
 
-Utilities for forwarding types based on an object type’s cv/ref qualifiers.
+The call `forward_like<Base>(t)` returns a reference to the argument `t`. The kind of the reference,
+lvalue or rvalue, is taken from the type `Base`, and the qualifiers `const` and `volatile` of
+the type `Base` are added to the qualifiers of the argument itself.
+
+The alias template `forward_like_t<Base, Type>` is the type of the result of a call of the function
+`forward_like` for an argument of the type `Type`.
 
 - Header: `#include <scl/utility/type_traits/forward_like.h>`
 
-Contents:
-- [`forward_like_t<Base, Type>`](#forward_like-type)
-- [`forward_like<Base, Type>`](#forward_like-method)
+```cpp
+namespace scl
+{
+    template <typename Base, typename Type>
+    using forward_like_t = unspecified;
+
+    template <typename Base, typename T>
+    [[nodiscard]]
+    constexpr decltype(auto) forward_like(T && t) noexcept;
+}
+```
+
+## Semantics
+
+### Alias template `forward_like_t`
+
+- **Kind of reference.** The alias template `forward_like_t<Base, Type>` is an lvalue reference if
+  the type `Base` is an lvalue reference, and an rvalue reference otherwise, that is for a type with
+  no reference and for an rvalue reference. The reference of the type `Type` itself does not affect
+  the kind of reference of the result, so an argument of the type `double &` for the type `Base`
+  equal to `int` is returned as `double &&`.
+- **Cv-qualifiers.** The qualifiers `const` and `volatile` of the type `Base` are added to
+  the cv-qualifiers of the type `Type`. The qualifiers the type `Type` already has stay, so the type
+  of the result has the cv-qualifiers of both types. The type
+  `forward_like_t<int const &, double volatile>`, for example, is `double const volatile &`.
+- **Type `void`.** If the type `Type` is `void` with or without cv-qualifiers, the alias template
+  `forward_like_t` is `void` with the cv-qualifiers of both types and with no reference.
+
+### Function template `forward_like`
+
+- **Cast.** The call `forward_like<Base>(t)` returns the argument `t` cast to the type
+  `forward_like_t<Base, T>`, the type `T` being deduced from the argument. The function
+  `forward_like` has no side effects. The argument is not copied or moved, and a reference to
+  the same object is returned. The function is declared with the specifiers `constexpr` and
+  `noexcept` and with the attribute `[[nodiscard]]`.
+
+### Difference from `std::forward_like`
+
+The function template `scl::forward_like` adds the qualifier `volatile` of the type `Base` to
+the result type just as the qualifier `const`. The function template `std::forward_like` of C++23
+does not add the qualifier `volatile` to its result type.
+
+## Examples
+
+The result type for different types `Base` and `Type`:
+
+<!-- snippet: example/type_traits/forward_like/type_traits_forward_like_example.cpp type -->
+```cpp
+static_assert(std::is_same_v<scl::forward_like_t<int const &, double>, double const &>);
+static_assert(std::is_same_v<scl::forward_like_t<int &&, double const>, double const &&>);
+static_assert(std::is_same_v<scl::forward_like_t<int, double &>, double &&>);
+static_assert(std::is_same_v<scl::forward_like_t<int volatile &, double>, double volatile &>);
+```
+
+A member passed on with the value category of the object it belongs to. The function `text_of`
+returns the field `text` as an lvalue reference for an lvalue object and as an rvalue reference for
+an rvalue object:
+
+<!-- snippet: example/type_traits/forward_like/type_traits_forward_like_example.cpp member -->
+```cpp
+struct label
+{
+    std::string text;
+};
+
+template <typename Owner>
+decltype(auto) text_of(Owner && owner)
+{
+    return scl::forward_like<Owner>(owner.text);
+}
+
+static_assert(std::is_same_v<decltype(text_of(std::declval<label &>())), std::string &>);
+static_assert(std::is_same_v<decltype(text_of(std::declval<label const &>())), std::string const &>);
+static_assert(std::is_same_v<decltype(text_of(std::declval<label>())), std::string &&>);
+```
+
+<!-- snippet: example/type_traits/forward_like/type_traits_forward_like_example.cpp move -->
+```cpp
+    label first{"first"};
+    std::string const copied = text_of(first);
+    std::string const moved = text_of(std::move(first));
+    std::cout << copied << ' ' << moved << '\n'; // first first
+```
+
+## See also
+
+- [`example/type_traits/forward_like/type_traits_forward_like_example.cpp`](../../../../example/type_traits/forward_like/type_traits_forward_like_example.cpp)
 
 ---
 
-## forward_like_t<Base, Type>
-
-Creates a type that mimics the cv-ref semantics of `std::forward_like`, combining qualifier overlay
-with reference replacement.
-
-This trait models the behavior of C++23 `std::forward_like`. It overlays cv-qualifiers from `Base`
-onto `Type` (preserving `Type`'s own qualifiers) while completely replacing `Type`'s reference
-category with that of `Base`.
-
-- Header: `#include <scl/utility/type_traits.h>`
-- Declaration: `template <typename Base, typename Type> using forward_like_t = ...;`
-
-### Semantics
-
-- **CV-Qualifier Application (Overlay):**
-  The `const` and `volatile` qualifiers from `Base` are **added** to `Type`. Any existing
-  cv-qualifiers on `Type` are preserved, resulting in a union.
-
-- **Reference Application (Replacement):**
-  The reference category is determined solely by `Base`. If `Base` is an lvalue reference,
-  the result is an lvalue reference; otherwise (rvalue reference or non-reference) the result
-  is an rvalue reference. The original reference on `Type` is ignored.
-
-- **Special Cases:**
-  A reference is not applied if the underlying `Type` is `void`. For arrays, cv-qualifiers
-  apply to the element type, and the reference applies to the array itself.
-
-### Examples
-
-```cpp
-#include <scl/utility/type_traits/forward_like.h>
-
-using ::scl::forward_like_t;
-
-// CV-qualifiers are overlaid (union); non-reference Base → rvalue reference result
-static_assert(std::is_same_v<forward_like_t<const int, volatile double>, const volatile double &&>);
-static_assert(std::is_same_v<forward_like_t<int, const double>, const double &&>);
-
-// Reference category is replaced (copied from Base)
-static_assert(std::is_same_v<forward_like_t<int&, double&&>, double&>);      // & replaces &&
-static_assert(std::is_same_v<forward_like_t<int&&, double&>, double&&>);      // && replaces &
-static_assert(std::is_same_v<forward_like_t<int, double&>, double &&>);       // non-ref Base → &&
-
-// Hybrid Behavior
-static_assert(std::is_same_v<forward_like_t<const int&, volatile double>, const volatile double&>);
-
-// Special case for void
-static_assert(std::is_same_v<forward_like_t<const int&, void>, const void>); // ref not applied
-
-// Arrays
-static_assert(std::is_same_v<forward_like_t<const int, int volatile[3]>, const volatile int (&&)[3]>);
-static_assert(std::is_same_v<forward_like_t<int&&, int const(&)[3]>, int const(&&)[3]>);
-```
-
-### Typical Use Cases
-
-Mimicking `std::forward_like` to provide consistent forwarding semantics, especially in code
-aiming for compatibility with different C++ standard versions. It's useful when you need to
-control the reference type explicitly while adding, but not removing, cv-qualifiers.
-
-### See Also
-
-- `forward_like` — The corresponding function that uses this trait for casting.
-
----
-
-## forward_like<Base, Type>(t)
-
-A utility function that forwards a value `t` as a reference with cv-ref qualifiers
-determined by `forward_like_t`. It is a direct analog to C++23 `std::forward_like`.
-
-- Header: `#include <scl/utility/type_traits.h>`
-- Declaration: `template <typename Base, typename Type> constexpr decltype(auto) forward_like(Type&& t) noexcept;`
-
-### Description
-
-This function performs a `static_cast` on the input `t` to the type produced by
-`forward_like_t<Base, Type&&>`. It perfectly forwards the value with the desired cv-ref
-properties, making generic code cleaner and more expressive.
-
-### Example
-
-```cpp
-#include <scl/utility/type_traits/forward_like.h>
-#include <iostream>
-#include <string>
-
-// A function that processes a string, with behavior depending on qualifiers
-void process(const std::string& str) { std::cout << "Processing const lvalue: " << str << std::endl; }
-void process(std::string& str)       { std::cout << "Processing non-const lvalue: " << str << std::endl; }
-void process(std::string&& str)      { std::cout << "Processing rvalue: " << str << std::endl; }
-
-// A generic wrapper that forwards its argument `like` the template parameter `T`
-template <typename T, typename U>
-void wrapper(U&& arg)
-{
-    // Forward `arg` with qualifiers from T
-    process(scl::forward_like<T>(arg));
-}
-
-int main()
-{
-    std::string s = "hello";
-    const std::string cs = "world";
-
-    wrapper<const int&>(s); // Forwards s as const lvalue ref
-    wrapper<int&>(s);       // Forwards s as non-const lvalue ref
-    wrapper<int&&>(std::move(s)); // Forwards a temporary as rvalue ref
-    // wrapper<int&>(cs);      // Error: cannot cast away const.
-}
-```
-The last line in `main` would fail to compile because `forward_like_t<int&, const std::string&>`
-results in `const std::string&`. The `process` function does not have an overload that can bind a
-`const std::string&` to a `std::string&` parameter. This demonstrates how `forward_like`
-correctly preserves `const`-ness from the underlying value type.
+Previous: [Operator presence detection](operator_detection.md) |
+Next: [Building the member pointer type from the object type](member_like.md) |
+[Back to the group](index.md) | [Back to the main page](../Main.md)
