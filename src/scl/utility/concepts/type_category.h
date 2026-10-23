@@ -88,7 +88,7 @@ namespace scl::concepts
     concept scoped_enum = enum_type<T> && ::std::is_scoped_enum_v<T>;
 #else
     template <typename T>
-    concept scoped_enum = enum_type<T> && !::std::is_convertible_v<T, ::std::underlying_type_t<T> >;
+    concept scoped_enum = enum_type<T> && !::std::is_convertible_v<T, ::std::underlying_type_t<T>>;
 #endif
 
     /**

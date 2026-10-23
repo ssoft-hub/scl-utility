@@ -5,7 +5,7 @@
 # Global language / standard
 # -----------------------------
 Language: Cpp                   # Apply this section to C/C++ files
-Standard: Auto                  # Let clang-format detect C++ standard from code/toolchain
+Standard: c++20                 # The baseline of the module
 
 # -----------------------------
 # Line width & indentation
