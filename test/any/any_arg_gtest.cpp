@@ -40,8 +40,8 @@ namespace
     concept arg_castable = requires(::scl::any_arg arg) { ::scl::any_cast<Type>(arg); };
 
     template <typename Type>
-    concept arg_ptr_castable =
-        requires(::scl::any_argument const * arg) { ::scl::any_cast<Type>(arg); };
+    concept arg_ptr_castable = requires(
+        ::scl::any_argument const * arg) { ::scl::any_cast<Type>(arg); };
 
     template <typename Type>
     concept arg_from_lvalue = requires(Type & object) { ::scl::any_arg{object}; };
@@ -52,8 +52,8 @@ namespace
     // Reaching a mutable reference through a read-only view, which the implicit
     // any_view -> any_arg conversion would otherwise allow.
     template <typename Type>
-    concept view_mutable_ref_castable =
-        requires(::scl::any_view view) { ::scl::any_cast<Type &>(view); };
+    concept view_mutable_ref_castable = requires(
+        ::scl::any_view view) { ::scl::any_cast<Type &>(view); };
 
     // The constexpr casts below are spelled as calls because that is where an argument's
     // anchor lives: it is created by the caller and lasts for the whole call.
@@ -123,7 +123,8 @@ namespace
     {
         int const value = 42;
         return [](::scl::any_arg argument) noexcept {
-            return ::scl::any_cast<int>(&argument) == nullptr && ::scl::any_cast<int const>(&argument) != nullptr;
+            return ::scl::any_cast<int>(&argument) == nullptr &&
+                ::scl::any_cast<int const>(&argument) != nullptr;
         }(value);
     }
 
@@ -515,7 +516,8 @@ TEST(AnyArgTest, MutableAccessOnUnqualifiedReferent)
 
     // The pointer form yields exactly the requested qualification.
     STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::any_cast<counted>(&arg)), counted *>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::any_cast<counted const>(&arg)), counted const *>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<decltype(::scl::any_cast<counted const>(&arg)), counted const *>));
 }
 
 TEST(AnyArgTest, MutableAccessRefusedOnQualifiedReferent)

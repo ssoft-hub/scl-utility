@@ -38,13 +38,16 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_HOT),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_HOT),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_HOT_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_HOT_GNU),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_HOT_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_HOT_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_HOT));
+// clang-format on
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #define SCL_DETAIL_COLD_MSVC
@@ -76,13 +79,16 @@ static_assert(
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_COLD),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_COLD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_GNU),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_COLD_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_COLD));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

@@ -52,29 +52,31 @@
 
 #ifndef SCL_DOXYGEN
 
-#define SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION(op, name)                                                                \
-    namespace scl                                                                                                        \
-    {                                                                                                                    \
-        template <typename Type, typename... Arguments>                                                                  \
-        using name##_member_operation =                                                                                  \
-            decltype(::std::declval<Type>().operator op /**/ (::std::declval<Arguments>()...));                          \
-        template <typename... Arguments>                                                                                 \
-        inline constexpr auto has_##name##_member_v =                                                                    \
-            ::scl::is_detected_v<name##_member_operation, Arguments...>;                                                 \
-        template <typename... Arguments>                                                                                 \
-        using name##_member_t = ::scl::detected_t<name##_member_operation, Arguments...>;                                \
-    }                                                                                                                    \
-    namespace scl                                                                                                        \
-    {                                                                                                                    \
-        template <typename Type, typename... Arguments>                                                                  \
-        using name##_member_exact_operation = decltype((::std::declval<Type>().*                                         \
-            static_cast<::scl::member_function_like_t<Type, name##_member_operation<Type, Arguments...>(Arguments...)>>( \
-                &::std::remove_cvref_t<Type>::operator op /**/))(::std::declval<Arguments>()...));                       \
-        template <typename... Arguments>                                                                                 \
-        inline constexpr auto has_##name##_member_exact_v =                                                              \
-            ::scl::is_detected_v<name##_member_exact_operation, Arguments...>;                                           \
-        template <typename... Arguments>                                                                                 \
-        using name##_member_exact_t = ::scl::detected_t<name##_member_exact_operation, Arguments...>;                    \
+#define SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION(op, name)                                             \
+    namespace scl                                                                                     \
+    {                                                                                                 \
+        template <typename Type, typename... Arguments>                                               \
+        using name##_member_operation = decltype(::std::declval<Type>().operator op /**/ (            \
+            ::std::declval<Arguments>()...));                                                         \
+        template <typename... Arguments>                                                              \
+        inline constexpr auto has_##name##_member_v =                                                 \
+            ::scl::is_detected_v<name##_member_operation, Arguments...>;                              \
+        template <typename... Arguments>                                                              \
+        using name##_member_t = ::scl::detected_t<name##_member_operation, Arguments...>;             \
+    }                                                                                                 \
+    namespace scl                                                                                     \
+    {                                                                                                 \
+        template <typename Type, typename... Arguments>                                               \
+        using name##_member_exact_operation = decltype((                                              \
+            ::std::declval<Type>().*                                                                  \
+            static_cast<::scl::member_function_like_t<                                                \
+                Type, name##_member_operation<Type, Arguments...>(Arguments...)>>(                    \
+                &::std::remove_cvref_t<Type>::operator op /**/))(::std::declval<Arguments>()...));    \
+        template <typename... Arguments>                                                              \
+        inline constexpr auto has_##name##_member_exact_v =                                           \
+            ::scl::is_detected_v<name##_member_exact_operation, Arguments...>;                        \
+        template <typename... Arguments>                                                              \
+        using name##_member_exact_t = ::scl::detected_t<name##_member_exact_operation, Arguments...>; \
     }
 
 #define SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(op, name)                                         \
@@ -102,8 +104,8 @@
     namespace scl                                                                                          \
     {                                                                                                      \
         template <typename Type>                                                                           \
-        using name##_member_operation =                                                                    \
-            decltype(::std::declval<Type>().operator op /**/ (::std::declval<int>()));                     \
+        using name##_member_operation = decltype(::std::declval<Type>().operator op /**/ (                 \
+            ::std::declval<int>()));                                                                       \
         template <typename Type>                                                                           \
         inline constexpr auto has_##name##_member_v = ::scl::is_detected_v<name##_member_operation, Type>; \
         template <typename Type>                                                                           \
@@ -112,7 +114,8 @@
     namespace scl                                                                                          \
     {                                                                                                      \
         template <typename Type>                                                                           \
-        using name##_member_exact_operation = decltype((::std::declval<Type>().*                           \
+        using name##_member_exact_operation = decltype((                                                   \
+            ::std::declval<Type>().*                                                                       \
             static_cast<::scl::member_function_like_t<Type, name##_member_operation<Type>(int)>>(          \
                 &::std::remove_cvref_t<Type>::operator op /**/))(::std::declval<int>()));                  \
         template <typename Type>                                                                           \
@@ -138,8 +141,8 @@
     namespace scl                                                                                    \
     {                                                                                                \
         template <typename Type, typename... Arguments>                                              \
-        using name##_operation =                                                                     \
-            decltype(::std::declval<Type>().operator op /**/ (::std::declval<Arguments>()...));      \
+        using name##_operation = decltype(::std::declval<Type>().operator op /**/ (                  \
+            ::std::declval<Arguments>()...));                                                        \
         template <typename... Arguments>                                                             \
         inline constexpr auto has_##name##_v = ::scl::is_detected_v<name##_operation, Arguments...>; \
         template <typename... Arguments>                                                             \

@@ -17,8 +17,8 @@ namespace
     concept runtime_type_name_declared = requires(T const & object) { ::scl::type_name(object); };
 
     template <typename T>
-    concept runtime_type_short_name_declared =
-        requires(T const & object) { ::scl::type_short_name(object); };
+    concept runtime_type_short_name_declared = requires(
+        T const & object) { ::scl::type_short_name(object); };
 } // namespace
 
 #if SCL_HAS_RTTI
@@ -366,8 +366,8 @@ TEST(TypeShortNameTest, OperatorInTemplateArgument)
     EXPECT_EQ(::scl::type_short_name(Box<decltype(Ordered{} < Ordered{})>{}), "Box");
     EXPECT_EQ(::scl::type_short_name(Box<decltype(Ordered{} <= Ordered{})>{}), "Box");
     EXPECT_EQ(::scl::type_short_name(Box<cooperator<int>>{}), "Box");
-    EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >{}),
-        "Member");
+    EXPECT_EQ(
+        ::scl::type_short_name(Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >{}), "Member");
 }
 
 /**
@@ -381,15 +381,20 @@ TEST(TypeShortNameTest, ArrowAndMinusInTemplateArgument)
     EXPECT_EQ(::scl::type_short_name(Box<Holder<&Pointing::operator- > *>{}), "Box");
     EXPECT_EQ(::scl::type_short_name(Box<Holder<&Pointing::operator->* >>{}), "Box");
     EXPECT_EQ(
-        ::scl::type_short_name(Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>{}), "Box");
-    EXPECT_EQ(::scl::type_short_name(Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>{}),
+        ::scl::type_short_name(Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>{}),
         "Box");
     EXPECT_EQ(
-        ::scl::type_short_name(Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>{}), "Box");
-    EXPECT_EQ(::scl::type_short_name(Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>{}),
+        ::scl::type_short_name(Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>{}),
         "Box");
-    EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >{}), "Member");
-    EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >{}), "Member");
+    EXPECT_EQ(
+        ::scl::type_short_name(Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>{}),
+        "Box");
+    EXPECT_EQ(
+        ::scl::type_short_name(Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>{}), "Box");
+    EXPECT_EQ(
+        ::scl::type_short_name(Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >{}), "Member");
+    EXPECT_EQ(
+        ::scl::type_short_name(Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >{}), "Member");
     EXPECT_EQ(::scl::type_short_name(Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >{}), "Member");
 }
 

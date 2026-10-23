@@ -41,8 +41,8 @@ namespace scl::hash
             public:
                 using value_type = ::std::uint8_t;
                 using difference_type = ::std::ptrdiff_t;
-                using iterator_concept = ::std::conditional_t<::std::ranges::forward_range<source_type>,
-                    ::std::forward_iterator_tag,
+                using iterator_concept = ::std::conditional_t<
+                    ::std::ranges::forward_range<source_type>, ::std::forward_iterator_tag,
                     ::std::input_iterator_tag>;
                 // The reference is a prvalue, which the legacy category cannot express.
                 using iterator_category = ::std::input_iterator_tag;
@@ -105,7 +105,8 @@ namespace scl::hash
                 }
 
                 constexpr cursor operator++(int) /**/
-                    noexcept(nothrow_traversal && ::std::is_nothrow_copy_constructible_v<iterator_type> &&
+                    noexcept(
+                        nothrow_traversal && ::std::is_nothrow_copy_constructible_v<iterator_type> &&
                         ::std::is_nothrow_copy_constructible_v<sentinel_type>)
                     requires(::std::ranges::forward_range<source_type>)
                 {
@@ -115,7 +116,7 @@ namespace scl::hash
                 }
 
                 [[nodiscard]]
-                friend constexpr bool operator==(cursor const & left, cursor const & right) /**/
+                friend constexpr bool operator==(cursor const & left, cursor const & right)
                     noexcept(noexcept(left.position == right.position))
                     requires(::std::equality_comparable<iterator_type>)
                 {
@@ -123,8 +124,8 @@ namespace scl::hash
                 }
 
                 [[nodiscard]]
-                friend constexpr bool
-                operator==(cursor const & left, [[maybe_unused]] ::std::default_sentinel_t const sentinel) /**/
+                friend constexpr bool operator==(
+                    cursor const & left, [[maybe_unused]] ::std::default_sentinel_t const sentinel)
                     noexcept(noexcept(left.position == left.last))
                 {
                     return left.position == left.last;
@@ -139,13 +140,13 @@ namespace scl::hash
         public:
             byte_range() = default;
 
-            constexpr explicit byte_range(Base source) /**/
+            constexpr explicit byte_range(Base source)
                 noexcept(::std::is_nothrow_move_constructible_v<Base>)
                 : source{::std::move(source)}
             {}
 
             [[nodiscard]]
-            constexpr auto begin() /**/
+            constexpr auto begin()
                 noexcept(noexcept(cursor{::std::ranges::begin(source), ::std::ranges::end(source)}))
                 requires(!::scl::hash::detail::same_element_as_const<Base>)
             {
@@ -153,7 +154,7 @@ namespace scl::hash
             }
 
             [[nodiscard]]
-            constexpr auto begin() const /**/
+            constexpr auto begin() const
                 noexcept(noexcept(cursor{::std::ranges::begin(source), ::std::ranges::end(source)}))
                 requires(::scl::hash::detail::same_element_as_const<Base>)
             {

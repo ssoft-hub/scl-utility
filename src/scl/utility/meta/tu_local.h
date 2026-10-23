@@ -60,9 +60,10 @@ namespace scl::detail
         // not odr-used and has the same value in every TU ([basic.def.odr]).
         // A string_view pointing into the per-TU signature literal breaks the
         // same-value requirement; the character contents do not.
-        constexpr auto marker_plain = ::scl::detail::materialize_marker<marker_plain_text.size()>(marker_plain_text);
-        constexpr auto marker_nested =
-            ::scl::detail::materialize_marker<marker_nested_text.size()>(marker_nested_text);
+        constexpr auto marker_plain = ::scl::detail::materialize_marker<marker_plain_text.size()>(
+            marker_plain_text);
+        constexpr auto marker_nested = ::scl::detail::materialize_marker<marker_nested_text.size()>(
+            marker_nested_text);
     } // namespace
 
     // ODR: the marker is passed by value on purpose; binding a reference to
@@ -70,8 +71,8 @@ namespace scl::detail
     // odr-use it and void the [basic.def.odr] carve-out relied on above.
     // cppcheck-suppress-begin passedByValue
     template <::std::size_t N>
-    constexpr bool
-    marker_matches_at(::std::string_view name, ::std::size_t pos, ::std::array<char, N> marker) noexcept
+    constexpr bool marker_matches_at(
+        ::std::string_view name, ::std::size_t pos, ::std::array<char, N> marker) noexcept
     {
         // An empty marker means the derivation degenerated; it must never
         // match, otherwise every type would classify as TU-local.
@@ -91,8 +92,7 @@ namespace scl::detail
     }
     // cppcheck-suppress-end passedByValue
 
-    constexpr ::std::size_t
-    skip_quoted(::std::string_view name, ::std::size_t pos, char const closing) noexcept
+    constexpr ::std::size_t skip_quoted(::std::string_view name, ::std::size_t pos, char const closing) noexcept
     {
         for (++pos; pos < name.size(); ++pos)
             if (name.at(pos) == '\\')
@@ -166,14 +166,14 @@ namespace scl::detail
 
     template <typename R, typename... Args>
     struct tu_local_impl<R(Args...)>
-        : ::std::bool_constant<tu_local_impl<::std::remove_cv_t<R>>::value ||
-              (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
+        : ::std::bool_constant<
+              tu_local_impl<::std::remove_cv_t<R>>::value || (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
     {};
 
     template <typename R, typename... Args>
     struct tu_local_impl<R(Args...) noexcept>
-        : ::std::bool_constant<tu_local_impl<::std::remove_cv_t<R>>::value ||
-              (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
+        : ::std::bool_constant<
+              tu_local_impl<::std::remove_cv_t<R>>::value || (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
     {};
 
     template <template <typename...> class Template, typename... Args>

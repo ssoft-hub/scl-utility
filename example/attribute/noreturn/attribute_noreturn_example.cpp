@@ -12,7 +12,8 @@
 #include <iostream>
 
 //! [noreturn]
-SCL_NORETURN void fail(char const * message)
+SCL_NORETURN
+void fail(char const * message)
 {
     std::cerr << "fatal: " << message << '\n';
     std::exit(EXIT_FAILURE);

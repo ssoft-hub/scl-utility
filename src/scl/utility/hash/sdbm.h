@@ -75,7 +75,7 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint64_t sdbm(Range && range, ::std::uint64_t h = 0ull) /**/
+    constexpr ::std::uint64_t sdbm(Range && range, ::std::uint64_t h = 0ull)
         noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
         for (::std::ranges::range_value_t<Range> const c :
@@ -95,7 +95,7 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range && range) const /**/
+        constexpr result_type operator()(Range && range) const
             noexcept(noexcept(::scl::hash::sdbm(::std::forward<Range>(range))))
         {
             return ::scl::hash::sdbm(::std::forward<Range>(range));

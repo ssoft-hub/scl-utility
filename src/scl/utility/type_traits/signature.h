@@ -153,8 +153,8 @@ namespace scl::detail
         using bare_type = ::std::remove_reference_t<Object>;
         using const_type = ::std::conditional_t<::std::is_const_v<bare_type>, Callable const, Callable>;
         using cv_type = ::std::conditional_t<::std::is_volatile_v<bare_type>, const_type volatile, const_type>;
-        using type = ::std::conditional_t<::std::is_lvalue_reference_v<Object>,
-            cv_type &,
+        using type = ::std::conditional_t<
+            ::std::is_lvalue_reference_v<Object>, cv_type &,
             ::std::conditional_t<::std::is_rvalue_reference_v<Object>, cv_type &&, cv_type>>;
     };
 
@@ -201,8 +201,8 @@ namespace scl::detail
 
     template <typename Callable, ::scl::detail::member_signature Pointer>
     struct call_operator_signature<Callable, Pointer>
-        : ::scl::detail::signature<Pointer>::template with_object<
-              ::scl::detail::object_like_t<typename ::scl::detail::signature<Pointer>::object_type, Callable>>
+        : ::scl::detail::signature<Pointer>::template with_object<::scl::detail::object_like_t<
+              typename ::scl::detail::signature<Pointer>::object_type, Callable>>
     {};
 
     template <typename Callable, ::scl::detail::explicit_object_pointer<Callable> Pointer>

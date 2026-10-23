@@ -16,7 +16,8 @@
 //! [indeterminate]
 std::string reversed_decimal(unsigned value)
 {
-    SCL_INDETERMINATE char digits[std::numeric_limits<unsigned>::digits10 + 1];
+    SCL_INDETERMINATE
+    char digits[std::numeric_limits<unsigned>::digits10 + 1];
     std::size_t count = 0;
     do
     {

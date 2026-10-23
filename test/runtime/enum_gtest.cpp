@@ -42,8 +42,8 @@ namespace
     };
 
     template <typename Enum, typename Format>
-    concept accepts_format = requires(Enum value,
-        Format && format) { ::scl::enum_string(value, static_cast<Format &&>(format)); };
+    concept accepts_format = requires(
+        Enum value, Format && format) { ::scl::enum_string(value, static_cast<Format &&>(format)); };
 
     // Takes the function object through the concept written as a type-constraint.
     template <typename Enum, ::scl::concepts::enum_string_format<Enum> Format>
@@ -283,8 +283,8 @@ TEST(EnumStringTest, FormatMutableAccepted)
     EXPECT_EQ(::scl::enum_string(Flags::B, counted), "Flags::first");
     EXPECT_EQ(::scl::enum_string(Flags::B, counted), "Flags::again");
     EXPECT_EQ(
-        ::scl::enum_string(Flags::B,
-            [calls = 0](auto) mutable { return ++calls == 1 ? "first" : "again"; }),
+        ::scl::enum_string(
+            Flags::B, [calls = 0](auto) mutable { return ++calls == 1 ? "first" : "again"; }),
         "Flags::first");
 
     auto wide_mutable = [calls = 0](::std::uint32_t) mutable {
@@ -362,8 +362,10 @@ TEST(EnumStringTest, FormatParameterOutsideRuleRefused)
         return "";
     };
     auto const other_wide =
-        [](::std::conditional_t<::std::is_signed_v<wchar_t>, ::std::make_unsigned_t<wchar_t>,
-            ::std::make_signed_t<wchar_t>>) { return ""; };
+        [](::std::conditional_t<
+            ::std::is_signed_v<wchar_t>, ::std::make_unsigned_t<wchar_t>, ::std::make_signed_t<wchar_t>>) {
+        return "";
+    };
     auto narrow_mutable = [calls = 0](::std::uint8_t) mutable {
         return ++calls == 1 ? "first" : "again";
     };

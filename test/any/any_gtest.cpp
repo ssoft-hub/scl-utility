@@ -56,7 +56,8 @@ namespace
         {
             ++allocation_counter::deallocations;
 
-            auto const released = ::std::ranges::find(allocation_counter::live, static_cast<void *>(pointer));
+            auto const released = ::std::ranges::find(
+                allocation_counter::live, static_cast<void *>(pointer));
             if (released == allocation_counter::live.end())
                 return;
 
@@ -112,8 +113,8 @@ namespace
     concept any_converts_from = ::std::is_convertible_v<Type, ::scl::any>;
 
     template <typename Type>
-    concept any_assigns_value = requires(::scl::any & target,
-        Type value) { target = ::std::move(value); };
+    concept any_assigns_value = requires(
+        ::scl::any & target, Type value) { target = ::std::move(value); };
 
     template <typename Type>
     concept any_constructs_in_place = requires { ::scl::any{::std::in_place_type<Type>}; };

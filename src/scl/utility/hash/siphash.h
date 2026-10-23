@@ -34,8 +34,8 @@ namespace scl::hash
 
     namespace detail
     {
-        constexpr void
-        sip_round(::std::uint64_t & v0, ::std::uint64_t & v1, ::std::uint64_t & v2, ::std::uint64_t & v3) noexcept
+        constexpr void sip_round(
+            ::std::uint64_t & v0, ::std::uint64_t & v1, ::std::uint64_t & v2, ::std::uint64_t & v3) noexcept
         {
             v0 += v1;
             v1 = ::std::rotl(v1, 13);
@@ -126,8 +126,8 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint64_t
-    siphash(Range && range, ::scl::hash::siphash_key const key = ::scl::hash::siphash_default_key) /**/
+    constexpr ::std::uint64_t siphash(
+        Range && range, ::scl::hash::siphash_key const key = ::scl::hash::siphash_default_key)
         noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
         // State initialised from key XOR'd with magic constants spelling
@@ -192,7 +192,7 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range && range) const /**/
+        constexpr result_type operator()(Range && range) const
             noexcept(noexcept(::scl::hash::siphash(::std::forward<Range>(range), Key)))
         {
             return ::scl::hash::siphash(::std::forward<Range>(range), Key);

@@ -146,16 +146,17 @@ TEST(MetaTypeTest, TemplateTypes)
 
 #if defined(_MSC_VER) && !defined(__clang__)
     STATIC_EXPECT_EQ(::scl::type_name<T>(), "struct Namespace::TemplateStruct<struct Namespace::Struct>");
-    STATIC_EXPECT_EQ(::scl::type_name<TT>(),
+    STATIC_EXPECT_EQ(
+        ::scl::type_name<TT>(),
         "class Namespace::TemplateClass<struct Namespace::TemplateStruct<struct Namespace::Struct> >");
 #elif defined(__clang__)
     STATIC_EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
-    STATIC_EXPECT_EQ(::scl::type_name<TT>(),
-        "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct>>");
+    STATIC_EXPECT_EQ(
+        ::scl::type_name<TT>(), "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct>>");
 #else
     STATIC_EXPECT_EQ(::scl::type_name<T>(), "Namespace::TemplateStruct<Namespace::Struct>");
-    STATIC_EXPECT_EQ(::scl::type_name<TT>(),
-        "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct> >");
+    STATIC_EXPECT_EQ(
+        ::scl::type_name<TT>(), "Namespace::TemplateClass<Namespace::TemplateStruct<Namespace::Struct> >");
 #endif
 
     STATIC_EXPECT_EQ(::scl::type_short_name<T>(), "TemplateStruct");
@@ -456,11 +457,14 @@ TEST(MetaTypeTest, ArrowAndMinusInTemplateArgumentShortName)
     STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator- > *>>(), "Box");
     STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<&Pointing::operator->* >>>(), "Box");
     STATIC_EXPECT_EQ(
-        ::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>>(), "Box");
+        ::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator-> >>>(),
+        "Box");
     STATIC_EXPECT_EQ(
-        ::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>>(), "Box");
+        ::scl::type_short_name<Box<Enclosing<&Pointing::operator-> >::Member<&Pointing::operator- >>>(),
+        "Box");
     STATIC_EXPECT_EQ(
-        ::scl::type_short_name<Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>>(), "Box");
+        ::scl::type_short_name<Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator-> >>>(),
+        "Box");
     STATIC_EXPECT_EQ(
         ::scl::type_short_name<Box<Enclosing<&Pointing::operator- >::Member<&Pointing::operator- >>>(), "Box");
     STATIC_EXPECT_EQ(
@@ -487,9 +491,10 @@ TEST(MetaTypeTest, SharedNameShortName)
     STATIC_EXPECT_EQ(::scl::type_short_name<first_type>(), "Wrap");
 #endif
 #if defined(__clang__)
-    STATIC_EXPECT_TRUE(::scl::type_name<first_type>().ends_with(
-        "Wrap<(anonymous namespace)::Holder<&(anonymous namespace)::Pointing::operator->>::Inner<"
-        "&(anonymous namespace)::Pointing::operator->>"));
+    STATIC_EXPECT_TRUE(
+        ::scl::type_name<first_type>().ends_with(
+            "Wrap<(anonymous namespace)::Holder<&(anonymous namespace)::Pointing::operator->>::Inner<"
+            "&(anonymous namespace)::Pointing::operator->>"));
 #endif
 }
 
@@ -525,10 +530,12 @@ TEST(MetaTypeTest, AnonymousNamespaceType)
  */
 TEST(MetaTypeTest, StandardLibraryTypes)
 {
-    STATIC_EXPECT_TRUE(::scl::type_name<::std::vector<int>>().find("vector<int") != ::std::string_view::npos);
+    STATIC_EXPECT_TRUE(
+        ::scl::type_name<::std::vector<int>>().find("vector<int") != ::std::string_view::npos);
     STATIC_EXPECT_EQ(::scl::type_short_name<::std::vector<int>>(), "vector");
 #if defined(_MSC_VER) && !defined(__clang__)
-    STATIC_EXPECT_EQ(::scl::type_name<::std::string>(),
+    STATIC_EXPECT_EQ(
+        ::scl::type_name<::std::string>(),
         "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >");
 #elif defined(__clang__) && (defined(_MSVC_STL_VERSION) || defined(__GLIBCXX__))
     STATIC_EXPECT_EQ(::scl::type_name<::std::string>(), "std::basic_string<char>");

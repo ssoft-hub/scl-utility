@@ -64,7 +64,8 @@ static void show_relationships(employee const & ceo)
 
     ::std::cout << "Engineer A's direct manager: " << vp_engineering.get() << '\n';
     ::std::cout
-        << "Engineer A and B share a manager: " << (are_sibling(engineer_a, engineer_b) ? "yes" : "no") << '\n';
+        << "Engineer A and B share a manager: "
+        << (are_sibling(engineer_a, engineer_b) ? "yes" : "no") << '\n';
 }
 
 // ============================================================================

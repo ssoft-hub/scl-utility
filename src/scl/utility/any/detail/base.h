@@ -52,15 +52,15 @@ namespace scl::detail
     [[nodiscard]]
     constexpr any_qualifier operator|(any_qualifier left, any_qualifier right) noexcept
     {
-        return static_cast<any_qualifier>(static_cast<unsigned char>(left) |
-            static_cast<unsigned char>(right));
+        return static_cast<any_qualifier>(
+            static_cast<unsigned char>(left) | static_cast<unsigned char>(right));
     }
 
     [[nodiscard]]
     constexpr any_qualifier operator&(any_qualifier left, any_qualifier right) noexcept
     {
-        return static_cast<any_qualifier>(static_cast<unsigned char>(left) &
-            static_cast<unsigned char>(right));
+        return static_cast<any_qualifier>(
+            static_cast<unsigned char>(left) & static_cast<unsigned char>(right));
     }
 
     [[nodiscard]]
@@ -205,8 +205,8 @@ namespace scl::detail
     any_holder_base * any_move_to(void * storage, any_holder_base * source) noexcept
         requires ::std::is_nothrow_move_constructible_v<Type>
     {
-        auto * const moved = ::std::construct_at(static_cast<any_holder<Type> *>(storage),
-            ::std::move(*any_holder_object<Type>(source)));
+        auto * const moved = ::std::construct_at(
+            static_cast<any_holder<Type> *>(storage), ::std::move(*any_holder_object<Type>(source)));
         any_erase_at<Type>(source);
         return moved;
     }

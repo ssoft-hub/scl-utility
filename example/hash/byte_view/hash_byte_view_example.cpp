@@ -33,7 +33,8 @@ constexpr auto wide_value = fnv1a(byte_view(::std::u16string_view{u"start"}));
 
 // Every bit of every code unit reaches the hash value, so two texts that differ above the low
 // byte are two inputs — the low bytes of both spell "\x00\x00".
-static_assert(fnv1a(byte_view(::std::u16string_view{u"Ā"})) != fnv1a(byte_view(::std::u16string_view{u"Ȁ"})));
+static_assert(
+    fnv1a(byte_view(::std::u16string_view{u"Ā"})) != fnv1a(byte_view(::std::u16string_view{u"Ȁ"})));
 
 // A wide spelling is its own input: it carries the zero bytes the narrow one does not.
 static_assert(wide_value != fnv1a(::std::string_view{"start"}));

@@ -32,12 +32,15 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_MAYBE_UNUSED),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_MAYBE_UNUSED),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_MAYBE_UNUSED_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_MAYBE_UNUSED_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_MAYBE_UNUSED_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_MAYBE_UNUSED));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

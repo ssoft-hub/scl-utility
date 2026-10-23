@@ -7,12 +7,21 @@
 
 namespace
 {
-    SCL_FORCE_INLINE int twice(int value) { return value * 2; }
+    SCL_FORCE_INLINE
+    int twice(int value)
+    {
+        return value * 2;
+    }
 
-    SCL_NOINLINE int called(int value) { return value + 1; }
+    SCL_NOINLINE
+    int called(int value)
+    {
+        return value + 1;
+    }
 
 #if !defined(__GNUC__) || defined(__clang__)
-    SCL_FORCE_INLINE int factorial(int value)
+    SCL_FORCE_INLINE
+    int factorial(int value)
     {
         return value <= 1 ? 1 : value * factorial(value - 1);
     }

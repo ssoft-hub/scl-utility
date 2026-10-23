@@ -314,8 +314,8 @@ namespace scl
         constexpr auto result = text.substr(prefix_length, text.length() - prefix_length - suffix_length);
 
 #if defined(_MSC_VER) && !defined(__clang__)
-        constexpr auto target =
-            ::scl::detail::msvc_thunk_name(::scl::detail::msvc_member_pointer_target(result));
+        constexpr auto target = ::scl::detail::msvc_thunk_name(
+            ::scl::detail::msvc_member_pointer_target(result));
         constexpr auto name = ::scl::detail::msvc_qualified_symbol<S>(
             ::scl::detail::bare_symbol(::scl::detail::msvc_entity_name(target)));
 #else

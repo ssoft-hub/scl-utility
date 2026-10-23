@@ -96,7 +96,8 @@ namespace
         double marker = 0.0;
     };
 
-    static_assert(sizeof(same_shape_as_three_doubles) == sizeof(three_doubles) &&
+    static_assert(
+        sizeof(same_shape_as_three_doubles) == sizeof(three_doubles) &&
             alignof(same_shape_as_three_doubles) == alignof(three_doubles),
         "the block-reusing tests prove nothing unless the two types share one shape");
 
@@ -197,7 +198,7 @@ namespace
 
         throwing_copy_three_doubles() = default;
 
-        throwing_copy_three_doubles(throwing_copy_three_doubles const &) /**/
+        throwing_copy_three_doubles(throwing_copy_three_doubles const &)
         {
             throw block_construction_failure{};
         }
@@ -215,16 +216,15 @@ namespace
 
         throwing_copy_movable_three_doubles() = default;
 
-        throwing_copy_movable_three_doubles(throwing_copy_movable_three_doubles const &) /**/
+        throwing_copy_movable_three_doubles(throwing_copy_movable_three_doubles const &)
         {
             throw block_construction_failure{};
         }
 
         throwing_copy_movable_three_doubles(throwing_copy_movable_three_doubles &&) noexcept = default;
-        throwing_copy_movable_three_doubles &
-        operator=(throwing_copy_movable_three_doubles const &) = default;
-        throwing_copy_movable_three_doubles &
-        operator=(throwing_copy_movable_three_doubles &&) noexcept = default;
+        throwing_copy_movable_three_doubles & operator=(throwing_copy_movable_three_doubles const &) = default;
+        throwing_copy_movable_three_doubles & operator=(
+            throwing_copy_movable_three_doubles &&) noexcept = default;
         ~throwing_copy_movable_three_doubles() = default;
     };
 #endif

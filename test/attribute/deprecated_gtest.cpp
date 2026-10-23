@@ -12,8 +12,7 @@ namespace
         return 1;
     }
 
-    SCL_DEPRECATED_MSG("use current_function instead")
-    [[maybe_unused]]
+    SCL_DEPRECATED_MSG("use current_function instead") [[maybe_unused]]
     int old_function_with_message()
     {
         return 2;

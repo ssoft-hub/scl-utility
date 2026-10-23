@@ -150,7 +150,8 @@ TEST(MetaOwnNamesTest, SymbolName)
  */
 TEST(MetaOwnNamesTest, TypeKey)
 {
-    STATIC_EXPECT_EQ(::scl::type_key_of<::own_names_types::Probe>().name(),
+    STATIC_EXPECT_EQ(
+        ::scl::type_key_of<::own_names_types::Probe>().name(),
         ::scl::type_name<::own_names_types::Probe>());
     STATIC_EXPECT_NE(::scl::type_key_of<::own_names_types::Probe>(), ::scl::type_key_of<int>());
     STATIC_EXPECT_FALSE(::scl::is_tu_local_v<::own_names_types::Probe>);

@@ -10,19 +10,22 @@ namespace
 {
     int classify(int value)
     {
-        if (value > 0)
-            SCL_LIKELY { return 1; }
-        else
-            SCL_UNLIKELY { return -1; }
+        if (value > 0) SCL_LIKELY
+            return 1;
+        else SCL_UNLIKELY
+            return -1;
     }
 
     int label(int value)
     {
         switch (value)
         {
-        SCL_LIKELY case 0:
+        SCL_LIKELY
+        case 0:
             return 10;
-            SCL_UNLIKELY default : return 20;
+        SCL_UNLIKELY
+        default:
+            return 20;
         }
     }
 

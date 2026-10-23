@@ -33,7 +33,8 @@ namespace scl::hash::detail
      */
     template <typename Range>
     concept nothrow_iterable = ::std::ranges::range<Range> &&
-        ::std::is_nothrow_convertible_v<::std::ranges::range_reference_t<Range>, ::std::ranges::range_value_t<Range>> &&
+        ::std::is_nothrow_convertible_v<
+            ::std::ranges::range_reference_t<Range>, ::std::ranges::range_value_t<Range>> &&
         requires(Range & range, ::std::ranges::iterator_t<Range> & position, ::std::ranges::sentinel_t<Range> & last) {
             {
                 ::std::ranges::begin(range)
@@ -111,7 +112,8 @@ namespace scl::hash::detail
 
     template <::scl::hash::concepts::byte_element Element>
     [[nodiscard]]
-    SCL_FORCE_INLINE constexpr ::std::uint8_t as_byte(Element const value) noexcept
+    SCL_FORCE_INLINE
+    constexpr ::std::uint8_t as_byte(Element const value) noexcept
     {
         return ::std::bit_cast<::std::uint8_t>(value);
     }
@@ -122,7 +124,8 @@ namespace scl::hash::detail
      */
     template <::scl::hash::concepts::integer_element Element>
     [[nodiscard]]
-    SCL_FORCE_INLINE constexpr auto element_bits(Element const value) noexcept
+    SCL_FORCE_INLINE
+    constexpr auto element_bits(Element const value) noexcept
     {
         if constexpr (sizeof(Element) == 1)
         {

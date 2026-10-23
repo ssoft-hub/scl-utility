@@ -77,7 +77,7 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint64_t djb2(Range && range, ::std::uint64_t h = 5381ull) /**/
+    constexpr ::std::uint64_t djb2(Range && range, ::std::uint64_t h = 5381ull)
         noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
         for (::std::ranges::range_value_t<Range> const c :
@@ -97,7 +97,7 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range && range) const /**/
+        constexpr result_type operator()(Range && range) const
             noexcept(noexcept(::scl::hash::djb2(::std::forward<Range>(range))))
         {
             return ::scl::hash::djb2(::std::forward<Range>(range));

@@ -47,7 +47,8 @@
 
 <!-- snippet: example/attribute/noreturn/attribute_noreturn_example.cpp noreturn -->
 ```cpp
-SCL_NORETURN void fail(char const * message)
+SCL_NORETURN
+void fail(char const * message)
 {
     std::cerr << "fatal: " << message << '\n';
     std::exit(EXIT_FAILURE);

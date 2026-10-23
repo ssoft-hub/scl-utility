@@ -39,12 +39,13 @@ ShortNamespaceLines: 0          # Do not auto-collapse namespaces solely by shor
 # -----------------------------
 # Function parameters / call arguments
 # -----------------------------
-AlignAfterOpenBracket: DontAlign        # Always break right after '(' so first param starts on a new line
+AlignAfterOpenBracket: DontAlign        # Indent a wrapped argument or parameter by the continuation width
 AllowAllArgumentsOnNextLine: true       # Allow the first call argument to start on its own next line
 AllowAllParametersOfDeclarationOnNextLine: true  # Allow the first parameter of a declaration to start on next line
-AllowBreakBeforeNoexceptSpecifier: OnlyWithParen # Break noexcept only if we already broke after '('
-BinPackArguments: true                  # When wrapped, place one argument per line
-BinPackParameters: false                # When wrapped, place one parameter per line
+AllowBreakBeforeNoexceptSpecifier: OnlyWithParen # Break before noexcept only when it carries a condition in '()'
+BinPackArguments: true                  # When wrapped, fill each line with arguments
+BinPackParameters: BinPack              # When wrapped, fill each line with parameters
+BreakAfterOpenBracketFunction: true     # When wrapped, start the parameters or arguments on the line after '('
 
 # -----------------------------
 # Arrays of structs / visual alignment helpers
@@ -97,6 +98,24 @@ AlignConsecutiveMacros:         # Do not align macro names/arguments in consecut
 # -----------------------------
 SkipMacroDefinitionBody: false  # Format macro bodies as regular code
 AlignEscapedNewlines: Left      # Place '\' for line-continuations at the leftmost allowed column
+# SCL_LIFETIMEBOUND is left out: mapped, it makes clang-format 22 move a comma into the comment before it in any_arg.h
+Macros:                         # Lay out each listed macro as a standard attribute in its place
+  - SCL_NODISCARD=[[nodiscard]]
+  - SCL_NODISCARD_MSG(message)=[[nodiscard(message)]]
+  - SCL_DEPRECATED=[[deprecated]]
+  - SCL_DEPRECATED_MSG(message)=[[deprecated(message)]]
+  - SCL_FORCE_INLINE=[[gnu::always_inline]]
+  - SCL_NOINLINE=[[gnu::noinline]]
+  - SCL_HOT=[[gnu::hot]]
+  - SCL_COLD=[[gnu::cold]]
+  - SCL_NORETURN=[[noreturn]]
+  - SCL_MAYBE_UNUSED=[[maybe_unused]]
+  - SCL_NO_UNIQUE_ADDRESS=[[no_unique_address]]
+  - SCL_INDETERMINATE=[[indeterminate]]
+  - SCL_FALLTHROUGH=[[fallthrough]]
+  - SCL_LIKELY=[[likely]]
+  - SCL_UNLIKELY=[[unlikely]]
+  - SCL_DETAIL_ENUM_JOIN_INLINE=[[gnu::always_inline]]
 
 # -----------------------------
 # switch/case and short constructs
@@ -260,13 +279,13 @@ PenaltyBreakAssignment: 100                # Cost of breaking around '='
 PenaltyBreakBeforeFirstCallParameter: 100  # Cost of breaking before first call arg
 PenaltyBreakComment: 0                     # Cost of breaking comments (0 = cheap)
 PenaltyBreakFirstLessLess: 0               # Cost of breaking before the FIRST '<<'
-PenaltyBreakOpenParenthesis: 100           # Cost of breaking right after '('
+PenaltyBreakOpenParenthesis: 0             # Cost of breaking right after '('
 PenaltyBreakScopeResolution: 1000          # Keep 'ns::Type' together when possible
 PenaltyBreakString: 100000                 # Strongly avoid splitting string literals
 PenaltyBreakTemplateDeclaration: 0         # Cheap to wrap template declarations
-PenaltyExcessCharacter: 10                 # Strongly avoid exceeding ColumnLimit
+PenaltyExcessCharacter: 15                 # Allow a short overrun of ColumnLimit rather than an awkward break
 PenaltyIndentedWhitespace: 100             # Avoid deep indentation staircase
-PenaltyReturnTypeOnItsOwnLine: 50          # Keep return type with function name
+PenaltyReturnTypeOnItsOwnLine: 1000        # Keep return type with function name
 
 # -----------------------------
 # Pointers / references / qualifiers

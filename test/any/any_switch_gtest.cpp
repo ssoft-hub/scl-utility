@@ -71,8 +71,8 @@ namespace
     concept handlerless_case = requires { ::scl::any_switch<Result>().template in_case<int>(); };
 
     template <typename Handler>
-    concept int_handler =
-        requires(Handler handler) { ::scl::any_switch<int>().in_case<int>(handler); };
+    concept int_handler = requires(
+        Handler handler) { ::scl::any_switch<int>().in_case<int>(handler); };
 
     template <typename Handler>
     concept void_handler = requires(Handler handler) { ::scl::any_switch<>().in_case<int>(handler); };
@@ -606,7 +606,9 @@ TEST(AnySwitchTest, CallOperatorReachesAMutableHandler)
 {
     int value = 7;
 
-    auto matcher = ::scl::any_switch<int>().in_case<int>([count = 0](int) mutable { return ++count; });
+    auto matcher = ::scl::any_switch<int>().in_case<int>([count = 0](int) mutable {
+        return ++count;
+    });
 
     EXPECT_EQ(*matcher(value), 1);
     EXPECT_EQ(*matcher(value), 2);
@@ -640,7 +642,9 @@ TEST(AnySwitchTest, MutableHandlerRunsOnANonConstChain)
 {
     int value = 7;
 
-    auto matcher = ::scl::any_switch<int>().in_case<int>([count = 0](int) mutable { return ++count; });
+    auto matcher = ::scl::any_switch<int>().in_case<int>([count = 0](int) mutable {
+        return ++count;
+    });
 
     EXPECT_EQ(*matcher.apply(value), 1);
     EXPECT_EQ(*matcher.apply(value), 2);
@@ -704,7 +708,9 @@ TEST(AnySwitchTest, ObjectCaseCopiesOnceIntoAByValueHandler)
     int seen = 0;
     counted::copies = 0;
 
-    ::scl::any_switch<>().in_case<counted>([&seen](counted object) { seen = object.id; }).apply(value);
+    ::scl::any_switch<>().in_case<counted>([&seen](counted object) {
+        seen = object.id;
+    }).apply(value);
 
     EXPECT_EQ(seen, 7);
     EXPECT_EQ(counted::copies, 1);

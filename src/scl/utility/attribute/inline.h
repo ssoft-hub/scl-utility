@@ -38,13 +38,16 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_FORCE_INLINE),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_FORCE_INLINE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FORCE_INLINE_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FORCE_INLINE_GNU),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FORCE_INLINE_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_FORCE_INLINE_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_FORCE_INLINE));
+// clang-format on
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #ifndef noinline
@@ -84,13 +87,16 @@ static_assert(
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NOINLINE),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NOINLINE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NOINLINE_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NOINLINE_GNU),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NOINLINE_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NOINLINE_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NOINLINE));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

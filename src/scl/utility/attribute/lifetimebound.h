@@ -50,13 +50,16 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIFETIMEBOUND),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_LIFETIMEBOUND),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_CLANG),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_LIFETIMEBOUND_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_LIFETIMEBOUND));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

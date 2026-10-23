@@ -104,8 +104,8 @@ namespace scl
 
         // From the parts rather than from a handle: a volatile handle is not copyable as a
         // base, and only run time reaches this, where the address is the shape the base keeps.
-        any_view(detail::any_holder_base const * held,
-            void const volatile * object,
+        any_view(
+            detail::any_holder_base const * held, void const volatile * object,
             base_type::descriptor_type const * descriptor) noexcept
             : base_type{held, object, descriptor}
         {}
@@ -127,7 +127,8 @@ namespace scl
     // the handle, not the referent, so it takes no part in the request.
     template <::scl::concepts::object_type Type, typename View>
     [[nodiscard]]
-    SCL_HOT constexpr Type const * any_cast(View * view) noexcept
+    SCL_HOT
+    constexpr Type const * any_cast(View * view) noexcept
         requires(::std::same_as<::std::remove_cv_t<View>, any_view>)
     {
         using bare = ::std::remove_cvref_t<Type>;
@@ -171,7 +172,8 @@ namespace scl
     template <typename Type>
     [[nodiscard]]
     constexpr Type any_cast(any_view const & view)
-        requires(::std::is_object_v<Type> ||
+        requires(
+            ::std::is_object_v<Type> ||
             (::std::is_lvalue_reference_v<Type> && ::std::is_const_v<::std::remove_reference_t<Type>>))
     {
         // remove_reference_t keeps the request's cv: T const volatile & must reach a volatile referent.

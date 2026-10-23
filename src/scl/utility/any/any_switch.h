@@ -161,7 +161,8 @@ namespace scl::detail
                 return ::std::is_nothrow_invocable_v<Handler>;
         else if constexpr (::std::is_invocable_v<Handler, Argument...>)
             return ::std::is_nothrow_invocable_v<Handler, Argument...> &&
-                ::std::is_nothrow_assignable_v<::std::optional<Result> &, ::std::invoke_result_t<Handler, Argument...>>;
+                ::std::is_nothrow_assignable_v<
+                    ::std::optional<Result> &, ::std::invoke_result_t<Handler, Argument...>>;
         else if constexpr (::std::is_invocable_v<Handler>)
             return ::std::is_nothrow_invocable_v<Handler> &&
                 ::std::is_nothrow_assignable_v<::std::optional<Result> &, ::std::invoke_result_t<Handler>>;
@@ -196,8 +197,8 @@ namespace scl
     {
         using branches_type = ::std::tuple<Branches...>;
         // A `void` chain produces nothing, so it neither builds an optional nor returns one.
-        using storage_type =
-            ::std::conditional_t<::std::is_void_v<Result>, detail::any_switch_no_result, ::std::optional<Result>>;
+        using storage_type = ::std::conditional_t<
+            ::std::is_void_v<Result>, detail::any_switch_no_result, ::std::optional<Result>>;
 
         // Handing the result back is part of what apply does, so a result whose move may
         // throw makes apply throwing however quiet its branches are.
@@ -302,17 +303,15 @@ namespace scl
         {
             using branch = detail::any_switch_branch<Case, ::std::decay_t<Handler>>;
 
-            return any_switch<Result, Branches..., branch>{::std::tuple_cat(m_branches,
-                ::std::tuple<branch>{branch{::std::forward<Handler>(handler)}})};
+            return any_switch<Result, Branches..., branch>{::std::tuple_cat(
+                m_branches, ::std::tuple<branch>{branch{::std::forward<Handler>(handler)}})};
         }
 
         // Branches is deduced as a `const` or non-`const` tuple, so the same walk serves
         // both forms of apply and each reaches its handlers the way that form may.
         template <typename BranchTuple, ::std::size_t... Index>
-        static constexpr void select(/**/
-            BranchTuple & branches,
-            any_arg subject,
-            storage_type & result,
+        static constexpr void select(
+            BranchTuple & branches, any_arg subject, storage_type & result,
             ::std::index_sequence<Index...> /*indices*/)
         {
             bool done = false;
@@ -381,8 +380,7 @@ namespace scl
         // handler that accepts both, and the only one that can see the value at all. A
         // handler that is not invocable at all is a value, which is the branch itself.
         template <typename Handler, typename... Argument>
-        static constexpr void
-        dispatch(storage_type & result, Handler & handler, Argument &&... argument)
+        static constexpr void dispatch(storage_type & result, Handler & handler, Argument &&... argument)
         {
             if constexpr (::std::is_same_v<::std::remove_const_t<Handler>, detail::any_switch_no_handler>)
                 return;

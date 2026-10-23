@@ -38,13 +38,16 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NORETURN),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NORETURN),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NORETURN_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NORETURN_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NORETURN_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NORETURN_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NORETURN));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

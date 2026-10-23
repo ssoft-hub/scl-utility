@@ -78,7 +78,7 @@ namespace scl::hash
      */
     template <::scl::hash::concepts::hashable_range Range>
     [[nodiscard]]
-    constexpr ::std::uint64_t fnv1a(Range && range, ::std::uint64_t h = 14695981039346656037ull) /**/
+    constexpr ::std::uint64_t fnv1a(Range && range, ::std::uint64_t h = 14695981039346656037ull)
         noexcept(::scl::hash::detail::nothrow_traversable<Range>)
     {
         for (::std::ranges::range_value_t<Range> const c :
@@ -100,7 +100,7 @@ namespace scl::hash
 
         template <::scl::hash::concepts::hashable_range Range>
         [[nodiscard]]
-        constexpr result_type operator()(Range && range) const /**/
+        constexpr result_type operator()(Range && range) const
             noexcept(noexcept(::scl::hash::fnv1a(::std::forward<Range>(range))))
         {
             return ::scl::hash::fnv1a(::std::forward<Range>(range));

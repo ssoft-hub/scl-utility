@@ -32,7 +32,8 @@ namespace scl
 
     template <::scl::concepts::object_type Type, typename MutableView>
     [[nodiscard]]
-    SCL_HOT constexpr Type * any_cast(MutableView * view) noexcept
+    SCL_HOT
+    constexpr Type * any_cast(MutableView * view) noexcept
         requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>);
 
     class any_mutable_view : detail::any_base
@@ -140,7 +141,8 @@ namespace scl
     // the handle, not the referent, so it takes no part in the request.
     template <::scl::concepts::object_type Type, typename MutableView>
     [[nodiscard]]
-    SCL_HOT constexpr Type * any_cast(MutableView * view) noexcept
+    SCL_HOT
+    constexpr Type * any_cast(MutableView * view) noexcept
         requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>)
     {
         if (view == nullptr) [[unlikely]]

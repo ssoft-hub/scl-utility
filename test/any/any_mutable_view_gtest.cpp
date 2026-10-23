@@ -15,15 +15,15 @@ namespace
     concept view_from_lvalue = requires(Type & object) { ::scl::any_mutable_view{object}; };
 
     template <typename Type>
-    concept view_from_const_lvalue =
-        requires(Type const & object) { ::scl::any_mutable_view{object}; };
+    concept view_from_const_lvalue = requires(
+        Type const & object) { ::scl::any_mutable_view{object}; };
 
     template <typename Type>
     concept view_from_rvalue = requires { ::scl::any_mutable_view{Type{}}; };
 
     template <typename Type>
-    concept view_ptr_castable =
-        requires(::scl::any_mutable_view const * view) { ::scl::any_cast<Type>(view); };
+    concept view_ptr_castable = requires(
+        ::scl::any_mutable_view const * view) { ::scl::any_cast<Type>(view); };
 
     void write_through(::scl::any_arg argument) noexcept
     {
@@ -112,7 +112,8 @@ TEST(AnyMutableViewTest, RefusesAConstLvalueAndATemporary)
     // rvalue also binds a const lvalue reference, so the anchor constructor would take one.
     STATIC_EXPECT_FALSE(view_from_rvalue<::scl::any_anchor<int>>);
     STATIC_EXPECT_FALSE(view_from_rvalue<::scl::any>);
-    STATIC_EXPECT_FALSE((::std::is_constructible_v<::scl::any_mutable_view, ::scl::any_anchor<int const> &>));
+    STATIC_EXPECT_FALSE(
+        (::std::is_constructible_v<::scl::any_mutable_view, ::scl::any_anchor<int const> &>));
 #if SCL_HAS_RTTI
     STATIC_EXPECT_FALSE(view_from_rvalue<::std::any>);
 #endif

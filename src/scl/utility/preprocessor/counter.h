@@ -40,8 +40,9 @@ namespace scl::preprocessor::detail
      */
     template <typename Tag, ::std::uint_fast32_t Rank, ::std::uint_fast32_t Acc>
     [[nodiscard]]
-    constexpr counter<Acc>
-    crumb(::std::type_identity<Tag> * /*tag*/, counter<Rank> /*rank*/, counter<Acc> /*acc*/) noexcept // NOLINT(readability-named-parameter)
+    constexpr counter<Acc> crumb(
+        ::std::type_identity<Tag> * /*tag*/, counter<Rank> /*rank*/,
+        counter<Acc> /*acc*/) noexcept // NOLINT(readability-named-parameter)
     {
         return {};
     }
@@ -57,8 +58,9 @@ namespace scl::preprocessor::detail
  * @param rank The value of the bit to read, a power of two.
  * @param acc The bits of the count above @p rank, read so far.
  */
-#define SCL_DETAIL_COUNTER_CRUMB(Tag, rank, acc)                                          \
-    ::scl::preprocessor::detail::crumb(static_cast<::std::type_identity<Tag> *>(nullptr), \
+#define SCL_DETAIL_COUNTER_CRUMB(Tag, rank, acc)           \
+    ::scl::preprocessor::detail::crumb(                    \
+        static_cast<::std::type_identity<Tag> *>(nullptr), \
         ::scl::preprocessor::detail::counter<rank>(), ::scl::preprocessor::detail::counter<acc>())
 
 /**
@@ -86,40 +88,42 @@ namespace scl::preprocessor::detail
  *
  * @snippet preprocessor/counter/preprocessor_counter_example.cpp count
  */
-#define SCL_COUNTER_VALUE(...)                                                                                                                                                                \
-    (SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 0,                                                                                                                             \
-        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 1,                                                                                                                          \
-            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 2,                                                                                                                      \
-                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 3,                                                                                                                  \
-                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 4,                                                                                                              \
-                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 5,                                                                                                          \
-                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 6,                                                                                                      \
-                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 7,                                                                                                  \
-                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 8,                                                                                              \
-                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 9,                                                                                          \
-                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 10,                                                                                     \
-                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 11,                                                                                 \
-                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 12,                                                                             \
-                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 13,                                                                         \
-                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 14,                                                                     \
-                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 15,                                                                 \
-                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 16,                                                             \
-                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 17,                                                         \
-                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 18,                                                     \
-                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 19,                                                 \
-                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 20,                                             \
-                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 21,                                         \
-                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 22,                                     \
-                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 23,                                 \
-                                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 24,                             \
-                                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 25,                         \
-                                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 26,                     \
-                                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 27,                 \
-                                                                                                                    SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 28,             \
-                                                                                                                        SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 29,         \
-                                                                                                                            SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 30,     \
-                                                                                                                                SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 31, \
-                                                                                                                                    0))))))))))))))))))))))))))))))))())
+// clang-format off
+#define SCL_COUNTER_VALUE(...)                                     \
+    (SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 0,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 1,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 2,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 3,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 4,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 5,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 6,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 7,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 8,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 9,  \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 10, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 11, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 12, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 13, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 14, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 15, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 16, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 17, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 18, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 19, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 20, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 21, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 22, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 23, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 24, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 25, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 26, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 27, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 28, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 29, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 30, \
+     SCL_DETAIL_COUNTER_CRUMB(SCL_FORWARD(__VA_ARGS__), 1ul << 31, \
+     0))))))))))))))))))))))))))))))))())
+// clang-format on
 
 /**
  * @def SCL_COUNTER_NEXT(...)
@@ -139,8 +143,8 @@ namespace scl::preprocessor::detail
     namespace scl::preprocessor::detail                                                              \
     {                                                                                                \
         [[nodiscard]]                                                                                \
-        constexpr counter<SCL_COUNTER_VALUE(__VA_ARGS__) + 1>                                        \
-        crumb(::std::type_identity<__VA_ARGS__> *,                                                   \
+        constexpr counter<SCL_COUNTER_VALUE(__VA_ARGS__) + 1> crumb(                                 \
+            ::std::type_identity<__VA_ARGS__> *,                                                     \
             counter<(SCL_COUNTER_VALUE(__VA_ARGS__) + 1) & ~SCL_COUNTER_VALUE(__VA_ARGS__)>,         \
             counter<(SCL_COUNTER_VALUE(__VA_ARGS__) + 1) & SCL_COUNTER_VALUE(__VA_ARGS__)>) noexcept \
         {                                                                                            \

@@ -124,7 +124,7 @@ namespace
             ++position;
         }
 
-        bool operator==(throwing_iterator const & other) const /**/
+        bool operator==(throwing_iterator const & other) const
             noexcept(Operation != throwing_operation::compare)
         {
             return position == other.position;
@@ -180,7 +180,7 @@ namespace
             return taken;
         }
 
-        bool operator==(forward_throwing_iterator const & other) const /**/
+        bool operator==(forward_throwing_iterator const & other) const
             noexcept(Operation != throwing_operation::compare)
         {
             return position == other.position;
@@ -246,8 +246,8 @@ namespace
      */
     struct shared_buffer
     {
-        ::std::shared_ptr<::std::array<char, 3>> held =
-            ::std::make_shared<::std::array<char, 3>>(::std::array<char, 3>{'a', 'b', 'c'});
+        ::std::shared_ptr<::std::array<char, 3>> held = ::std::make_shared<::std::array<char, 3>>(
+            ::std::array<char, 3>{'a', 'b', 'c'});
 
         inline static int mutable_reads = 0;
 
@@ -348,8 +348,7 @@ namespace
     {
         char const * last = nullptr;
 
-        friend bool
-        operator==(move_throwing_iterator const & position, plain_sentinel const & sentinel) noexcept
+        friend bool operator==(move_throwing_iterator const & position, plain_sentinel const & sentinel) noexcept
         {
             return position.position == sentinel.last;
         }
@@ -393,8 +392,7 @@ namespace
             return *this;
         }
 
-        friend bool
-        operator==(char const * const position, move_throwing_sentinel const & sentinel) noexcept
+        friend bool operator==(char const * const position, move_throwing_sentinel const & sentinel) noexcept
         {
             return position == sentinel.last;
         }
@@ -414,8 +412,7 @@ namespace
     {
         char const * last = nullptr;
 
-        friend bool
-        operator==(char const * const position, compare_throwing_sentinel const & sentinel) /**/
+        friend bool operator==(char const * const position, compare_throwing_sentinel const & sentinel) /**/
             noexcept(false)
         {
             return position == sentinel.last;
@@ -672,7 +669,8 @@ TEST(HashByteViewTest, ARangeThatCannotBeReadAsConstIsTaken)
  */
 TEST(HashByteViewTest, ATemporaryContainerIsTakenAndOwned)
 {
-    EXPECT_EQ(fnv1a(byte_view(::std::vector<char16_t>{u'A', u'B'})),
+    EXPECT_EQ(
+        fnv1a(byte_view(::std::vector<char16_t>{u'A', u'B'})),
         fnv1a(byte_view(::std::u16string_view{u"AB"})));
 }
 
@@ -796,8 +794,8 @@ TEST(HashByteViewTest, AWideCharacterSourceSpellsThePlatformWidth)
 {
     static constexpr ::std::uint8_t expected[sizeof(wchar_t)]{0x41U};
 
-    STATIC_EXPECT_TRUE(::std::ranges::equal(::scl::hash::byte_view(::std::wstring_view{L"A"}),
-        ::std::span{expected}));
+    STATIC_EXPECT_TRUE(
+        ::std::ranges::equal(::scl::hash::byte_view(::std::wstring_view{L"A"}), ::std::span{expected}));
 }
 
 /**
@@ -805,9 +803,10 @@ TEST(HashByteViewTest, AWideCharacterSourceSpellsThePlatformWidth)
  */
 TEST(HashByteViewTest, WideInputsDifferingAboveTheLowByteDiffer)
 {
-    STATIC_EXPECT_NE(fnv1a(byte_view(::std::u16string_view{u"Ā"})),
-        fnv1a(byte_view(::std::u16string_view{u"Ȁ"})));
-    STATIC_EXPECT_NE(siphash(byte_view(::std::u16string_view{u"AB"})),
+    STATIC_EXPECT_NE(
+        fnv1a(byte_view(::std::u16string_view{u"Ā"})), fnv1a(byte_view(::std::u16string_view{u"Ȁ"})));
+    STATIC_EXPECT_NE(
+        siphash(byte_view(::std::u16string_view{u"AB"})),
         siphash(byte_view(::std::u16string_view{u"Łł"})));
 }
 
@@ -943,13 +942,14 @@ TEST(HashByteViewTest, NoexceptFollowsTheSource)
  */
 TEST(HashByteViewTest, AViewOfATemporaryKeepsTheSourceAlive)
 {
-    auto const kept = ::std::make_shared<::std::array<char16_t, 3>>(::std::array<char16_t, 3>{
-        u'A', u'B', u'C'});
+    auto const kept = ::std::make_shared<::std::array<char16_t, 3>>(
+        ::std::array<char16_t, 3>{u'A', u'B', u'C'});
 
     auto const bytes = ::scl::hash::byte_view(counted_buffer{kept});
 
     EXPECT_EQ(kept.use_count(), 2);
-    EXPECT_EQ(::scl::hash::fnv1a(bytes),
+    EXPECT_EQ(
+        ::scl::hash::fnv1a(bytes),
         ::scl::hash::fnv1a(::scl::hash::byte_view(::std::u16string_view{u"ABC"})));
 }
 
@@ -1060,8 +1060,8 @@ TEST(HashByteViewTest, ASingleElementSourceSpellsItsBytes)
 {
     static constexpr ::std::uint8_t expected[]{0x41U, 0x00U};
 
-    STATIC_EXPECT_TRUE(::std::ranges::equal(::scl::hash::byte_view(::std::u16string_view{u"A"}),
-        ::std::span{expected}));
+    STATIC_EXPECT_TRUE(
+        ::std::ranges::equal(::scl::hash::byte_view(::std::u16string_view{u"A"}), ::std::span{expected}));
 }
 
 /**
@@ -1154,7 +1154,8 @@ TEST(HashByteViewTest, TheSizeThrowsExactlyWhereTheSourceSizeThrows)
 TEST(HashByteViewTest, AnEmptySourceSpellsNoBytes)
 {
     STATIC_EXPECT_TRUE(::scl::hash::byte_view(::std::u16string_view{}).empty());
-    STATIC_EXPECT_EQ(::scl::hash::fnv1a(::scl::hash::byte_view(::std::u16string_view{})),
+    STATIC_EXPECT_EQ(
+        ::scl::hash::fnv1a(::scl::hash::byte_view(::std::u16string_view{})),
         ::scl::hash::fnv1a(::std::string_view{}));
 }
 

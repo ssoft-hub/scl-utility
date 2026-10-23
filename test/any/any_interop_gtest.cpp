@@ -88,8 +88,8 @@ namespace
     concept built_from = requires(Source & source) { Target{::std::move(source)}; };
 
     template <typename Target, typename Source>
-    concept assigned_from = requires(Target & target,
-        Source & source) { target = ::std::move(source); };
+    concept assigned_from = requires(
+        Target & target, Source & source) { target = ::std::move(source); };
 
     template <typename Target, typename Source>
     concept swapped_with = requires(Target & target, Source & source) { target.swap(source); };

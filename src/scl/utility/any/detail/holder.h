@@ -21,10 +21,10 @@ namespace scl::detail
     // A buffer object is relocated by moving it, and a move that throws would leave the
     // owner with neither the old object nor the new one - hence the demand for `move`.
     [[nodiscard]]
-    constexpr bool
-    any_fits_in_buffer(any_type_descriptor const & descriptor, ::std::size_t capacity) noexcept
+    constexpr bool any_fits_in_buffer(any_type_descriptor const & descriptor, ::std::size_t capacity) noexcept
     {
-        return descriptor.size <= capacity && descriptor.alignment <= alignof(void *) && descriptor.move != nullptr;
+        return descriptor.size <= capacity && descriptor.alignment <= alignof(void *) &&
+            descriptor.move != nullptr;
     }
 
     // Typed rather than byte-sized: this is what aligns an over-aligned object and what
@@ -72,8 +72,8 @@ namespace scl::detail
     [[nodiscard]]
     any_holder_base * any_make_holder_in_place(void * storage, Arguments &&... arguments)
     {
-        return ::std::construct_at(static_cast<any_holder<Type> *>(storage),
-            ::std::forward<Arguments>(arguments)...);
+        return ::std::construct_at(
+            static_cast<any_holder<Type> *>(storage), ::std::forward<Arguments>(arguments)...);
     }
 
     // Storage an owner hands to an operation that only knows the referent's size and
@@ -126,7 +126,8 @@ namespace scl::detail
             typename ::std::allocator_traits<Allocator>::template rebind_alloc<block>>;
 
         typename traits::allocator_type block_allocator{allocator};
-        traits::deallocate(block_allocator, static_cast<block *>(storage), (size + Alignment - 1U) / Alignment);
+        traits::deallocate(
+            block_allocator, static_cast<block *>(storage), (size + Alignment - 1U) / Alignment);
     }
 
     template <typename Allocator>
@@ -231,8 +232,7 @@ namespace scl::detail
     // explicit copy constructor, or one beside a deleted move, satisfies one and not the other.
     template <typename Type, typename Allocator>
     [[nodiscard]]
-    constexpr any_holder_base *
-    any_duplicate_holder(any_holder_base const * held, Allocator & allocator)
+    constexpr any_holder_base * any_duplicate_holder(any_holder_base const * held, Allocator & allocator)
         requires ::std::constructible_from<Type, Type const &>
     {
         return any_make_holder<Type>(allocator, *any_holder_object<Type>(held));
@@ -275,8 +275,7 @@ namespace scl::detail
     };
 
     [[nodiscard]]
-    constexpr any_type_descriptor
-    any_owned_form(any_type_descriptor described, any_owned_links links) noexcept
+    constexpr any_type_descriptor any_owned_form(any_type_descriptor described, any_owned_links links) noexcept
     {
         // What tells a cast that the handle remembers a holder; the shared forms describe
         // a plain binding.
@@ -286,18 +285,25 @@ namespace scl::detail
         return described;
     }
 
+    // clang-format off
     template <typename Type, typename Allocator>
     inline constexpr any_owned_forms<Allocator> any_owned_forms_of{
-        .value = {any_owned_form(any_type_descriptor_of<Type &>,
-                  {.as_const = &any_owned_forms_of<Type, Allocator>.constant,
-                  .as_value = &any_owned_forms_of<Type, Allocator>.value}),
-                  &any_destroy_holder<Type, Allocator>, any_duplicate_operation_of<Type, Allocator>()},
+        .value = {
+            any_owned_form(
+                any_type_descriptor_of<Type &>,
+                {.as_const = &any_owned_forms_of<Type, Allocator>.constant,
+                 .as_value = &any_owned_forms_of<Type, Allocator>.value}),
+            &any_destroy_holder<Type, Allocator>,
+            any_duplicate_operation_of<Type, Allocator>()},
         .constant = {
-                  any_owned_form(any_type_descriptor_of<Type const &>,
-                  {.as_const = &any_owned_forms_of<Type, Allocator>.constant,
-                  .as_value = &any_owned_forms_of<Type, Allocator>.value}),
-                  &any_destroy_holder<Type, Allocator>, any_duplicate_operation_of<Type, Allocator>()}
+            any_owned_form(
+                any_type_descriptor_of<Type const &>,
+                {.as_const = &any_owned_forms_of<Type, Allocator>.constant,
+                 .as_value = &any_owned_forms_of<Type, Allocator>.value}),
+            &any_destroy_holder<Type, Allocator>,
+            any_duplicate_operation_of<Type, Allocator>()}
     };
+    // clang-format on
 
     template <typename Type, typename Allocator>
     inline constexpr any_descriptor<Allocator> const & any_descriptor_of =

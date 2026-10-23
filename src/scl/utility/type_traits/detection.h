@@ -170,6 +170,7 @@ namespace scl
      * @tparam Arguments Arguments for the template
      */
     template <typename To, template <typename...> class Operation, typename... Arguments>
-    inline constexpr bool is_detected_convertible_v = is_detected_convertible<To, Operation, Arguments...>::value;
+    inline constexpr bool is_detected_convertible_v =
+        is_detected_convertible<To, Operation, Arguments...>::value;
 
 } // namespace scl

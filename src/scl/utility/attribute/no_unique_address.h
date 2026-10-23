@@ -40,12 +40,15 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NO_UNIQUE_ADDRESS),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_NO_UNIQUE_ADDRESS),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NO_UNIQUE_ADDRESS_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NO_UNIQUE_ADDRESS_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_NO_UNIQUE_ADDRESS_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_NO_UNIQUE_ADDRESS));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

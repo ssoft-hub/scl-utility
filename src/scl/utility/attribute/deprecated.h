@@ -42,13 +42,16 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DEPRECATED),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DEPRECATED),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSVC),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_ATTRIBUTE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_DEPRECATED));
+// clang-format on
 
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(deprecated)
@@ -83,7 +86,8 @@ static_assert(
 #endif
 
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DEPRECATED_MSG("scl_detail_message")),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DEPRECATED_MSG("scl_detail_message")),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_STD("scl_detail_message")),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_MSVC("scl_detail_message")),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_DEPRECATED_MSG_ATTRIBUTE("scl_detail_message")),

@@ -75,7 +75,8 @@
 
 <!-- snippet: example/attribute/inline/attribute_inline_example.cpp force_inline -->
 ```cpp
-SCL_FORCE_INLINE int clamp(int value, int low, int high)
+SCL_FORCE_INLINE
+int clamp(int value, int low, int high)
 {
     return value < low ? low : value > high ? high : value;
 }
@@ -85,7 +86,11 @@ SCL_FORCE_INLINE int clamp(int value, int low, int high)
 
 <!-- snippet: example/attribute/inline/attribute_inline_example.cpp noinline -->
 ```cpp
-SCL_NOINLINE void report_out_of_range(int value) { std::cerr << value << " is out of range\n"; }
+SCL_NOINLINE
+void report_out_of_range(int value)
+{
+    std::cerr << value << " is out of range\n";
+}
 ```
 
 ## Смотрите также

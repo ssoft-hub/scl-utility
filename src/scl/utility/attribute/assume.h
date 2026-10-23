@@ -58,7 +58,8 @@
 #endif
 
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_ASSUME(scl_detail_condition)),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_ASSUME(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_CXX23(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_MSVC(scl_detail_condition)),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_ASSUME_BUILTIN(scl_detail_condition)),
@@ -89,12 +90,15 @@ static_assert(
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNREACHABLE()),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_UNREACHABLE()),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNREACHABLE_MSVC()),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNREACHABLE_BUILTIN()),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_UNREACHABLE_FALLBACK())),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_UNREACHABLE));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

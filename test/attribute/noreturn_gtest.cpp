@@ -11,9 +11,17 @@
 
 namespace
 {
-    SCL_NORETURN SCL_NOINLINE void fail_out_of_line() { std::abort(); }
+    SCL_NORETURN SCL_NOINLINE
+    void fail_out_of_line()
+    {
+        std::abort();
+    }
 
-    SCL_NORETURN SCL_FORCE_INLINE void fail_in_line() { std::abort(); }
+    SCL_NORETURN SCL_FORCE_INLINE
+    void fail_in_line()
+    {
+        std::abort();
+    }
 
     int checked(int value)
     {
@@ -32,7 +40,11 @@ namespace
     }
 
 #if SCL_HAS_EXCEPTIONS
-    SCL_NORETURN void throw_code(int code) { throw code; }
+    SCL_NORETURN
+    void throw_code(int code)
+    {
+        throw code;
+    }
 #endif
 } // namespace
 

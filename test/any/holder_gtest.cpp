@@ -127,8 +127,8 @@ namespace
     constexpr ::std::size_t constant_round_trip()
     {
         default_allocator allocator;
-        ::scl::detail::any_holder_base * const held =
-            ::scl::detail::any_make_holder<::std::string>(allocator, "Hello Any!");
+        ::scl::detail::any_holder_base * const held = ::scl::detail::any_make_holder<::std::string>(
+            allocator, "Hello Any!");
 
         ::scl::detail::any_holder_base * const copy =
             ::scl::detail::any_duplicate_holder<::std::string>(held, allocator);
@@ -197,8 +197,8 @@ TEST(AnyHolderTest, ErasedCopyReproducesTheObjectAtAGivenAddress)
     ::std::string source{"Hello Any!"};
     alignas(::std::string)::std::byte storage[sizeof(::std::string)]{};
 
-    ::scl::detail::any_holder_base * const copy = described<::std::string>.place(storage,
-        ::std::addressof(source));
+    ::scl::detail::any_holder_base * const copy = described<::std::string>.place(
+        storage, ::std::addressof(source));
 
     EXPECT_EQ(*::scl::detail::any_holder_object<::std::string>(copy), "Hello Any!");
     described<::std::string>.erase(copy);
@@ -215,8 +215,8 @@ TEST(AnyHolderTest, ErasedMoveRelocatesTheObjectAndEndsTheSource)
     alignas(traced)::std::byte source_storage[sizeof(traced)]{};
     alignas(traced)::std::byte target_storage[sizeof(traced)]{};
     traced source{log};
-    ::scl::detail::any_holder_base * const held =
-        ::scl::detail::any_make_holder_in_place<traced>(source_storage, source);
+    ::scl::detail::any_holder_base * const held = ::scl::detail::any_make_holder_in_place<traced>(
+        source_storage, source);
 
     ::scl::detail::any_holder_base * const target = described<traced>.move(target_storage, held);
 

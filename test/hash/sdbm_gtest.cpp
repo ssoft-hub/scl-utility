@@ -53,7 +53,8 @@ TEST(SdbmTest, DifferentInputsDifferentHashes)
  */
 TEST(SdbmTest, ChainingEquivalentToConcatenation)
 {
-    STATIC_EXPECT_EQ(sdbm(::std::string_view{"bar"}, sdbm(::std::string_view{"foo"})),
+    STATIC_EXPECT_EQ(
+        sdbm(::std::string_view{"bar"}, sdbm(::std::string_view{"foo"})),
         sdbm(::std::string_view{"foobar"}));
 }
 

@@ -26,11 +26,14 @@
 #endif
 #endif
 
+// clang-format off
 static_assert(
-    ::scl::attribute::detail::spelled_as_one_of(SCL_DETAIL_ATTRIBUTE_TEXT(SCL_INDETERMINATE),
+    ::scl::attribute::detail::spelled_as_one_of(
+        SCL_DETAIL_ATTRIBUTE_TEXT(SCL_INDETERMINATE),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_INDETERMINATE_STD),
         SCL_DETAIL_ATTRIBUTE_TEXT(SCL_DETAIL_INDETERMINATE_FALLBACK)),
     SCL_DETAIL_ATTRIBUTE_MESSAGE(SCL_INDETERMINATE));
+// clang-format on
 
 // -----------------------------------------------------------------------------
 // Documentation

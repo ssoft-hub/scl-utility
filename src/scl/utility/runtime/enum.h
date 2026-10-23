@@ -43,8 +43,8 @@ namespace scl::detail
     template <typename Underlying>
     struct enum_number
     {
-        using type = ::std::conditional_t<::std::is_signed_v<Underlying>,
-            ::std::make_signed_t<Underlying>,
+        using type = ::std::conditional_t<
+            ::std::is_signed_v<Underlying>, ::std::make_signed_t<Underlying>,
             ::std::make_unsigned_t<Underlying>>;
     };
 
@@ -58,8 +58,8 @@ namespace scl::detail
     using enum_number_t = ::scl::detail::enum_number<::std::underlying_type_t<Enum>>::type;
 
     [[nodiscard]]
-    SCL_DETAIL_ENUM_JOIN_INLINE ::std::string
-    enum_spelling(::std::string_view type, ::std::string_view number)
+    SCL_DETAIL_ENUM_JOIN_INLINE
+    ::std::string enum_spelling(::std::string_view type, ::std::string_view number)
     {
         ::std::string result;
         result.reserve(type.size() + 2 + number.size());
@@ -84,7 +84,8 @@ namespace scl::detail::concepts
     template <typename Format, typename Underlying>
     concept enum_format_parameter = !::scl::detail::has_signature<Format> ||
         ::scl::signature::parameter_count_v<Format> == 0 ||
-        ::scl::detail::concepts::takes_number<::std::remove_cvref_t<::scl::signature::parameter_t<Format, 0>>, Underlying>;
+        ::scl::detail::concepts::takes_number<
+            ::std::remove_cvref_t<::scl::signature::parameter_t<Format, 0>>, Underlying>;
 
 } // namespace scl::detail::concepts
 
@@ -94,8 +95,8 @@ namespace scl::concepts
     template <typename Format, typename Enum>
     concept enum_string_format = ::scl::concepts::enum_type<Enum> &&
         ::std::invocable<Format, ::scl::detail::enum_number_t<Enum> const &> &&
-        ::std::convertible_to<::std::invoke_result_t<Format, ::scl::detail::enum_number_t<Enum> const &>,
-            ::std::string_view> &&
+        ::std::convertible_to<
+            ::std::invoke_result_t<Format, ::scl::detail::enum_number_t<Enum> const &>, ::std::string_view> &&
         ::scl::detail::concepts::enum_format_parameter<Format, ::std::underlying_type_t<Enum>>;
 
 } // namespace scl::concepts
@@ -119,14 +120,17 @@ namespace scl
     ::std::string enum_string(E value)
     {
         using number = ::scl::detail::enum_number_t<E>;
-        SCL_INDETERMINATE ::std::array<char, ::std::numeric_limits<number>::digits10 + 2> digits; // NOLINT(cppcoreguidelines-pro-type-member-init)
-        auto const end =
-            ::std::to_chars(digits.data(),
-                ::std::next(digits.data(), static_cast<::std::ptrdiff_t>(digits.size())), static_cast<number>(value))
-                .ptr;
+        SCL_INDETERMINATE
+        ::std::array<char, ::std::numeric_limits<number>::digits10 + 2> digits; // NOLINT(cppcoreguidelines-pro-type-member-init)
+        auto const end = ::std::to_chars(
+            digits.data(), ::std::next(digits.data(), static_cast<::std::ptrdiff_t>(digits.size())),
+            static_cast<number>(value))
+                             .ptr;
         constexpr auto type = ::scl::type_short_name<E>();
-        return ::scl::detail::enum_spelling(type,
-            ::std::string_view{digits.data(), static_cast<::std::size_t>(::std::distance(digits.data(), end))});
+        return ::scl::detail::enum_spelling(
+            type,
+            ::std::string_view{
+                digits.data(), static_cast<::std::size_t>(::std::distance(digits.data(), end))});
     }
 
 } // namespace scl

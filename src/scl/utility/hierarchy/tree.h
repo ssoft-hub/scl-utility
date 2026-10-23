@@ -296,10 +296,11 @@ namespace scl::hierarchy
 
             template <typename... Arguments>
             constexpr void set_value(Arguments &&... arguments) /**/
-                noexcept(::std::is_nothrow_constructible_v<payload, Arguments...> &&
+                noexcept(
+                    ::std::is_nothrow_constructible_v<payload, Arguments...> &&
                     ::std::is_nothrow_move_assignable_v<payload> &&
-                    noexcept(::std::declval<observer &>().on_change(::std::declval<const_payload_reference>(),
-                        ::std::declval<const_payload_reference>())))
+                    noexcept(::std::declval<observer &>().on_change(
+                        ::std::declval<const_payload_reference>(), ::std::declval<const_payload_reference>())))
                 requires(::std::constructible_from<payload, Arguments...>)
             {
                 payload new_value{::std::forward<Arguments>(arguments)...};
@@ -373,8 +374,9 @@ namespace scl::hierarchy
 
             template <typename... Arguments>
             constexpr iterator emplace(const_iterator where, Arguments &&... arguments) /**/
-                noexcept(noexcept(::std::declval<node_reference>().emplace(
-                             ::std::declval<typename node::const_iterator>(), ::std::declval<Arguments>()...)) &&
+                noexcept(
+                    noexcept(::std::declval<node_reference>().emplace(
+                        ::std::declval<typename node::const_iterator>(), ::std::declval<Arguments>()...)) &&
                     noexcept(::std::declval<observer &>().on_insert(::std::declval<iterator>())))
                 requires(::std::constructible_from<payload, Arguments...>)
             {
@@ -511,7 +513,8 @@ namespace scl::hierarchy
                     from.m_tree.notify_on_erase(first);
 
                 // erase(it, it) is a no-op that returns a mutable iterator to the same position
-                iterator to{::std::addressof(m_tree), from.m_node.erase(first.m_node_iter, first.m_node_iter)};
+                iterator to{::std::addressof(m_tree),
+                    from.m_node.erase(first.m_node_iter, first.m_node_iter)};
                 m_node.transfer(where.m_node_iter, from.m_node, first.m_node_iter);
 
                 if (cross)
@@ -523,10 +526,9 @@ namespace scl::hierarchy
                 transfer(cend(), from, first, last);
             }
 
-            constexpr void transfer(const_iterator where,
-                reference from, /**/
-                const_iterator first,
-                const_iterator last) noexcept
+            constexpr void transfer(
+                const_iterator where, reference from, /**/
+                const_iterator first, const_iterator last) noexcept
             {
                 bool const cross = ::std::addressof(m_tree) != ::std::addressof(from.m_tree);
                 size_type n = 0;
@@ -535,7 +537,8 @@ namespace scl::hierarchy
                         from.m_tree.notify_on_erase(it);
 
                 // erase(it, it) is a no-op that returns a mutable iterator to the same position
-                iterator to{::std::addressof(m_tree), from.m_node.erase(first.m_node_iter, first.m_node_iter)};
+                iterator to{::std::addressof(m_tree),
+                    from.m_node.erase(first.m_node_iter, first.m_node_iter)};
                 m_node.transfer(where.m_node_iter, from.m_node, first.m_node_iter, last.m_node_iter);
 
                 if (cross)
@@ -872,18 +875,20 @@ namespace scl::hierarchy
 
         template <typename... Arguments>
         constexpr iterator emplace(const_iterator where, Arguments &&... arguments) /**/
-            noexcept(noexcept(::std::declval<nodes &>().emplace(
-                         ::std::declval<typename nodes::const_iterator>(), ::std::declval<Arguments>()...)) &&
+            noexcept(
+                noexcept(::std::declval<nodes &>().emplace(
+                    ::std::declval<typename nodes::const_iterator>(), ::std::declval<Arguments>()...)) &&
                 noexcept(::std::declval<observer &>().on_insert(::std::declval<iterator>())))
             requires(::std::constructible_from<payload, Arguments...>)
         {
-            iterator iter{this, m_nodes.emplace(where.m_node_iter, ::std::forward<Arguments>(arguments)...)};
+            iterator iter{
+                this, m_nodes.emplace(where.m_node_iter, ::std::forward<Arguments>(arguments)...)};
             notify_on_insert(iter);
             return iter;
         }
 
         template <typename Iterator>
-        constexpr Iterator erase(Iterator position) /**/
+        constexpr Iterator erase(Iterator position)
             noexcept(noexcept(notify_on_erase(::std::declval<const_iterator>())))
             requires(::std::same_as<Iterator, iterator> || ::std::same_as<Iterator, const_iterator>)
         {
@@ -893,7 +898,7 @@ namespace scl::hierarchy
         }
 
         template <typename Iterator>
-        constexpr Iterator erase(Iterator first, Iterator last) /**/
+        constexpr Iterator erase(Iterator first, Iterator last)
             noexcept(noexcept(notify_on_erase(::std::declval<const_iterator>())))
             requires(::std::same_as<Iterator, iterator> || ::std::same_as<Iterator, const_iterator>)
         {
@@ -963,8 +968,8 @@ namespace scl::hierarchy
             transfer(cend(), from, first, last);
         }
 
-        constexpr void
-        transfer(const_iterator where, tree & from, const_iterator first, const_iterator last) noexcept
+        constexpr void transfer(
+            const_iterator where, tree & from, const_iterator first, const_iterator last) noexcept
         {
             bool const cross = this != &from;
             size_type n = 0;
@@ -1079,14 +1084,14 @@ namespace scl::hierarchy
             m_observer.on_clear();
         }
 
-        constexpr void
-        notify_on_change(const_payload_reference current, const_payload_reference next) /**/
+        constexpr void notify_on_change(const_payload_reference current, const_payload_reference next)
             noexcept(noexcept(m_observer.on_change(current, next)))
         {
             m_observer.on_change(current, next);
         }
 
-        static_assert(::scl::hierarchy::concepts::observer<observer, tree>,
+        static_assert(
+            ::scl::hierarchy::concepts::observer<observer, tree>,
             "Observer<tree> must satisfy scl::hierarchy::concepts::observer "
             "(on_insert / on_erase / on_clear / on_change)");
     };

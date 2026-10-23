@@ -6,9 +6,17 @@
 
 namespace
 {
-    SCL_NODISCARD int result() { return 1; }
+    SCL_NODISCARD
+    int result()
+    {
+        return 1;
+    }
 
-    SCL_NODISCARD_MSG("the status tells whether the call succeeded") int status() { return 2; }
+    SCL_NODISCARD_MSG("the status tells whether the call succeeded")
+    int status()
+    {
+        return 2;
+    }
 
     struct SCL_NODISCARD code
     {
