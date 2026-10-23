@@ -10,123 +10,102 @@
 
 namespace scl::detail
 {
+    enum class member_function_reference : unsigned char
+    {
+        none,
+        lvalue,
+        rvalue
+    };
+
+    template <typename Type>
+    inline constexpr ::scl::detail::member_function_reference member_function_reference_of =
+        ::scl::detail::member_function_reference::none;
+    template <typename Type>
+    inline constexpr ::scl::detail::member_function_reference member_function_reference_of<Type &> =
+        ::scl::detail::member_function_reference::lvalue;
+    template <typename Type>
+    inline constexpr ::scl::detail::member_function_reference member_function_reference_of<Type &&> =
+        ::scl::detail::member_function_reference::rvalue;
+
+    template <typename Class, typename Signature, ::scl::detail::member_function_reference Reference>
+    struct member_function_forms;
+
+    template <typename Class, typename Result, typename... Arguments>
+    struct member_function_forms<Class, Result(Arguments...), ::scl::detail::member_function_reference::none>
+    {
+        using plain = Result (Class::*)(Arguments...);
+        using c = Result (Class::*)(Arguments...) const;
+        using v = Result (Class::*)(Arguments...) volatile;
+        using cv = Result (Class::*)(Arguments...) const volatile;
+    };
+
+    template <typename Class, typename Result, typename... Arguments>
+    struct member_function_forms<
+        Class, Result(Arguments...) noexcept, ::scl::detail::member_function_reference::none>
+    {
+        using plain = Result (Class::*)(Arguments...) noexcept;
+        using c = Result (Class::*)(Arguments...) const noexcept;
+        using v = Result (Class::*)(Arguments...) volatile noexcept;
+        using cv = Result (Class::*)(Arguments...) const volatile noexcept;
+    };
+
+    template <typename Class, typename Result, typename... Arguments>
+    struct member_function_forms<Class, Result(Arguments...), ::scl::detail::member_function_reference::lvalue>
+    {
+        using plain = Result (Class::*)(Arguments...) &;
+        using c = Result (Class::*)(Arguments...) const &;
+        using v = Result (Class::*)(Arguments...) volatile &;
+        using cv = Result (Class::*)(Arguments...) const volatile &;
+    };
+
+    template <typename Class, typename Result, typename... Arguments>
+    struct member_function_forms<
+        Class, Result(Arguments...) noexcept, ::scl::detail::member_function_reference::lvalue>
+    {
+        using plain = Result (Class::*)(Arguments...) & noexcept;
+        using c = Result (Class::*)(Arguments...) const & noexcept;
+        using v = Result (Class::*)(Arguments...) volatile & noexcept;
+        using cv = Result (Class::*)(Arguments...) const volatile & noexcept;
+    };
+
+    template <typename Class, typename Result, typename... Arguments>
+    struct member_function_forms<Class, Result(Arguments...), ::scl::detail::member_function_reference::rvalue>
+    {
+        using plain = Result (Class::*)(Arguments...) &&;
+        using c = Result (Class::*)(Arguments...) const &&;
+        using v = Result (Class::*)(Arguments...) volatile &&;
+        using cv = Result (Class::*)(Arguments...) const volatile &&;
+    };
+
+    template <typename Class, typename Result, typename... Arguments>
+    struct member_function_forms<
+        Class, Result(Arguments...) noexcept, ::scl::detail::member_function_reference::rvalue>
+    {
+        using plain = Result (Class::*)(Arguments...) && noexcept;
+        using c = Result (Class::*)(Arguments...) const && noexcept;
+        using v = Result (Class::*)(Arguments...) volatile && noexcept;
+        using cv = Result (Class::*)(Arguments...) const volatile && noexcept;
+    };
+
+    template <typename Forms, typename Object>
+    using member_function_cv_t = ::std::conditional_t<
+        ::std::is_const_v<Object>,
+        ::std::conditional_t<::std::is_volatile_v<Object>, typename Forms::cv, typename Forms::c>,
+        ::std::conditional_t<::std::is_volatile_v<Object>, typename Forms::v, typename Forms::plain>>;
+
     template <typename Type, typename Signature>
-    struct member_function_like;
-
-    enum class member_function_noexcept : bool
+    struct member_function_build
     {
-        disabled = false,
-        enabled = true
-    };
-
-    // Common builder parametrized by Noex (controls noexcept on the member function)
-    template <typename Type, typename Result, ::scl::detail::member_function_noexcept Noexcept, typename... Arguments>
-    struct build_member_function_like
-    {
-    private:
         static_assert(
             ::std::is_class_v<::std::remove_cvref_t<Type>>,
             "member_function_like_t requires Type to be a class type");
 
-        using class_t = ::std::remove_cvref_t<Type>;
-
-        // All cv/ref forms in one place; noexcept is controlled by Noexcept
-        using un = Result (class_t::*)(Arguments...);
-        using c = Result (class_t::*)(Arguments...) const;
-        using v = Result (class_t::*)(Arguments...) volatile;
-        using cv = Result (class_t::*)(Arguments...) const volatile;
-
-        using un_l = Result (class_t::*)(Arguments...) &;
-        using un_r = Result (class_t::*)(Arguments...) &&;
-        using c_l = Result (class_t::*)(Arguments...) const &;
-        using c_r = Result (class_t::*)(Arguments...) const &&;
-        using v_l = Result (class_t::*)(Arguments...) volatile &;
-        using v_r = Result (class_t::*)(Arguments...) volatile &&;
-        using cv_l = Result (class_t::*)(Arguments...) const volatile &;
-        using cv_r = Result (class_t::*)(Arguments...) const volatile &&;
-
-        static constexpr bool is_c = ::std::is_const_v<::std::remove_reference_t<Type>>;
-        static constexpr bool is_v = ::std::is_volatile_v<::std::remove_reference_t<Type>>;
-        static constexpr bool is_l = ::std::is_lvalue_reference_v<Type>;
-        static constexpr bool is_r = ::std::is_rvalue_reference_v<Type>;
-
-    public:
-        using type = ::std::conditional_t<
-            is_l,
-            // lvalue-qualified member functions
-            ::std::conditional_t<
-                (is_c && is_v), cv_l, ::std::conditional_t<is_c, c_l, ::std::conditional_t<is_v, v_l, un_l>>>,
-            ::std::conditional_t<
-                is_r,
-                // rvalue-qualified member functions
-                ::std::conditional_t<
-                    (is_c && is_v), cv_r, ::std::conditional_t<is_c, c_r, ::std::conditional_t<is_v, v_r, un_r>>>,
-                // no ref-qualifier
-                ::std::conditional_t<
-                    (is_c && is_v), cv, ::std::conditional_t<is_c, c, ::std::conditional_t<is_v, v, un>>>>>;
+        using type = ::scl::detail::member_function_cv_t<
+            ::scl::detail::member_function_forms<
+                ::std::remove_cvref_t<Type>, Signature, ::scl::detail::member_function_reference_of<Type>>,
+            ::std::remove_reference_t<Type>>;
     };
 
-    template <typename Type, typename Result, typename... Arguments>
-    struct build_member_function_like<Type, Result, ::scl::detail::member_function_noexcept::enabled, Arguments...>
-    {
-    private:
-        static_assert(
-            ::std::is_class_v<::std::remove_cvref_t<Type>>,
-            "member_function_like_t requires Type to be a class type");
-
-        using class_t = ::std::remove_cvref_t<Type>;
-
-        // All cv/ref forms in one place; noexcept is controlled by Noexcept
-        using un = Result (class_t::*)(Arguments...) noexcept;
-        using c = Result (class_t::*)(Arguments...) const noexcept;
-        using v = Result (class_t::*)(Arguments...) volatile noexcept;
-        using cv = Result (class_t::*)(Arguments...) const volatile noexcept;
-
-        using un_l = Result (class_t::*)(Arguments...) & noexcept;
-        using un_r = Result (class_t::*)(Arguments...) && noexcept;
-        using c_l = Result (class_t::*)(Arguments...) const & noexcept;
-        using c_r = Result (class_t::*)(Arguments...) const && noexcept;
-        using v_l = Result (class_t::*)(Arguments...) volatile & noexcept;
-        using v_r = Result (class_t::*)(Arguments...) volatile && noexcept;
-        using cv_l = Result (class_t::*)(Arguments...) const volatile & noexcept;
-        using cv_r = Result (class_t::*)(Arguments...) const volatile && noexcept;
-
-        static constexpr bool is_c = ::std::is_const_v<::std::remove_reference_t<Type>>;
-        static constexpr bool is_v = ::std::is_volatile_v<::std::remove_reference_t<Type>>;
-        static constexpr bool is_l = ::std::is_lvalue_reference_v<Type>;
-        static constexpr bool is_r = ::std::is_rvalue_reference_v<Type>;
-
-    public:
-        using type = ::std::conditional_t<
-            is_l,
-            // lvalue-qualified member functions
-            ::std::conditional_t<
-                (is_c && is_v), cv_l, ::std::conditional_t<is_c, c_l, ::std::conditional_t<is_v, v_l, un_l>>>,
-            ::std::conditional_t<
-                is_r,
-                // rvalue-qualified member functions
-                ::std::conditional_t<
-                    (is_c && is_v), cv_r, ::std::conditional_t<is_c, c_r, ::std::conditional_t<is_v, v_r, un_r>>>,
-                // no ref-qualifier
-                ::std::conditional_t<
-                    (is_c && is_v), cv, ::std::conditional_t<is_c, c, ::std::conditional_t<is_v, v, un>>>>>;
-    };
-
-    // Entry: Signature without noexcept
-    template <typename Type, typename Result, typename... Arguments>
-    struct member_function_like<Type, Result(Arguments...)>
-        : ::scl::detail::build_member_function_like<
-              Type, Result, ::scl::detail::member_function_noexcept::disabled, Arguments...>
-    {};
-
-    // Entry: Signature with noexcept
-    template <typename Type, typename Result, typename... Arguments>
-    struct member_function_like<Type, Result(Arguments...) noexcept>
-        : ::scl::detail::build_member_function_like<
-              Type, Result, ::scl::detail::member_function_noexcept::enabled, Arguments...>
-    {};
-
-    // Fallback for non-function Signature
     template <typename Type, typename Signature>
     struct member_function_like
     {
@@ -135,27 +114,39 @@ namespace scl::detail
             "::scl::member_function_like_t requires a function type like Result(Arguments...) or Result(Arguments...) noexcept");
     };
 
+    template <typename Type, typename Result, typename... Arguments>
+    struct member_function_like<Type, Result(Arguments...)>
+        : ::scl::detail::member_function_build<Type, Result(Arguments...)>
+    {};
+
+    template <typename Type, typename Result, typename... Arguments>
+    struct member_function_like<Type, Result(Arguments...) noexcept>
+        : ::scl::detail::member_function_build<Type, Result(Arguments...) noexcept>
+    {};
+
+    template <typename Object, typename Member>
+    using add_const_like_t = ::std::conditional_t<::std::is_const_v<Object>, Member const, Member>;
+
+    template <typename Object, typename Member>
+    using add_cv_like_t = ::std::conditional_t<
+        ::std::is_volatile_v<Object>, ::scl::detail::add_const_like_t<Object, Member> volatile,
+        ::scl::detail::add_const_like_t<Object, Member>>;
+
+    template <typename Class, typename Member>
+    using member_object_pointer_t = Member Class::*;
+
     template <typename Type, typename Member>
     struct member_object_like
     {
-    private:
-        using class_t = ::std::remove_cvref_t<Type>;
-
         static_assert(
-            ::std::is_class_v<class_t> || ::std::is_union_v<class_t>,
+            ::std::is_class_v<::std::remove_cvref_t<Type>> || ::std::is_union_v<::std::remove_cvref_t<Type>>,
             "member_object_like_t requires Type to be a class or union type");
         static_assert(
             !::std::is_function_v<Member>,
             "member_object_like_t expects a data member type; use member_function_like_t for member functions");
 
-        using no_ref_t = ::std::remove_reference_t<Type>;
-        using member_like_c_t =
-            ::std::conditional_t<::std::is_const_v<no_ref_t>, ::std::add_const_t<Member>, Member>;
-        using member_like_cv_t = ::std::conditional_t<
-            ::std::is_volatile_v<no_ref_t>, ::std::add_volatile_t<member_like_c_t>, member_like_c_t>;
-
-    public:
-        using type = member_like_cv_t(class_t::*);
+        using type = ::scl::detail::member_object_pointer_t<
+            ::std::remove_cvref_t<Type>, ::scl::detail::add_cv_like_t<::std::remove_reference_t<Type>, Member>>;
     };
 
     template <typename Type, typename T, bool IsFunction = ::std::is_function_v<T>>
