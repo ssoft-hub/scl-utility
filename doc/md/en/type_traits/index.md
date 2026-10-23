@@ -23,7 +23,7 @@ a member function, and find the parts of the signature of a callable type.
 | `<scl/utility/type_traits/detection/operator.h>` | [Operator presence detection](operator_detection.md) | `scl::has_plus_v`, `scl::plus_t`, `scl::has_plus_member_v` and the same for every operator |
 | `<scl/utility/type_traits/forward_like.h>` | [Cast of a value to the category and cv-qualifiers of a given type](forward_like.md) | `scl::forward_like`, `scl::forward_like_t` |
 | `<scl/utility/type_traits/member_like.h>` | [Building the member pointer type from the object type](member_like.md) | `scl::member_like_t`, `scl::member_function_like_t`, `scl::member_object_like_t` |
-| `<scl/utility/type_traits/overload_cast.h>` | [Choosing an overload of a function or a member function by parameter types](overload_cast.md) | `scl::overload_cast` |
+| `<scl/utility/type_traits/overload_cast.h>` | [Choosing an overload of a function or a member function by parameter types](overload_cast.md) | `scl::overload_cast`, `scl::member_overload_cast` |
 | `<scl/utility/type_traits/signature.h>` | [Finding the signature of a callable type](signature.md) | `scl::signature_t`, `scl::signature::result_t` and the rest of the namespace `scl::signature` |
 
 ## Documentation of the group
@@ -46,7 +46,8 @@ a member function, and find the parts of the signature of a callable type.
 - [Building the member pointer type from the object type](member_like.md) - the type of a pointer to
   a member function or a data member, with the qualifiers taken from the object type
 - [Choosing an overload of a function or a member function by parameter types](overload_cast.md) -
-  a pointer to the overload whose parameters are exactly the given types
+  a pointer to an overload chosen by its exact parameter types, and for a member function also by
+  the object type
 - [Finding the signature of a callable type](signature.md) - the result type, the parameter types,
   the qualifiers and other properties of functions, member functions and lambda expressions
 

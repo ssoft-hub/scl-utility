@@ -1,5 +1,7 @@
 #pragma once
 
+#include <scl/utility/type_traits/detail/member_qualifiers.h>
+
 #include <type_traits>
 
 /**
@@ -10,23 +12,6 @@
 
 namespace scl::detail
 {
-    enum class member_function_reference : unsigned char
-    {
-        none,
-        lvalue,
-        rvalue
-    };
-
-    template <typename Type>
-    inline constexpr ::scl::detail::member_function_reference member_function_reference_of =
-        ::scl::detail::member_function_reference::none;
-    template <typename Type>
-    inline constexpr ::scl::detail::member_function_reference member_function_reference_of<Type &> =
-        ::scl::detail::member_function_reference::lvalue;
-    template <typename Type>
-    inline constexpr ::scl::detail::member_function_reference member_function_reference_of<Type &&> =
-        ::scl::detail::member_function_reference::rvalue;
-
     template <typename Class, typename Signature, ::scl::detail::member_function_reference Reference>
     struct member_function_forms;
 
@@ -87,11 +72,33 @@ namespace scl::detail
         using cv = Result (Class::*)(Arguments...) const volatile && noexcept;
     };
 
+    template <typename Forms, ::scl::detail::member_function_cv Cv>
+    struct member_function_cv_form
+    {
+        using type = Forms::plain;
+    };
+
+    template <typename Forms>
+    struct member_function_cv_form<Forms, ::scl::detail::member_function_cv::const_only>
+    {
+        using type = Forms::c;
+    };
+
+    template <typename Forms>
+    struct member_function_cv_form<Forms, ::scl::detail::member_function_cv::volatile_only>
+    {
+        using type = Forms::v;
+    };
+
+    template <typename Forms>
+    struct member_function_cv_form<Forms, ::scl::detail::member_function_cv::const_volatile>
+    {
+        using type = Forms::cv;
+    };
+
     template <typename Forms, typename Object>
-    using member_function_cv_t = ::std::conditional_t<
-        ::std::is_const_v<Object>,
-        ::std::conditional_t<::std::is_volatile_v<Object>, typename Forms::cv, typename Forms::c>,
-        ::std::conditional_t<::std::is_volatile_v<Object>, typename Forms::v, typename Forms::plain>>;
+    using member_function_cv_t =
+        ::scl::detail::member_function_cv_form<Forms, ::scl::detail::member_function_cv_of<Object>>::type;
 
     template <typename Type, typename Signature>
     struct member_function_build
