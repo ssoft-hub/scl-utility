@@ -57,7 +57,7 @@ if constexpr (scl::is_detected_v<has_size_t, MyType>) {
 
 #### `detected_t<Operation, Arguments... >`
 
-Извлекает тип `Operation<Arguments...>` или возвращает `void`, если выражение некорректно.
+Извлекает тип `Operation<Arguments...>` или возвращает `scl::nonesuch`, если выражение некорректно.
 
 ```cpp
 template <typename T>

@@ -53,6 +53,23 @@ namespace scl::detail
 namespace scl
 {
     /**
+     * @brief The type ::scl::detected_t names where `Operation<Arguments...>` is ill-formed
+     * @ingroup scl_utility_type_traits
+     *
+     * No object of the type can be created, copied, moved or destroyed. An operation that yields
+     * `void` gives `void`, so a failed detection and a `void` result read apart.
+     */
+    struct nonesuch
+    {
+        nonesuch() = delete;
+        ~nonesuch() = delete;
+        nonesuch(nonesuch const &) = delete;
+        nonesuch(nonesuch &&) = delete;
+        void operator=(nonesuch const &) = delete;
+        void operator=(nonesuch &&) = delete;
+    };
+
+    /**
      * @brief Detects whether Operation<Arguments...> is a valid expression
      * @ingroup scl_utility_type_traits
      * @tparam Operation Template to instantiate
@@ -85,17 +102,17 @@ namespace scl
     inline constexpr bool is_detected_v = is_detected<Operation, Arguments...>::value;
 
     /**
-     * @brief Gets the type of Operation<Arguments...> or void if ill-formed
+     * @brief Gets the type of Operation<Arguments...> or ::scl::nonesuch if ill-formed
      * @ingroup scl_utility_type_traits
      * @tparam Operation Template to instantiate
      * @tparam Arguments Arguments for the template
-     * 
+     *
      * @code{.cpp}
      * using result = detected_t<has_foo_t, MyClass>;
      * @endcode
      */
     template <template <typename...> class Operation, typename... Arguments>
-    using detected_t = detail::detector<void, void, Operation, Arguments...>::type;
+    using detected_t = detail::detector<::scl::nonesuch, void, Operation, Arguments...>::type;
 
     /**
      * @brief Helper for getting detected type or a default
@@ -174,3 +191,37 @@ namespace scl
         is_detected_convertible<To, Operation, Arguments...>::value;
 
 } // namespace scl
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @fn scl::nonesuch::nonesuch()
+ * @brief Deleted, so no object of ::scl::nonesuch is created.
+ */
+
+/**
+ * @fn scl::nonesuch::~nonesuch()
+ * @brief Deleted, so no object of ::scl::nonesuch is destroyed.
+ */
+
+/**
+ * @fn scl::nonesuch::nonesuch(nonesuch const &)
+ * @brief Deleted, so no object of ::scl::nonesuch is copied.
+ */
+
+/**
+ * @fn scl::nonesuch::nonesuch(nonesuch &&)
+ * @brief Deleted, so no object of ::scl::nonesuch is moved.
+ */
+
+/**
+ * @fn scl::nonesuch::operator=(nonesuch const &)
+ * @brief Deleted, so no object of ::scl::nonesuch is assigned.
+ */
+
+/**
+ * @fn scl::nonesuch::operator=(nonesuch &&)
+ * @brief Deleted, so no object of ::scl::nonesuch is assigned.
+ */

@@ -55,7 +55,7 @@ if constexpr (scl::is_detected_v<has_size_t, MyType>) {
 
 #### `detected_t<Operation, Arguments...>`
 
-Extracts the type of `Operation<Arguments...>`, or `void` if ill-formed.
+Extracts the type of `Operation<Arguments...>`, or `scl::nonesuch` if ill-formed.
 
 ```cpp
 template <typename T>
