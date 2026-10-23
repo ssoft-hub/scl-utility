@@ -6,7 +6,7 @@ Utilities for building pointer-to-member types based on an object type’s cv/re
 
 Contents:
 - [`member_function_like_t<Type, Signature>`](#member_function_like_ttype-signature)
-- [`member_property_like_t<Type, Member>`](#member_property_like_ttype-member)
+- [`member_object_like_t<Type, Member>`](#member_object_like_ttype-member)
 - [`member_like_t<Type, T>`](#member_like_ttype-t)
 
 ---
@@ -72,16 +72,16 @@ static_assert(std::is_same_v<member_function_like_t<X const&, int(short)>, int (
 
 ### See Also
 
-- [`member_property_like_t`](#member_property_like_ttype-member) — Forms pointer-to-data-member types.
+- [`member_object_like_t`](#member_object_like_ttype-member) — Forms pointer-to-data-member types.
 - [`member_like_t`](#member_like_ttype-t) — Generic selector between function and data member pointer formation.
 
 ---
 
-## `member_property_like_t<Type, Member>`
+## `member_object_like_t<Type, Member>`
 
 Builds a pointer-to-data-member type for class `Type` and member type `Member`, overlaying the object’s cv-qualifiers onto the member type.
 
-- Declaration: `template <typename Type, typename Member> using member_property_like_t = ...;`
+- Declaration: `template <typename Type, typename Member> using member_object_like_t = ...;`
 
 ### Semantics
 
@@ -100,21 +100,21 @@ Builds a pointer-to-data-member type for class `Type` and member type `Member`, 
 
 struct X { int a = 0; int const b = 1; };
 
-using ::scl::member_property_like_t;
+using ::scl::member_object_like_t;
 
 // Object qualifiers overlay onto Member
-static_assert(std::is_same_v<member_property_like_t<X, int>, int X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const, int>, int const X::*>);
-static_assert(std::is_same_v<member_property_like_t<X volatile, int>, int volatile X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const volatile, int>, int const volatile X::*>);
+static_assert(std::is_same_v<member_object_like_t<X, int>, int X::*>);
+static_assert(std::is_same_v<member_object_like_t<X const, int>, int const X::*>);
+static_assert(std::is_same_v<member_object_like_t<X volatile, int>, int volatile X::*>);
+static_assert(std::is_same_v<member_object_like_t<X const volatile, int>, int const volatile X::*>);
 
 // References on Type do not matter for data members
-static_assert(std::is_same_v<member_property_like_t<X&, int>, int X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const&, int>, int const X::*>);
+static_assert(std::is_same_v<member_object_like_t<X&, int>, int X::*>);
+static_assert(std::is_same_v<member_object_like_t<X const&, int>, int const X::*>);
 
 // Member’s own cv is preserved (and overlaid with object’s cv)
-static_assert(std::is_same_v<member_property_like_t<X, int const>, int const X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const, int volatile>, int const volatile X::*>);
+static_assert(std::is_same_v<member_object_like_t<X, int const>, int const X::*>);
+static_assert(std::is_same_v<member_object_like_t<X const, int volatile>, int const volatile X::*>);
 ```
 
 ### Typical Use Cases
@@ -133,7 +133,7 @@ static_assert(std::is_same_v<member_property_like_t<X const, int volatile>, int 
 
 Generic selector that produces a pointer-to-member type for class `Type` and a descriptor `T`:
 - If `T` is a function type (`R(Args...)` or `R(Args...) noexcept`), behaves like `member_function_like_t<Type, T>`.
-- Otherwise, behaves like `member_property_like_t<Type, T>`.
+- Otherwise, behaves like `member_object_like_t<Type, T>`.
 
 - Declaration: `template <typename Type, typename T> using member_like_t = ...;`
 
@@ -178,7 +178,7 @@ static_assert(std::is_same_v<member_like_t<X, int const>, int const X::*>);
 ### See Also
 
 - [`member_function_like_t`](#member_function_like_ttype-signature) — Pointer-to-member-function builder.
-- [`member_property_like_t`](#member_property_like_ttype-member) — Pointer-to-data-member builder.
+- [`member_object_like_t`](#member_object_like_ttype-member) — Pointer-to-data-member builder.
 
 ---
 
@@ -186,5 +186,5 @@ static_assert(std::is_same_v<member_like_t<X, int const>, int const X::*>);
 
 - Constraints:
   - For `member_function_like_t`, `Type` must be a class type; `Signature` must be a function type (`R(Args...)` or `R(Args...) noexcept`).
-  - For `member_property_like_t`, `Type` must be a class or union type; `Member` must not be a function type.
+  - For `member_object_like_t`, `Type` must be a class or union type; `Member` must not be a function type.
 - As usual for pointer-to-member types, invocation and access require objects of compatible cv/ref categories, enforced by the formed type at compile time.

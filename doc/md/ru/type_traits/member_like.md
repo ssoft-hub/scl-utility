@@ -9,7 +9,7 @@
 
 Содержание:
 - [`member_function_like_t<Type, Signature>`](#member_function_like_ttype-signature)
-- [`member_property_like_t<Type, Member>`](#member_property_like_ttype-member)
+- [`member_object_like_t<Type, Member>`](#member_object_like_ttype-member)
 - [`member_like_t<Type, T>`](#member_like_ttype-t)
 
 ---
@@ -75,16 +75,16 @@ static_assert(std::is_same_v<member_function_like_t<X const&, int(short)>, int (
 
 ### См. также
 
-- [`member_property_like_t`](#member_property_like_ttype-member) — Формирует типы указателей на члены-данные.
+- [`member_object_like_t`](#member_object_like_ttype-member) — Формирует типы указателей на члены-данные.
 - [`member_like_t`](#member_like_ttype-t) — Обобщённый селектор для формирования указателей на функции-члены и члены-данные.
 
 ---
 
-## `member_property_like_t<Type, Member>`
+## `member_object_like_t<Type, Member>`
 
 Формирует тип указателя на член-данное для класса `Type` и типа члена `Member`, накладывая cv-квалификаторы объекта на тип члена.
 
-- Объявление: `template <typename Type, typename Member> using member_property_like_t = ...;`
+- Объявление: `template <typename Type, typename Member> using member_object_like_t = ...;`
 
 ### Семантика
 
@@ -104,21 +104,21 @@ static_assert(std::is_same_v<member_function_like_t<X const&, int(short)>, int (
 
 struct X { int a = 0; int const b = 1; };
 
-using ::scl::member_property_like_t;
+using ::scl::member_object_like_t;
 
 // Квалификаторы объекта накладываются на Member
-static_assert(std::is_same_v<member_property_like_t<X, int>, int X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const, int>, int const X::*>);
-static_assert(std::is_same_v<member_property_like_t<X volatile, int>, int volatile X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const volatile, int>, int const volatile X::*>);
+static_assert(std::is_same_v<member_object_like_t<X, int>, int X::*>);
+static_assert(std::is_same_v<member_object_like_t<X const, int>, int const X::*>);
+static_assert(std::is_same_v<member_object_like_t<X volatile, int>, int volatile X::*>);
+static_assert(std::is_same_v<member_object_like_t<X const volatile, int>, int const volatile X::*>);
 
 // Ссылки на Type не влияют на члены-данные
-static_assert(std::is_same_v<member_property_like_t<X&, int>, int X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const&, int>, int const X::*>);
+static_assert(std::is_same_v<member_object_like_t<X&, int>, int X::*>);
+static_assert(std::is_same_v<member_object_like_t<X const&, int>, int const X::*>);
 
 // Собственные cv-квалификаторы члена сохраняются (и объединяются с квалификаторами объекта)
-static_assert(std::is_same_v<member_property_like_t<X, int const>, int const X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const, int volatile>, int const volatile X::*>);
+static_assert(std::is_same_v<member_object_like_t<X, int const>, int const X::*>);
+static_assert(std::is_same_v<member_object_like_t<X const, int volatile>, int const volatile X::*>);
 ```
 
 ### Типичные сценарии использования
@@ -137,7 +137,7 @@ static_assert(std::is_same_v<member_property_like_t<X const, int volatile>, int 
 
 Обобщённый селектор, который создаёт тип указателя на член для класса `Type` и дескриптора `T`:
 - Если `T` — это функциональный тип (`R(Args...)` или `R(Args...) noexcept`), ведёт себя как `member_function_like_t<Type, T>`.
-- В противном случае, ведёт себя как `member_property_like_t<Type, T>`.
+- В противном случае, ведёт себя как `member_object_like_t<Type, T>`.
 
 - Объявление: `template <typename Type, typename T> using member_like_t = ...;`
 
@@ -182,7 +182,7 @@ static_assert(std::is_same_v<member_like_t<X, int const>, int const X::*>);
 ### См. также
 
 - [`member_function_like_t`](#member_function_like_ttype-signature) — Конструктор указателей на функции-члены.
-- [`member_property_like_t`](#member_property_like_ttype-member) — Конструктор указателей на члены-данные.
+- [`member_object_like_t`](#member_object_like_ttype-member) — Конструктор указателей на члены-данные.
 
 ---
 
@@ -190,5 +190,5 @@ static_assert(std::is_same_v<member_like_t<X, int const>, int const X::*>);
 
 - Ограничения:
   - Для `member_function_like_t`: `Type` должен быть классовым типом; `Signature` должен быть функциональным типом (`R(Args...)` или `R(Args...) noexcept`).
-  - Для `member_property_like_t`: `Type` должен быть классом или объединением (union); `Member` не должен быть функциональным типом.
+  - Для `member_object_like_t`: `Type` должен быть классом или объединением (union); `Member` не должен быть функциональным типом.
 - Как и для обычных указателей на члены, вызов функции или доступ к данным требует объектов с совместимыми cv/ref-категориями, что обеспечивается сформированным типом на этапе компиляции.

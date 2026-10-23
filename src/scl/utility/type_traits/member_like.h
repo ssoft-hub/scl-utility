@@ -11,7 +11,7 @@
  *     Builds a pointer-to-member-function type:
  *       Result (::std::remove_cvref_t<Type>::*)(Arguments...) [cv] [ref] [noexcept]
  *     where [cv]/[ref] are mirrored from Type and [noexcept] is mirrored from Signature.
- * - scl::member_property_like_t<Type, Member>:
+ * - scl::member_object_like_t<Type, Member>:
  *     Builds a pointer-to-data-member type:
  *       Member (::std::remove_cvref_t<Type>::*)
  *     Object cv/ref qualifiers do not affect the pointer type for data members.
@@ -143,17 +143,17 @@ namespace scl::detail
     };
 
     template <typename Type, typename Member>
-    struct member_property_like
+    struct member_object_like
     {
     private:
         using class_t = ::std::remove_cvref_t<Type>;
 
         static_assert(
             ::std::is_class_v<class_t> || ::std::is_union_v<class_t>,
-            "member_property_like_t requires Type to be a class or union type");
+            "member_object_like_t requires Type to be a class or union type");
         static_assert(
             !::std::is_function_v<Member>,
-            "member_property_like_t expects a data member type; use member_function_like_t for member functions");
+            "member_object_like_t expects a data member type; use member_function_like_t for member functions");
 
         using no_ref_t = ::std::remove_reference_t<Type>;
         using member_like_c_t =
@@ -173,7 +173,7 @@ namespace scl::detail
     {};
 
     template <typename Type, typename Member>
-    struct member_like<Type, Member, false> : member_property_like<Type, Member>
+    struct member_like<Type, Member, false> : member_object_like<Type, Member>
     {};
 
 } // namespace scl::detail
@@ -213,13 +213,13 @@ namespace scl
      *
      * @par Examples
      * @code{.cpp}
-     *   using P0 = scl::member_property_like_t<Foo, int>;         // int Foo::*
-     *   using P1 = scl::member_property_like_t<Foo const&, int>;  // int const & Foo::*
-     *   using P2 = scl::member_property_like_t<Foo, int const>;   // int Foo::*
+     *   using P0 = scl::member_object_like_t<Foo, int>;         // int Foo::*
+     *   using P1 = scl::member_object_like_t<Foo const&, int>;  // int const & Foo::*
+     *   using P2 = scl::member_object_like_t<Foo, int const>;   // int Foo::*
      * @endcode
      */
     template <typename Type, typename Member>
-    using member_property_like_t = ::scl::detail::member_property_like<Type, Member>::type;
+    using member_object_like_t = ::scl::detail::member_object_like<Type, Member>::type;
 
     /**
      * @brief Generic pointer-to-member type selector for class Type and Member.
@@ -233,9 +233,9 @@ namespace scl
      *   where:
      *   - [cv]/[ref] are mirrored from Type (const/volatile and &/&&),
      *   - [noexcept] is mirrored from T.
-     * - Otherwise, it aliases to scl::member_property_like_t<Type, Member>, producing:
+     * - Otherwise, it aliases to scl::member_object_like_t<Type, Member>, producing:
      *     `Member (::std::remove_cvref_t<Type>::*)`
-     *   (see member_property_like_t for details on how object qualifiers may affect Member).
+     *   (see member_object_like_t for details on how object qualifiers may affect Member).
      *
      * @tparam Type   Class (object) type whose cv/ref qualifiers are mirrored for member functions.
      *                The class itself is decayed with ::std::remove_cvref_t before forming the pointer type.
