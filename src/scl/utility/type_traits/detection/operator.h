@@ -101,7 +101,7 @@
     }                                                                                                \
     SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION(SCL_FORWARD(op), name)
 
-#define SCL_DETAIL_ARROW_OPERATOR_DETECTION(op, name)                                                \
+#define SCL_DETAIL_MEMBER_ACCESS_OPERATOR_DETECTION(op, name)                                        \
     namespace scl                                                                                    \
     {                                                                                                \
         template <typename Type, typename... Arguments>                                              \
@@ -116,8 +116,8 @@
 
 SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(&, address_of)
 SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(*, indirection)
-SCL_DETAIL_ARROW_OPERATOR_DETECTION(->*, arrow_to_pointer)
-SCL_DETAIL_ARROW_OPERATOR_DETECTION(->, arrow)
+SCL_DETAIL_MEMBER_ACCESS_OPERATOR_DETECTION(->*, pointer_to_member_access)
+SCL_DETAIL_MEMBER_ACCESS_OPERATOR_DETECTION(->, member_access)
 // cppcheck-suppress syntaxError
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(SCL_FORWARD(, ), comma)
 
@@ -191,7 +191,7 @@ SCL_DETAIL_BINARY_OPERATOR_DETECTION(^=, bit_xor_assign)
 #undef SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION
 #undef SCL_DETAIL_POSTFIX_UNARY_OPERATOR_DETECTION
 #undef SCL_DETAIL_BINARY_OPERATOR_DETECTION
-#undef SCL_DETAIL_ARROW_OPERATOR_DETECTION
+#undef SCL_DETAIL_MEMBER_ACCESS_OPERATOR_DETECTION
 #undef SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION
 
 #elif defined(SCL_DOXYGEN)
@@ -4164,7 +4164,7 @@ namespace scl
     /** @} */
 
     /**
-     * @defgroup scl_utility_operator_detection_special Arrow, comma, subscript and call operators
+     * @defgroup scl_utility_operator_detection_special Member access, comma, subscript and call operators
      * @{
      */
 
@@ -4173,67 +4173,68 @@ namespace scl
      *
      * A built-in operator and a free function are not found.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
      * @tparam Type Type of the object.
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_to_pointer_operation = decltype(::std::declval<Type>().operator->*(
+    using pointer_to_member_access_operation = decltype(::std::declval<Type>().operator->*(
         ::std::declval<Arguments>()...));
     /**
-     * @brief Whether ::scl::arrow_to_pointer_operation is well-formed for @p Arguments.
+     * @brief Whether ::scl::pointer_to_member_access_operation is well-formed for @p Arguments.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
-     * @tparam Arguments Template arguments of ::scl::arrow_to_pointer_operation.
+     * @tparam Arguments Template arguments of ::scl::pointer_to_member_access_operation.
      */
     template <typename... Arguments>
-    inline constexpr auto has_arrow_to_pointer_v =
-        ::scl::is_detected_v<::scl::arrow_to_pointer_operation, Arguments...>;
+    inline constexpr auto has_pointer_to_member_access_v =
+        ::scl::is_detected_v<::scl::pointer_to_member_access_operation, Arguments...>;
     /**
-     * @brief ::scl::arrow_to_pointer_operation for @p Arguments, or ::scl::nonesuch.
+     * @brief ::scl::pointer_to_member_access_operation for @p Arguments, or ::scl::nonesuch.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
-     * @tparam Arguments Template arguments of ::scl::arrow_to_pointer_operation.
+     * @tparam Arguments Template arguments of ::scl::pointer_to_member_access_operation.
      */
     template <typename... Arguments>
-    using arrow_to_pointer_t = ::scl::detected_t<::scl::arrow_to_pointer_operation, Arguments...>;
+    using pointer_to_member_access_t =
+        ::scl::detected_t<::scl::pointer_to_member_access_operation, Arguments...>;
 
     /**
      * @brief The type of `std::declval<Type>().operator->*(std::declval<Arguments>()...)`.
      *
      * A built-in operator and a free function are not found.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
      * @tparam Type Type of the object.
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_to_pointer_member_operation = decltype(::std::declval<Type>().operator->*(
+    using pointer_to_member_access_member_operation = decltype(::std::declval<Type>().operator->*(
         ::std::declval<Arguments>()...));
     /**
-     * @brief Whether ::scl::arrow_to_pointer_member_operation is well-formed for @p Arguments.
+     * @brief Whether ::scl::pointer_to_member_access_member_operation is well-formed.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
      * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    inline constexpr auto has_arrow_to_pointer_member_v =
-        ::scl::is_detected_v<::scl::arrow_to_pointer_member_operation, Arguments...>;
+    inline constexpr auto has_pointer_to_member_access_member_v =
+        ::scl::is_detected_v<::scl::pointer_to_member_access_member_operation, Arguments...>;
     /**
-     * @brief ::scl::arrow_to_pointer_member_operation for @p Arguments, or ::scl::nonesuch.
+     * @brief ::scl::pointer_to_member_access_member_operation for @p Arguments, or ::scl::nonesuch.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
      * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    using arrow_to_pointer_member_t =
-        ::scl::detected_t<::scl::arrow_to_pointer_member_operation, Arguments...>;
+    using pointer_to_member_access_member_t =
+        ::scl::detected_t<::scl::pointer_to_member_access_member_operation, Arguments...>;
 
     /**
      * @brief The type of the call of the member function `operator->*` with exactly these parameters.
@@ -4245,97 +4246,99 @@ namespace scl
      * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
      * the member function is not compared.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
      * @tparam Type Type of the object.
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_to_pointer_member_exact_operation = unspecified;
+    using pointer_to_member_access_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator->*` is declared exactly for the given object and parameter types.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
      * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    inline constexpr auto has_arrow_to_pointer_member_exact_v =
-        ::scl::is_detected_v<::scl::arrow_to_pointer_member_exact_operation, Arguments...>;
+    inline constexpr auto has_pointer_to_member_access_member_exact_v =
+        ::scl::is_detected_v<::scl::pointer_to_member_access_member_exact_operation, Arguments...>;
     /**
-     * @brief ::scl::arrow_to_pointer_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     * @brief ::scl::pointer_to_member_access_member_exact_operation, or ::scl::nonesuch.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp pointer_to_member_access
      *
      * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    using arrow_to_pointer_member_exact_t =
-        ::scl::detected_t<::scl::arrow_to_pointer_member_exact_operation, Arguments...>;
+    using pointer_to_member_access_member_exact_t =
+        ::scl::detected_t<::scl::pointer_to_member_access_member_exact_operation, Arguments...>;
 
     /**
      * @brief The type of `std::declval<Type>().operator->(std::declval<Arguments>()...)`.
      *
      * A built-in operator and a free function are not found.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
      *
      * @tparam Type Type of the object.
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_operation = decltype(::std::declval<Type>().operator->(::std::declval<Arguments>()...));
-    /**
-     * @brief Whether ::scl::arrow_operation is well-formed for @p Arguments.
-     *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
-     *
-     * @tparam Arguments Template arguments of ::scl::arrow_operation.
-     */
-    template <typename... Arguments>
-    inline constexpr auto has_arrow_v = ::scl::is_detected_v<::scl::arrow_operation, Arguments...>;
-    /**
-     * @brief ::scl::arrow_operation for @p Arguments, or ::scl::nonesuch.
-     *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
-     *
-     * @tparam Arguments Template arguments of ::scl::arrow_operation.
-     */
-    template <typename... Arguments>
-    using arrow_t = ::scl::detected_t<::scl::arrow_operation, Arguments...>;
-
-    /**
-     * @brief The type of `std::declval<Type>().operator->(std::declval<Arguments>()...)`.
-     *
-     * A built-in operator and a free function are not found.
-     *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
-     *
-     * @tparam Type Type of the object.
-     * @tparam Arguments Argument types.
-     */
-    template <typename Type, typename... Arguments>
-    using arrow_member_operation = decltype(::std::declval<Type>().operator->(
+    using member_access_operation = decltype(::std::declval<Type>().operator->(
         ::std::declval<Arguments>()...));
     /**
-     * @brief Whether ::scl::arrow_member_operation is well-formed for @p Arguments.
+     * @brief Whether ::scl::member_access_operation is well-formed for @p Arguments.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
      *
-     * @tparam Arguments Type of the object, then argument types.
+     * @tparam Arguments Template arguments of ::scl::member_access_operation.
      */
     template <typename... Arguments>
-    inline constexpr auto has_arrow_member_v =
-        ::scl::is_detected_v<::scl::arrow_member_operation, Arguments...>;
+    inline constexpr auto has_member_access_v =
+        ::scl::is_detected_v<::scl::member_access_operation, Arguments...>;
     /**
-     * @brief ::scl::arrow_member_operation for @p Arguments, or ::scl::nonesuch.
+     * @brief ::scl::member_access_operation for @p Arguments, or ::scl::nonesuch.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
+     *
+     * @tparam Arguments Template arguments of ::scl::member_access_operation.
+     */
+    template <typename... Arguments>
+    using member_access_t = ::scl::detected_t<::scl::member_access_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator->(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using member_access_member_operation = decltype(::std::declval<Type>().operator->(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::member_access_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
      *
      * @tparam Arguments Type of the object, then argument types.
      */
     template <typename... Arguments>
-    using arrow_member_t = ::scl::detected_t<::scl::arrow_member_operation, Arguments...>;
+    inline constexpr auto has_member_access_member_v =
+        ::scl::is_detected_v<::scl::member_access_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::member_access_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using member_access_member_t = ::scl::detected_t<::scl::member_access_member_operation, Arguments...>;
 
     /**
      * @brief The type of the call of the member function `operator->` with exactly these parameters.
@@ -4347,32 +4350,33 @@ namespace scl
      * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
      * the member function is not compared.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
      *
      * @tparam Type Type of the object.
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_member_exact_operation = unspecified;
+    using member_access_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator->` is declared exactly for the given object and parameter types.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
      *
      * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    inline constexpr auto has_arrow_member_exact_v =
-        ::scl::is_detected_v<::scl::arrow_member_exact_operation, Arguments...>;
+    inline constexpr auto has_member_access_member_exact_v =
+        ::scl::is_detected_v<::scl::member_access_member_exact_operation, Arguments...>;
     /**
-     * @brief ::scl::arrow_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     * @brief ::scl::member_access_member_exact_operation for @p Arguments, or ::scl::nonesuch.
      *
-     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp member_access
      *
      * @tparam Arguments Type of the object, then parameter types.
      */
     template <typename... Arguments>
-    using arrow_member_exact_t = ::scl::detected_t<::scl::arrow_member_exact_operation, Arguments...>;
+    using member_access_member_exact_t =
+        ::scl::detected_t<::scl::member_access_member_exact_operation, Arguments...>;
 
     /**
      * @brief The type of `std::declval<Left>(), std::declval<Right>()`.

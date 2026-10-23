@@ -55,7 +55,7 @@ namespace scl
 | Arithmetic and bitwise | `*` `multiplies`, `/` `divides`, `%` `modulus`, `+` `plus`, `-` `minus`, `<<` `left_shift`, `>>` `right_shift`, `&` `bit_and`, `\|` `bit_or`, `^` `bit_xor` |
 | Logical | `&&` `logical_and`, `\|\|` `logical_or` |
 | Assignment | `=` `assign`, `*=` `multiplies_assign`, `/=` `divides_assign`, `%=` `modulus_assign`, `+=` `plus_assign`, `-=` `minus_assign`, `<<=` `left_shift_assign`, `>>=` `right_shift_assign`, `&=` `bit_and_assign`, `\|=` `bit_or_assign`, `^=` `bit_xor_assign` |
-| Other | `->*` `arrow_to_pointer`, `->` `arrow`, `,` `comma`, `[]` `subscript`, `()` `call` |
+| Other | `->*` `pointer_to_member_access`, `->` `member_access`, `,` `comma`, `[]` `subscript`, `()` `call` |
 
 Where the standard library has a function object for the same operator, such as `std::multiplies` or
 `std::bit_and`, the name of the operator is the name of that class template.
@@ -111,9 +111,9 @@ Where the standard library has a function object for the same operator, such as 
 ### Operators with rules of their own
 
 - **Operators `->` and `->*`.** For the operators `->` and `->*` no expression is checked, and
-  the variable templates `has_arrow_v` and `has_arrow_to_pointer_v` are `true` if a call of
-  the member function `operator->` or `operator->*` compiles. So for a built-in pointer and for
-  a free function `operator->*` these variable templates are `false`.
+  the variable templates `has_member_access_v` and `has_pointer_to_member_access_v` are `true` if
+  a call of the member function `operator->` or `operator->*` compiles. So for a built-in pointer
+  and for a free function `operator->*` these variable templates are `false`.
 - **Postfix `++` and `--`.** The templates `has_postfix_increment_member_v`,
   `has_postfix_increment_member_exact_v` and the other templates of the postfix operators `++` and
   `--` that check a member function take only the object type. The call `operator++(0)` or

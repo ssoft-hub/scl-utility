@@ -534,31 +534,35 @@ static_assert(scl::has_bit_xor_assign_member_exact_v<bit_xor_assign_operand, int
 static_assert(!scl::has_bit_xor_assign_member_exact_v<bit_xor_assign_operand, short>);
 //! [bit_xor_assign]
 
-//! [arrow_to_pointer]
-struct arrow_to_pointer_operand
+//! [pointer_to_member_access]
+struct pointer_to_member_access_operand
 {
     long operator->*(int value) const;
 };
 
-static_assert(scl::has_arrow_to_pointer_v<arrow_to_pointer_operand const, int>);
-static_assert(!scl::has_arrow_to_pointer_v<arrow_to_pointer_operand *, long arrow_to_pointer_operand::*>);
-static_assert(std::is_same_v<scl::arrow_to_pointer_member_t<arrow_to_pointer_operand const, short>, long>);
-static_assert(scl::has_arrow_to_pointer_member_exact_v<arrow_to_pointer_operand const, int>);
-static_assert(!scl::has_arrow_to_pointer_member_exact_v<arrow_to_pointer_operand const, short>);
-//! [arrow_to_pointer]
+static_assert(scl::has_pointer_to_member_access_v<pointer_to_member_access_operand const, int>);
+static_assert(!scl::has_pointer_to_member_access_v<
+    pointer_to_member_access_operand *, long pointer_to_member_access_operand::*>);
+static_assert(std::is_same_v<
+    scl::pointer_to_member_access_member_t<pointer_to_member_access_operand const, short>, long>);
+static_assert(
+    scl::has_pointer_to_member_access_member_exact_v<pointer_to_member_access_operand const, int>);
+static_assert(
+    !scl::has_pointer_to_member_access_member_exact_v<pointer_to_member_access_operand const, short>);
+//! [pointer_to_member_access]
 
-//! [arrow]
-struct arrow_operand
+//! [member_access]
+struct member_access_operand
 {
     long const * operator->() const;
 };
 
-static_assert(scl::has_arrow_v<arrow_operand const>);
-static_assert(!scl::has_arrow_v<arrow_operand *>);
-static_assert(std::is_same_v<scl::arrow_member_t<arrow_operand const>, long const *>);
-static_assert(scl::has_arrow_member_exact_v<arrow_operand const>);
-static_assert(!scl::has_arrow_member_exact_v<arrow_operand const &>);
-//! [arrow]
+static_assert(scl::has_member_access_v<member_access_operand const>);
+static_assert(!scl::has_member_access_v<member_access_operand *>);
+static_assert(std::is_same_v<scl::member_access_member_t<member_access_operand const>, long const *>);
+static_assert(scl::has_member_access_member_exact_v<member_access_operand const>);
+static_assert(!scl::has_member_access_member_exact_v<member_access_operand const &>);
+//! [member_access]
 
 //! [comma]
 struct comma_operand

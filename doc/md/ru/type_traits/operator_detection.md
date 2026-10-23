@@ -55,7 +55,7 @@ namespace scl
 | Арифметические и поразрядные | `*` `multiplies`, `/` `divides`, `%` `modulus`, `+` `plus`, `-` `minus`, `<<` `left_shift`, `>>` `right_shift`, `&` `bit_and`, `\|` `bit_or`, `^` `bit_xor` |
 | Логические | `&&` `logical_and`, `\|\|` `logical_or` |
 | Присваивания | `=` `assign`, `*=` `multiplies_assign`, `/=` `divides_assign`, `%=` `modulus_assign`, `+=` `plus_assign`, `-=` `minus_assign`, `<<=` `left_shift_assign`, `>>=` `right_shift_assign`, `&=` `bit_and_assign`, `\|=` `bit_or_assign`, `^=` `bit_xor_assign` |
-| Прочие | `->*` `arrow_to_pointer`, `->` `arrow`, `,` `comma`, `[]` `subscript`, `()` `call` |
+| Прочие | `->*` `pointer_to_member_access`, `->` `member_access`, `,` `comma`, `[]` `subscript`, `()` `call` |
 
 Если в стандартной библиотеке есть функциональный объект для того же оператора, например
 `std::multiplies` или `std::bit_and`, имя оператора совпадает с именем этого шаблона класса.
@@ -109,9 +109,9 @@ namespace scl
 ### Операторы с собственными правилами
 
 - **Операторы `->` и `->*`.** Для операторов `->` и `->*` выражение не проверяется, а шаблонные
-  константы `has_arrow_v` и `has_arrow_to_pointer_v` равны `true`, если компилируется вызов метода
-  `operator->` или `operator->*`. Поэтому для встроенного указателя и для свободной функции
-  `operator->*` эти шаблонные константы равны `false`.
+  константы `has_member_access_v` и `has_pointer_to_member_access_v` равны `true`,
+  если компилируется вызов метода `operator->` или `operator->*`. Поэтому для встроенного указателя
+  и для свободной функции `operator->*` эти шаблонные константы равны `false`.
 - **Постфиксные `++` и `--`.** Шаблонам `has_postfix_increment_member_v`,
   `has_postfix_increment_member_exact_v` и другим шаблонам постфиксных операторов `++` и `--`,
   которые проверяют метод, передаётся только тип объекта. Вызов `operator++(0)` или `operator--(0)`
