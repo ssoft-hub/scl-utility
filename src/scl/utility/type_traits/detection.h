@@ -86,7 +86,7 @@ namespace scl
      * @endcode
      */
     template <template <typename...> class Operation, typename... Arguments>
-    using is_detected = detail::detector<void, void, Operation, Arguments...>::value_t;
+    using is_detected = ::scl::detail::detector<void, void, Operation, Arguments...>::value_t;
 
     /**
      * @brief Variable template version of is_detected
@@ -99,7 +99,7 @@ namespace scl
      * @endcode
      */
     template <template <typename...> class Operation, typename... Arguments>
-    inline constexpr bool is_detected_v = is_detected<Operation, Arguments...>::value;
+    inline constexpr bool is_detected_v = ::scl::is_detected<Operation, Arguments...>::value;
 
     /**
      * @brief Gets the type of Operation<Arguments...> or ::scl::nonesuch if ill-formed
@@ -112,7 +112,7 @@ namespace scl
      * @endcode
      */
     template <template <typename...> class Operation, typename... Arguments>
-    using detected_t = detail::detector<::scl::nonesuch, void, Operation, Arguments...>::type;
+    using detected_t = ::scl::detail::detector<::scl::nonesuch, void, Operation, Arguments...>::type;
 
     /**
      * @brief Helper for getting detected type or a default
@@ -125,7 +125,7 @@ namespace scl
      * if well-formed, or Default otherwise.
      */
     template <typename Default, template <typename...> class Operation, typename... Arguments>
-    using detected_or = detail::detector<Default, void, Operation, Arguments...>;
+    using detected_or = ::scl::detail::detector<Default, void, Operation, Arguments...>;
 
     /**
      * @brief Gets the type of Operation<Arguments...> or Default if ill-formed
@@ -139,7 +139,7 @@ namespace scl
      * @endcode
      */
     template <typename Default, template <typename...> class Operation, typename... Arguments>
-    using detected_or_t = detected_or<Default, Operation, Arguments...>::type;
+    using detected_or_t = ::scl::detected_or<Default, Operation, Arguments...>::type;
 
     /**
      * @brief Checks if Operation<Arguments...> results in exactly Expected type
@@ -153,7 +153,7 @@ namespace scl
      * @endcode
      */
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
-    using is_detected_exact = ::std::is_same<Expected, detected_t<Operation, Arguments...>>;
+    using is_detected_exact = ::std::is_same<Expected, ::scl::detected_t<Operation, Arguments...>>;
 
     /**
      * @brief Variable template version of is_detected_exact
@@ -163,7 +163,8 @@ namespace scl
      * @tparam Arguments Arguments for the template
      */
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
-    inline constexpr bool is_detected_exact_v = is_detected_exact<Expected, Operation, Arguments...>::value;
+    inline constexpr bool is_detected_exact_v =
+        ::scl::is_detected_exact<Expected, Operation, Arguments...>::value;
 
     /**
      * @brief Checks if Operation<Arguments... > is convertible to To
@@ -177,7 +178,7 @@ namespace scl
      * @endcode
      */
     template <typename To, template <typename...> class Operation, typename... Arguments>
-    using is_detected_convertible = ::std::is_convertible<detected_t<Operation, Arguments...>, To>;
+    using is_detected_convertible = ::std::is_convertible<::scl::detected_t<Operation, Arguments...>, To>;
 
     /**
      * @brief Variable template version of is_detected_convertible
@@ -188,7 +189,7 @@ namespace scl
      */
     template <typename To, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_convertible_v =
-        is_detected_convertible<To, Operation, Arguments...>::value;
+        ::scl::is_detected_convertible<To, Operation, Arguments...>::value;
 
 } // namespace scl
 

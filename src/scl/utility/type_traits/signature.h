@@ -92,11 +92,10 @@ namespace scl::detail
         using with_object = ::scl::detail::callable_signature<Other, Function>;
     };
 
-    // A function type with a calling convention other than the default matches none of the shapes.
+    // A function type with a calling convention other than the default matches none of the
+    // shapes.
     template <typename Function>
-    concept plain_function = requires { typename ::scl::detail::function_parts<Function>::type; };
-
-    template <::scl::detail::plain_function Function>
+        requires requires { typename ::scl::detail::function_parts<Function>::type; }
     struct signature<Function *> : ::scl::detail::callable_signature<void, Function>
     {};
 
@@ -159,14 +158,11 @@ namespace scl::detail
     template <typename Object, typename Callable>
     using object_like_t = ::scl::detail::object_like<Object, Callable>::type;
 
-    template <typename Pointer>
-    concept member_signature = requires { typename ::scl::detail::signature<Pointer>::object_type; };
-
-    // A static member function reached through an object is an lvalue, whose address can be taken;
-    // any other member function is a prvalue usable only in a call ([expr.ref]).
-    template <typename Pointer, typename Callable>
-    concept explicit_object_pointer = ::std::is_pointer_v<Pointer> &&
-        !requires(Callable & callable) { &callable.operator(); };
+    // A static member function reached through an object is an lvalue, whose address can be
+    // taken; any other member function is a prvalue usable only in a call ([expr.ref]).
+    template <typename Callable>
+    inline constexpr bool call_operator_addressable_v = requires(
+        Callable & callable) { &callable.operator(); };
 
     template <typename Pointer>
     struct explicit_object_signature
@@ -197,21 +193,21 @@ namespace scl::detail
     struct call_operator_signature : ::scl::detail::signature<Pointer>
     {};
 
-    template <typename Callable, ::scl::detail::member_signature Pointer>
+    template <typename Callable, typename Pointer>
+        requires requires { typename ::scl::detail::signature<Pointer>::object_type; }
     struct call_operator_signature<Callable, Pointer>
         : ::scl::detail::signature<Pointer>::template with_object<::scl::detail::object_like_t<
               typename ::scl::detail::signature<Pointer>::object_type, Callable>>
     {};
 
-    template <typename Callable, ::scl::detail::explicit_object_pointer<Callable> Pointer>
+    template <typename Callable, typename Pointer>
+        requires(::std::is_pointer_v<Pointer> && !::scl::detail::call_operator_addressable_v<Callable>)
     struct call_operator_signature<Callable, Pointer> : ::scl::detail::explicit_object_signature<Pointer>
     {};
 
     template <typename Callable>
-    concept call_operator_class = (::std::is_class_v<Callable> || ::std::is_union_v<Callable>) &&
-        requires { &Callable::operator(); };
-
-    template <::scl::detail::call_operator_class Callable>
+        requires(::std::is_class_v<Callable> || ::std::is_union_v<Callable>) &&
+        requires { &Callable::operator(); }
     struct signature<Callable>
         : ::scl::detail::call_operator_signature<Callable, decltype(&Callable::operator())>
     {};
@@ -220,18 +216,17 @@ namespace scl::detail
     using signature_of = ::scl::detail::signature<::std::decay_t<Callable>>;
 
     template <typename Callable>
-    concept has_signature = requires { typename ::scl::detail::signature_of<Callable>::type; };
+    inline constexpr bool has_signature_v =
+        requires { typename ::scl::detail::signature_of<Callable>::type; };
 
     template <typename Callable, ::std::size_t Index>
-    concept parameter_index = ::scl::detail::has_signature<Callable> &&
-        (Index < ::std::tuple_size_v<typename ::scl::detail::signature_of<Callable>::parameter_types>);
-
-    template <typename Callable, typename Index>
     struct signature_parameter
     {};
 
-    template <::std::size_t Index, ::scl::detail::parameter_index<Index> Callable>
-    struct signature_parameter<Callable, ::std::integral_constant<::std::size_t, Index>>
+    template <typename Callable, ::std::size_t Index>
+        requires(::scl::detail::has_signature_v<Callable>) &&
+        (Index < ::std::tuple_size_v<typename ::scl::detail::signature_of<Callable>::parameter_types>)
+    struct signature_parameter<Callable, Index>
     {
         using type = ::std::tuple_element_t<Index, typename ::scl::detail::signature_of<Callable>::parameter_types>;
     };
@@ -258,8 +253,7 @@ namespace scl::signature
         ::std::tuple_size_v<::scl::signature::parameters_t<Callable>>;
 
     template <typename Callable, ::std::size_t Index>
-    using parameter_t =
-        ::scl::detail::signature_parameter<Callable, ::std::integral_constant<::std::size_t, Index>>::type;
+    using parameter_t = ::scl::detail::signature_parameter<Callable, Index>::type;
 
     template <typename Callable>
     using object_t = ::scl::detail::signature_of<Callable>::object_type;

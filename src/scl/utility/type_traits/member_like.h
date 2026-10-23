@@ -29,7 +29,7 @@ namespace scl::detail
     };
 
     // Common builder parametrized by Noex (controls noexcept on the member function)
-    template <typename Type, typename Result, member_function_noexcept Noexcept, typename... Arguments>
+    template <typename Type, typename Result, ::scl::detail::member_function_noexcept Noexcept, typename... Arguments>
     struct build_member_function_like
     {
     private:
@@ -76,7 +76,7 @@ namespace scl::detail
     };
 
     template <typename Type, typename Result, typename... Arguments>
-    struct build_member_function_like<Type, Result, member_function_noexcept::enabled, Arguments...>
+    struct build_member_function_like<Type, Result, ::scl::detail::member_function_noexcept::enabled, Arguments...>
     {
     private:
         static_assert(
@@ -124,13 +124,15 @@ namespace scl::detail
     // Entry: Signature without noexcept
     template <typename Type, typename Result, typename... Arguments>
     struct member_function_like<Type, Result(Arguments...)>
-        : build_member_function_like<Type, Result, member_function_noexcept::disabled, Arguments...>
+        : ::scl::detail::build_member_function_like<
+              Type, Result, ::scl::detail::member_function_noexcept::disabled, Arguments...>
     {};
 
     // Entry: Signature with noexcept
     template <typename Type, typename Result, typename... Arguments>
     struct member_function_like<Type, Result(Arguments...) noexcept>
-        : build_member_function_like<Type, Result, member_function_noexcept::enabled, Arguments...>
+        : ::scl::detail::build_member_function_like<
+              Type, Result, ::scl::detail::member_function_noexcept::enabled, Arguments...>
     {};
 
     // Fallback for non-function Signature
@@ -169,11 +171,11 @@ namespace scl::detail
     struct member_like;
 
     template <typename Type, typename Signature>
-    struct member_like<Type, Signature, true> : member_function_like<Type, Signature>
+    struct member_like<Type, Signature, true> : ::scl::detail::member_function_like<Type, Signature>
     {};
 
     template <typename Type, typename Member>
-    struct member_like<Type, Member, false> : member_object_like<Type, Member>
+    struct member_like<Type, Member, false> : ::scl::detail::member_object_like<Type, Member>
     {};
 
 } // namespace scl::detail

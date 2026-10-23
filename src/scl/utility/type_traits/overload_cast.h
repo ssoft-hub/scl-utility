@@ -219,7 +219,7 @@ namespace scl
 {
 #ifndef SCL_DOXYGEN
     template <typename... Args>
-    inline constexpr detail::overload_cast<Args...> overload_cast{};
+    inline constexpr ::scl::detail::overload_cast<Args...> overload_cast{};
 #endif
 
 } // namespace scl

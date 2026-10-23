@@ -24,7 +24,8 @@ namespace scl::detail
 
     // Add both const and volatile from From to To (ignoring reference)
     template <typename From, typename To>
-    using add_cv_from_t = add_const_from_t<From, add_volatile_from_t<From, To>>;
+    using add_cv_from_t =
+        ::scl::detail::add_const_from_t<From, ::scl::detail::add_volatile_from_t<From, To>>;
 
     // Copy ref from From onto To: lvalue ref → &, otherwise (rvalue ref or non-reference) → &&.
     // Matches std::forward_like semantics: the result is always a reference.
@@ -89,7 +90,7 @@ namespace scl
     [[nodiscard]]
     constexpr decltype(auto) forward_like(T && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
     {
-        return static_cast<forward_like_t<Base, T &&>>(t);
+        return static_cast<::scl::forward_like_t<Base, T &&>>(t);
     }
 
 } // namespace scl
