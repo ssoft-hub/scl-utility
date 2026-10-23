@@ -26,16 +26,16 @@
      *   - `name_member_exact_t<...>`: alias to the detected result type for the exact member expression, or `scl::nonesuch`.
  *
      * Operators covered:
-     * - Prefix unary: `&` (address_of), `*` (indirection), `+` (unary_plus), `-` (unary_minus),
-     *   `++` (prefix_increment), `--` (prefix_decrement), `~` (bitwise_not), `!` (logical_not)
+     * - Prefix unary: `&` (address_of), `*` (indirection), `+` (unary_plus), `-` (negate),
+     *   `++` (prefix_increment), `--` (prefix_decrement), `~` (bit_not), `!` (logical_not)
      * - Postfix unary: `++` (postfix_increment), `--` (postfix_decrement)
      * - Binary comparisons: `==` (equal_to), `!=` (not_equal_to), `<` (less), `<=` (less_equal), `>` (greater), `>=` (greater_equal)
-     * - Binary arithmetic/bitwise: `*` (multiply), `/` (divide), `%` (modulo), `+` (plus), `-` (minus),
-     *   `<<` (left_shift), `>>` (right_shift), `&` (bitwise_and), `|` (bitwise_or), `^` (bitwise_xor)
+     * - Binary arithmetic/bitwise: `*` (multiplies), `/` (divides), `%` (modulus), `+` (plus), `-` (minus),
+     *   `<<` (left_shift), `>>` (right_shift), `&` (bit_and), `|` (bit_or), `^` (bit_xor)
      * - Logical binary: `&&` (logical_and), `||` (logical_or)
-     * - Assignment: `=` (assign), `+=` (plus_assign), `-=` (minus_assign), `*=` (multiply_assign), `/=` (divide_assign),
-     *   `%=` (modulo_assign), `<<=` (left_shift_assign), `>>=` (right_shift_assign), `&=` (bitwise_and_assign),
-     *   `|=` (bitwise_or_assign), `^=` (bitwise_xor_assign)
+     * - Assignment: `=` (assign), `+=` (plus_assign), `-=` (minus_assign), `*=` (multiplies_assign), `/=` (divides_assign),
+     *   `%=` (modulus_assign), `<<=` (left_shift_assign), `>>=` (right_shift_assign), `&=` (bit_and_assign),
+     *   `|=` (bit_or_assign), `^=` (bit_xor_assign)
      * - Special: `->*` (arrow_to_pointer), `->` (arrow), `,` (comma), `[]` (subscript), `()` (call)
  *
      * Implementation notes:
@@ -180,10 +180,10 @@ namespace scl
 SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION((), call)
 
 SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(+, unary_plus)
-SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(-, unary_minus)
+SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(-, negate)
 SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(++, prefix_increment)
 SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(--, prefix_decrement)
-SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(~, bitwise_not)
+SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(~, bit_not)
 SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(!, logical_not)
 
 SCL_DETAIL_POSTFIX_UNARY_OPERATOR_DETECTION(++, postfix_increment) // NOLINT(bugprone-macro-repeated-side-effects)
@@ -196,33 +196,33 @@ SCL_DETAIL_BINARY_OPERATOR_DETECTION(<=, less_equal)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(>, greater)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(>=, greater_equal)
 
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(*, multiply)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(/, divide)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(%, modulo)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(*, multiplies)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(/, divides)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(%, modulus)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(+, plus)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(-, minus)
 
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(<<, left_shift)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(>>, right_shift)
 
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(&, bitwise_and)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(|, bitwise_or)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(^, bitwise_xor)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(&, bit_and)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(|, bit_or)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(^, bit_xor)
 
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(&&, logical_and)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(||, logical_or)
 
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(=, assign)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(*=, multiply_assign)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(/=, divide_assign)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(%=, modulo_assign)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(*=, multiplies_assign)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(/=, divides_assign)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(%=, modulus_assign)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(+=, plus_assign)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(-=, minus_assign)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(<<=, left_shift_assign)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(>>=, right_shift_assign)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(&=, bitwise_and_assign)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(|=, bitwise_or_assign)
-SCL_DETAIL_BINARY_OPERATOR_DETECTION(^=, bitwise_xor_assign)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(&=, bit_and_assign)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(|=, bit_or_assign)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(^=, bit_xor_assign)
 
 #undef SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION
 #undef SCL_DETAIL_POSTFIX_UNARY_OPERATOR_DETECTION
@@ -495,7 +495,7 @@ namespace scl
      * @tparam Type The operand type.
      */
     template <typename Type>
-    using unary_minus_operation = /* implementation defined */;
+    using negate_operation = /* implementation defined */;
     /**
      * @brief Detects unary minus operator (`-obj`).
      * @details
@@ -503,7 +503,7 @@ namespace scl
      * @tparam Type The operand type.
      */
     template <typename Type>
-    inline constexpr bool has_unary_minus_v = /* implementation defined */;
+    inline constexpr bool has_negate_v = /* implementation defined */;
     /**
      * @brief Detected result type of unary minus, or `scl::nonesuch`.
      * @details
@@ -511,7 +511,7 @@ namespace scl
      * @tparam Type The operand type.
      */
     template <typename Type>
-    using unary_minus_t = /* implementation defined */;
+    using negate_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member unary minus `std::declval<Type>().operator-()`.
      * @details
@@ -520,15 +520,15 @@ namespace scl
      * @tparam Arguments The operator argument types (none).
      */
     template <typename Type, typename... Arguments>
-    using unary_minus_member_operation = /* implementation defined */;
+    using negate_member_operation = /* implementation defined */;
     /**
      * @brief Detects member unary minus operator (`obj.operator-()`).
      * @details
-     * True if `unary_minus_member_operation<Type>` is well-formed.
+     * True if `negate_member_operation<Type>` is well-formed.
      * @tparam Arguments First type is the class type.
      */
     template <typename... Arguments>
-    inline constexpr bool has_unary_minus_member_v = /* implementation defined */;
+    inline constexpr bool has_negate_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member unary minus, or `scl::nonesuch`.
      * @details
@@ -536,7 +536,7 @@ namespace scl
      * @tparam Arguments First type is the class type.
      */
     template <typename... Arguments>
-    using unary_minus_member_t = /* implementation defined */;
+    using negate_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member unary minus detection.
      * @details
@@ -545,7 +545,7 @@ namespace scl
      * @tparam Arguments Exact operator argument types (none).
      */
     template <typename Type, typename... Arguments>
-    using unary_minus_member_exact_operation = /* implementation defined */;
+    using negate_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member unary minus operator (`obj.operator-()` exact).
      * @details
@@ -553,7 +553,7 @@ namespace scl
      * @tparam Arguments First type is the class type.
      */
     template <typename... Arguments>
-    inline constexpr bool has_unary_minus_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_negate_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member unary minus, or `scl::nonesuch`.
      * @details
@@ -561,7 +561,7 @@ namespace scl
      * @tparam Arguments First type is the class type.
      */
     template <typename... Arguments>
-    using unary_minus_member_exact_t = /* implementation defined */;
+    using negate_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for the prefix increment expression `++std::declval<Type>()`.
@@ -720,7 +720,7 @@ namespace scl
      * @tparam Type The operand type.
      */
     template <typename Type>
-    using bitwise_not_operation = /* implementation defined */;
+    using bit_not_operation = /* implementation defined */;
     /**
      * @brief Detects bitwise NOT operator (`~obj`).
      * @details
@@ -728,7 +728,7 @@ namespace scl
      * @tparam Type The operand type.
      */
     template <typename Type>
-    inline constexpr bool has_bitwise_not_v = /* implementation defined */;
+    inline constexpr bool has_bit_not_v = /* implementation defined */;
     /**
      * @brief Detected result type of bitwise NOT, or `scl::nonesuch`.
      * @details
@@ -736,7 +736,7 @@ namespace scl
      * @tparam Type The operand type.
      */
     template <typename Type>
-    using bitwise_not_t = /* implementation defined */;
+    using bit_not_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member bitwise NOT `std::declval<Type>().operator~()`.
      * @details
@@ -745,15 +745,15 @@ namespace scl
      * @tparam Arguments The operator argument types (none).
      */
     template <typename Type, typename... Arguments>
-    using bitwise_not_member_operation = /* implementation defined */;
+    using bit_not_member_operation = /* implementation defined */;
     /**
      * @brief Detects member bitwise NOT operator (`obj.operator~()`).
      * @details
-     * True if `bitwise_not_member_operation<Type>` is well-formed; useful for ref-qualified overloads.
+     * True if `bit_not_member_operation<Type>` is well-formed; useful for ref-qualified overloads.
      * @tparam Arguments First type is the class type.
      */
     template <typename... Arguments>
-    inline constexpr bool has_bitwise_not_member_v = /* implementation defined */;
+    inline constexpr bool has_bit_not_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member bitwise NOT, or `scl::nonesuch`.
      * @details
@@ -761,7 +761,7 @@ namespace scl
      * @tparam Arguments First type is the class type.
      */
     template <typename... Arguments>
-    using bitwise_not_member_t = /* implementation defined */;
+    using bit_not_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member bitwise NOT detection.
      * @details
@@ -770,7 +770,7 @@ namespace scl
      * @tparam Arguments Exact operator argument types (none).
      */
     template <typename Type, typename... Arguments>
-    using bitwise_not_member_exact_operation = /* implementation defined */;
+    using bit_not_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member bitwise NOT operator (`obj.operator~()` exact).
      * @details
@@ -778,7 +778,7 @@ namespace scl
      * @tparam Arguments First type is the class type.
      */
     template <typename... Arguments>
-    inline constexpr bool has_bitwise_not_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_bit_not_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member bitwise NOT, or `scl::nonesuch`.
      * @details
@@ -786,7 +786,7 @@ namespace scl
      * @tparam Arguments First type is the class type.
      */
     template <typename... Arguments>
-    using bitwise_not_member_exact_t = /* implementation defined */;
+    using bit_not_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for the logical NOT expression `!std::declval<Type>()`.
@@ -1545,7 +1545,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using multiply_operation = /* implementation defined */;
+    using multiplies_operation = /* implementation defined */;
     /**
      * @brief Detects multiplication operator (`x     * y`).
      * @details
@@ -1554,7 +1554,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_multiply_v = /* implementation defined */;
+    inline constexpr bool has_multiplies_v = /* implementation defined */;
     /**
      * @brief Detected result type of multiplication, or `scl::nonesuch`.
      * @details
@@ -1563,7 +1563,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using multiply_t = /* implementation defined */;
+    using multiplies_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member multiplication `std::declval<Type>().operator*(std::declval<Argument>())`.
      * @details
@@ -1572,7 +1572,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using multiply_member_operation = /* implementation defined */;
+    using multiplies_member_operation = /* implementation defined */;
     /**
      * @brief Detects member multiplication operator (`obj.operator*(arg)`).
      * @details
@@ -1581,7 +1581,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_multiply_member_v = /* implementation defined */;
+    inline constexpr bool has_multiplies_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member multiplication, or `scl::nonesuch`.
      * @details
@@ -1590,7 +1590,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using multiply_member_t = /* implementation defined */;
+    using multiplies_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member multiplication detection.
      * @details
@@ -1599,7 +1599,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using multiply_member_exact_operation = /* implementation defined */;
+    using multiplies_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member multiplication operator (`obj.operator*(arg)` exact).
      * @details
@@ -1608,7 +1608,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_multiply_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_multiplies_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member multiplication, or `scl::nonesuch`.
      * @details
@@ -1617,7 +1617,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using multiply_member_exact_t = /* implementation defined */;
+    using multiplies_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for division expression `std::declval<Left>() / std::declval<Right>()`.
@@ -1627,7 +1627,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using divide_operation = /* implementation defined */;
+    using divides_operation = /* implementation defined */;
     /**
      * @brief Detects division operator (`x / y`).
      * @details
@@ -1636,7 +1636,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_divide_v = /* implementation defined */;
+    inline constexpr bool has_divides_v = /* implementation defined */;
     /**
      * @brief Detected result type of division, or `scl::nonesuch`.
      * @details
@@ -1645,7 +1645,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using divide_t = /* implementation defined */;
+    using divides_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member division `std::declval<Type>().operator/(std::declval<Argument>())`.
      * @details
@@ -1654,7 +1654,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using divide_member_operation = /* implementation defined */;
+    using divides_member_operation = /* implementation defined */;
     /**
      * @brief Detects member division operator (`obj.operator/(arg)`).
      * @details
@@ -1663,7 +1663,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_divide_member_v = /* implementation defined */;
+    inline constexpr bool has_divides_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member division, or `scl::nonesuch`.
      * @details
@@ -1672,7 +1672,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using divide_member_t = /* implementation defined */;
+    using divides_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member division detection.
      * @details
@@ -1681,7 +1681,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using divide_member_exact_operation = /* implementation defined */;
+    using divides_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member division operator (`obj.operator/(arg)` exact).
      * @details
@@ -1690,7 +1690,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_divide_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_divides_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member division, or `scl::nonesuch`.
      * @details
@@ -1699,89 +1699,89 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using divide_member_exact_t = /* implementation defined */;
+    using divides_member_exact_t = /* implementation defined */;
 
     /**
-     * @brief Alias for modulo expression `std::declval<Left>() % std::declval<Right>()`.
+     * @brief Alias for modulus expression `std::declval<Left>() % std::declval<Right>()`.
      * @details
      * Represents the unevaluated `%` expression (built-in or overloaded).
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using modulo_operation = /* implementation defined */;
+    using modulus_operation = /* implementation defined */;
     /**
-     * @brief Detects modulo operator (`x % y`).
+     * @brief Detects modulus operator (`x % y`).
      * @details
      * True if the remainder expression is well-formed for the given operands.
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_modulo_v = /* implementation defined */;
+    inline constexpr bool has_modulus_v = /* implementation defined */;
     /**
-     * @brief Detected result type of modulo, or `scl::nonesuch`.
+     * @brief Detected result type of modulus, or `scl::nonesuch`.
      * @details
      * Exposes the type returned by `Left % Right`, else `scl::nonesuch`.
      * @tparam Left Left operand type.
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using modulo_t = /* implementation defined */;
+    using modulus_t = /* implementation defined */;
     /**
-     * @brief Alias for invoking member modulo `std::declval<Type>().operator%(std::declval<Argument>())`.
+     * @brief Alias for invoking member modulus `std::declval<Type>().operator%(std::declval<Argument>())`.
      * @details
      * Probes for `Type::operator%(Argument)` (implicit conversions allowed).
      * @tparam Type The class type.
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using modulo_member_operation = /* implementation defined */;
+    using modulus_member_operation = /* implementation defined */;
     /**
-     * @brief Detects member modulo operator (`obj.operator%(arg)`).
+     * @brief Detects member modulus operator (`obj.operator%(arg)`).
      * @details
      * True if `Type::operator%(Argument)` is callable.
      * @tparam Type The class type.
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_modulo_member_v = /* implementation defined */;
+    inline constexpr bool has_modulus_member_v = /* implementation defined */;
     /**
-     * @brief Detected result type of member modulo, or `scl::nonesuch`.
+     * @brief Detected result type of member modulus, or `scl::nonesuch`.
      * @details
      * Exposes the return type of member `operator%` if available.
      * @tparam Type The class type.
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using modulo_member_t = /* implementation defined */;
+    using modulus_member_t = /* implementation defined */;
     /**
-     * @brief Alias for strict member modulo detection.
+     * @brief Alias for strict member modulus detection.
      * @details
      * Enforces exact signature and cv/ref-qualifiers for a true member `operator%`.
      * @tparam Type The class type.
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using modulo_member_exact_operation = /* implementation defined */;
+    using modulus_member_exact_operation = /* implementation defined */;
     /**
-     * @brief Detects strict member modulo operator (`obj.operator%(arg)` exact).
+     * @brief Detects strict member modulus operator (`obj.operator%(arg)` exact).
      * @details
      * True if an exactly matching member `operator%` exists on `Type`.
      * @tparam Type The class type.
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_modulo_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_modulus_member_exact_v = /* implementation defined */;
     /**
-     * @brief Detected result type of strict member modulo, or `scl::nonesuch`.
+     * @brief Detected result type of strict member modulus, or `scl::nonesuch`.
      * @details
-     * Exposes the exact modulo return type; `scl::nonesuch` otherwise.
+     * Exposes the exact modulus return type; `scl::nonesuch` otherwise.
      * @tparam Type The class type.
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using modulo_member_exact_t = /* implementation defined */;
+    using modulus_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for addition expression `std::declval<Left>() + std::declval<Right>()`.
@@ -2119,7 +2119,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bitwise_and_operation = /* implementation defined */;
+    using bit_and_operation = /* implementation defined */;
     /**
      * @brief Detects bitwise AND operator (`x & y`).
      * @details
@@ -2128,7 +2128,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_bitwise_and_v = /* implementation defined */;
+    inline constexpr bool has_bit_and_v = /* implementation defined */;
     /**
      * @brief Detected result type of bitwise AND, or `scl::nonesuch`.
      * @details
@@ -2137,7 +2137,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bitwise_and_t = /* implementation defined */;
+    using bit_and_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member bitwise AND `std::declval<Type>().operator&(std::declval<Argument>())`.
      * @details
@@ -2146,7 +2146,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_and_member_operation = /* implementation defined */;
+    using bit_and_member_operation = /* implementation defined */;
     /**
      * @brief Detects member bitwise AND operator (`obj.operator&(arg)`).
      * @details
@@ -2155,7 +2155,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_and_member_v = /* implementation defined */;
+    inline constexpr bool has_bit_and_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member bitwise AND, or `scl::nonesuch`.
      * @details
@@ -2164,7 +2164,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_and_member_t = /* implementation defined */;
+    using bit_and_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member bitwise AND detection.
      * @details
@@ -2173,7 +2173,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_and_member_exact_operation = /* implementation defined */;
+    using bit_and_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member bitwise AND operator (`obj.operator&(arg)` exact).
      * @details
@@ -2182,7 +2182,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_and_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_bit_and_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member bitwise AND, or `scl::nonesuch`.
      * @details
@@ -2191,7 +2191,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_and_member_exact_t = /* implementation defined */;
+    using bit_and_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for bitwise OR expression `std::declval<Left>() | std::declval<Right>()`.
@@ -2201,7 +2201,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bitwise_or_operation = /* implementation defined */;
+    using bit_or_operation = /* implementation defined */;
     /**
      * @brief Detects bitwise OR operator (`x | y`).
      * @details
@@ -2210,7 +2210,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_bitwise_or_v = /* implementation defined */;
+    inline constexpr bool has_bit_or_v = /* implementation defined */;
     /**
      * @brief Detected result type of bitwise OR, or `scl::nonesuch`.
      * @details
@@ -2219,7 +2219,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bitwise_or_t = /* implementation defined */;
+    using bit_or_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member bitwise OR `std::declval<Type>().operator|(std::declval<Argument>())`.
      * @details
@@ -2228,7 +2228,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_or_member_operation = /* implementation defined */;
+    using bit_or_member_operation = /* implementation defined */;
     /**
      * @brief Detects member bitwise OR operator (`obj.operator|(arg)`).
      * @details
@@ -2237,7 +2237,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_or_member_v = /* implementation defined */;
+    inline constexpr bool has_bit_or_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member bitwise OR, or `scl::nonesuch`.
      * @details
@@ -2246,7 +2246,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_or_member_t = /* implementation defined */;
+    using bit_or_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member bitwise OR detection.
      * @details
@@ -2255,7 +2255,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_or_member_exact_operation = /* implementation defined */;
+    using bit_or_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member bitwise OR operator (`obj.operator|(arg)` exact).
      * @details
@@ -2264,7 +2264,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_or_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_bit_or_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member bitwise OR, or `scl::nonesuch`.
      * @details
@@ -2273,7 +2273,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_or_member_exact_t = /* implementation defined */;
+    using bit_or_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for bitwise XOR expression `std::declval<Left>() ^ std::declval<Right>()`.
@@ -2283,7 +2283,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bitwise_xor_operation = /* implementation defined */;
+    using bit_xor_operation = /* implementation defined */;
     /**
      * @brief Detects bitwise XOR operator (`x ^ y`).
      * @details
@@ -2292,7 +2292,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_bitwise_xor_v = /* implementation defined */;
+    inline constexpr bool has_bit_xor_v = /* implementation defined */;
     /**
      * @brief Detected result type of bitwise XOR, or `scl::nonesuch`.
      * @details
@@ -2301,7 +2301,7 @@ namespace scl
      * @tparam Right Right operand type.
      */
     template <typename Left, typename Right>
-    using bitwise_xor_t = /* implementation defined */;
+    using bit_xor_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member bitwise XOR `std::declval<Type>().operator^(std::declval<Argument>())`.
      * @details
@@ -2310,7 +2310,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_xor_member_operation = /* implementation defined */;
+    using bit_xor_member_operation = /* implementation defined */;
     /**
      * @brief Detects member bitwise XOR operator (`obj.operator^(arg)`).
      * @details
@@ -2319,7 +2319,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_xor_member_v = /* implementation defined */;
+    inline constexpr bool has_bit_xor_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member bitwise XOR, or `scl::nonesuch`.
      * @details
@@ -2328,7 +2328,7 @@ namespace scl
      * @tparam Argument Right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_xor_member_t = /* implementation defined */;
+    using bit_xor_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member bitwise XOR detection.
      * @details
@@ -2337,7 +2337,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_xor_member_exact_operation = /* implementation defined */;
+    using bit_xor_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member bitwise XOR operator (`obj.operator^(arg)` exact).
      * @details
@@ -2346,7 +2346,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_xor_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_bit_xor_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member bitwise XOR, or `scl::nonesuch`.
      * @details
@@ -2355,7 +2355,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type.
      */
     template <typename Type, typename Argument>
-    using bitwise_xor_member_exact_t = /* implementation defined */;
+    using bit_xor_member_exact_t = /* implementation defined */;
 
     /** @} */
 
@@ -2792,250 +2792,250 @@ namespace scl
     using minus_assign_member_exact_t = /* implementation defined */;
 
     /**
-     * @brief Alias for multiply-assign expression `std::declval<Left>() *= std::declval<Right>()`.
+     * @brief Alias for multiplies-assign expression `std::declval<Left>() *= std::declval<Right>()`.
      * @details
      * Represents the unevaluated `*=` expression (built-in or overloaded).
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using multiply_assign_operation = /* implementation defined */;
+    using multiplies_assign_operation = /* implementation defined */;
     /**
-     * @brief Detects multiply-assign operator (`x *= y`).
+     * @brief Detects multiplies-assign operator (`x *= y`).
      * @details
      * True if the compound multiplication expression is well-formed for the given operands.
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_multiply_assign_v = /* implementation defined */;
+    inline constexpr bool has_multiplies_assign_v = /* implementation defined */;
     /**
-     * @brief Detected result type of multiply-assign, or `scl::nonesuch`.
+     * @brief Detected result type of multiplies-assign, or `scl::nonesuch`.
      * @details
      * Exposes the type returned by `Left *= Right` (typically `Left&`) when available.
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using multiply_assign_t = /* implementation defined */;
+    using multiplies_assign_t = /* implementation defined */;
     /**
-     * @brief Alias for invoking member multiply-assign `std::declval<Type>().operator*=(std::declval<Argument>())`.
+     * @brief Alias for invoking member multiplies-assign `std::declval<Type>().operator*=(std::declval<Argument>())`.
      * @details
      * Probes for `Type::operator*=(Argument)` (implicit conversions allowed).
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using multiply_assign_member_operation = /* implementation defined */;
+    using multiplies_assign_member_operation = /* implementation defined */;
     /**
-     * @brief Detects member multiply-assign operator (`obj.operator*=(arg)`).
+     * @brief Detects member multiplies-assign operator (`obj.operator*=(arg)`).
      * @details
      * True if `Type::operator*=(Argument)` is callable.
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_multiply_assign_member_v = /* implementation defined */;
+    inline constexpr bool has_multiplies_assign_member_v = /* implementation defined */;
     /**
-     * @brief Detected result type of member multiply-assign, or `scl::nonesuch`.
+     * @brief Detected result type of member multiplies-assign, or `scl::nonesuch`.
      * @details
      * Exposes the return type of member `operator*=` if present.
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using multiply_assign_member_t = /* implementation defined */;
+    using multiplies_assign_member_t = /* implementation defined */;
     /**
-     * @brief Alias for strict member multiply-assign detection.
+     * @brief Alias for strict member multiplies-assign detection.
      * @details
      * Enforces exact signature and cv/ref-qualifiers for a true member `operator*=`.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using multiply_assign_member_exact_operation = /* implementation defined */;
+    using multiplies_assign_member_exact_operation = /* implementation defined */;
     /**
-     * @brief Detects strict member multiply-assign operator (`obj.operator*=(arg)` exact).
+     * @brief Detects strict member multiplies-assign operator (`obj.operator*=(arg)` exact).
      * @details
      * True if an exactly matching `operator*=` exists on `Type`.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_multiply_assign_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_multiplies_assign_member_exact_v = /* implementation defined */;
     /**
-     * @brief Detected result type of strict member multiply-assign, or `scl::nonesuch`.
+     * @brief Detected result type of strict member multiplies-assign, or `scl::nonesuch`.
      * @details
-     * Exposes the exact multiply-assign return type; `scl::nonesuch` otherwise.
+     * Exposes the exact multiplies-assign return type; `scl::nonesuch` otherwise.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using multiply_assign_member_exact_t = /* implementation defined */;
+    using multiplies_assign_member_exact_t = /* implementation defined */;
 
     /**
-     * @brief Alias for divide-assign expression `std::declval<Left>() /= std::declval<Right>()`.
+     * @brief Alias for divides-assign expression `std::declval<Left>() /= std::declval<Right>()`.
      * @details
      * Represents the unevaluated `/=` expression (built-in or overloaded).
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using divide_assign_operation = /* implementation defined */;
+    using divides_assign_operation = /* implementation defined */;
     /**
-     * @brief Detects divide-assign operator (`x /= y`).
+     * @brief Detects divides-assign operator (`x /= y`).
      * @details
      * True if the compound division expression is well-formed for the given operands.
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_divide_assign_v = /* implementation defined */;
+    inline constexpr bool has_divides_assign_v = /* implementation defined */;
     /**
-     * @brief Detected result type of divide-assign, or `scl::nonesuch`.
+     * @brief Detected result type of divides-assign, or `scl::nonesuch`.
      * @details
      * Exposes the type returned by `Left /= Right` (typically `Left&`) when available.
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using divide_assign_t = /* implementation defined */;
+    using divides_assign_t = /* implementation defined */;
     /**
-     * @brief Alias for invoking member divide-assign `std::declval<Type>().operator/=(std::declval<Argument>())`.
+     * @brief Alias for invoking member divides-assign `std::declval<Type>().operator/=(std::declval<Argument>())`.
      * @details
      * Probes for `Type::operator/=(Argument)` (implicit conversions allowed).
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using divide_assign_member_operation = /* implementation defined */;
+    using divides_assign_member_operation = /* implementation defined */;
     /**
-     * @brief Detects member divide-assign operator (`obj.operator/=(arg)`).
+     * @brief Detects member divides-assign operator (`obj.operator/=(arg)`).
      * @details
      * True if `Type::operator/=(Argument)` is callable.
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_divide_assign_member_v = /* implementation defined */;
+    inline constexpr bool has_divides_assign_member_v = /* implementation defined */;
     /**
-     * @brief Detected result type of member divide-assign, or `scl::nonesuch`.
+     * @brief Detected result type of member divides-assign, or `scl::nonesuch`.
      * @details
      * Exposes the return type of member `operator/=` if present.
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using divide_assign_member_t = /* implementation defined */;
+    using divides_assign_member_t = /* implementation defined */;
     /**
-     * @brief Alias for strict member divide-assign detection.
+     * @brief Alias for strict member divides-assign detection.
      * @details
      * Enforces exact signature and cv/ref-qualifiers for a true member `operator/=`.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using divide_assign_member_exact_operation = /* implementation defined */;
+    using divides_assign_member_exact_operation = /* implementation defined */;
     /**
-     * @brief Detects strict member divide-assign operator (`obj.operator/=(arg)` exact).
+     * @brief Detects strict member divides-assign operator (`obj.operator/=(arg)` exact).
      * @details
      * True if an exactly matching `operator/=` exists on `Type`.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_divide_assign_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_divides_assign_member_exact_v = /* implementation defined */;
     /**
-     * @brief Detected result type of strict member divide-assign, or `scl::nonesuch`.
+     * @brief Detected result type of strict member divides-assign, or `scl::nonesuch`.
      * @details
-     * Exposes the exact divide-assign return type; `scl::nonesuch` otherwise.
+     * Exposes the exact divides-assign return type; `scl::nonesuch` otherwise.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using divide_assign_member_exact_t = /* implementation defined */;
+    using divides_assign_member_exact_t = /* implementation defined */;
 
     /**
-     * @brief Alias for modulo-assign expression `std::declval<Left>() %= std::declval<Right>()`.
+     * @brief Alias for modulus-assign expression `std::declval<Left>() %= std::declval<Right>()`.
      * @details
      * Represents the unevaluated `%=` expression (built-in or overloaded).
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using modulo_assign_operation = /* implementation defined */;
+    using modulus_assign_operation = /* implementation defined */;
     /**
-     * @brief Detects modulo-assign operator (`x %= y`).
+     * @brief Detects modulus-assign operator (`x %= y`).
      * @details
-     * True if the compound modulo expression is well-formed for the given operands.
+     * True if the compound modulus expression is well-formed for the given operands.
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_modulo_assign_v = /* implementation defined */;
+    inline constexpr bool has_modulus_assign_v = /* implementation defined */;
     /**
-     * @brief Detected result type of modulo-assign, or `scl::nonesuch`.
+     * @brief Detected result type of modulus-assign, or `scl::nonesuch`.
      * @details
      * Exposes the type returned by `Left %= Right` (typically `Left&`) when available.
      * @tparam Left Left operand type (LHS).
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using modulo_assign_t = /* implementation defined */;
+    using modulus_assign_t = /* implementation defined */;
     /**
-     * @brief Alias for invoking member modulo-assign `std::declval<Type>().operator%=(std::declval<Argument>())`.
+     * @brief Alias for invoking member modulus-assign `std::declval<Type>().operator%=(std::declval<Argument>())`.
      * @details
      * Probes for `Type::operator%=(Argument)` (implicit conversions allowed).
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using modulo_assign_member_operation = /* implementation defined */;
+    using modulus_assign_member_operation = /* implementation defined */;
     /**
-     * @brief Detects member modulo-assign operator (`obj.operator%=(arg)`).
+     * @brief Detects member modulus-assign operator (`obj.operator%=(arg)`).
      * @details
      * True if `Type::operator%=(Argument)` is callable.
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_modulo_assign_member_v = /* implementation defined */;
+    inline constexpr bool has_modulus_assign_member_v = /* implementation defined */;
     /**
-     * @brief Detected result type of member modulo-assign, or `scl::nonesuch`.
+     * @brief Detected result type of member modulus-assign, or `scl::nonesuch`.
      * @details
      * Exposes the return type of member `operator%=` if present.
      * @tparam Type The class type (LHS).
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using modulo_assign_member_t = /* implementation defined */;
+    using modulus_assign_member_t = /* implementation defined */;
     /**
-     * @brief Alias for strict member modulo-assign detection.
+     * @brief Alias for strict member modulus-assign detection.
      * @details
      * Enforces exact signature and cv/ref-qualifiers for a true member `operator%=`.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using modulo_assign_member_exact_operation = /* implementation defined */;
+    using modulus_assign_member_exact_operation = /* implementation defined */;
     /**
-     * @brief Detects strict member modulo-assign operator (`obj.operator%=(arg)` exact).
+     * @brief Detects strict member modulus-assign operator (`obj.operator%=(arg)` exact).
      * @details
      * True if an exactly matching `operator%=` exists on `Type`.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_modulo_assign_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_modulus_assign_member_exact_v = /* implementation defined */;
     /**
-     * @brief Detected result type of strict member modulo-assign, or `scl::nonesuch`.
+     * @brief Detected result type of strict member modulus-assign, or `scl::nonesuch`.
      * @details
-     * Exposes the exact modulo-assign return type; `scl::nonesuch` otherwise.
+     * Exposes the exact modulus-assign return type; `scl::nonesuch` otherwise.
      * @tparam Type The class type (LHS).
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using modulo_assign_member_exact_t = /* implementation defined */;
+    using modulus_assign_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for left-shift-assign expression `std::declval<Left>() <<= std::declval<Right>()`.
@@ -3209,7 +3209,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using bitwise_and_assign_operation = /* implementation defined */;
+    using bit_and_assign_operation = /* implementation defined */;
     /**
      * @brief Detects bitwise AND-assign operator (`x &= y`).
      * @details
@@ -3218,7 +3218,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_bitwise_and_assign_v = /* implementation defined */;
+    inline constexpr bool has_bit_and_assign_v = /* implementation defined */;
     /**
      * @brief Detected result type of bitwise AND-assign, or `scl::nonesuch`.
      * @details
@@ -3227,7 +3227,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using bitwise_and_assign_t = /* implementation defined */;
+    using bit_and_assign_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member bitwise AND-assign `std::declval<Type>().operator&=(std::declval<Argument>())`.
      * @details
@@ -3236,7 +3236,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_and_assign_member_operation = /* implementation defined */;
+    using bit_and_assign_member_operation = /* implementation defined */;
     /**
      * @brief Detects member bitwise AND-assign operator (`obj.operator&=(arg)`).
      * @details
@@ -3245,7 +3245,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_and_assign_member_v = /* implementation defined */;
+    inline constexpr bool has_bit_and_assign_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member bitwise AND-assign, or `scl::nonesuch`.
      * @details
@@ -3254,7 +3254,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_and_assign_member_t = /* implementation defined */;
+    using bit_and_assign_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member bitwise AND-assign detection.
      * @details
@@ -3263,7 +3263,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_and_assign_member_exact_operation = /* implementation defined */;
+    using bit_and_assign_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member bitwise AND-assign operator (`obj.operator&=(arg)` exact).
      * @details
@@ -3272,7 +3272,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_and_assign_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_bit_and_assign_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member bitwise AND-assign, or `scl::nonesuch`.
      * @details
@@ -3281,7 +3281,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_and_assign_member_exact_t = /* implementation defined */;
+    using bit_and_assign_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for bitwise OR-assign expression `std::declval<Left>() |= std::declval<Right>()`.
@@ -3291,7 +3291,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using bitwise_or_assign_operation = /* implementation defined */;
+    using bit_or_assign_operation = /* implementation defined */;
     /**
      * @brief Detects bitwise OR-assign operator (`x |= y`).
      * @details
@@ -3300,7 +3300,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_bitwise_or_assign_v = /* implementation defined */;
+    inline constexpr bool has_bit_or_assign_v = /* implementation defined */;
     /**
      * @brief Detected result type of bitwise OR-assign, or `scl::nonesuch`.
      * @details
@@ -3309,7 +3309,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using bitwise_or_assign_t = /* implementation defined */;
+    using bit_or_assign_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member bitwise OR-assign `std::declval<Type>().operator|=(std::declval<Argument>())`.
      * @details
@@ -3318,7 +3318,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_or_assign_member_operation = /* implementation defined */;
+    using bit_or_assign_member_operation = /* implementation defined */;
     /**
      * @brief Detects member bitwise OR-assign operator (`obj.operator|=(arg)`).
      * @details
@@ -3327,7 +3327,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_or_assign_member_v = /* implementation defined */;
+    inline constexpr bool has_bit_or_assign_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member bitwise OR-assign, or `scl::nonesuch`.
      * @details
@@ -3336,7 +3336,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_or_assign_member_t = /* implementation defined */;
+    using bit_or_assign_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member bitwise OR-assign detection.
      * @details
@@ -3345,7 +3345,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_or_assign_member_exact_operation = /* implementation defined */;
+    using bit_or_assign_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member bitwise OR-assign operator (`obj.operator|=(arg)` exact).
      * @details
@@ -3354,7 +3354,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_or_assign_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_bit_or_assign_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member bitwise OR-assign, or `scl::nonesuch`.
      * @details
@@ -3363,7 +3363,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_or_assign_member_exact_t = /* implementation defined */;
+    using bit_or_assign_member_exact_t = /* implementation defined */;
 
     /**
      * @brief Alias for bitwise XOR-assign expression `std::declval<Left>() ^= std::declval<Right>()`.
@@ -3373,7 +3373,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using bitwise_xor_assign_operation = /* implementation defined */;
+    using bit_xor_assign_operation = /* implementation defined */;
     /**
      * @brief Detects bitwise XOR-assign operator (`x ^= y`).
      * @details
@@ -3382,7 +3382,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    inline constexpr bool has_bitwise_xor_assign_v = /* implementation defined */;
+    inline constexpr bool has_bit_xor_assign_v = /* implementation defined */;
     /**
      * @brief Detected result type of bitwise XOR-assign, or `scl::nonesuch`.
      * @details
@@ -3391,7 +3391,7 @@ namespace scl
      * @tparam Right Right operand type (RHS).
      */
     template <typename Left, typename Right>
-    using bitwise_xor_assign_t = /* implementation defined */;
+    using bit_xor_assign_t = /* implementation defined */;
     /**
      * @brief Alias for invoking member bitwise XOR-assign `std::declval<Type>().operator^=(std::declval<Argument>())`.
      * @details
@@ -3400,7 +3400,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_xor_assign_member_operation = /* implementation defined */;
+    using bit_xor_assign_member_operation = /* implementation defined */;
     /**
      * @brief Detects member bitwise XOR-assign operator (`obj.operator^=(arg)`).
      * @details
@@ -3409,7 +3409,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_xor_assign_member_v = /* implementation defined */;
+    inline constexpr bool has_bit_xor_assign_member_v = /* implementation defined */;
     /**
      * @brief Detected result type of member bitwise XOR-assign, or `scl::nonesuch`.
      * @details
@@ -3418,7 +3418,7 @@ namespace scl
      * @tparam Argument Right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_xor_assign_member_t = /* implementation defined */;
+    using bit_xor_assign_member_t = /* implementation defined */;
     /**
      * @brief Alias for strict member bitwise XOR-assign detection.
      * @details
@@ -3427,7 +3427,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_xor_assign_member_exact_operation = /* implementation defined */;
+    using bit_xor_assign_member_exact_operation = /* implementation defined */;
     /**
      * @brief Detects strict member bitwise XOR-assign operator (`obj.operator^=(arg)` exact).
      * @details
@@ -3436,7 +3436,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    inline constexpr bool has_bitwise_xor_assign_member_exact_v = /* implementation defined */;
+    inline constexpr bool has_bit_xor_assign_member_exact_v = /* implementation defined */;
     /**
      * @brief Detected result type of strict member bitwise XOR-assign, or `scl::nonesuch`.
      * @details
@@ -3445,7 +3445,7 @@ namespace scl
      * @tparam Argument Exact right-hand argument type (RHS).
      */
     template <typename Type, typename Argument>
-    using bitwise_xor_assign_member_exact_t = /* implementation defined */;
+    using bit_xor_assign_member_exact_t = /* implementation defined */;
 
     /** @} */
 

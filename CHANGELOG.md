@@ -46,6 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [meta] Broke `type_short_name<T>()` for a pointer, an array, a function or a member pointer
 - [preprocessor] Broke a `SCL_FORWARD` defined before its header: the header no longer yields to it
 - [type_traits] Broke `detected_t` of an ill-formed operation, now `scl::nonesuch`
+- [type_traits] Broke operator detection names, now as std names them
 - Marked the entry points of `hash`, `meta`, `forward_like` and `overload_cast` `[[nodiscard]]`
 
 ### Fixed

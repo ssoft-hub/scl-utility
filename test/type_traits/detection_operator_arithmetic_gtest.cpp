@@ -334,478 +334,478 @@ TEST(OperatorDetectionTest, MinusMemberExact)
 // BINARY MULTIPLY (*)
 // ----------------------------------------------------------------------------
 
-TEST(OperatorDetectionTest, Multiply)
+TEST(OperatorDetectionTest, Multiplies)
 {
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<int, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<int &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<int &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<int const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<int const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<int const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<int, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<int &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<int &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<int const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<int const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithGlobal, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithGlobal &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithGlobal &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithGlobal const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithGlobal const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithGlobal, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithGlobal &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithGlobal &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithGlobal const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithGlobal const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_v<NoOperators const &&, int>));
 }
 
-TEST(OperatorDetectionTest, MultiplyMember)
+TEST(OperatorDetectionTest, MultipliesMember)
 {
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<int, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<int &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<int &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<int const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<int const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<int const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithGlobal, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithGlobal &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithGlobal &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithGlobal const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithGlobal const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_v<NoOperators const &&, int>));
 }
 
-TEST(OperatorDetectionTest, MultiplyMemberExact)
+TEST(OperatorDetectionTest, MultipliesMemberExact)
 {
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<int, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<int &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<int &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<int const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<int const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<int const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_exact_v<WithMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_exact_v<WithMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithConstMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithConstMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_exact_v<WithConstMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_exact_v<WithConstMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithConstMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_exact_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_exact_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_multiply_member_exact_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_multiplies_member_exact_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithGlobal, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithGlobal &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithGlobal &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithGlobal const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithGlobal const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_multiply_member_exact_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_multiplies_member_exact_v<NoOperators const &&, int>));
 }
 
 // ----------------------------------------------------------------------------
 // BINARY DIVIDE (/)
 // ----------------------------------------------------------------------------
 
-TEST(OperatorDetectionTest, Divide)
+TEST(OperatorDetectionTest, Divides)
 {
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<int, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<int &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<int &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<int const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<int const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<int const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<int, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<int &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<int &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<int const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<int const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithGlobal, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithGlobal &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithGlobal &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithGlobal const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithGlobal const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithGlobal, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithGlobal &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithGlobal &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithGlobal const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithGlobal const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_v<NoOperators const &&, int>));
 }
 
-TEST(OperatorDetectionTest, DivideMember)
+TEST(OperatorDetectionTest, DividesMember)
 {
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<int, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<int &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<int &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<int const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<int const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<int const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithGlobal, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithGlobal &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithGlobal &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithGlobal const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithGlobal const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_v<NoOperators const &&, int>));
 }
 
-TEST(OperatorDetectionTest, DivideMemberExact)
+TEST(OperatorDetectionTest, DividesMemberExact)
 {
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<int, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<int &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<int &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<int const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<int const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<int const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_exact_v<WithMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_exact_v<WithMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithConstMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithConstMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_exact_v<WithConstMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_exact_v<WithConstMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithConstMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_exact_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_exact_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_divide_member_exact_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_divides_member_exact_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithGlobal, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithGlobal &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithGlobal &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithGlobal const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithGlobal const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_divide_member_exact_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_divides_member_exact_v<NoOperators const &&, int>));
 }
 
 // ----------------------------------------------------------------------------
 // BINARY MODULO (%)
 // ----------------------------------------------------------------------------
 
-TEST(OperatorDetectionTest, Modulo)
+TEST(OperatorDetectionTest, Modulus)
 {
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<int, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<int &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<int &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<int const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<int const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<int const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<int, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<int &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<int &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<int const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<int const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithGlobal, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithGlobal &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithGlobal &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithGlobal const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithGlobal const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithGlobal, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithGlobal &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithGlobal &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithGlobal const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithGlobal const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_v<NoOperators const &&, int>));
 }
 
-TEST(OperatorDetectionTest, ModuloMember)
+TEST(OperatorDetectionTest, ModulusMember)
 {
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<int, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<int &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<int &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<int const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<int const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<int const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithGlobal, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithGlobal &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithGlobal &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithGlobal const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithGlobal const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_v<NoOperators const &&, int>));
 }
 
-TEST(OperatorDetectionTest, ModuloMemberExact)
+TEST(OperatorDetectionTest, ModulusMemberExact)
 {
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<int, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<int &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<int &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<int const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<int const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<int const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_exact_v<WithMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_exact_v<WithMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithConstMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithConstMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_exact_v<WithConstMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_exact_v<WithConstMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithConstMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_exact_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_exact_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_modulo_member_exact_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_modulus_member_exact_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithGlobal, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithGlobal &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithGlobal &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithGlobal const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithGlobal const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_modulo_member_exact_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_modulus_member_exact_v<NoOperators const &&, int>));
 }
