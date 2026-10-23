@@ -51,7 +51,7 @@ namespace scl
 |---|---|
 | Префиксные | `&` `address_of`, `*` `indirection`, `+` `unary_plus`, `-` `negate`, `++` `prefix_increment`, `--` `prefix_decrement`, `~` `bit_not`, `!` `logical_not` |
 | Постфиксные | `++` `postfix_increment`, `--` `postfix_decrement` |
-| Сравнения | `==` `equal_to`, `!=` `not_equal_to`, `<` `less`, `<=` `less_equal`, `>` `greater`, `>=` `greater_equal` |
+| Сравнения | `==` `equal_to`, `!=` `not_equal_to`, `<` `less`, `<=` `less_equal`, `>` `greater`, `>=` `greater_equal`, `<=>` `compare_three_way` |
 | Арифметические и поразрядные | `*` `multiplies`, `/` `divides`, `%` `modulus`, `+` `plus`, `-` `minus`, `<<` `left_shift`, `>>` `right_shift`, `&` `bit_and`, `\|` `bit_or`, `^` `bit_xor` |
 | Логические | `&&` `logical_and`, `\|\|` `logical_or` |
 | Присваивания | `=` `assign`, `*=` `multiplies_assign`, `/=` `divides_assign`, `%=` `modulus_assign`, `+=` `plus_assign`, `-=` `minus_assign`, `<<=` `left_shift_assign`, `>>=` `right_shift_assign`, `&=` `bit_and_assign`, `\|=` `bit_or_assign`, `^=` `bit_xor_assign` |

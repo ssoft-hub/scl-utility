@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [meta] Added `scl::type_key`, a type identity with no RTTI, and `scl::is_tu_local`
 - [preprocessor] Added `SCL_HAS_RTTI`, `SCL_HAS_EXCEPTIONS` and `SCL_HAS_THREADS`
 - [runtime] Added `scl::type_name(object)`, `type_short_name(object)` and `scl::enum_string`
-- [type_traits] Added `scl::signature_t` and `scl::signature`, the parts of a callable type
+- [type_traits] Added `scl::signature_t` and the detection of `operator<=>`
 - Added runnable examples, a Quick start among them, and a version selector to the reference
 
 ### Changed

@@ -249,6 +249,19 @@ static_assert(scl::has_greater_equal_member_exact_v<greater_equal_operand const,
 static_assert(!scl::has_greater_equal_member_exact_v<greater_equal_operand const, short>);
 //! [greater_equal]
 
+//! [compare_three_way]
+struct compare_three_way_operand
+{
+    std::strong_ordering operator<=>(int value) const;
+};
+
+static_assert(scl::has_compare_three_way_v<int, long>);
+static_assert(std::is_same_v<
+    scl::compare_three_way_member_t<compare_three_way_operand const, short>, std::strong_ordering>);
+static_assert(scl::has_compare_three_way_member_exact_v<compare_three_way_operand const, int>);
+static_assert(!scl::has_compare_three_way_member_exact_v<compare_three_way_operand const, short>);
+//! [compare_three_way]
+
 //! [multiplies]
 struct multiplies_operand
 {

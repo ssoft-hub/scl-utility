@@ -10,6 +10,7 @@
 #include <scl/utility/type_traits/detail/exact.h>
 #include <scl/utility/type_traits/detection.h>
 
+#include <compare>
 #include <type_traits>
 #include <utility>
 
@@ -159,6 +160,7 @@ SCL_DETAIL_BINARY_OPERATOR_DETECTION(<, less)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(<=, less_equal)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(>, greater)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(>=, greater_equal)
+SCL_DETAIL_BINARY_OPERATOR_DETECTION(<=>, compare_three_way)
 
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(*, multiplies)
 SCL_DETAIL_BINARY_OPERATOR_DETECTION(/, divides)
@@ -1832,6 +1834,108 @@ namespace scl
     template <typename... Arguments>
     using greater_equal_member_exact_t =
         ::scl::detected_t<::scl::greater_equal_member_exact_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Left>() <=> std::declval<Right>()`.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Left Left operand type.
+     * @tparam Right Right operand type.
+     */
+    template <typename Left, typename Right>
+    using compare_three_way_operation = decltype(::std::declval<Left>() <=> ::std::declval<Right>());
+    /**
+     * @brief Whether ::scl::compare_three_way_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Arguments Template arguments of ::scl::compare_three_way_operation.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_compare_three_way_v =
+        ::scl::is_detected_v<::scl::compare_three_way_operation, Arguments...>;
+    /**
+     * @brief ::scl::compare_three_way_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Arguments Template arguments of ::scl::compare_three_way_operation.
+     */
+    template <typename... Arguments>
+    using compare_three_way_t = ::scl::detected_t<::scl::compare_three_way_operation, Arguments...>;
+
+    /**
+     * @brief The type of `std::declval<Type>().operator<=>(std::declval<Arguments>()...)`.
+     *
+     * A built-in operator and a free function are not found.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using compare_three_way_member_operation = decltype(::std::declval<Type>().operator<=>(
+        ::std::declval<Arguments>()...));
+    /**
+     * @brief Whether ::scl::compare_three_way_member_operation is well-formed for @p Arguments.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_compare_three_way_member_v =
+        ::scl::is_detected_v<::scl::compare_three_way_member_operation, Arguments...>;
+    /**
+     * @brief ::scl::compare_three_way_member_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Arguments Type of the object, then argument types.
+     */
+    template <typename... Arguments>
+    using compare_three_way_member_t =
+        ::scl::detected_t<::scl::compare_three_way_member_operation, Arguments...>;
+
+    /**
+     * @brief The type of the call of the member function `operator<=>` with exactly these parameters.
+     *
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator<=>` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator<=>`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Type Type of the object.
+     * @tparam Arguments Argument types.
+     */
+    template <typename Type, typename... Arguments>
+    using compare_three_way_member_exact_operation = unspecified;
+    /**
+     * @brief Whether `operator<=>` is declared exactly for the given object and parameter types.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    inline constexpr auto has_compare_three_way_member_exact_v =
+        ::scl::is_detected_v<::scl::compare_three_way_member_exact_operation, Arguments...>;
+    /**
+     * @brief ::scl::compare_three_way_member_exact_operation for @p Arguments, or ::scl::nonesuch.
+     *
+     * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp compare_three_way
+     *
+     * @tparam Arguments Type of the object, then parameter types.
+     */
+    template <typename... Arguments>
+    using compare_three_way_member_exact_t =
+        ::scl::detected_t<::scl::compare_three_way_member_exact_operation, Arguments...>;
 
     /** @} */
 
