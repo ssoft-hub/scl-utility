@@ -15,9 +15,9 @@ namespace scl
     template <typename Base, typename Type>
     using forward_like_t = unspecified;
 
-    template <typename Base, typename T>
+    template <typename Base, typename Type>
     [[nodiscard]]
-    constexpr decltype(auto) forward_like(T && t) noexcept;
+    constexpr decltype(auto) forward_like(Type && t) noexcept;
 }
 ```
 
@@ -39,7 +39,7 @@ namespace scl
 ### Шаблон функции `forward_like`
 
 - **Приведение.** Вызов `forward_like<Base>(t)` возвращает аргумент `t`, приведённый к типу
-  `forward_like_t<Base, T>`, где тип `T` выводится из аргумента. Функция `forward_like`
+  `forward_like_t<Base, Type>`, где тип `Type` выводится из аргумента. Функция `forward_like`
   не имеет побочных эффектов. Аргумент не копируется и не перемещается, а возвращается ссылка на тот
   же объект. Функция объявлена со спецификаторами `constexpr` и `noexcept` и с атрибутом
   `[[nodiscard]]`.

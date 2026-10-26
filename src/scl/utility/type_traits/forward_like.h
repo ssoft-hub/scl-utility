@@ -42,11 +42,11 @@ namespace scl
         Base, ::scl::detail::add_cv_from_t<Base, ::std::remove_reference_t<Type>>>;
 #endif
 
-    template <typename Base, typename T>
+    template <typename Base, typename Type>
     [[nodiscard]]
-    constexpr decltype(auto) forward_like(T && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
+    constexpr decltype(auto) forward_like(Type && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
     {
-        return static_cast<::scl::forward_like_t<Base, T &&>>(t);
+        return static_cast<::scl::forward_like_t<Base, Type>>(t);
     }
 
 } // namespace scl
@@ -90,9 +90,9 @@ namespace scl
  */
 
 /**
- * @fn scl::forward_like(T && t)
+ * @fn scl::forward_like(Type && t)
  * @ingroup scl_utility_type_traits
- * @brief Returns @p t as ::scl::forward_like_t<Base, T>.
+ * @brief Returns @p t as ::scl::forward_like_t<Base, Type>.
  *
  * The result is an lvalue where @p Base is an lvalue reference and an rvalue otherwise, with
  * the `const` and `volatile` of @p Base added.
@@ -104,7 +104,7 @@ namespace scl
  * @snippet type_traits/forward_like/type_traits_forward_like_example.cpp move
  *
  * @tparam Base Type whose value category and cv-qualifiers are given to @p t.
- * @tparam T Type of the argument, deduced.
+ * @tparam Type Type of the argument, deduced.
  * @param t Object to pass on.
  * @return A reference to @p t.
  */

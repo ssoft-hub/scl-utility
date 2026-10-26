@@ -15,9 +15,9 @@ namespace scl
     template <typename Base, typename Type>
     using forward_like_t = unspecified;
 
-    template <typename Base, typename T>
+    template <typename Base, typename Type>
     [[nodiscard]]
-    constexpr decltype(auto) forward_like(T && t) noexcept;
+    constexpr decltype(auto) forward_like(Type && t) noexcept;
 }
 ```
 
@@ -40,7 +40,7 @@ namespace scl
 ### Function template `forward_like`
 
 - **Cast.** The call `forward_like<Base>(t)` returns the argument `t` cast to the type
-  `forward_like_t<Base, T>`, the type `T` being deduced from the argument. The function
+  `forward_like_t<Base, Type>`, the type `Type` being deduced from the argument. The function
   `forward_like` has no side effects. The argument is not copied or moved, and a reference to
   the same object is returned. The function is declared with the specifiers `constexpr` and
   `noexcept` and with the attribute `[[nodiscard]]`.
