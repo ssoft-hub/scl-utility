@@ -49,7 +49,9 @@ namespace scl
   as `void() const`, the alias template `member_function_like_t` is not defined. For such a type
   the substitution fails without a build error, so this can be checked with the templates of
   [expression presence detection](detection.md). If the type `Signature` is not a function type at
-  all, or the type `std::remove_cvref_t<Type>` is not a class, the build ends with an error.
+  all, the build ends with an error. The build also ends with an error where the type `Signature`
+  has one of the two forms above and the type `std::remove_cvref_t<Type>` is neither a class nor
+  a union.
 
 ### Pointer to a data member
 

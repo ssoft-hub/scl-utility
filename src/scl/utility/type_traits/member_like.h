@@ -97,8 +97,8 @@ namespace scl::detail
     struct member_function_build
     {
         static_assert(
-            ::std::is_class_v<::std::remove_cvref_t<Type>>,
-            "member_function_like_t requires Type to be a class type");
+            ::std::is_class_v<::std::remove_cvref_t<Type>> || ::std::is_union_v<::std::remove_cvref_t<Type>>,
+            "member_function_like_t requires Type to be a class or union type");
 
         using type = ::scl::detail::member_function_cv_t<
             ::scl::detail::member_function_forms<
@@ -210,8 +210,8 @@ namespace scl
  * is not defined for another function type, a C-style variadic one or one with cv- or
  * ref-qualifiers, and the substitution of such a type fails without a build error. For
  * a @p Signature of one of these two forms the build ends with an error if
- * `std::remove_cvref_t<Type>` is not a class. The build also ends with an error if @p Signature is
- * not a function type.
+ * `std::remove_cvref_t<Type>` is neither a class nor a union. The build also ends with an error if
+ * @p Signature is not a function type.
  *
  * @snippet type_traits/member_like/type_traits_member_like_example.cpp types
  * @snippet type_traits/member_like/type_traits_member_like_example.cpp function

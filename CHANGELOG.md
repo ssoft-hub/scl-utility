@@ -59,6 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [meta] Made `type_short_name<T>()` return the name of the type alone, without `const`, `volatile` and a reference, for a closure, an unnamed type and a name holding an operator as well, apart from two types GCC or Clang spell with one name
 - [meta] Made `symbol_name<S>()` return the full name and `symbol_short_name<S>()` the name alone, apart from a conversion operator with GCC and a virtual member function with MSVC
 - [preprocessor] Made the counter take a tag of any type or with commas, and yield a plain value
+- [type_traits] Accepted a union in `member_function_like_t` and the exact method form
 - Included `hash.h` in `<scl/utility.h>`, which left the hash group out
 - Fixed the installation steps, which added a directory with no `CMakeLists.txt`
 

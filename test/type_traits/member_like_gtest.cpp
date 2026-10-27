@@ -18,7 +18,18 @@ namespace
         int f5(int v) const && noexcept { return v; }
     };
 
+    union U
+    {
+        int i;
+
+        int get() const & { return i; }
+    };
+
 } // namespace
+
+// a union is accepted as the class of the member function
+static_assert(::std::is_same_v<::scl::member_function_like_t<U const &, int()>, int (U::*)() const &>);
+static_assert(::std::is_same_v<::scl::member_like_t<U &&, int() noexcept>, int (U::*)() && noexcept>);
 
 // no ref-qualifier, no noexcept
 static_assert(::std::is_same_v<::scl::member_function_like_t<X, void()>, void (X::*)()>);

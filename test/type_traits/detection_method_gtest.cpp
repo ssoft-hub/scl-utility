@@ -25,6 +25,16 @@ namespace
     };
 
     /**
+     * @brief Union with a member function.
+     */
+    union Variant
+    {
+        int number;
+
+        int query(int x) & { return x; }
+    };
+
+    /**
      * @brief Class with no methods.
      */
     struct Empty
@@ -119,4 +129,14 @@ TEST(MethodDetectionTest, Static)
     // lvalue_only() is not a static method
     STATIC_EXPECT_FALSE(has_lvalue_only_static_method_v<Mock>);
     STATIC_EXPECT_FALSE(has_lvalue_only_static_method_exact_v<Mock>);
+}
+
+/**
+ * @test Verify the exact form for a member function of a union.
+ */
+TEST(MethodDetectionTest, Union)
+{
+    STATIC_EXPECT_TRUE((has_query_method_v<Variant &, int>));
+    STATIC_EXPECT_TRUE((has_query_method_exact_v<Variant &, int>));
+    STATIC_EXPECT_FALSE((has_query_method_exact_v<Variant, int>));
 }
