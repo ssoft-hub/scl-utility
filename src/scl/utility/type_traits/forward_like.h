@@ -1,5 +1,7 @@
 #pragma once
 
+#include <scl/utility/attribute/lifetimebound.h>
+
 #include <type_traits>
 
 /**
@@ -44,7 +46,7 @@ namespace scl
 
     template <typename Base, typename Type>
     [[nodiscard]]
-    constexpr decltype(auto) forward_like(Type && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
+    constexpr decltype(auto) forward_like(Type && t SCL_LIFETIMEBOUND) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
     {
         return static_cast<::scl::forward_like_t<Base, Type>>(t);
     }
@@ -98,7 +100,9 @@ namespace scl
  * the `const` and `volatile` of @p Base added.
  *
  * A member of an object is passed on with the value category of the object. The argument is cast
- * to a reference type, and nothing is copied or moved by the call.
+ * to a reference type, and nothing is copied or moved by the call. The parameter is marked with
+ * @ref SCL_LIFETIMEBOUND, so a compiler that supports the check warns where the returned reference
+ * outlives a temporary argument.
  *
  * @snippet type_traits/forward_like/type_traits_forward_like_example.cpp member
  * @snippet type_traits/forward_like/type_traits_forward_like_example.cpp move
