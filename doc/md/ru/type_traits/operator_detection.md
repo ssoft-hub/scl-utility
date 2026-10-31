@@ -37,9 +37,7 @@ namespace scl
     using plus_member_t = detected_t<plus_member_operation, Arguments...>;
 
     template <typename Type, typename... Arguments>
-    using plus_member_exact_operation = decltype((std::declval<Type>().*
-        static_cast<member_function_like_t<Type, plus_member_operation<Type, Arguments...>(Arguments...)>>(
-            &std::remove_cvref_t<Type>::operator+))(std::declval<Arguments>()...));
+    using plus_member_exact_operation = unspecified;
     template <typename... Arguments>
     inline constexpr auto has_plus_member_exact_v = is_detected_v<plus_member_exact_operation, Arguments...>;
     template <typename... Arguments>
@@ -92,19 +90,21 @@ namespace scl
 - **Строгое соответствие.** Шаблонная константа `has_plus_member_exact_v<Type, Arguments...>` равна
   `true`, если в классе `std::remove_cvref_t<Type>` или в его открытом базовом классе объявлен метод
   `operator+`, параметры которого имеют в точности типы `Arguments...`, квалификаторы которого
-  соответствуют типу `Type`, и вызов этого метода компилируется. Квалификаторы должны
-  соответствовать типу `Type` по тем же правилам, что на странице
-  [обнаружения наличия метода](method_detection.md).
+  соответствуют типу `Type`, и этот метод не удалён и доступен. Квалификаторы должны соответствовать
+  типу `Type` по тем же правилам, что на странице [обнаружения наличия метода](method_detection.md).
   Например, для типа `X const` нужен метод с квалификатором `const` без ссылочного квалификатора,
   для типа `X &` нужен метод с квалификатором `&` и так далее.
 - **Тип результата и неоднозначный вызов.** Тип результата метода в строгом соответствии
-  не сравнивается. Шаблонный тип `plus_member_exact_t` является типом результата вызова метода,
-  который должен компилироваться. Если этот вызов неоднозначен, например для перегрузок
-  `long operator+(int) const` и `char operator+(int &&) const`, шаблонная константа
-  `has_plus_member_exact_v<X const, int>` равна `false`, хотя метод `operator+(int) const` объявлен.
+  не сравнивается. Шаблонный тип `plus_member_exact_t` является типом результата найденного метода.
+  Метод находится и тогда, когда вызов метода `operator+` неоднозначен, например для перегрузок
+  `long operator+(int) const` и `char operator+(int &&) const`. Если среди перегрузок `operator+`
+  есть шаблон метода, находится только перегрузка, тип результата которой совпадает с типом
+  результата вызова `std::declval<Type>().operator+(std::declval<Arguments>()...)`.
 - **Спецификатор `noexcept`.** Спецификатор `noexcept` оператора в строгом соответствии
   не сравнивается. Его можно проверить оператором `noexcept`, применённым к вызову
-  `std::declval<Type>().operator+(std::declval<Arguments>()...)`.
+  `std::declval<Type>().operator+(std::declval<Arguments>()...)`. Если этот вызов неоднозначен,
+  а перегрузки различаются не только квалификаторами, спецификатор виден в типе указателя на нужную
+  перегрузку, который возвращает [`scl::overload_cast`](overload_cast.md) для адреса оператора.
 
 ### Операторы с собственными правилами
 
@@ -121,7 +121,10 @@ namespace scl
 
 - **MSVC.** На MSVC доступ проверяется так же, как описано на странице
   [обнаружения наличия метода](method_detection.md). Поэтому закрытый и защищённый методы оператора
-  находятся в форме выражения и в нестрогой форме метода.
+  находятся в форме выражения и в нестрогой форме метода, а в строгой форме только в том случае,
+  если в классе объявлены и другие перегрузки этого оператора. Строгое соответствие на MSVC
+  также требует, чтобы вызов метода оператора компилировался, поэтому там при неоднозначном вызове
+  метода `operator+` шаблонная константа `has_plus_member_exact_v` равна `false`.
 
 ## Примеры
 

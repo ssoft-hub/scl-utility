@@ -28,8 +28,7 @@ template <typename... Arguments>
 using foo_function_t = scl::detected_t<foo_function_operation, Arguments...>;
 
 template <typename... Arguments>
-using foo_function_exact_operation = decltype(
-    static_cast<foo_function_operation<Arguments...> (*)(Arguments...)>(&foo)(std::declval<Arguments>()...));
+using foo_function_exact_operation = unspecified;
 template <typename... Arguments>
 inline constexpr auto has_foo_function_exact_v = scl::is_detected_v<foo_function_exact_operation, Arguments...>;
 template <typename... Arguments>
@@ -59,30 +58,44 @@ using foo_function_exact_t = scl::detected_t<foo_function_exact_operation, Argum
 
 - **Condition.** The variable template `has_foo_function_exact_v<Arguments...>` is `true` if
   a function `foo` whose parameters are exactly the types `Arguments...` is declared before
-  the macro is expanded, and the call `foo(std::declval<Arguments>()...)` compiles. The top-level
-  qualifiers `const` and `volatile` of the types `Arguments...` do not count, as the section Notes
-  explains. For the overloads `int foo(int, int)` and `double foo(double, double)`, for example,
-  the variable template `has_foo_function_exact_v<int, int>` is `true`, and the variable template
+  the macro is expanded, and the function is not deleted (`= delete`). The top-level qualifiers
+  `const` and `volatile` of the types `Arguments...` do not count, as the section Notes explains.
+  For the overloads `int foo(int, int)` and `double foo(double, double)`, for example, the variable
+  template `has_foo_function_exact_v<int, int>` is `true`, and the variable template
   `has_foo_function_exact_v<int, long>` is `false`, although a call with such arguments compiles.
 - **Lookup.** The function is looked up only among the declarations visible where the macro is
   expanded, without the lookup through the arguments (ADL). So for a function declared later
   the variable template `has_foo_function_exact_v` is `false`. It is `false` for a pointer to
   a function and for a function object named `foo` as well, since such a variable is not a function.
 - **Result type.** The strict match does not compare the result type of the function. The alias
-  template `foo_function_exact_t<Arguments...>` is the result type of the plain call, and it can
+  template `foo_function_exact_t<Arguments...>` is the result type of the function found, and it can
   be compared with an expected type, for example with `std::is_same_v`. The function is found also
   where its result type is deduced from its body (`auto`), and where it is a specialization of
   a function template with parameters of exactly the types `Arguments...`.
-- **Ambiguous call.** The strict match requires the plain call `foo(std::declval<Arguments>()...)`
-  to compile. For the overloads `long f(int)` and `char f(int &&)`, for example, the call
-  `f(std::declval<int>())` is ambiguous, so the variable templates `has_f_function_v<int>` and
-  `has_f_function_exact_v<int>` are `false`, although the function `f(int)` is declared.
+- **Ambiguous call.** In the strict match the function is found also where the plain call is
+  ambiguous. For the overloads `long f(int)` and `char f(int &&)`, for example, the call
+  `f(std::declval<int>())` is ambiguous, so the variable template `has_f_function_v<int>` is
+  `false`. The variable template `has_f_function_exact_v<int>` is `true` all the same, and the alias
+  template `f_function_exact_t<int>` is the type `long`. The variable template
+  `has_f_function_exact_v<int &&>` is `true` as well.
+- **Function template among the overloads.** If the overloads of `foo` include a function template,
+  the function with the needed parameters is chosen by the result type of the plain call, that is
+  the overload taken is the one whose result type is that of the call
+  `foo(std::declval<Arguments>()...)`. If that call is ambiguous, it has no result type, and
+  the variable template `has_foo_function_exact_v` is `false`. For the overloads
+  `template <typename T> T f(T)`, `long f(int)` and `char f(int &&)`, for example, the variable
+  template `has_f_function_exact_v<int>` is `false`, although the function `f(int)` is declared.
 - **Specifier `noexcept`.** The strict match does not compare the specifier `noexcept` of
   the function. It can be checked with the operator `noexcept` applied to a call, for example
-  `noexcept(foo(1, 2))`.
+  `noexcept(foo(1, 2))`. Where the call is ambiguous, the specifier shows in the type of the pointer
+  to the needed overload that [`scl::overload_cast`](overload_cast.md) returns.
 
 ### Limitations
 
+- **MSVC.** On MSVC the address of a deleted function is not rejected during substitution. To keep
+  such a function out of the strict match, on MSVC the strict match also requires the plain call
+  `foo(std::declval<Arguments>()...)` to compile. So on MSVC the variable template
+  `has_foo_function_exact_v` is `false` where the plain call is ambiguous.
 - **Place of expansion.** The build ends with an error if no declaration of `foo` is visible where
   the macro is expanded, or if the macro is expanded inside a class.
 

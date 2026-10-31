@@ -61,6 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [preprocessor] Made the counter take a tag of any type or with commas, and yield a plain value
 - [type_traits] Accepted a union in `member_function_like_t` and the exact method form
 - [type_traits] Made `is_detected_exact` and `is_detected_convertible` false on a failed detection
+- [type_traits] Found an exact overload beside an ambiguous call, except on MSVC and for templates
 - Included `hash.h` in `<scl/utility.h>`, which left the hash group out
 - Fixed the installation steps, which added a directory with no `CMakeLists.txt`
 

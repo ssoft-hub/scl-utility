@@ -36,9 +36,7 @@ template <typename... Arguments>
 using add_method_t = scl::detected_t<add_method_operation, Arguments...>;
 
 template <typename Type, typename... Arguments>
-using add_method_exact_operation = decltype((std::declval<Type>().*
-    static_cast<scl::member_function_like_t<Type, add_method_operation<Type, Arguments...>(Arguments...)>>(
-        &std::remove_cvref_t<Type>::add))(std::declval<Arguments>()...));
+using add_method_exact_operation = unspecified;
 template <typename... Arguments>
 inline static constexpr auto has_add_method_exact_v = scl::is_detected_v<add_method_exact_operation, Arguments...>;
 template <typename... Arguments>
@@ -52,9 +50,7 @@ template <typename... Arguments>
 using add_static_method_t = scl::detected_t<add_static_method_operation, Arguments...>;
 
 template <typename Type, typename... Arguments>
-using add_static_method_exact_operation = decltype((static_cast<
-    add_static_method_operation<Type, Arguments...> (*)(Arguments...)>(&std::remove_cvref_t<Type>::add))(
-        std::declval<Arguments>()...));
+using add_static_method_exact_operation = unspecified;
 template <typename... Arguments>
 inline static constexpr auto has_add_static_method_exact_v =
     scl::is_detected_v<add_static_method_exact_operation, Arguments...>;
@@ -86,10 +82,10 @@ using add_static_method_exact_t = scl::detected_t<add_static_method_exact_operat
 - **Condition.** The variable template `has_add_method_exact_v<Type, Arguments...>` is `true` if
   the class `std::remove_cvref_t<Type>` or a public base class of it declares a member function
   `add` whose parameters are exactly the types `Arguments...` and whose qualifiers match the type
-  `Type`, and the plain call `std::declval<Type>().add(std::declval<Arguments>()...)` compiles.
-  A member function of a private or protected base class is not found, even where a `using`
-  declaration in the class `std::remove_cvref_t<Type>` makes it public. The top-level qualifiers
-  `const` and `volatile` of the types `Arguments...` do not count, as the section Notes explains.
+  `Type`, and the member function is neither deleted (`= delete`) nor inaccessible. A member
+  function of a private or protected base class is not found, even where a `using` declaration in
+  the class `std::remove_cvref_t<Type>` makes it public. The top-level qualifiers `const` and
+  `volatile` of the types `Arguments...` do not count, as the section Notes explains.
 - **Matching qualifiers.** In the strict match the cv-qualifiers of the member function have to be
   those of the type `Type`, and its ref-qualifier has to be `&` for the type `X &`, `&&` for
   the type `X &&`, and none for the type `X`. For the type `X const &`, for example, the variable
@@ -97,15 +93,22 @@ using add_static_method_exact_t = scl::detected_t<add_static_method_exact_operat
   `add(...) const` with no ref-qualifier it is `false`, although such a member function can be
   called on that object.
 - **Result type.** The strict match does not compare the result type of the member function.
-  The alias template `add_method_exact_t<Type, Arguments...>` is the result type of the plain call,
-  and it can be compared with an expected type, for example with `std::is_same_v`.
-- **Ambiguous call.** The strict match requires the plain call to compile. For the overloads
-  `long add(int) &` and `char add(int &&) &`, for example, that call is ambiguous, so the variable
-  templates `has_add_method_v<X &, int>` and `has_add_method_exact_v<X &, int>` are `false`,
-  although the member function `add(int) &` is declared.
+  The alias template `add_method_exact_t<Type, Arguments...>` is the result type of the member
+  function found, and it can be compared with an expected type, for example with `std::is_same_v`.
+- **Ambiguous call.** In the strict match the member function is found also where the plain call is
+  ambiguous. For the overloads `long add(int) &` and `char add(int &&) &`, for example, the variable
+  template `has_add_method_v<X &, int>` is `false`, and the variable templates
+  `has_add_method_exact_v<X &, int>` and `has_add_method_exact_v<X &, int &&>` are `true`.
+- **Member function template among the overloads.** If the overloads of `add` include a member
+  function template, the member function with the needed parameters is chosen by the result type of
+  the plain call, that is the overload taken is the one whose result type is that of the call
+  `std::declval<Type>().add(std::declval<Arguments>()...)`. If that call is ambiguous, the variable
+  template `has_add_method_exact_v` is `false`.
 - **Specifier `noexcept`.** The strict match does not compare the specifier `noexcept` of the member
   function. It can be checked with the operator `noexcept` applied to a call, as in the example
-  below.
+  below. Where the call is ambiguous and the overloads differ not only in their qualifiers,
+  the specifier shows in the type of the pointer to the needed overload that
+  [`scl::overload_cast`](overload_cast.md) returns.
 
 ### Static member functions and the explicit object parameter
 
@@ -113,17 +116,22 @@ using add_static_method_exact_t = scl::detected_t<add_static_method_exact_operat
   `true` if the call through the class name
   `std::remove_cvref_t<Type>::add(std::declval<Arguments>()...)` compiles. The variable template
   `has_add_static_method_exact_v<Type, Arguments...>` is `true` if a static member function `add`
-  whose parameters are exactly the types `Arguments...` is declared, and the call through the class
-  name compiles. For the static forms the object type `Type` gives only the class, and its
+  whose parameters are exactly the types `Arguments...` is declared. As in the strict match of
+  a member function, such a static member function is found also where the call through the class
+  name is ambiguous. For the static forms the object type `Type` gives only the class, and its
   qualifiers do not count.
 
 ### Limitations
 
 - **MSVC.** On MSVC the access is not checked during substitution in the call of a non-static
   member function. So a private and a protected member function are found in the non-strict match,
-  and so is a member function of a private or a protected base class. In the non-strict static form
-  a private or a protected static member function is found on MSVC only where the class declares
-  other overloads of that name.
+  and so is a member function of a private or a protected base class. In the strict match and in
+  the static forms a private or a protected member function is found on MSVC only where the class
+  declares other overloads of that name. The address of a deleted member function is not rejected
+  on MSVC either, so there the strict match also requires the plain call to compile, and the static
+  strict form requires the call through the class name to compile. So on MSVC the variable
+  templates `has_add_method_exact_v` and `has_add_static_method_exact_v` are `false` where that
+  call is ambiguous.
 
 ## Examples
 

@@ -29,8 +29,7 @@ template <typename... Arguments>
 using foo_function_t = scl::detected_t<foo_function_operation, Arguments...>;
 
 template <typename... Arguments>
-using foo_function_exact_operation = decltype(
-    static_cast<foo_function_operation<Arguments...> (*)(Arguments...)>(&foo)(std::declval<Arguments>()...));
+using foo_function_exact_operation = unspecified;
 template <typename... Arguments>
 inline constexpr auto has_foo_function_exact_v = scl::is_detected_v<foo_function_exact_operation, Arguments...>;
 template <typename... Arguments>
@@ -60,32 +59,45 @@ using foo_function_exact_t = scl::detected_t<foo_function_exact_operation, Argum
 
 - **Условие.** Шаблонная константа `has_foo_function_exact_v<Arguments...>` равна `true`,
   если до раскрытия макроса объявлена функция `foo`, параметры которой имеют в точности типы
-  `Arguments...`, и вызов `foo(std::declval<Arguments>()...)` компилируется. Квалификаторы `const`
-  и `volatile` верхнего уровня у типов `Arguments...` не учитываются, подробнее об этом сказано
-  в разделе "Примечания". Например, для перегрузок `int foo(int, int)`
-  и `double foo(double, double)` шаблонная константа `has_foo_function_exact_v<int, int>` равна
-  `true`, а шаблонная константа `has_foo_function_exact_v<int, long>` равна `false`, хотя вызов
-  с такими аргументами компилируется.
+  `Arguments...`, и эта функция не удалена (`= delete`). Квалификаторы `const` и `volatile` верхнего
+  уровня у типов `Arguments...` не учитываются, подробнее об этом сказано в разделе "Примечания".
+  Например, для перегрузок `int foo(int, int)` и `double foo(double, double)` шаблонная константа
+  `has_foo_function_exact_v<int, int>` равна `true`, а шаблонная константа
+  `has_foo_function_exact_v<int, long>` равна `false`, хотя вызов с такими аргументами
+  компилируется.
 - **Поиск функции.** Функция ищется только среди объявлений, видимых в месте раскрытия макроса,
   без поиска по аргументам (ADL). Поэтому для функции, объявленной позже, шаблонная константа
   `has_foo_function_exact_v` равна `false`. Для указателя на функцию и для функционального объекта
   с именем `foo` она тоже равна `false`, потому что такая переменная не является функцией.
 - **Тип результата.** Тип результата функции в строгом соответствии не сравнивается. Шаблонный тип
-  `foo_function_exact_t<Arguments...>` является типом результата обычного вызова, и его можно
+  `foo_function_exact_t<Arguments...>` является типом результата найденной функции, и его можно
   сравнить с ожидаемым типом, например с помощью `std::is_same_v`. Функция находится и тогда,
   когда её тип результата выводится из тела (`auto`), и тогда, когда она является специализацией
   шаблона функции с параметрами в точности типов `Arguments...`.
-- **Неоднозначный вызов.** Строгое соответствие требует, чтобы обычный вызов
-  `foo(std::declval<Arguments>()...)` компилировался. Например, для перегрузок `long f(int)`
-  и `char f(int &&)` вызов `f(std::declval<int>())` неоднозначен, поэтому шаблонные константы
-  `has_f_function_v<int>` и `has_f_function_exact_v<int>` равны `false`, хотя функция `f(int)`
-  объявлена.
+- **Неоднозначный вызов.** В строгом соответствии функция находится и тогда, когда обычный вызов
+  неоднозначен. Например, для перегрузок `long f(int)` и `char f(int &&)` вызов
+  `f(std::declval<int>())` неоднозначен, поэтому шаблонная константа `has_f_function_v<int>` равна
+  `false`. При этом шаблонная константа `has_f_function_exact_v<int>` равна `true`, а шаблонный тип
+  `f_function_exact_t<int>` является типом `long`. Шаблонная константа
+  `has_f_function_exact_v<int &&>` тоже равна `true`.
+- **Шаблон функции среди перегрузок.** Если среди перегрузок `foo` есть шаблон функции, функция
+  с нужными параметрами выбирается по типу результата обычного вызова, то есть берётся перегрузка,
+  тип результата которой совпадает с типом результата вызова `foo(std::declval<Arguments>()...)`.
+  Если этот вызов неоднозначен, типа результата у него нет, и шаблонная константа
+  `has_foo_function_exact_v` равна `false`. Например, для перегрузок `template <typename T> T f(T)`,
+  `long f(int)` и `char f(int &&)` шаблонная константа `has_f_function_exact_v<int>` равна `false`,
+  хотя функция `f(int)` объявлена.
 - **Спецификатор `noexcept`.** Спецификатор `noexcept` функции в строгом соответствии
   не сравнивается. Его можно проверить оператором `noexcept`, применённым к вызову, например
-  `noexcept(foo(1, 2))`.
+  `noexcept(foo(1, 2))`. Если вызов неоднозначен, спецификатор виден в типе указателя на нужную
+  перегрузку, который возвращает [`scl::overload_cast`](overload_cast.md).
 
 ### Ограничения
 
+- **MSVC.** На MSVC адрес удалённой функции при подстановке не отбрасывается. Чтобы строгое
+  соответствие не находило такую функцию, на MSVC оно дополнительно требует, чтобы обычный вызов
+  `foo(std::declval<Arguments>()...)` компилировался. Поэтому на MSVC при неоднозначном обычном
+  вызове шаблонная константа `has_foo_function_exact_v` равна `false`.
 - **Место раскрытия.** Сборка завершается с ошибкой, если в месте раскрытия макроса не видно
   ни одного объявления `foo` или если макрос раскрыт внутри класса.
 

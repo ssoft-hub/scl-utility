@@ -37,9 +37,7 @@ namespace scl
     using plus_member_t = detected_t<plus_member_operation, Arguments...>;
 
     template <typename Type, typename... Arguments>
-    using plus_member_exact_operation = decltype((std::declval<Type>().*
-        static_cast<member_function_like_t<Type, plus_member_operation<Type, Arguments...>(Arguments...)>>(
-            &std::remove_cvref_t<Type>::operator+))(std::declval<Arguments>()...));
+    using plus_member_exact_operation = unspecified;
     template <typename... Arguments>
     inline constexpr auto has_plus_member_exact_v = is_detected_v<plus_member_exact_operation, Arguments...>;
     template <typename... Arguments>
@@ -92,19 +90,23 @@ Where the standard library has a function object for the same operator, such as 
 - **Strict match.** The variable template `has_plus_member_exact_v<Type, Arguments...>` is `true` if
   the class `std::remove_cvref_t<Type>` or a public base class of it declares a member function
   `operator+` whose parameters are exactly the types `Arguments...` and whose qualifiers match
-  the type `Type`, and the call of that member function compiles. The qualifiers match
+  the type `Type`, and the member function is neither deleted nor inaccessible. The qualifiers match
   as on the page of [member function presence detection](method_detection.md). The type `X const`,
   for example, needs a member function with the qualifier `const` and no ref-qualifier, the type
   `X &` needs one with the qualifier `&`, and so on.
 - **Result type and an ambiguous call.** The strict match does not compare the result type of
-  the member function. The alias template `plus_member_exact_t` is the result type of the call of
-  the member function, which has to compile. Where that call is ambiguous, as for the overloads
-  `long operator+(int) const` and `char operator+(int &&) const`, the variable template
-  `has_plus_member_exact_v<X const, int>` is `false`, although the member function
-  `operator+(int) const` is declared.
+  the member function. The alias template `plus_member_exact_t` is the result type of the member
+  function found. The member function is found also where the call of the member function
+  `operator+` is ambiguous, as for the overloads `long operator+(int) const` and
+  `char operator+(int &&) const`. If the overloads of `operator+` include a member function
+  template, only the overload whose result type is that of the call
+  `std::declval<Type>().operator+(std::declval<Arguments>()...)` is found.
 - **Specifier `noexcept`.** The strict match does not compare the specifier `noexcept` of
   the operator. It can be checked with the operator `noexcept` applied to the call
-  `std::declval<Type>().operator+(std::declval<Arguments>()...)`.
+  `std::declval<Type>().operator+(std::declval<Arguments>()...)`. Where that call is ambiguous and
+  the overloads differ not only in their qualifiers, the specifier shows in the type of the pointer
+  to the needed overload that [`scl::overload_cast`](overload_cast.md) returns for the address of
+  the operator.
 
 ### Operators with rules of their own
 
@@ -121,7 +123,11 @@ Where the standard library has a function object for the same operator, such as 
 
 - **MSVC.** On MSVC the access is checked as on the page of
   [member function presence detection](method_detection.md). So a private and a protected operator
-  member function are found in the expression form and in the non-strict member form.
+  member function are found in the expression form and in the non-strict member form, and in
+  the strict form only where the class declares other overloads of that operator. The strict match
+  on MSVC also requires the call of the operator member function to compile, so there the variable
+  template `has_plus_member_exact_v` is `false` where the call of the member function `operator+`
+  is ambiguous.
 
 ## Examples
 

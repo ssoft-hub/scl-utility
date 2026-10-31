@@ -7,8 +7,11 @@
 #pragma once
 
 #include <scl/utility/preprocessor/forward.h>
+#include <scl/utility/type_traits/detail/exact.h>
 #include <scl/utility/type_traits/detection.h>
-#include <scl/utility/type_traits/member_like.h>
+
+#include <type_traits>
+#include <utility>
 
 #ifndef SCL_DOXYGEN
 
@@ -29,9 +32,10 @@
         template <typename Type, typename... Arguments>                                               \
         using name##_member_exact_operation = decltype((                                              \
             ::std::declval<Type>().*                                                                  \
-            static_cast<::scl::member_function_like_t<                                                \
-                Type, name##_member_operation<Type, Arguments...>(Arguments...)>>(                    \
-                &::std::remove_cvref_t<Type>::operator op /**/))(::std::declval<Arguments>()...));    \
+            ::scl::detail::exact_member<                                                              \
+                Type, ::scl::detected_t<name##_member_operation, Type, Arguments...>,                 \
+                Arguments...>::select(&::std::remove_cvref_t<Type>::operator op /**/))(               \
+            ::std::declval<Arguments>()...));                                                         \
         template <typename... Arguments>                                                              \
         inline constexpr auto has_##name##_member_exact_v =                                           \
             ::scl::is_detected_v<name##_member_exact_operation, Arguments...>;                        \
@@ -51,38 +55,38 @@
     }                                                                                                \
     SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION(SCL_FORWARD(op), name)
 
-#define SCL_DETAIL_POSTFIX_UNARY_OPERATOR_DETECTION(op, name)                                              \
-    namespace scl                                                                                          \
-    {                                                                                                      \
-        template <typename Type>                                                                           \
-        using name##_operation = decltype(::std::declval<Type>() op /**/);                                 \
-        template <typename... Arguments>                                                                   \
-        inline constexpr auto has_##name##_v = ::scl::is_detected_v<name##_operation, Arguments...>;       \
-        template <typename... Arguments>                                                                   \
-        using name##_t = ::scl::detected_t<name##_operation, Arguments...>;                                \
-    }                                                                                                      \
-    namespace scl                                                                                          \
-    {                                                                                                      \
-        template <typename Type>                                                                           \
-        using name##_member_operation = decltype(::std::declval<Type>().operator op /**/ (                 \
-            ::std::declval<int>()));                                                                       \
-        template <typename Type>                                                                           \
-        inline constexpr auto has_##name##_member_v = ::scl::is_detected_v<name##_member_operation, Type>; \
-        template <typename Type>                                                                           \
-        using name##_member_t = ::scl::detected_t<name##_member_operation, Type>;                          \
-    }                                                                                                      \
-    namespace scl                                                                                          \
-    {                                                                                                      \
-        template <typename Type>                                                                           \
-        using name##_member_exact_operation = decltype((                                                   \
-            ::std::declval<Type>().*                                                                       \
-            static_cast<::scl::member_function_like_t<Type, name##_member_operation<Type>(int)>>(          \
-                &::std::remove_cvref_t<Type>::operator op /**/))(::std::declval<int>()));                  \
-        template <typename Type>                                                                           \
-        inline constexpr auto has_##name##_member_exact_v =                                                \
-            ::scl::is_detected_v<name##_member_exact_operation, Type>;                                     \
-        template <typename Type>                                                                           \
-        using name##_member_exact_t = ::scl::detected_t<name##_member_exact_operation, Type>;              \
+#define SCL_DETAIL_POSTFIX_UNARY_OPERATOR_DETECTION(op, name)                                                 \
+    namespace scl                                                                                             \
+    {                                                                                                         \
+        template <typename Type>                                                                              \
+        using name##_operation = decltype(::std::declval<Type>() op /**/);                                    \
+        template <typename... Arguments>                                                                      \
+        inline constexpr auto has_##name##_v = ::scl::is_detected_v<name##_operation, Arguments...>;          \
+        template <typename... Arguments>                                                                      \
+        using name##_t = ::scl::detected_t<name##_operation, Arguments...>;                                   \
+    }                                                                                                         \
+    namespace scl                                                                                             \
+    {                                                                                                         \
+        template <typename Type>                                                                              \
+        using name##_member_operation = decltype(::std::declval<Type>().operator op /**/ (                    \
+            ::std::declval<int>()));                                                                          \
+        template <typename Type>                                                                              \
+        inline constexpr auto has_##name##_member_v = ::scl::is_detected_v<name##_member_operation, Type>;    \
+        template <typename Type>                                                                              \
+        using name##_member_t = ::scl::detected_t<name##_member_operation, Type>;                             \
+    }                                                                                                         \
+    namespace scl                                                                                             \
+    {                                                                                                         \
+        template <typename Type>                                                                              \
+        using name##_member_exact_operation = decltype((                                                      \
+            ::std::declval<Type>().*                                                                          \
+            ::scl::detail::exact_member<Type, ::scl::detected_t<name##_member_operation, Type>, int>::select( \
+                &::std::remove_cvref_t<Type>::operator op /**/))(::std::declval<int>()));                     \
+        template <typename Type>                                                                              \
+        inline constexpr auto has_##name##_member_exact_v =                                                   \
+            ::scl::is_detected_v<name##_member_exact_operation, Type>;                                        \
+        template <typename Type>                                                                              \
+        using name##_member_exact_t = ::scl::detected_t<name##_member_exact_operation, Type>;                 \
     }
 
 #define SCL_DETAIL_BINARY_OPERATOR_DETECTION(op, name)                                               \
@@ -205,8 +209,13 @@ namespace scl
      * `name_member_exact_t` for the member function declared with exactly the given parameters.
      * In the exact form the top-level `const` and `volatile` of a parameter are not compared, since
      * they are not part of a function type, and a member function that is deleted or inaccessible is
-     * not found. The specifier `noexcept` is not compared either. On MSVC a private or a protected
-     * operator is found by the expression form and the member form.
+     * not found. The specifier `noexcept` is not compared either. Where the call of the member
+     * function is ambiguous and the overloads differ not only in their qualifiers, the specifier
+     * shows in the type of the pointer that `scl::overload_cast<Arguments...>` returns for
+     * the address of the operator. On MSVC the call of the member function has to compile in
+     * the exact form. A private or a protected operator is found there by the expression form and
+     * the member form, and by the exact form only where the class declares other overloads of
+     * the operator.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp types
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp expression
@@ -281,14 +290,14 @@ namespace scl
     using address_of_member_t = ::scl::detected_t<::scl::address_of_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator&`.
+     * @brief The type of the call of the member function `operator&` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::address_of_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator&`
-     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
-     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
-     * result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator&` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator&`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp address_of
      *
@@ -296,11 +305,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using address_of_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::address_of_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator&))(::std::declval<Arguments>()...));
+    using address_of_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator&` is declared exactly for the given object and parameter types.
      *
@@ -385,14 +390,14 @@ namespace scl
     using indirection_member_t = ::scl::detected_t<::scl::indirection_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator*`.
+     * @brief The type of the call of the member function `operator*` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::indirection_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator*`
-     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
-     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
-     * result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator*` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator*`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp indirection
      *
@@ -400,11 +405,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using indirection_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::indirection_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator*))(::std::declval<Arguments>()...));
+    using indirection_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator*` is declared exactly for the given object and parameter types.
      *
@@ -488,14 +489,14 @@ namespace scl
     using unary_plus_member_t = ::scl::detected_t<::scl::unary_plus_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator+`.
+     * @brief The type of the call of the member function `operator+` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::unary_plus_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator+`
-     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
-     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
-     * result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator+` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator+`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp unary_plus
      *
@@ -503,11 +504,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using unary_plus_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::unary_plus_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator+))(::std::declval<Arguments>()...));
+    using unary_plus_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator+` is declared exactly for the given object and parameter types.
      *
@@ -591,14 +588,14 @@ namespace scl
     using negate_member_t = ::scl::detected_t<::scl::negate_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator-`.
+     * @brief The type of the call of the member function `operator-` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::negate_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator-` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator-` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator-`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp negate
      *
@@ -606,11 +603,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using negate_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::negate_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator-))(::std::declval<Arguments>()...));
+    using negate_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator-` is declared exactly for the given object and parameter types.
      *
@@ -695,14 +688,14 @@ namespace scl
         ::scl::detected_t<::scl::prefix_increment_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator++`.
+     * @brief The type of the call of the member function `operator++` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::prefix_increment_member_operation<Type, Arguments...>. The operation is well-formed
-     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator++` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator++` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator++`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_increment
      *
@@ -710,11 +703,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using prefix_increment_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::prefix_increment_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator++))(::std::declval<Arguments>()...));
+    using prefix_increment_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator++` is declared exactly for the given object and parameter types.
      *
@@ -800,14 +789,14 @@ namespace scl
         ::scl::detected_t<::scl::prefix_decrement_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator--`.
+     * @brief The type of the call of the member function `operator--` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::prefix_decrement_member_operation<Type, Arguments...>. The operation is well-formed
-     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator--` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator--` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator--`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp prefix_decrement
      *
@@ -815,11 +804,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using prefix_decrement_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::prefix_decrement_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator--))(::std::declval<Arguments>()...));
+    using prefix_decrement_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator--` is declared exactly for the given object and parameter types.
      *
@@ -903,14 +888,14 @@ namespace scl
     using bit_not_member_t = ::scl::detected_t<::scl::bit_not_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator~`.
+     * @brief The type of the call of the member function `operator~` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::bit_not_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator~` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator~` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator~`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_not
      *
@@ -918,11 +903,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using bit_not_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::bit_not_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator~))(::std::declval<Arguments>()...));
+    using bit_not_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator~` is declared exactly for the given object and parameter types.
      *
@@ -1006,14 +987,14 @@ namespace scl
     using logical_not_member_t = ::scl::detected_t<::scl::logical_not_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator!`.
+     * @brief The type of the call of the member function `operator!` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::logical_not_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator!`
-     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
-     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
-     * result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator!` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator!`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_not
      *
@@ -1021,11 +1002,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using logical_not_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::logical_not_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator!))(::std::declval<Arguments>()...));
+    using logical_not_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator!` is declared exactly for the given object and parameter types.
      *
@@ -1116,24 +1093,21 @@ namespace scl
     using postfix_increment_member_t = ::scl::detected_t<::scl::postfix_increment_member_operation, Type>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator++`.
+     * @brief The type of the call of the member function `operator++` with the parameter `int`.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(int)>, `R` being
-     * ::scl::postfix_increment_member_operation<Type>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator++` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator++` with the parameter `int` and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator++`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_increment
      *
      * @tparam Type Type of the object.
      */
     template <typename Type>
-    using postfix_increment_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<Type, ::scl::postfix_increment_member_operation<Type>(int)>>(
-            &::std::remove_cvref_t<Type>::operator++))(::std::declval<int>()));
+    using postfix_increment_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator++` is declared exactly for the object type @p Type.
      *
@@ -1217,24 +1191,21 @@ namespace scl
     using postfix_decrement_member_t = ::scl::detected_t<::scl::postfix_decrement_member_operation, Type>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator--`.
+     * @brief The type of the call of the member function `operator--` with the parameter `int`.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(int)>, `R` being
-     * ::scl::postfix_decrement_member_operation<Type>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator--` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator--` with the parameter `int` and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator--`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp postfix_decrement
      *
      * @tparam Type Type of the object.
      */
     template <typename Type>
-    using postfix_decrement_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<Type, ::scl::postfix_decrement_member_operation<Type>(int)>>(
-            &::std::remove_cvref_t<Type>::operator--))(::std::declval<int>()));
+    using postfix_decrement_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator--` is declared exactly for the object type @p Type.
      *
@@ -1326,14 +1297,14 @@ namespace scl
     using equal_to_member_t = ::scl::detected_t<::scl::equal_to_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator==`.
+     * @brief The type of the call of the member function `operator==` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::equal_to_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator==` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator==` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator==`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp equal_to
      *
@@ -1341,11 +1312,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using equal_to_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::equal_to_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator==))(::std::declval<Arguments>()...));
+    using equal_to_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator==` is declared exactly for the given object and parameter types.
      *
@@ -1430,14 +1397,14 @@ namespace scl
     using not_equal_to_member_t = ::scl::detected_t<::scl::not_equal_to_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator!=`.
+     * @brief The type of the call of the member function `operator!=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::not_equal_to_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator!=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator!=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator!=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp not_equal_to
      *
@@ -1445,11 +1412,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using not_equal_to_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::not_equal_to_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator!=))(::std::declval<Arguments>()...));
+    using not_equal_to_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator!=` is declared exactly for the given object and parameter types.
      *
@@ -1534,14 +1497,14 @@ namespace scl
     using less_member_t = ::scl::detected_t<::scl::less_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator<`.
+     * @brief The type of the call of the member function `operator<` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::less_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator<` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator<` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator<`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less
      *
@@ -1549,11 +1512,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using less_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::less_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator<))(::std::declval<Arguments>()...));
+    using less_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator<` is declared exactly for the given object and parameter types.
      *
@@ -1637,14 +1596,14 @@ namespace scl
     using less_equal_member_t = ::scl::detected_t<::scl::less_equal_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator<=`.
+     * @brief The type of the call of the member function `operator<=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::less_equal_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator<=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator<=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator<=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp less_equal
      *
@@ -1652,11 +1611,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using less_equal_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::less_equal_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator<=))(::std::declval<Arguments>()...));
+    using less_equal_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator<=` is declared exactly for the given object and parameter types.
      *
@@ -1741,14 +1696,14 @@ namespace scl
     using greater_member_t = ::scl::detected_t<::scl::greater_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator>`.
+     * @brief The type of the call of the member function `operator>` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::greater_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator>` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator>` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator>`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater
      *
@@ -1756,11 +1711,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using greater_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::greater_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator>))(::std::declval<Arguments>()...));
+    using greater_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator>` is declared exactly for the given object and parameter types.
      *
@@ -1845,14 +1796,14 @@ namespace scl
     using greater_equal_member_t = ::scl::detected_t<::scl::greater_equal_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator>=`.
+     * @brief The type of the call of the member function `operator>=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::greater_equal_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator>=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator>=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator>=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp greater_equal
      *
@@ -1860,11 +1811,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using greater_equal_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::greater_equal_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator>=))(::std::declval<Arguments>()...));
+    using greater_equal_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator>=` is declared exactly for the given object and parameter types.
      *
@@ -1956,14 +1903,14 @@ namespace scl
     using multiplies_member_t = ::scl::detected_t<::scl::multiplies_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator*`.
+     * @brief The type of the call of the member function `operator*` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::multiplies_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator*`
-     * with exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type,
-     * and the plain call compiles. For an ambiguous plain call the operation is ill-formed. The
-     * result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator*` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator*`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies
      *
@@ -1971,11 +1918,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using multiplies_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::multiplies_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator*))(::std::declval<Arguments>()...));
+    using multiplies_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator*` is declared exactly for the given object and parameter types.
      *
@@ -2060,14 +2003,14 @@ namespace scl
     using divides_member_t = ::scl::detected_t<::scl::divides_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator/`.
+     * @brief The type of the call of the member function `operator/` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::divides_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator/` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator/` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator/`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides
      *
@@ -2075,11 +2018,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using divides_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::divides_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator/))(::std::declval<Arguments>()...));
+    using divides_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator/` is declared exactly for the given object and parameter types.
      *
@@ -2163,14 +2102,14 @@ namespace scl
     using modulus_member_t = ::scl::detected_t<::scl::modulus_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator%`.
+     * @brief The type of the call of the member function `operator%` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::modulus_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator%` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator%` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator%`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus
      *
@@ -2178,11 +2117,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using modulus_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::modulus_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator%))(::std::declval<Arguments>()...));
+    using modulus_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator%` is declared exactly for the given object and parameter types.
      *
@@ -2266,14 +2201,14 @@ namespace scl
     using plus_member_t = ::scl::detected_t<::scl::plus_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator+`.
+     * @brief The type of the call of the member function `operator+` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::plus_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator+` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator+` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator+`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus
      *
@@ -2281,11 +2216,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using plus_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::plus_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator+))(::std::declval<Arguments>()...));
+    using plus_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator+` is declared exactly for the given object and parameter types.
      *
@@ -2369,14 +2300,14 @@ namespace scl
     using minus_member_t = ::scl::detected_t<::scl::minus_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator-`.
+     * @brief The type of the call of the member function `operator-` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::minus_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator-` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator-` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator-`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus
      *
@@ -2384,11 +2315,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using minus_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::minus_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator-))(::std::declval<Arguments>()...));
+    using minus_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator-` is declared exactly for the given object and parameter types.
      *
@@ -2472,14 +2399,14 @@ namespace scl
     using left_shift_member_t = ::scl::detected_t<::scl::left_shift_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator<<`.
+     * @brief The type of the call of the member function `operator<<` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::left_shift_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator<<` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator<<` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator<<`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift
      *
@@ -2487,11 +2414,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using left_shift_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::left_shift_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator<<))(::std::declval<Arguments>()...));
+    using left_shift_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator<<` is declared exactly for the given object and parameter types.
      *
@@ -2577,14 +2500,14 @@ namespace scl
     using right_shift_member_t = ::scl::detected_t<::scl::right_shift_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator>>`.
+     * @brief The type of the call of the member function `operator>>` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::right_shift_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator>>` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator>>` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator>>`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift
      *
@@ -2592,11 +2515,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using right_shift_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::right_shift_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator>>))(::std::declval<Arguments>()...));
+    using right_shift_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator>>` is declared exactly for the given object and parameter types.
      *
@@ -2681,14 +2600,14 @@ namespace scl
     using bit_and_member_t = ::scl::detected_t<::scl::bit_and_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator&`.
+     * @brief The type of the call of the member function `operator&` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::bit_and_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator&` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator&` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator&`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and
      *
@@ -2696,11 +2615,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using bit_and_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::bit_and_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator&))(::std::declval<Arguments>()...));
+    using bit_and_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator&` is declared exactly for the given object and parameter types.
      *
@@ -2784,14 +2699,14 @@ namespace scl
     using bit_or_member_t = ::scl::detected_t<::scl::bit_or_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator|`.
+     * @brief The type of the call of the member function `operator|` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::bit_or_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator|` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator|` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator|`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or
      *
@@ -2799,11 +2714,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using bit_or_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::bit_or_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator|))(::std::declval<Arguments>()...));
+    using bit_or_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator|` is declared exactly for the given object and parameter types.
      *
@@ -2887,14 +2798,14 @@ namespace scl
     using bit_xor_member_t = ::scl::detected_t<::scl::bit_xor_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator^`.
+     * @brief The type of the call of the member function `operator^` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::bit_xor_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator^` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator^` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator^`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor
      *
@@ -2902,11 +2813,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using bit_xor_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::bit_xor_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator^))(::std::declval<Arguments>()...));
+    using bit_xor_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator^` is declared exactly for the given object and parameter types.
      *
@@ -2998,14 +2905,14 @@ namespace scl
     using logical_and_member_t = ::scl::detected_t<::scl::logical_and_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator&&`.
+     * @brief The type of the call of the member function `operator&&` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::logical_and_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator&&` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator&&` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator&&`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_and
      *
@@ -3013,11 +2920,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using logical_and_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::logical_and_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator&&))(::std::declval<Arguments>()...));
+    using logical_and_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator&&` is declared exactly for the given object and parameter types.
      *
@@ -3102,14 +3005,14 @@ namespace scl
     using logical_or_member_t = ::scl::detected_t<::scl::logical_or_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator||`.
+     * @brief The type of the call of the member function `operator||` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::logical_or_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator||` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator||` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator||`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp logical_or
      *
@@ -3117,11 +3020,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using logical_or_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::logical_or_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator||))(::std::declval<Arguments>()...));
+    using logical_or_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator||` is declared exactly for the given object and parameter types.
      *
@@ -3213,14 +3112,14 @@ namespace scl
     using assign_member_t = ::scl::detected_t<::scl::assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator=`.
+     * @brief The type of the call of the member function `operator=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::assign_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator=` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp assign
      *
@@ -3228,11 +3127,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator=))(::std::declval<Arguments>()...));
+    using assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator=` is declared exactly for the given object and parameter types.
      *
@@ -3318,14 +3213,14 @@ namespace scl
         ::scl::detected_t<::scl::multiplies_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator*=`.
+     * @brief The type of the call of the member function `operator*=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::multiplies_assign_member_operation<Type, Arguments...>. The operation is well-formed
-     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator*=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator*=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator*=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp multiplies_assign
      *
@@ -3333,11 +3228,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using multiplies_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::multiplies_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator*=))(::std::declval<Arguments>()...));
+    using multiplies_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator*=` is declared exactly for the given object and parameter types.
      *
@@ -3423,14 +3314,14 @@ namespace scl
     using divides_assign_member_t = ::scl::detected_t<::scl::divides_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator/=`.
+     * @brief The type of the call of the member function `operator/=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::divides_assign_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator/=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator/=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator/=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp divides_assign
      *
@@ -3438,11 +3329,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using divides_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::divides_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator/=))(::std::declval<Arguments>()...));
+    using divides_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator/=` is declared exactly for the given object and parameter types.
      *
@@ -3528,14 +3415,14 @@ namespace scl
     using modulus_assign_member_t = ::scl::detected_t<::scl::modulus_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator%=`.
+     * @brief The type of the call of the member function `operator%=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::modulus_assign_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator%=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator%=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator%=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp modulus_assign
      *
@@ -3543,11 +3430,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using modulus_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::modulus_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator%=))(::std::declval<Arguments>()...));
+    using modulus_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator%=` is declared exactly for the given object and parameter types.
      *
@@ -3633,14 +3516,14 @@ namespace scl
     using plus_assign_member_t = ::scl::detected_t<::scl::plus_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator+=`.
+     * @brief The type of the call of the member function `operator+=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::plus_assign_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator+=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator+=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator+=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp plus_assign
      *
@@ -3648,11 +3531,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using plus_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::plus_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator+=))(::std::declval<Arguments>()...));
+    using plus_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator+=` is declared exactly for the given object and parameter types.
      *
@@ -3738,14 +3617,14 @@ namespace scl
     using minus_assign_member_t = ::scl::detected_t<::scl::minus_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator-=`.
+     * @brief The type of the call of the member function `operator-=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::minus_assign_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator-=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator-=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator-=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp minus_assign
      *
@@ -3753,11 +3632,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using minus_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::minus_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator-=))(::std::declval<Arguments>()...));
+    using minus_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator-=` is declared exactly for the given object and parameter types.
      *
@@ -3844,14 +3719,14 @@ namespace scl
         ::scl::detected_t<::scl::left_shift_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator<<=`.
+     * @brief The type of the call of the member function `operator<<=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::left_shift_assign_member_operation<Type, Arguments...>. The operation is well-formed
-     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator<<=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator<<=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator<<=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp left_shift_assign
      *
@@ -3859,11 +3734,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using left_shift_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::left_shift_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator<<=))(::std::declval<Arguments>()...));
+    using left_shift_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator<<=` is declared exactly for the given object and parameter types.
      *
@@ -3950,14 +3821,14 @@ namespace scl
         ::scl::detected_t<::scl::right_shift_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator>>=`.
+     * @brief The type of the call of the member function `operator>>=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::right_shift_assign_member_operation<Type, Arguments...>. The operation is well-formed
-     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator>>=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator>>=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator>>=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp right_shift_assign
      *
@@ -3965,11 +3836,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using right_shift_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::right_shift_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator>>=))(::std::declval<Arguments>()...));
+    using right_shift_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator>>=` is declared exactly for the given object and parameter types.
      *
@@ -4055,14 +3922,14 @@ namespace scl
     using bit_and_assign_member_t = ::scl::detected_t<::scl::bit_and_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator&=`.
+     * @brief The type of the call of the member function `operator&=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::bit_and_assign_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator&=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator&=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator&=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_and_assign
      *
@@ -4070,11 +3937,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using bit_and_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::bit_and_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator&=))(::std::declval<Arguments>()...));
+    using bit_and_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator&=` is declared exactly for the given object and parameter types.
      *
@@ -4160,14 +4023,14 @@ namespace scl
     using bit_or_assign_member_t = ::scl::detected_t<::scl::bit_or_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator|=`.
+     * @brief The type of the call of the member function `operator|=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::bit_or_assign_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator|=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator|=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator|=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_or_assign
      *
@@ -4175,11 +4038,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using bit_or_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::bit_or_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator|=))(::std::declval<Arguments>()...));
+    using bit_or_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator|=` is declared exactly for the given object and parameter types.
      *
@@ -4265,14 +4124,14 @@ namespace scl
     using bit_xor_assign_member_t = ::scl::detected_t<::scl::bit_xor_assign_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator^=`.
+     * @brief The type of the call of the member function `operator^=` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::bit_xor_assign_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator^=` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator^=` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator^=`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp bit_xor_assign
      *
@@ -4280,11 +4139,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using bit_xor_assign_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::bit_xor_assign_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator^=))(::std::declval<Arguments>()...));
+    using bit_xor_assign_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator^=` is declared exactly for the given object and parameter types.
      *
@@ -4381,14 +4236,14 @@ namespace scl
         ::scl::detected_t<::scl::arrow_to_pointer_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator->*`.
+     * @brief The type of the call of the member function `operator->*` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::arrow_to_pointer_member_operation<Type, Arguments...>. The operation is well-formed
-     * only where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator->*` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator->*` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator->*`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow_to_pointer
      *
@@ -4396,11 +4251,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_to_pointer_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::arrow_to_pointer_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator->*))(::std::declval<Arguments>()...));
+    using arrow_to_pointer_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator->*` is declared exactly for the given object and parameter types.
      *
@@ -4487,14 +4338,14 @@ namespace scl
     using arrow_member_t = ::scl::detected_t<::scl::arrow_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator->`.
+     * @brief The type of the call of the member function `operator->` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::arrow_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator->` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator->` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator->`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp arrow
      *
@@ -4502,11 +4353,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using arrow_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::arrow_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator->))(::std::declval<Arguments>()...));
+    using arrow_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator->` is declared exactly for the given object and parameter types.
      *
@@ -4590,14 +4437,14 @@ namespace scl
     using comma_member_t = ::scl::detected_t<::scl::comma_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator ,`.
+     * @brief The type of the call of the member function `operator ,` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::comma_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator ,` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator ,` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator ,`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp comma
      *
@@ -4605,11 +4452,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using comma_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::comma_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator, ))(::std::declval<Arguments>()...));
+    using comma_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator ,` is declared exactly for the given object and parameter types.
      *
@@ -4693,14 +4536,14 @@ namespace scl
     using subscript_member_t = ::scl::detected_t<::scl::subscript_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator[]`.
+     * @brief The type of the call of the member function `operator[]` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::subscript_member_operation<Type, Arguments...>. The operation is well-formed only
-     * where the class `std::remove_cvref_t<Type>` or a public base class of it declares
-     * `operator[]` with exactly those parameters and with the cv-qualifiers and the ref-qualifier
-     * of @p Type, and the plain call compiles. For an ambiguous plain call the operation is
-     * ill-formed. The result type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator[]` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator[]`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp subscript
      *
@@ -4708,11 +4551,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using subscript_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::subscript_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator[]))(::std::declval<Arguments>()...));
+    using subscript_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator[]` is declared exactly for the given object and parameter types.
      *
@@ -4796,14 +4635,14 @@ namespace scl
     using call_member_t = ::scl::detected_t<::scl::call_member_operation, Arguments...>;
 
     /**
-     * @brief The type of the same call through a pointer to the member function `operator()`.
+     * @brief The type of the call of the member function `operator()` with exactly these parameters.
      *
-     * The pointer is ::scl::member_function_like_t<Type, R(Arguments...)>, `R` being
-     * ::scl::call_member_operation<Type, Arguments...>. The operation is well-formed only where
-     * the class `std::remove_cvref_t<Type>` or a public base class of it declares `operator()` with
-     * exactly those parameters and with the cv-qualifiers and the ref-qualifier of @p Type, and
-     * the plain call compiles. For an ambiguous plain call the operation is ill-formed. The result
-     * type and the `noexcept` of the member function are not compared.
+     * The operation is well-formed only where the class `std::remove_cvref_t<Type>` or a public
+     * base class of it declares `operator()` with exactly those parameters and with
+     * the cv-qualifiers and the ref-qualifier of @p Type. Where the overloads of `operator()`
+     * include a member function template, only the overload whose result type is that of the plain
+     * call is found, so for an ambiguous plain call the operation is ill-formed. The `noexcept` of
+     * the member function is not compared.
      *
      * @snippet type_traits/operator_detection/type_traits_operator_detection_example.cpp call
      *
@@ -4811,11 +4650,7 @@ namespace scl
      * @tparam Arguments Argument types.
      */
     template <typename Type, typename... Arguments>
-    using call_member_exact_operation = decltype((
-        ::std::declval<Type>().*
-        static_cast<::scl::member_function_like_t<
-            Type, ::scl::call_member_operation<Type, Arguments...>(Arguments...)>>(
-            &::std::remove_cvref_t<Type>::operator()))(::std::declval<Arguments>()...));
+    using call_member_exact_operation = unspecified;
     /**
      * @brief Whether `operator()` is declared exactly for the given object and parameter types.
      *
