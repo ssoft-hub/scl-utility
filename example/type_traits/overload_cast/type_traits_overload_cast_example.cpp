@@ -2,8 +2,8 @@
  * @example type_traits_overload_cast_example.cpp
  * @brief Takes the address of one overload of a function, chosen by its parameter types.
  *
- * scl::overload_cast<Args...>(&f) returns the pointer to the overload of f whose parameter types
- * are Args..., whatever its result, cv-qualifiers, ref-qualifier and noexcept.
+ * scl::overload_cast<Arguments...>(&f) returns the pointer to the overload of f whose parameter
+ * types are Arguments..., whatever its result, cv-qualifiers, ref-qualifier and noexcept.
  */
 
 #include <scl/utility/type_traits/overload_cast.h>
