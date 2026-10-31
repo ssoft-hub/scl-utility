@@ -11,7 +11,10 @@ the subsection Well-formed operation of the section Semantics describes. The ope
 reference to a container. The operation is passed to every template of this page as the parameter
 `Operation`, and the types substituted into it follow as `Arguments...`.
 
-The names of the templates are taken from the Library Fundamentals TS v2.
+The names of the templates are taken from the Library Fundamentals TS v2. The templates
+`is_detected_exact` and `is_detected_convertible` behave differently from the TS for an ill-formed
+operation, and the subsection Difference from Library Fundamentals TS v2 of the section Semantics
+describes the difference.
 
 - Header: `#include <scl/utility/type_traits/detection.h>`
 
@@ -34,12 +37,14 @@ namespace scl
     using detected_or_t = detected_or<Default, Operation, Arguments...>::type;
 
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
-    using is_detected_exact = std::is_same<Expected, detected_t<Operation, Arguments...>>;
+    using is_detected_exact = std::bool_constant<(
+        is_detected_v<Operation, Arguments...> && std::is_same_v<Expected, detected_t<Operation, Arguments...>>)>;
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_exact_v = is_detected_exact<Expected, Operation, Arguments...>::value;
 
     template <typename To, template <typename...> class Operation, typename... Arguments>
-    using is_detected_convertible = std::is_convertible<detected_t<Operation, Arguments...>, To>;
+    using is_detected_convertible = std::bool_constant<(
+        is_detected_v<Operation, Arguments...> && std::is_convertible_v<detected_t<Operation, Arguments...>, To>)>;
     template <typename To, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_convertible_v =
         is_detected_convertible<To, Operation, Arguments...>::value;
@@ -91,16 +96,28 @@ namespace scl
   `detected_or<Default, Operation, Arguments...>::type`, that is the alias template `detected_t`
   with the marker type `nonesuch` replaced by the type `Default`.
 - **`is_detected_exact`.** The alias template `is_detected_exact<Expected, Operation, Arguments...>`
-  is the type `std::true_type` if the type `detected_t<Operation, Arguments...>` is exactly the type
-  `Expected`, and the type `std::false_type` otherwise. For an ill-formed operation that type is
-  the marker type `nonesuch`, so the variable template
-  `is_detected_exact_v<nonesuch, Operation, Arguments...>` is `true` for an ill-formed operation.
+  is the type `std::true_type` if the operation is well-formed and its type is exactly the type
+  `Expected`. Otherwise it is the type `std::false_type`.
 - **`is_detected_convertible`.** The alias template
-  `is_detected_convertible<To, Operation, Arguments...>` is the type `std::true_type` if the type
-  `detected_t<Operation, Arguments...>` converts implicitly to the type `To`, and the type
-  `std::false_type` otherwise. So for an ill-formed operation it is `true` for a type `To` that
-  the marker type `nonesuch` converts to, such as the type `nonesuch const &` or a class with
-  a constructor `template <typename T> To(T &&)` accepting an argument of any type.
+  `is_detected_convertible<To, Operation, Arguments...>` is the type `std::true_type` if
+  the operation is well-formed and its type converts implicitly to the type `To`. Otherwise it is
+  the type `std::false_type`.
+
+### Difference from Library Fundamentals TS v2
+
+For an ill-formed operation the variable templates `is_detected_exact_v` and
+`is_detected_convertible_v` are always `false`, whatever type is passed as `Expected` or `To`.
+In the TS these templates check the type `detected_t<Operation, Arguments...>`, which for
+an ill-formed operation is the marker type `nonesuch`. So in the TS they are `true` where the type
+`Expected` is the type `nonesuch` or where the type `nonesuch` converts to the type `To`.
+
+Values of the variable templates for an ill-formed operation:
+
+| Variable template | `scl` | TS |
+|---|---|---|
+| `is_detected_exact_v<nonesuch, Operation, Arguments...>` | `false` | `true` |
+| `is_detected_convertible_v<nonesuch const &, Operation, Arguments...>` | `false` | `true` |
+| `is_detected_convertible_v<To, Operation, Arguments...>` for a class `To` with a constructor `template <typename T> To(T &&)` | `false` | `true` |
 
 ## Examples
 

@@ -2,7 +2,7 @@
  * @file
  * @brief Whether an expression over given types is well-formed, and which type it yields.
  *
- * The templates follow the detection idiom of Library Fundamentals TS v2.
+ * The templates of the detection idiom take their names from Library Fundamentals TS v2.
  * @ingroup scl_utility_type_traits
  */
 #pragma once
@@ -80,14 +80,18 @@ namespace scl
     using detected_or_t = ::scl::detected_or<Default, Operation, Arguments...>::type;
 
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
-    using is_detected_exact = ::std::is_same<Expected, ::scl::detected_t<Operation, Arguments...>>;
+    using is_detected_exact = ::std::bool_constant<(
+        ::scl::is_detected_v<Operation, Arguments...> &&
+        ::std::is_same_v<Expected, ::scl::detected_t<Operation, Arguments...>>)>;
 
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_exact_v =
         ::scl::is_detected_exact<Expected, Operation, Arguments...>::value;
 
     template <typename To, template <typename...> class Operation, typename... Arguments>
-    using is_detected_convertible = ::std::is_convertible<::scl::detected_t<Operation, Arguments...>, To>;
+    using is_detected_convertible = ::std::bool_constant<(
+        ::scl::is_detected_v<Operation, Arguments...> &&
+        ::std::is_convertible_v<::scl::detected_t<Operation, Arguments...>, To>)>;
 
     template <typename To, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_convertible_v =
@@ -234,7 +238,10 @@ namespace scl
 /**
  * @typedef scl::is_detected_exact
  * @ingroup scl_utility_type_traits
- * @brief Whether ::scl::detected_t of the operation is @p Expected, as `std::is_same`.
+ * @brief Whether the operation is well-formed and its type is @p Expected.
+ *
+ * The alias template is `std::true_type` if the operation is well-formed and ::scl::detected_t of it
+ * is @p Expected, and `std::false_type` otherwise, whatever @p Expected is.
  *
  * @snippet type_traits/detection/type_traits_detection_example.cpp exact
  *
@@ -259,10 +266,10 @@ namespace scl
 /**
  * @typedef scl::is_detected_convertible
  * @ingroup scl_utility_type_traits
- * @brief Whether ::scl::detected_t of the operation converts to @p To, as `std::is_convertible`.
+ * @brief Whether the operation is well-formed and its type converts to @p To.
  *
- * For an ill-formed operation the value is `true` only if an rvalue of ::scl::nonesuch converts
- * to @p To.
+ * The alias template is `std::true_type` if the operation is well-formed and ::scl::detected_t of it
+ * converts implicitly to @p To, and `std::false_type` otherwise, whatever @p To is.
  *
  * @snippet type_traits/detection/type_traits_detection_example.cpp exact
  *

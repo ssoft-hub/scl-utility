@@ -11,7 +11,9 @@
 шаблону страницы параметром `Operation`, а типы, которые подставляются в операцию, передаются за ней
 как `Arguments...`.
 
-Имена шаблонов взяты из Library Fundamentals TS v2.
+Имена шаблонов взяты из Library Fundamentals TS v2. Поведение шаблонов `is_detected_exact`
+и `is_detected_convertible` для некорректной операции отличается от TS, это различие описано
+в подразделе "Отличие от Library Fundamentals TS v2" раздела "Семантика".
 
 - Заголовок: `#include <scl/utility/type_traits/detection.h>`
 
@@ -34,12 +36,14 @@ namespace scl
     using detected_or_t = detected_or<Default, Operation, Arguments...>::type;
 
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
-    using is_detected_exact = std::is_same<Expected, detected_t<Operation, Arguments...>>;
+    using is_detected_exact = std::bool_constant<(
+        is_detected_v<Operation, Arguments...> && std::is_same_v<Expected, detected_t<Operation, Arguments...>>)>;
     template <typename Expected, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_exact_v = is_detected_exact<Expected, Operation, Arguments...>::value;
 
     template <typename To, template <typename...> class Operation, typename... Arguments>
-    using is_detected_convertible = std::is_convertible<detected_t<Operation, Arguments...>, To>;
+    using is_detected_convertible = std::bool_constant<(
+        is_detected_v<Operation, Arguments...> && std::is_convertible_v<detected_t<Operation, Arguments...>, To>)>;
     template <typename To, template <typename...> class Operation, typename... Arguments>
     inline constexpr bool is_detected_convertible_v =
         is_detected_convertible<To, Operation, Arguments...>::value;
@@ -90,16 +94,28 @@ namespace scl
   `detected_or<Default, Operation, Arguments...>::type`, то есть совпадает с шаблонным типом
   `detected_t`, в котором маркерный тип `nonesuch` заменён типом `Default`.
 - **`is_detected_exact`.** Шаблонный тип `is_detected_exact<Expected, Operation, Arguments...>`
-  является типом `std::true_type`, если тип `detected_t<Operation, Arguments...>` в точности
-  совпадает с типом `Expected`, и типом `std::false_type` в остальных случаях. Для некорректной
-  операции этот тип является маркерным типом `nonesuch`, поэтому шаблонная константа
-  `is_detected_exact_v<nonesuch, Operation, Arguments...>` для некорректной операции равна `true`.
+  является типом `std::true_type`, если операция корректна и её тип в точности совпадает с типом
+  `Expected`. В остальных случаях он является типом `std::false_type`.
 - **`is_detected_convertible`.** Шаблонный тип
-  `is_detected_convertible<To, Operation, Arguments...>` является типом `std::true_type`, если тип
-  `detected_t<Operation, Arguments...>` неявно преобразуется в тип `To`, и типом `std::false_type`
-  в остальных случаях. Поэтому для некорректной операции он равен `std::true_type` для типа `To`,
-  в который преобразуется маркерный тип `nonesuch`, например для типа `nonesuch const &`
-  или для класса с конструктором `template <typename T> To(T &&)`, принимающим аргумент любого типа.
+  `is_detected_convertible<To, Operation, Arguments...>` является типом `std::true_type`,
+  если операция корректна и её тип неявно преобразуется в тип `To`. В остальных случаях он является
+  типом `std::false_type`.
+
+### Отличие от Library Fundamentals TS v2
+
+Для некорректной операции шаблонные константы `is_detected_exact_v` и `is_detected_convertible_v`
+всегда равны `false`, какой бы тип ни был передан параметром `Expected` или `To`. В TS эти шаблоны
+проверяют тип `detected_t<Operation, Arguments...>`, который для некорректной операции является
+маркерным типом `nonesuch`. Поэтому в TS они равны `true`, если тип `Expected` совпадает с типом
+`nonesuch` или если тип `nonesuch` преобразуется в тип `To`.
+
+Значения шаблонных констант для некорректной операции:
+
+| Шаблонная константа | `scl` | TS |
+|---|---|---|
+| `is_detected_exact_v<nonesuch, Operation, Arguments...>` | `false` | `true` |
+| `is_detected_convertible_v<nonesuch const &, Operation, Arguments...>` | `false` | `true` |
+| `is_detected_convertible_v<To, Operation, Arguments...>` для класса `To` с конструктором `template <typename T> To(T &&)` | `false` | `true` |
 
 
 ## Примеры
