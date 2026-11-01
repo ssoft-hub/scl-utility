@@ -10,6 +10,8 @@ types:
 - whether the operator is declared as a member function with parameters that are exactly the given
   types and with qualifiers that match the type of the object (strict match).
 
+Besides, it is checked whether the operator is declared as a member function with an explicit object
+parameter (C++23), and for the operators `()` and `[]` as a static member function (C++23) as well.
 The checks run while the program compiles. For each check a variable template `has_..._v` and
 an alias template `..._t` for the result type are declared.
 
@@ -42,6 +44,14 @@ namespace scl
     inline constexpr auto has_plus_member_exact_v = is_detected_v<plus_member_exact_operation, Arguments...>;
     template <typename... Arguments>
     using plus_member_exact_t = detected_t<plus_member_exact_operation, Arguments...>;
+
+    template <typename Type, typename... Arguments>
+    using plus_explicit_member_exact_operation = unspecified;
+    template <typename... Arguments>
+    inline constexpr auto has_plus_explicit_member_exact_v =
+        is_detected_v<plus_explicit_member_exact_operation, Arguments...>;
+    template <typename... Arguments>
+    using plus_explicit_member_exact_t = detected_t<plus_explicit_member_exact_operation, Arguments...>;
 }
 ```
 
@@ -93,7 +103,8 @@ Where the standard library has a function object for the same operator, such as 
   the type `Type`, and the member function is neither deleted nor inaccessible. The qualifiers match
   as on the page of [member function presence detection](method_detection.md). The type `X const`,
   for example, needs a member function with the qualifier `const` and no ref-qualifier, the type
-  `X &` needs one with the qualifier `&`, and so on.
+  `X &` needs one with the qualifier `&`, and so on. Only a member function with an implicit object
+  parameter is found in this form.
 - **Result type and an ambiguous call.** The strict match does not compare the result type of
   the member function. The alias template `plus_member_exact_t` is the result type of the member
   function found. The member function is found also where the call of the member function
@@ -103,10 +114,30 @@ Where the standard library has a function object for the same operator, such as 
   `std::declval<Type>().operator+(std::declval<Arguments>()...)` is found.
 - **Specifier `noexcept`.** The strict match does not compare the specifier `noexcept` of
   the operator. It can be checked with the operator `noexcept` applied to the call
-  `std::declval<Type>().operator+(std::declval<Arguments>()...)`. Where that call is ambiguous and
-  the overloads differ not only in their qualifiers, the specifier shows in the type of the pointer
-  to the needed overload that [`scl::overload_cast`](overload_cast.md) returns for the address of
-  the operator.
+  `std::declval<Type>().operator+(std::declval<Arguments>()...)`. Where that call is ambiguous,
+  the specifier shows in the type of the pointer to the needed overload that
+  [`scl::member_overload_cast`](overload_cast.md) returns for the address of the operator.
+
+### Explicit object parameter and static operators
+
+- **Explicit object parameter.** The variable template
+  `has_plus_explicit_member_exact_v<Type, Arguments...>` is `true` if a member function `operator+`
+  is declared with an explicit object parameter (C++23) of exactly the type `Type` and with
+  the other parameters of exactly the types `Arguments...`, and the member function is neither
+  deleted nor inaccessible. The rules of this form are those of the explicit object form on the page
+  of [member function presence detection](method_detection.md). Only the operators `()` and `[]` can
+  be static, so only for them an operator with an explicit object parameter is not found beside
+  a static operator taking the object first.
+- **Static `operator()` and `operator[]`.** The variable template
+  `has_call_static_member_v<Type, Arguments...>` is `true` if the call through the class name
+  `std::remove_cvref_t<Type>::operator()(std::declval<Arguments>()...)` compiles. The variable
+  template `has_call_static_member_exact_v<Type, Arguments...>` is `true` if a static `operator()`
+  whose parameters are exactly the types `Arguments...` is declared. The same templates named
+  `subscript`, such as `has_subscript_static_member_exact_v`, are declared for `operator[]`. As with
+  the static strict form of a member function, the variable template
+  `has_call_static_member_exact_v` is `true` also for an `operator()` with an explicit object
+  parameter whose type is the first of the types `Arguments...`. On MSVC the variable template is
+  `false` for such an operator, as the item MSVC below explains.
 
 ### Operators with rules of their own
 
@@ -127,7 +158,9 @@ Where the standard library has a function object for the same operator, such as 
   the strict form only where the class declares other overloads of that operator. The strict match
   on MSVC also requires the call of the operator member function to compile, so there the variable
   template `has_plus_member_exact_v` is `false` where the call of the member function `operator+`
-  is ambiguous.
+  is ambiguous. An `operator()` or an `operator[]` with an explicit object parameter cannot be
+  called through the class name, so on MSVC the variable templates `has_call_static_member_exact_v`
+  and `has_subscript_static_member_exact_v` are `false` for it.
 
 ## Examples
 

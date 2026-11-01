@@ -63,6 +63,16 @@ static_assert(scl::has_address_of_v<int &>);
 static_assert(std::is_same_v<scl::address_of_member_t<address_of_operand>, int *>);
 static_assert(scl::has_address_of_member_exact_v<address_of_operand>);
 static_assert(!scl::has_address_of_member_exact_v<address_of_operand &>);
+static_assert(!scl::has_address_of_explicit_member_exact_v<address_of_operand &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct address_of_explicit_operand
+{
+    int * operator&(this address_of_explicit_operand & self);
+};
+
+static_assert(scl::has_address_of_explicit_member_exact_v<address_of_explicit_operand &>);
+#endif
 //! [address_of]
 
 //! [indirection]
@@ -75,6 +85,16 @@ static_assert(scl::has_indirection_v<int *>);
 static_assert(std::is_same_v<scl::indirection_member_t<indirection_operand const>, int>);
 static_assert(scl::has_indirection_member_exact_v<indirection_operand const>);
 static_assert(!scl::has_indirection_member_exact_v<indirection_operand const &>);
+static_assert(!scl::has_indirection_explicit_member_exact_v<indirection_operand const &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct indirection_explicit_operand
+{
+    int operator*(this indirection_explicit_operand const & self);
+};
+
+static_assert(scl::has_indirection_explicit_member_exact_v<indirection_explicit_operand const &>);
+#endif
 //! [indirection]
 
 //! [unary_plus]
@@ -87,6 +107,16 @@ static_assert(scl::has_unary_plus_v<int>);
 static_assert(std::is_same_v<scl::unary_plus_member_t<unary_plus_operand const>, int>);
 static_assert(scl::has_unary_plus_member_exact_v<unary_plus_operand const>);
 static_assert(!scl::has_unary_plus_member_exact_v<unary_plus_operand const &>);
+static_assert(!scl::has_unary_plus_explicit_member_exact_v<unary_plus_operand const &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct unary_plus_explicit_operand
+{
+    int operator+(this unary_plus_explicit_operand const & self);
+};
+
+static_assert(scl::has_unary_plus_explicit_member_exact_v<unary_plus_explicit_operand const &>);
+#endif
 //! [unary_plus]
 
 //! [negate]
@@ -99,6 +129,16 @@ static_assert(scl::has_negate_v<int>);
 static_assert(std::is_same_v<scl::negate_member_t<negate_operand const>, int>);
 static_assert(scl::has_negate_member_exact_v<negate_operand const>);
 static_assert(!scl::has_negate_member_exact_v<negate_operand const &>);
+static_assert(!scl::has_negate_explicit_member_exact_v<negate_operand const &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct negate_explicit_operand
+{
+    int operator-(this negate_explicit_operand const & self);
+};
+
+static_assert(scl::has_negate_explicit_member_exact_v<negate_explicit_operand const &>);
+#endif
 //! [negate]
 
 //! [prefix_increment]
@@ -112,6 +152,16 @@ static_assert(
     std::is_same_v<scl::prefix_increment_member_t<prefix_increment_operand>, prefix_increment_operand &>);
 static_assert(scl::has_prefix_increment_member_exact_v<prefix_increment_operand>);
 static_assert(!scl::has_prefix_increment_member_exact_v<prefix_increment_operand &>);
+static_assert(!scl::has_prefix_increment_explicit_member_exact_v<prefix_increment_operand &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct prefix_increment_explicit_operand
+{
+    prefix_increment_explicit_operand & operator++(this prefix_increment_explicit_operand & self);
+};
+
+static_assert(scl::has_prefix_increment_explicit_member_exact_v<prefix_increment_explicit_operand &>);
+#endif
 //! [prefix_increment]
 
 //! [prefix_decrement]
@@ -125,6 +175,16 @@ static_assert(
     std::is_same_v<scl::prefix_decrement_member_t<prefix_decrement_operand>, prefix_decrement_operand &>);
 static_assert(scl::has_prefix_decrement_member_exact_v<prefix_decrement_operand>);
 static_assert(!scl::has_prefix_decrement_member_exact_v<prefix_decrement_operand &>);
+static_assert(!scl::has_prefix_decrement_explicit_member_exact_v<prefix_decrement_operand &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct prefix_decrement_explicit_operand
+{
+    prefix_decrement_explicit_operand & operator--(this prefix_decrement_explicit_operand & self);
+};
+
+static_assert(scl::has_prefix_decrement_explicit_member_exact_v<prefix_decrement_explicit_operand &>);
+#endif
 //! [prefix_decrement]
 
 //! [bit_not]
@@ -137,6 +197,16 @@ static_assert(scl::has_bit_not_v<int>);
 static_assert(std::is_same_v<scl::bit_not_member_t<bit_not_operand const>, int>);
 static_assert(scl::has_bit_not_member_exact_v<bit_not_operand const>);
 static_assert(!scl::has_bit_not_member_exact_v<bit_not_operand const &>);
+static_assert(!scl::has_bit_not_explicit_member_exact_v<bit_not_operand const &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct bit_not_explicit_operand
+{
+    int operator~(this bit_not_explicit_operand const & self);
+};
+
+static_assert(scl::has_bit_not_explicit_member_exact_v<bit_not_explicit_operand const &>);
+#endif
 //! [bit_not]
 
 //! [logical_not]
@@ -149,6 +219,16 @@ static_assert(scl::has_logical_not_v<bool>);
 static_assert(std::is_same_v<scl::logical_not_member_t<logical_not_operand const>, bool>);
 static_assert(scl::has_logical_not_member_exact_v<logical_not_operand const>);
 static_assert(!scl::has_logical_not_member_exact_v<logical_not_operand const &>);
+static_assert(!scl::has_logical_not_explicit_member_exact_v<logical_not_operand const &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct logical_not_explicit_operand
+{
+    bool operator!(this logical_not_explicit_operand const & self);
+};
+
+static_assert(scl::has_logical_not_explicit_member_exact_v<logical_not_explicit_operand const &>);
+#endif
 //! [logical_not]
 
 //! [postfix_increment]
@@ -162,6 +242,16 @@ static_assert(
     std::is_same_v<scl::postfix_increment_member_t<postfix_increment_operand>, postfix_increment_operand>);
 static_assert(scl::has_postfix_increment_member_exact_v<postfix_increment_operand>);
 static_assert(!scl::has_postfix_increment_member_exact_v<postfix_increment_operand &>);
+static_assert(!scl::has_postfix_increment_explicit_member_exact_v<postfix_increment_operand &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct postfix_increment_explicit_operand
+{
+    postfix_increment_explicit_operand operator++(this postfix_increment_explicit_operand & self, int);
+};
+
+static_assert(scl::has_postfix_increment_explicit_member_exact_v<postfix_increment_explicit_operand &>);
+#endif
 //! [postfix_increment]
 
 //! [postfix_decrement]
@@ -175,6 +265,16 @@ static_assert(
     std::is_same_v<scl::postfix_decrement_member_t<postfix_decrement_operand>, postfix_decrement_operand>);
 static_assert(scl::has_postfix_decrement_member_exact_v<postfix_decrement_operand>);
 static_assert(!scl::has_postfix_decrement_member_exact_v<postfix_decrement_operand &>);
+static_assert(!scl::has_postfix_decrement_explicit_member_exact_v<postfix_decrement_operand &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct postfix_decrement_explicit_operand
+{
+    postfix_decrement_explicit_operand operator--(this postfix_decrement_explicit_operand & self, int);
+};
+
+static_assert(scl::has_postfix_decrement_explicit_member_exact_v<postfix_decrement_explicit_operand &>);
+#endif
 //! [postfix_decrement]
 
 //! [equal_to]
@@ -187,6 +287,16 @@ static_assert(scl::has_equal_to_v<int, long>);
 static_assert(std::is_same_v<scl::equal_to_member_t<equal_to_operand const, short>, bool>);
 static_assert(scl::has_equal_to_member_exact_v<equal_to_operand const, int>);
 static_assert(!scl::has_equal_to_member_exact_v<equal_to_operand const, short>);
+static_assert(!scl::has_equal_to_explicit_member_exact_v<equal_to_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct equal_to_explicit_operand
+{
+    bool operator==(this equal_to_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_equal_to_explicit_member_exact_v<equal_to_explicit_operand const &, int>);
+#endif
 //! [equal_to]
 
 //! [not_equal_to]
@@ -199,6 +309,16 @@ static_assert(scl::has_not_equal_to_v<int, long>);
 static_assert(std::is_same_v<scl::not_equal_to_member_t<not_equal_to_operand const, short>, bool>);
 static_assert(scl::has_not_equal_to_member_exact_v<not_equal_to_operand const, int>);
 static_assert(!scl::has_not_equal_to_member_exact_v<not_equal_to_operand const, short>);
+static_assert(!scl::has_not_equal_to_explicit_member_exact_v<not_equal_to_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct not_equal_to_explicit_operand
+{
+    bool operator!=(this not_equal_to_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_not_equal_to_explicit_member_exact_v<not_equal_to_explicit_operand const &, int>);
+#endif
 //! [not_equal_to]
 
 //! [less]
@@ -211,6 +331,16 @@ static_assert(scl::has_less_v<int, long>);
 static_assert(std::is_same_v<scl::less_member_t<less_operand const, short>, bool>);
 static_assert(scl::has_less_member_exact_v<less_operand const, int>);
 static_assert(!scl::has_less_member_exact_v<less_operand const, short>);
+static_assert(!scl::has_less_explicit_member_exact_v<less_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct less_explicit_operand
+{
+    bool operator<(this less_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_less_explicit_member_exact_v<less_explicit_operand const &, int>);
+#endif
 //! [less]
 
 //! [less_equal]
@@ -223,6 +353,16 @@ static_assert(scl::has_less_equal_v<int, long>);
 static_assert(std::is_same_v<scl::less_equal_member_t<less_equal_operand const, short>, bool>);
 static_assert(scl::has_less_equal_member_exact_v<less_equal_operand const, int>);
 static_assert(!scl::has_less_equal_member_exact_v<less_equal_operand const, short>);
+static_assert(!scl::has_less_equal_explicit_member_exact_v<less_equal_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct less_equal_explicit_operand
+{
+    bool operator<=(this less_equal_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_less_equal_explicit_member_exact_v<less_equal_explicit_operand const &, int>);
+#endif
 //! [less_equal]
 
 //! [greater]
@@ -235,6 +375,16 @@ static_assert(scl::has_greater_v<int, long>);
 static_assert(std::is_same_v<scl::greater_member_t<greater_operand const, short>, bool>);
 static_assert(scl::has_greater_member_exact_v<greater_operand const, int>);
 static_assert(!scl::has_greater_member_exact_v<greater_operand const, short>);
+static_assert(!scl::has_greater_explicit_member_exact_v<greater_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct greater_explicit_operand
+{
+    bool operator>(this greater_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_greater_explicit_member_exact_v<greater_explicit_operand const &, int>);
+#endif
 //! [greater]
 
 //! [greater_equal]
@@ -247,6 +397,16 @@ static_assert(scl::has_greater_equal_v<int, long>);
 static_assert(std::is_same_v<scl::greater_equal_member_t<greater_equal_operand const, short>, bool>);
 static_assert(scl::has_greater_equal_member_exact_v<greater_equal_operand const, int>);
 static_assert(!scl::has_greater_equal_member_exact_v<greater_equal_operand const, short>);
+static_assert(!scl::has_greater_equal_explicit_member_exact_v<greater_equal_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct greater_equal_explicit_operand
+{
+    bool operator>=(this greater_equal_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_greater_equal_explicit_member_exact_v<greater_equal_explicit_operand const &, int>);
+#endif
 //! [greater_equal]
 
 //! [compare_three_way]
@@ -260,6 +420,17 @@ static_assert(std::is_same_v<
     scl::compare_three_way_member_t<compare_three_way_operand const, short>, std::strong_ordering>);
 static_assert(scl::has_compare_three_way_member_exact_v<compare_three_way_operand const, int>);
 static_assert(!scl::has_compare_three_way_member_exact_v<compare_three_way_operand const, short>);
+static_assert(!scl::has_compare_three_way_explicit_member_exact_v<compare_three_way_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct compare_three_way_explicit_operand
+{
+    std::strong_ordering operator<=>(this compare_three_way_explicit_operand const & self, int value);
+};
+
+static_assert(
+    scl::has_compare_three_way_explicit_member_exact_v<compare_three_way_explicit_operand const &, int>);
+#endif
 //! [compare_three_way]
 
 //! [multiplies]
@@ -272,6 +443,16 @@ static_assert(scl::has_multiplies_v<int, long>);
 static_assert(std::is_same_v<scl::multiplies_member_t<multiplies_operand const, short>, long>);
 static_assert(scl::has_multiplies_member_exact_v<multiplies_operand const, int>);
 static_assert(!scl::has_multiplies_member_exact_v<multiplies_operand const, short>);
+static_assert(!scl::has_multiplies_explicit_member_exact_v<multiplies_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct multiplies_explicit_operand
+{
+    long operator*(this multiplies_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_multiplies_explicit_member_exact_v<multiplies_explicit_operand const &, int>);
+#endif
 //! [multiplies]
 
 //! [divides]
@@ -284,6 +465,16 @@ static_assert(scl::has_divides_v<int, long>);
 static_assert(std::is_same_v<scl::divides_member_t<divides_operand const, short>, long>);
 static_assert(scl::has_divides_member_exact_v<divides_operand const, int>);
 static_assert(!scl::has_divides_member_exact_v<divides_operand const, short>);
+static_assert(!scl::has_divides_explicit_member_exact_v<divides_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct divides_explicit_operand
+{
+    long operator/(this divides_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_divides_explicit_member_exact_v<divides_explicit_operand const &, int>);
+#endif
 //! [divides]
 
 //! [modulus]
@@ -296,6 +487,16 @@ static_assert(scl::has_modulus_v<int, long>);
 static_assert(std::is_same_v<scl::modulus_member_t<modulus_operand const, short>, long>);
 static_assert(scl::has_modulus_member_exact_v<modulus_operand const, int>);
 static_assert(!scl::has_modulus_member_exact_v<modulus_operand const, short>);
+static_assert(!scl::has_modulus_explicit_member_exact_v<modulus_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct modulus_explicit_operand
+{
+    long operator%(this modulus_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_modulus_explicit_member_exact_v<modulus_explicit_operand const &, int>);
+#endif
 //! [modulus]
 
 //! [plus]
@@ -308,6 +509,16 @@ static_assert(scl::has_plus_v<int, long>);
 static_assert(std::is_same_v<scl::plus_member_t<plus_operand const, short>, long>);
 static_assert(scl::has_plus_member_exact_v<plus_operand const, int>);
 static_assert(!scl::has_plus_member_exact_v<plus_operand const, short>);
+static_assert(!scl::has_plus_explicit_member_exact_v<plus_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct plus_explicit_operand
+{
+    long operator+(this plus_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_plus_explicit_member_exact_v<plus_explicit_operand const &, int>);
+#endif
 //! [plus]
 
 //! [minus]
@@ -320,6 +531,16 @@ static_assert(scl::has_minus_v<int, long>);
 static_assert(std::is_same_v<scl::minus_member_t<minus_operand const, short>, long>);
 static_assert(scl::has_minus_member_exact_v<minus_operand const, int>);
 static_assert(!scl::has_minus_member_exact_v<minus_operand const, short>);
+static_assert(!scl::has_minus_explicit_member_exact_v<minus_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct minus_explicit_operand
+{
+    long operator-(this minus_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_minus_explicit_member_exact_v<minus_explicit_operand const &, int>);
+#endif
 //! [minus]
 
 //! [left_shift]
@@ -332,6 +553,16 @@ static_assert(scl::has_left_shift_v<int, long>);
 static_assert(std::is_same_v<scl::left_shift_member_t<left_shift_operand const, short>, long>);
 static_assert(scl::has_left_shift_member_exact_v<left_shift_operand const, int>);
 static_assert(!scl::has_left_shift_member_exact_v<left_shift_operand const, short>);
+static_assert(!scl::has_left_shift_explicit_member_exact_v<left_shift_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct left_shift_explicit_operand
+{
+    long operator<<(this left_shift_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_left_shift_explicit_member_exact_v<left_shift_explicit_operand const &, int>);
+#endif
 //! [left_shift]
 
 //! [right_shift]
@@ -344,6 +575,16 @@ static_assert(scl::has_right_shift_v<int, long>);
 static_assert(std::is_same_v<scl::right_shift_member_t<right_shift_operand const, short>, long>);
 static_assert(scl::has_right_shift_member_exact_v<right_shift_operand const, int>);
 static_assert(!scl::has_right_shift_member_exact_v<right_shift_operand const, short>);
+static_assert(!scl::has_right_shift_explicit_member_exact_v<right_shift_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct right_shift_explicit_operand
+{
+    long operator>>(this right_shift_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_right_shift_explicit_member_exact_v<right_shift_explicit_operand const &, int>);
+#endif
 //! [right_shift]
 
 //! [bit_and]
@@ -356,6 +597,16 @@ static_assert(scl::has_bit_and_v<int, long>);
 static_assert(std::is_same_v<scl::bit_and_member_t<bit_and_operand const, short>, long>);
 static_assert(scl::has_bit_and_member_exact_v<bit_and_operand const, int>);
 static_assert(!scl::has_bit_and_member_exact_v<bit_and_operand const, short>);
+static_assert(!scl::has_bit_and_explicit_member_exact_v<bit_and_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct bit_and_explicit_operand
+{
+    long operator&(this bit_and_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_bit_and_explicit_member_exact_v<bit_and_explicit_operand const &, int>);
+#endif
 //! [bit_and]
 
 //! [bit_or]
@@ -368,6 +619,16 @@ static_assert(scl::has_bit_or_v<int, long>);
 static_assert(std::is_same_v<scl::bit_or_member_t<bit_or_operand const, short>, long>);
 static_assert(scl::has_bit_or_member_exact_v<bit_or_operand const, int>);
 static_assert(!scl::has_bit_or_member_exact_v<bit_or_operand const, short>);
+static_assert(!scl::has_bit_or_explicit_member_exact_v<bit_or_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct bit_or_explicit_operand
+{
+    long operator|(this bit_or_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_bit_or_explicit_member_exact_v<bit_or_explicit_operand const &, int>);
+#endif
 //! [bit_or]
 
 //! [bit_xor]
@@ -380,6 +641,16 @@ static_assert(scl::has_bit_xor_v<int, long>);
 static_assert(std::is_same_v<scl::bit_xor_member_t<bit_xor_operand const, short>, long>);
 static_assert(scl::has_bit_xor_member_exact_v<bit_xor_operand const, int>);
 static_assert(!scl::has_bit_xor_member_exact_v<bit_xor_operand const, short>);
+static_assert(!scl::has_bit_xor_explicit_member_exact_v<bit_xor_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct bit_xor_explicit_operand
+{
+    long operator^(this bit_xor_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_bit_xor_explicit_member_exact_v<bit_xor_explicit_operand const &, int>);
+#endif
 //! [bit_xor]
 
 //! [logical_and]
@@ -392,6 +663,16 @@ static_assert(scl::has_logical_and_v<bool, bool>);
 static_assert(std::is_same_v<scl::logical_and_member_t<logical_and_operand const, short>, bool>);
 static_assert(scl::has_logical_and_member_exact_v<logical_and_operand const, int>);
 static_assert(!scl::has_logical_and_member_exact_v<logical_and_operand const, short>);
+static_assert(!scl::has_logical_and_explicit_member_exact_v<logical_and_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct logical_and_explicit_operand
+{
+    bool operator&&(this logical_and_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_logical_and_explicit_member_exact_v<logical_and_explicit_operand const &, int>);
+#endif
 //! [logical_and]
 
 //! [logical_or]
@@ -404,6 +685,16 @@ static_assert(scl::has_logical_or_v<bool, bool>);
 static_assert(std::is_same_v<scl::logical_or_member_t<logical_or_operand const, short>, bool>);
 static_assert(scl::has_logical_or_member_exact_v<logical_or_operand const, int>);
 static_assert(!scl::has_logical_or_member_exact_v<logical_or_operand const, short>);
+static_assert(!scl::has_logical_or_explicit_member_exact_v<logical_or_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct logical_or_explicit_operand
+{
+    bool operator||(this logical_or_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_logical_or_explicit_member_exact_v<logical_or_explicit_operand const &, int>);
+#endif
 //! [logical_or]
 
 //! [assign]
@@ -416,6 +707,16 @@ static_assert(scl::has_assign_v<int &, long>);
 static_assert(std::is_same_v<scl::assign_member_t<assign_operand, short>, assign_operand &>);
 static_assert(scl::has_assign_member_exact_v<assign_operand, int>);
 static_assert(!scl::has_assign_member_exact_v<assign_operand, short>);
+static_assert(!scl::has_assign_explicit_member_exact_v<assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct assign_explicit_operand
+{
+    assign_explicit_operand & operator=(this assign_explicit_operand & self, int value);
+};
+
+static_assert(scl::has_assign_explicit_member_exact_v<assign_explicit_operand &, int>);
+#endif
 //! [assign]
 
 //! [multiplies_assign]
@@ -429,6 +730,18 @@ static_assert(std::is_same_v<
     scl::multiplies_assign_member_t<multiplies_assign_operand, short>, multiplies_assign_operand &>);
 static_assert(scl::has_multiplies_assign_member_exact_v<multiplies_assign_operand, int>);
 static_assert(!scl::has_multiplies_assign_member_exact_v<multiplies_assign_operand, short>);
+static_assert(!scl::has_multiplies_assign_explicit_member_exact_v<multiplies_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct multiplies_assign_explicit_operand
+{
+    multiplies_assign_explicit_operand & operator*=(
+        this multiplies_assign_explicit_operand & self, int value);
+};
+
+static_assert(
+    scl::has_multiplies_assign_explicit_member_exact_v<multiplies_assign_explicit_operand &, int>);
+#endif
 //! [multiplies_assign]
 
 //! [divides_assign]
@@ -442,6 +755,16 @@ static_assert(std::is_same_v<
     scl::divides_assign_member_t<divides_assign_operand, short>, divides_assign_operand &>);
 static_assert(scl::has_divides_assign_member_exact_v<divides_assign_operand, int>);
 static_assert(!scl::has_divides_assign_member_exact_v<divides_assign_operand, short>);
+static_assert(!scl::has_divides_assign_explicit_member_exact_v<divides_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct divides_assign_explicit_operand
+{
+    divides_assign_explicit_operand & operator/=(this divides_assign_explicit_operand & self, int value);
+};
+
+static_assert(scl::has_divides_assign_explicit_member_exact_v<divides_assign_explicit_operand &, int>);
+#endif
 //! [divides_assign]
 
 //! [modulus_assign]
@@ -455,6 +778,16 @@ static_assert(std::is_same_v<
     scl::modulus_assign_member_t<modulus_assign_operand, short>, modulus_assign_operand &>);
 static_assert(scl::has_modulus_assign_member_exact_v<modulus_assign_operand, int>);
 static_assert(!scl::has_modulus_assign_member_exact_v<modulus_assign_operand, short>);
+static_assert(!scl::has_modulus_assign_explicit_member_exact_v<modulus_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct modulus_assign_explicit_operand
+{
+    modulus_assign_explicit_operand & operator%=(this modulus_assign_explicit_operand & self, int value);
+};
+
+static_assert(scl::has_modulus_assign_explicit_member_exact_v<modulus_assign_explicit_operand &, int>);
+#endif
 //! [modulus_assign]
 
 //! [plus_assign]
@@ -467,6 +800,16 @@ static_assert(scl::has_plus_assign_v<int &, long>);
 static_assert(std::is_same_v<scl::plus_assign_member_t<plus_assign_operand, short>, plus_assign_operand &>);
 static_assert(scl::has_plus_assign_member_exact_v<plus_assign_operand, int>);
 static_assert(!scl::has_plus_assign_member_exact_v<plus_assign_operand, short>);
+static_assert(!scl::has_plus_assign_explicit_member_exact_v<plus_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct plus_assign_explicit_operand
+{
+    plus_assign_explicit_operand & operator+=(this plus_assign_explicit_operand & self, int value);
+};
+
+static_assert(scl::has_plus_assign_explicit_member_exact_v<plus_assign_explicit_operand &, int>);
+#endif
 //! [plus_assign]
 
 //! [minus_assign]
@@ -480,6 +823,16 @@ static_assert(
     std::is_same_v<scl::minus_assign_member_t<minus_assign_operand, short>, minus_assign_operand &>);
 static_assert(scl::has_minus_assign_member_exact_v<minus_assign_operand, int>);
 static_assert(!scl::has_minus_assign_member_exact_v<minus_assign_operand, short>);
+static_assert(!scl::has_minus_assign_explicit_member_exact_v<minus_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct minus_assign_explicit_operand
+{
+    minus_assign_explicit_operand & operator-=(this minus_assign_explicit_operand & self, int value);
+};
+
+static_assert(scl::has_minus_assign_explicit_member_exact_v<minus_assign_explicit_operand &, int>);
+#endif
 //! [minus_assign]
 
 //! [left_shift_assign]
@@ -493,6 +846,18 @@ static_assert(std::is_same_v<
     scl::left_shift_assign_member_t<left_shift_assign_operand, short>, left_shift_assign_operand &>);
 static_assert(scl::has_left_shift_assign_member_exact_v<left_shift_assign_operand, int>);
 static_assert(!scl::has_left_shift_assign_member_exact_v<left_shift_assign_operand, short>);
+static_assert(!scl::has_left_shift_assign_explicit_member_exact_v<left_shift_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct left_shift_assign_explicit_operand
+{
+    left_shift_assign_explicit_operand & operator<<=(
+        this left_shift_assign_explicit_operand & self, int value);
+};
+
+static_assert(
+    scl::has_left_shift_assign_explicit_member_exact_v<left_shift_assign_explicit_operand &, int>);
+#endif
 //! [left_shift_assign]
 
 //! [right_shift_assign]
@@ -506,6 +871,18 @@ static_assert(std::is_same_v<
     scl::right_shift_assign_member_t<right_shift_assign_operand, short>, right_shift_assign_operand &>);
 static_assert(scl::has_right_shift_assign_member_exact_v<right_shift_assign_operand, int>);
 static_assert(!scl::has_right_shift_assign_member_exact_v<right_shift_assign_operand, short>);
+static_assert(!scl::has_right_shift_assign_explicit_member_exact_v<right_shift_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct right_shift_assign_explicit_operand
+{
+    right_shift_assign_explicit_operand & operator>>=(
+        this right_shift_assign_explicit_operand & self, int value);
+};
+
+static_assert(
+    scl::has_right_shift_assign_explicit_member_exact_v<right_shift_assign_explicit_operand &, int>);
+#endif
 //! [right_shift_assign]
 
 //! [bit_and_assign]
@@ -519,6 +896,16 @@ static_assert(std::is_same_v<
     scl::bit_and_assign_member_t<bit_and_assign_operand, short>, bit_and_assign_operand &>);
 static_assert(scl::has_bit_and_assign_member_exact_v<bit_and_assign_operand, int>);
 static_assert(!scl::has_bit_and_assign_member_exact_v<bit_and_assign_operand, short>);
+static_assert(!scl::has_bit_and_assign_explicit_member_exact_v<bit_and_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct bit_and_assign_explicit_operand
+{
+    bit_and_assign_explicit_operand & operator&=(this bit_and_assign_explicit_operand & self, int value);
+};
+
+static_assert(scl::has_bit_and_assign_explicit_member_exact_v<bit_and_assign_explicit_operand &, int>);
+#endif
 //! [bit_and_assign]
 
 //! [bit_or_assign]
@@ -532,6 +919,16 @@ static_assert(
     std::is_same_v<scl::bit_or_assign_member_t<bit_or_assign_operand, short>, bit_or_assign_operand &>);
 static_assert(scl::has_bit_or_assign_member_exact_v<bit_or_assign_operand, int>);
 static_assert(!scl::has_bit_or_assign_member_exact_v<bit_or_assign_operand, short>);
+static_assert(!scl::has_bit_or_assign_explicit_member_exact_v<bit_or_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct bit_or_assign_explicit_operand
+{
+    bit_or_assign_explicit_operand & operator|=(this bit_or_assign_explicit_operand & self, int value);
+};
+
+static_assert(scl::has_bit_or_assign_explicit_member_exact_v<bit_or_assign_explicit_operand &, int>);
+#endif
 //! [bit_or_assign]
 
 //! [bit_xor_assign]
@@ -545,6 +942,16 @@ static_assert(std::is_same_v<
     scl::bit_xor_assign_member_t<bit_xor_assign_operand, short>, bit_xor_assign_operand &>);
 static_assert(scl::has_bit_xor_assign_member_exact_v<bit_xor_assign_operand, int>);
 static_assert(!scl::has_bit_xor_assign_member_exact_v<bit_xor_assign_operand, short>);
+static_assert(!scl::has_bit_xor_assign_explicit_member_exact_v<bit_xor_assign_operand &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct bit_xor_assign_explicit_operand
+{
+    bit_xor_assign_explicit_operand & operator^=(this bit_xor_assign_explicit_operand & self, int value);
+};
+
+static_assert(scl::has_bit_xor_assign_explicit_member_exact_v<bit_xor_assign_explicit_operand &, int>);
+#endif
 //! [bit_xor_assign]
 
 //! [pointer_to_member_access]
@@ -562,6 +969,18 @@ static_assert(
     scl::has_pointer_to_member_access_member_exact_v<pointer_to_member_access_operand const, int>);
 static_assert(
     !scl::has_pointer_to_member_access_member_exact_v<pointer_to_member_access_operand const, short>);
+static_assert(!scl::has_pointer_to_member_access_explicit_member_exact_v<
+    pointer_to_member_access_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct pointer_to_member_access_explicit_operand
+{
+    long operator->*(this pointer_to_member_access_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_pointer_to_member_access_explicit_member_exact_v<
+    pointer_to_member_access_explicit_operand const &, int>);
+#endif
 //! [pointer_to_member_access]
 
 //! [member_access]
@@ -575,6 +994,16 @@ static_assert(!scl::has_member_access_v<member_access_operand *>);
 static_assert(std::is_same_v<scl::member_access_member_t<member_access_operand const>, long const *>);
 static_assert(scl::has_member_access_member_exact_v<member_access_operand const>);
 static_assert(!scl::has_member_access_member_exact_v<member_access_operand const &>);
+static_assert(!scl::has_member_access_explicit_member_exact_v<member_access_operand const &>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct member_access_explicit_operand
+{
+    long const * operator->(this member_access_explicit_operand const & self);
+};
+
+static_assert(scl::has_member_access_explicit_member_exact_v<member_access_explicit_operand const &>);
+#endif
 //! [member_access]
 
 //! [comma]
@@ -587,6 +1016,16 @@ static_assert(scl::has_comma_v<int, long>);
 static_assert(std::is_same_v<scl::comma_member_t<comma_operand const, short>, long>);
 static_assert(scl::has_comma_member_exact_v<comma_operand const, int>);
 static_assert(!scl::has_comma_member_exact_v<comma_operand const, short>);
+static_assert(!scl::has_comma_explicit_member_exact_v<comma_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct comma_explicit_operand
+{
+    long operator,(this comma_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_comma_explicit_member_exact_v<comma_explicit_operand const &, int>);
+#endif
 //! [comma]
 
 //! [subscript]
@@ -599,6 +1038,27 @@ static_assert(scl::has_subscript_v<int *, int>);
 static_assert(std::is_same_v<scl::subscript_member_t<subscript_operand const, short>, long>);
 static_assert(scl::has_subscript_member_exact_v<subscript_operand const, int>);
 static_assert(!scl::has_subscript_member_exact_v<subscript_operand const, short>);
+static_assert(!scl::has_subscript_explicit_member_exact_v<subscript_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct subscript_explicit_operand
+{
+    long operator[](this subscript_explicit_operand const & self, int index);
+};
+
+static_assert(scl::has_subscript_explicit_member_exact_v<subscript_explicit_operand const &, int>);
+#endif
+
+#if defined(__cpp_multidimensional_subscript) && __cpp_multidimensional_subscript >= 202211L
+struct subscript_static_operand
+{
+    static long operator[](int index);
+};
+
+static_assert(scl::has_subscript_static_member_v<subscript_static_operand, short>);
+static_assert(scl::has_subscript_static_member_exact_v<subscript_static_operand, int>);
+static_assert(!scl::has_subscript_static_member_exact_v<subscript_static_operand, short>);
+#endif
 //! [subscript]
 
 //! [call]
@@ -611,6 +1071,28 @@ static_assert(scl::has_call_v<long (*)(int), int>);
 static_assert(std::is_same_v<scl::call_member_t<call_operand const, short>, long>);
 static_assert(scl::has_call_member_exact_v<call_operand const, int>);
 static_assert(!scl::has_call_member_exact_v<call_operand const, short>);
+static_assert(!scl::has_call_explicit_member_exact_v<call_operand const &, int>);
+
+#if defined(__cpp_explicit_this_parameter)
+struct call_explicit_operand
+{
+    long operator()(this call_explicit_operand const & self, int value);
+};
+
+static_assert(scl::has_call_explicit_member_exact_v<call_explicit_operand const &, int>);
+#endif
+
+#if defined(__cpp_static_call_operator) && \
+    (__cplusplus > 202002L || (defined(_MSVC_LANG) && _MSVC_LANG > 202002L))
+struct call_static_operand
+{
+    static long operator()(int value);
+};
+
+static_assert(scl::has_call_static_member_v<call_static_operand, short>);
+static_assert(scl::has_call_static_member_exact_v<call_static_operand, int>);
+static_assert(!scl::has_call_static_member_exact_v<call_static_operand, short>);
+#endif
 //! [call]
 
 money operator*(money amount, int times) { return {amount.cents * times}; }

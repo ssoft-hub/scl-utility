@@ -249,3 +249,88 @@ TEST(MethodDetectionTest, ClassScope)
     STATIC_EXPECT_TRUE((method_traits::has_query_method_exact_v<Mock, int>));
     STATIC_EXPECT_FALSE((method_traits::has_query_method_v<Mock const, int>));
 }
+
+namespace
+{
+    struct implicit_pick
+    {
+        int pick(long) const &;
+    };
+
+    struct static_pick
+    {
+        static int pick(static_pick const &, long);
+    };
+
+    struct static_beside_implicit_pick
+    {
+        static int pick(static_beside_implicit_pick const &, long);
+        int pick(long) const;
+    };
+
+    SCL_METHOD_DETECTION(pick)
+} // namespace
+
+/**
+ * @test Verify that the explicit object exact form finds no other kind of member function.
+ */
+TEST(MethodDetectionTest, ExplicitObjectExactIgnoresOtherKinds)
+{
+    STATIC_EXPECT_TRUE((has_pick_method_exact_v<implicit_pick const &, long>));
+    STATIC_EXPECT_FALSE((has_pick_explicit_method_exact_v<implicit_pick const &, long>));
+    STATIC_EXPECT_FALSE((has_pick_explicit_method_exact_v<static_pick const &, long>));
+    STATIC_EXPECT_TRUE((has_pick_method_v<static_beside_implicit_pick const &, long>));
+    STATIC_EXPECT_FALSE((has_pick_explicit_method_exact_v<static_beside_implicit_pick const &, long>));
+}
+
+#ifdef __cpp_explicit_this_parameter
+namespace
+{
+    struct explicit_pick
+    {
+        int pick(this explicit_pick const &, long);
+    };
+
+    struct explicit_value_pick
+    {
+        int pick(this explicit_value_pick, long);
+    };
+
+    struct explicit_template_pick
+    {
+        template <typename Self>
+        int pick(this Self &&, long);
+    };
+
+    struct derived_template_pick : explicit_template_pick
+    {};
+
+    struct explicit_overloaded_pick
+    {
+        int pick(this explicit_overloaded_pick const &, long);
+        double pick(this explicit_overloaded_pick &, long);
+    };
+} // namespace
+
+/**
+ * @test Verify the exact form for a member function with an explicit object parameter.
+ */
+TEST(MethodDetectionTest, ExplicitObjectExact)
+{
+    STATIC_EXPECT_TRUE((has_pick_explicit_method_exact_v<explicit_pick const &, long>));
+    STATIC_EXPECT_FALSE((has_pick_explicit_method_exact_v<explicit_pick &, long>));
+    STATIC_EXPECT_FALSE((has_pick_explicit_method_exact_v<explicit_pick const &, int>));
+    STATIC_EXPECT_FALSE((has_pick_method_exact_v<explicit_pick const &, long>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<pick_explicit_method_exact_t<explicit_pick const &, long>, int>));
+
+    STATIC_EXPECT_TRUE((has_pick_explicit_method_exact_v<explicit_value_pick, long>));
+    STATIC_EXPECT_TRUE((has_pick_explicit_method_exact_v<explicit_template_pick &, long>));
+    STATIC_EXPECT_TRUE((has_pick_explicit_method_exact_v<explicit_template_pick const &&, long>));
+    STATIC_EXPECT_TRUE((has_pick_explicit_method_exact_v<derived_template_pick const &, long>));
+
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<pick_explicit_method_exact_t<explicit_overloaded_pick const &, long>, int>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<pick_explicit_method_exact_t<explicit_overloaded_pick &, long>, double>));
+}
+#endif
