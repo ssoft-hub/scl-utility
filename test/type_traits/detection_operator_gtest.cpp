@@ -314,6 +314,7 @@ TEST(TypeTraitsOperatorDetectionExact, TakesTheQualifiersFromTheType)
 TEST(TypeTraitsOperatorDetectionExact, IgnoresTheTopLevelQualifiersOfTheArguments)
 {
     STATIC_EXPECT_TRUE((::scl::has_plus_member_exact_v<qualified const, int const>));
+    STATIC_EXPECT_TRUE((::scl::has_plus_member_exact_v<qualified const, int volatile>));
 }
 
 TEST(TypeTraitsOperatorDetectionExact, FindsAnOperatorOfAPublicBase)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <scl/utility/type_traits/detail/exact.h>
 #include <scl/utility/type_traits/detail/member_qualifiers.h>
 
 #include <type_traits>
@@ -17,127 +18,111 @@ namespace scl::detail
     {
         template <typename Class, typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (Class::*ptr)(Arguments...)) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (Class::*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...)) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) noexcept) const noexcept -> decltype(ptr)
-        {
-            return ptr;
-        }
-
-        template <typename Class, typename R>
-        [[nodiscard]]
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) &) const noexcept -> decltype(ptr)
-        {
-            return ptr;
-        }
-        template <typename Class, typename R>
-        [[nodiscard]]
-        constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) & noexcept) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (Class::*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...) noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
         template <typename Class, typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) &&) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (Class::*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...) &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) && noexcept) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) & noexcept) const noexcept
+            -> decltype(ptr)
         {
             return ptr;
         }
 
         template <typename Class, typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) const) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (Class::*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...) &&) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const noexcept) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) && noexcept) const noexcept
+            -> decltype(ptr)
         {
             return ptr;
         }
 
         template <typename Class, typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) const &) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (Class::*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...) const) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const & noexcept) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const noexcept) const noexcept
+            -> decltype(ptr)
         {
             return ptr;
         }
 
         template <typename Class, typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) const &&) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (Class::*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...) const &) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const && noexcept) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const & noexcept) const noexcept
+            -> decltype(ptr)
         {
             return ptr;
         }
 
         template <typename Class, typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) volatile) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (Class::*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...) const &&) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) volatile noexcept) const noexcept -> decltype(ptr)
-        {
-            return ptr;
-        }
-
-        template <typename Class, typename R>
-        [[nodiscard]]
-        constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) volatile &) const noexcept -> decltype(ptr)
-        {
-            return ptr;
-        }
-        template <typename Class, typename R>
-        [[nodiscard]]
-        constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) volatile & noexcept) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const && noexcept) const noexcept
+            -> decltype(ptr)
         {
             return ptr;
         }
 
         template <typename Class, typename R>
         [[nodiscard]]
-        constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) volatile &&) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (Class::*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...) volatile) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) volatile && noexcept) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) volatile noexcept) const noexcept
+            -> decltype(ptr)
         {
             return ptr;
         }
@@ -145,29 +130,16 @@ namespace scl::detail
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const volatile) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) volatile &) const noexcept
+            -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const volatile noexcept) const noexcept -> decltype(ptr)
-        {
-            return ptr;
-        }
-
-        template <typename Class, typename R>
-        [[nodiscard]]
-        constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const volatile &) const noexcept -> decltype(ptr)
-        {
-            return ptr;
-        }
-        template <typename Class, typename R>
-        [[nodiscard]]
-        constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const volatile & noexcept) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) volatile & noexcept)
+            const noexcept -> decltype(ptr)
         {
             return ptr;
         }
@@ -175,27 +147,82 @@ namespace scl::detail
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const volatile &&) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) volatile &&) const noexcept
+            -> decltype(ptr)
         {
             return ptr;
         }
         template <typename Class, typename R>
         [[nodiscard]]
         constexpr auto operator()(/**/
-            R (Class::*ptr)(Arguments...) const volatile && noexcept) const noexcept -> decltype(ptr)
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) volatile && noexcept)
+            const noexcept -> decltype(ptr)
+        {
+            return ptr;
+        }
+
+        template <typename Class, typename R>
+        [[nodiscard]]
+        constexpr auto operator()(/**/
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const volatile) const noexcept
+            -> decltype(ptr)
+        {
+            return ptr;
+        }
+        template <typename Class, typename R>
+        [[nodiscard]]
+        constexpr auto operator()(/**/
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const volatile noexcept)
+            const noexcept -> decltype(ptr)
+        {
+            return ptr;
+        }
+
+        template <typename Class, typename R>
+        [[nodiscard]]
+        constexpr auto operator()(/**/
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const volatile &) const noexcept
+            -> decltype(ptr)
+        {
+            return ptr;
+        }
+        template <typename Class, typename R>
+        [[nodiscard]]
+        constexpr auto operator()(/**/
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const volatile & noexcept)
+            const noexcept -> decltype(ptr)
+        {
+            return ptr;
+        }
+
+        template <typename Class, typename R>
+        [[nodiscard]]
+        constexpr auto operator()(/**/
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const volatile &&) const noexcept
+            -> decltype(ptr)
+        {
+            return ptr;
+        }
+        template <typename Class, typename R>
+        [[nodiscard]]
+        constexpr auto operator()(/**/
+            R (Class::*ptr)(::scl::detail::exact_parameter_t<Arguments>...) const volatile && noexcept)
+            const noexcept -> decltype(ptr)
         {
             return ptr;
         }
 
         template <typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (*ptr)(Arguments...)) const noexcept -> decltype(ptr)
+        constexpr auto operator()(
+            R (*ptr)(::scl::detail::exact_parameter_t<Arguments>...)) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
         template <typename R>
         [[nodiscard]]
-        constexpr auto operator()(R (*ptr)(Arguments...) noexcept) const noexcept -> decltype(ptr)
+        constexpr auto operator()(R (*ptr)(
+            ::scl::detail::exact_parameter_t<Arguments>...) noexcept) const noexcept -> decltype(ptr)
         {
             return ptr;
         }
@@ -212,14 +239,15 @@ namespace scl::detail
     {                                                                                                             \
         template <typename Class, typename R>                                                                     \
         [[nodiscard]]                                                                                             \
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) qualifiers) const noexcept -> decltype(ptr)       \
+        constexpr auto operator()(R (Class::*ptr)(                                                                \
+            ::scl::detail::exact_parameter_t<Arguments>...) qualifiers) const noexcept -> decltype(ptr)           \
         {                                                                                                         \
             return ptr;                                                                                           \
         }                                                                                                         \
         template <typename Class, typename R>                                                                     \
         [[nodiscard]]                                                                                             \
-        constexpr auto operator()(R (Class::*ptr)(Arguments...) qualifiers noexcept) const noexcept               \
-            -> decltype(ptr)                                                                                      \
+        constexpr auto operator()(R (Class::*ptr)(::scl::detail::exact_parameter_t<                               \
+            Arguments>...) qualifiers noexcept) const noexcept -> decltype(ptr)                                   \
         {                                                                                                         \
             return ptr;                                                                                           \
         }                                                                                                         \

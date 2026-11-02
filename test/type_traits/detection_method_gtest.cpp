@@ -183,6 +183,8 @@ TEST(TypeTraitsMethodDetectionExact, IsFalseWhereTheArgumentsOnlyConvert)
 TEST(TypeTraitsMethodDetectionExact, IgnoresTheTopLevelQualifiersOfTheArguments)
 {
     STATIC_EXPECT_TRUE((has_add_method_exact_v<counter &, int const>));
+    STATIC_EXPECT_TRUE((has_add_method_exact_v<counter &, int volatile>));
+    STATIC_EXPECT_TRUE((has_make_static_method_exact_v<counter, int volatile>));
 }
 
 TEST(TypeTraitsMethodDetectionExact, FindsAMemberFunctionOfAPublicBase)

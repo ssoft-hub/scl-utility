@@ -31,13 +31,21 @@
 
 namespace scl::detail
 {
+    // The cv-qualifiers of an array type belong to its elements, which a parameter keeps.
+    template <typename Argument>
+    using exact_parameter_t =
+        ::std::conditional_t<::std::is_array_v<Argument>, Argument, ::std::remove_cv_t<Argument>>;
+
     template <typename Hint, typename... Arguments>
         requires(!::std::is_void_v<Arguments> && ...)
     struct exact_function
     {
         SCL_DETAIL_EXACT_DEDUCED(
-            template <typename Result> static auto select(Result (*function)(Arguments...))->decltype(function);)
-        static auto select(Hint (*function)(Arguments...)) -> decltype(function);
+            template <typename Result>
+            static auto select(Result (*function)(::scl::detail::exact_parameter_t<Arguments>...))
+                ->decltype(function);)
+        static auto select(Hint (*function)(::scl::detail::exact_parameter_t<Arguments>...))
+            -> decltype(function);
     };
 
     template <typename Type, typename Hint, typename... Arguments>
@@ -46,24 +54,26 @@ namespace scl::detail
     {
         SCL_DETAIL_EXACT_DEDUCED(
             template <typename Result, typename Class>
-            static auto select(Result (Class::*member)(Arguments...))
+            static auto select(Result (Class::*member)(::scl::detail::exact_parameter_t<Arguments>...))
                 ->decltype(member);)
         template <typename Class = Type>
-        static auto select(Hint (Class::*member)(Arguments...)) -> decltype(member);
+        static auto select(Hint (Class::*member)(::scl::detail::exact_parameter_t<Arguments>...))
+            -> decltype(member);
     };
 
 // NOLINTBEGIN(bugprone-macro-parentheses)
-#define SCL_DETAIL_EXACT_MEMBER(qualifiers)                                                     \
-    template <typename Type, typename Hint, typename... Arguments>                              \
-        requires(!::std::is_void_v<Arguments> && ...)                                           \
-    struct exact_member<Type qualifiers, Hint, Arguments...>                                    \
-    {                                                                                           \
-        SCL_DETAIL_EXACT_DEDUCED(                                                               \
-            template <typename Result, typename Class>                                          \
-            static auto select(Result (Class::*member)(Arguments...) qualifiers)                \
-                ->decltype(member);)                                                            \
-        template <typename Class = Type>                                                        \
-        static auto select(Hint (Class::*member)(Arguments...) qualifiers) -> decltype(member); \
+#define SCL_DETAIL_EXACT_MEMBER(qualifiers)                                                         \
+    template <typename Type, typename Hint, typename... Arguments>                                  \
+        requires(!::std::is_void_v<Arguments> && ...)                                               \
+    struct exact_member<Type qualifiers, Hint, Arguments...>                                        \
+    {                                                                                               \
+        SCL_DETAIL_EXACT_DEDUCED(                                                                   \
+            template <typename Result, typename Class> static auto select(                          \
+                Result (Class::*member)(::scl::detail::exact_parameter_t<Arguments>...) qualifiers) \
+                ->decltype(member);)                                                                \
+        template <typename Class = Type>                                                            \
+        static auto select(Hint (Class::*member)(                                                   \
+            ::scl::detail::exact_parameter_t<Arguments>...) qualifiers) -> decltype(member);        \
     };
     // NOLINTEND(bugprone-macro-parentheses)
 

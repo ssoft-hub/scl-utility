@@ -10,6 +10,7 @@ namespace plain
     double multiply(double value, double factor);
     void reset();
     void bind(int & value);
+    void scan(int const * values);
     long calm(int value) noexcept;
 
     long retire(int value) = delete;
@@ -23,6 +24,7 @@ namespace plain
     SCL_FUNCTION_DETECTION(multiply)
     SCL_FUNCTION_DETECTION(reset)
     SCL_FUNCTION_DETECTION(bind)
+    SCL_FUNCTION_DETECTION(scan)
     SCL_FUNCTION_DETECTION(calm)
     SCL_FUNCTION_DETECTION(retire)
     SCL_FUNCTION_DETECTION(deduced)
@@ -169,13 +171,16 @@ TEST(TypeTraitsFunctionDetectionExact, IsFalseWhereTheArgumentsOnlyConvert)
 
 TEST(TypeTraitsFunctionDetectionExact, IgnoresTheTopLevelQualifiersOfTheArguments)
 {
-    STATIC_EXPECT_TRUE((plain::has_multiply_function_exact_v<int const, int const>));
+    STATIC_EXPECT_TRUE((plain::has_multiply_function_exact_v<int const, int volatile>));
+    STATIC_EXPECT_TRUE((plain::has_multiply_function_exact_v<int const volatile, int>));
 }
 
 TEST(TypeTraitsFunctionDetectionExact, CountsTheQualifiersBelowTheTopLevel)
 {
     STATIC_EXPECT_TRUE(plain::has_bind_function_exact_v<int &>);
     STATIC_EXPECT_FALSE(plain::has_bind_function_exact_v<int const &>);
+    STATIC_EXPECT_TRUE(plain::has_scan_function_exact_v<int const[3]>);
+    STATIC_EXPECT_FALSE(plain::has_scan_function_exact_v<int[3]>);
 }
 
 TEST(TypeTraitsFunctionDetectionExact, IsFalseForADeletedFunction)

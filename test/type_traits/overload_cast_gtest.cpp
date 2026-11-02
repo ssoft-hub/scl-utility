@@ -12,6 +12,9 @@ namespace cast_fixture
     void bind(int & value);
     void bind(int const & value);
 
+    long scan(int * values);
+    char scan(int const * values);
+
     long spread(long value);
     long spread(int value, ...);
 
@@ -64,6 +67,7 @@ using cast_fixture::bind;
 using cast_fixture::derived_qualified;
 using cast_fixture::every;
 using cast_fixture::qualified;
+using cast_fixture::scan;
 using cast_fixture::spread;
 using cast_fixture::twice;
 
@@ -85,6 +89,15 @@ TEST(TypeTraitsOverloadCast, IgnoresTheTopLevelQualifiersOfTheArguments)
 {
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<decltype(::scl::overload_cast<int const>(&twice)), int (*)(int)>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<decltype(::scl::overload_cast<int volatile>(&twice)), int (*)(int)>));
+}
+
+TEST(TypeTraitsOverloadCast, KeepsTheConstOfTheElementsOfAnArray)
+{
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<decltype(::scl::overload_cast<int const[3]>(&scan)), char (*)(int const *)>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::overload_cast<int[3]>(&scan)), long (*)(int *)>));
 }
 
 TEST(TypeTraitsOverloadCast, ChoosesNoOverloadWithAnEllipsis)
@@ -203,6 +216,9 @@ TEST(TypeTraitsMemberOverloadCast, IgnoresTheTopLevelQualifiersOfTheArguments)
     STATIC_EXPECT_TRUE((::std::is_same_v<
         decltype(::scl::member_overload_cast<qualified const, int const>(&qualified::set)),
         void (qualified::*)(int) const>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(::scl::member_overload_cast<qualified volatile, int volatile>(&qualified::set)),
+        void (qualified::*)(int) volatile>));
 }
 
 TEST(TypeTraitsMemberOverloadCast, PointsToAMemberOfTheClassThatDeclaresIt)
