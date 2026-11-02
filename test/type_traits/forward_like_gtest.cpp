@@ -2,11 +2,13 @@
 
 #include <scl/utility/type_traits/forward_like.h>
 
+#include <type_traits>
+#include <utility>
+
 using ::scl::forward_like_t;
 
-TEST(ForwardLike, BasicCvPropagation)
+TEST(TypeTraitsForwardLikeT, AddsTheCvQualifiersOfTheBaseToThoseOfTheType)
 {
-    // Non-reference Base → rvalue reference result (std::forward_like semantics)
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, double>, double &&>));
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const, double>, double const &&>));
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile, double>, double volatile &&>));
@@ -38,245 +40,38 @@ TEST(ForwardLike, BasicCvPropagation)
         forward_like_t<int const volatile, double const volatile>, double const volatile &&>));
 }
 
-TEST(ForwardLike, ReferencePropagation)
+TEST(TypeTraitsForwardLikeT, TakesTheKindOfReferenceFromTheBase)
 {
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double>, double &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double>, double &&>));
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &, double>, double const &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, double>, double const &&>));
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &, double>, double volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &&, double>, double volatile &&>));
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<forward_like_t<int const volatile &, double>, double const volatile &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double>, double &&>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, double>, double const &&>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &&, double>, double volatile &&>));
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<forward_like_t<int const volatile &&, double>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double const>, double const &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double const>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &, double const>, double const &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, double const>, double const &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &, double const>, double const volatile &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &&, double const>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile &, double const>, double const volatile &>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile &&, double const>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double volatile>, double volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double volatile>, double volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const &, double volatile>, double const volatile &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const &&, double volatile>, double const volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &, double volatile>, double volatile &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &&, double volatile>, double volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, double volatile>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, double volatile>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int &, double const volatile>, double const volatile &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int &&, double const volatile>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const &, double const volatile>, double const volatile &>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const &&, double const volatile>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile &, double const volatile>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile &&, double const volatile>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, double const volatile>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, double const volatile>, double const volatile &&>));
 }
 
-TEST(ForwardLike, ReferenceRemoving)
+TEST(TypeTraitsForwardLikeT, IgnoresTheReferenceOfTheType)
 {
-    // Existing reference on Type is stripped; ref category comes from Base.
-    // Non-reference Base → rvalue reference result.
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, double &>, double &&>));
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, double &&>, double &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const, double &>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const, double &&>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile, double &>, double volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile, double &&>, double volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const volatile, double &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const volatile, double &&>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, double const &>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, double const &&>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const, double const &>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const, double const &&>, double const &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile, double const &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile, double const &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile, double const &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile, double const &&>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, double volatile &>, double volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, double volatile &&>, double volatile &&>));
     STATIC_EXPECT_TRUE(
         (::std::is_same_v<forward_like_t<int const, double volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const, double volatile &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile, double volatile &>, double volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile, double volatile &&>, double volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile, double volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile, double volatile &&>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int, double const volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int, double const volatile &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const, double const volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const, double const volatile &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile, double const volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile, double const volatile &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile, double const volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile, double const volatile &&>, double const volatile &&>));
 }
 
-TEST(ForwardLike, ReferenceOverExistingRefOnType)
+TEST(TypeTraitsForwardLikeT, TakesTheReferenceOfTheBaseOverThatOfTheType)
 {
-    // Existing reference on Type is ignored; cvref is taken from Base.
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double &>, double &>));
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double &&>, double &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double const &>, double const &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double const &&>, double const &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double volatile &>, double volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, double volatile &&>, double volatile &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int &, double const volatile &>, double const volatile &>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int &, double const volatile &&>, double const volatile &>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &, double &>, double const &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &, double &&>, double const &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &, double const &>, double const &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &, double const &&>, double const &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const &, double volatile &>, double const volatile &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double &>, double &&>));
     STATIC_EXPECT_TRUE((
         ::std::is_same_v<forward_like_t<int const &, double volatile &&>, double const volatile &>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const &, double const volatile &>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const &, double const volatile &&>, double const volatile &>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &, double &>, double volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &, double &&>, double volatile &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &, double const &>, double const volatile &>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int volatile &, double const &&>, double const volatile &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &, double volatile &>, double volatile &>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &, double volatile &&>, double volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile &, double const volatile &>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile &, double const volatile &&>, double const volatile &>));
-
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const volatile &, double &>, double const volatile &>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile &, double &&>, double const volatile &>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile &, double const &>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, double const &&>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, double volatile &>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, double volatile &&>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, double const volatile &>, double const volatile &>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, double const volatile &&>, double const volatile &>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double &>, double &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double &&>, double &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double const &>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double const &&>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double volatile &>, double volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, double volatile &&>, double volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int &&, double const volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int &&, double const volatile &&>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, double &>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, double &&>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, double const &>, double const &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, double const &&>, double const &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const &&, double volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const &&, double volatile &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const &&, double const volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const &&, double const volatile &&>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &&, double &>, double volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &&, double &&>, double volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int volatile &&, double const &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int volatile &&, double const &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &&, double volatile &>, double volatile &&>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &&, double volatile &&>, double volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile &&, double const volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile &&, double const volatile &&>, double const volatile &&>));
-
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile &&, double &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile &&, double &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, double const &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, double const &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, double volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, double volatile &&>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, double const volatile &>, double const volatile &&>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, double const volatile &&>, double const volatile &&>));
 }
 
-TEST(ForwardLike, VoidSpecialCase)
+TEST(TypeTraitsForwardLikeT, IsVoidWithTheCvQualifiersOfBothTypesForVoid)
 {
-    // Reference is not added to void; remains void with cv qualifiers.
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, void>, void>));
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, void const>, void const>));
     STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, void volatile>, void volatile>));
@@ -357,98 +152,34 @@ TEST(ForwardLike, VoidSpecialCase)
         forward_like_t<int const volatile &, void const volatile>, void const volatile>));
 }
 
-TEST(ForwardLike, ArraysAndOtherTypes)
+namespace
 {
-    // Non-reference Base → rvalue reference to array
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, int[3]>, int (&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const, int[3]>, int const(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile, int[3]>, int volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const volatile, int[3]>, int const volatile(&&)[3]>));
+    constexpr int stored = 7;
+} // namespace
 
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, int const[3]>, int const(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const, int const[3]>, int const(&&)[3]>));
+TEST(TypeTraitsForwardLike, ReturnsTheArgumentAsForwardLikeT)
+{
+    int value = 1;
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::forward_like<int const &>(value)), int const &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<decltype(::scl::forward_like<int>(value)), int &&>));
     STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile, int const[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile, int const[3]>, int const volatile(&&)[3]>));
+        (::std::is_same_v<decltype(::scl::forward_like<int &>(::std::move(value))), int &>));
+}
 
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int, int volatile[3]>, int volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const, int volatile[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile, int volatile[3]>, int volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile, int volatile[3]>, int const volatile(&&)[3]>));
+TEST(TypeTraitsForwardLike, ReturnsAReferenceToTheSameObject)
+{
+    int value = 1;
+    int && moved = ::scl::forward_like<int>(value);
+    EXPECT_EQ(&moved, &value);
+}
 
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int, int const volatile[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const, int const volatile[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile, int const volatile[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile, int const volatile[3]>, int const volatile(&&)[3]>));
+TEST(TypeTraitsForwardLike, IsAConstantExpression)
+{
+    STATIC_EXPECT_EQ(&::scl::forward_like<int const &>(stored), &stored);
+}
 
-    // Rvalue reference Base
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, int[3]>, int (&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, int[3]>, int const(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &&, int[3]>, int volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile &&, int[3]>, int const volatile(&&)[3]>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, int const[3]>, int const(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &&, int const[3]>, int const(&&)[3]>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int volatile &&, int const[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, int const[3]>, int const volatile(&&)[3]>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &&, int volatile[3]>, int volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const &&, int volatile[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &&, int volatile[3]>, int volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, int volatile[3]>, int const volatile(&&)[3]>));
-
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int &&, int const volatile[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const &&, int const volatile[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile &&, int const volatile[3]>, int const volatile(&&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &&, int const volatile[3]>, int const volatile(&&)[3]>));
-
-    // Lvalue reference Base
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, int[3]>, int (&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &, int[3]>, int const(&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int volatile &, int[3]>, int volatile(&)[3]>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const volatile &, int[3]>, int const volatile(&)[3]>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, int const[3]>, int const(&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int const &, int const[3]>, int const(&)[3]>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &, int const[3]>, int const volatile(&)[3]>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const volatile &, int const[3]>, int const volatile(&)[3]>));
-
-    STATIC_EXPECT_TRUE((::std::is_same_v<forward_like_t<int &, int volatile[3]>, int volatile(&)[3]>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int const &, int volatile[3]>, int const volatile(&)[3]>));
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int volatile &, int volatile[3]>, int volatile(&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, int volatile[3]>, int const volatile(&)[3]>));
-
-    STATIC_EXPECT_TRUE(
-        (::std::is_same_v<forward_like_t<int &, int const volatile[3]>, int const volatile(&)[3]>));
-    STATIC_EXPECT_TRUE((
-        ::std::is_same_v<forward_like_t<int const &, int const volatile[3]>, int const volatile(&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int volatile &, int const volatile[3]>, int const volatile(&)[3]>));
-    STATIC_EXPECT_TRUE((::std::is_same_v<
-        forward_like_t<int const volatile &, int const volatile[3]>, int const volatile(&)[3]>));
+TEST(TypeTraitsForwardLike, IsNoexcept)
+{
+    int value = 1;
+    STATIC_EXPECT_TRUE(noexcept(::scl::forward_like<int>(value)));
 }

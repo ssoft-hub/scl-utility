@@ -1,285 +1,162 @@
 #include <gtest_utils.h>
 
+#include <scl/utility/type_traits/detection.h>
 #include <scl/utility/type_traits/member_like.h>
+
+#include <type_traits>
 
 namespace
 {
-    struct X
+    struct gauge
     {
-        int a = 0;
-        int const b = 1;
-
-        // Methods for invocation tests
-        int f0(int v) { return v; }
-        int f1(int v) const { return v; }
-        int f2(int v) & { return v; }
-        int f3(int v) const & { return v; }
-        int f4(int v) && { return v; }
-        int f5(int v) const && noexcept { return v; }
+        int label() &;
+        long label() const &;
+        char label() &&;
     };
 
-    union U
+    union variant
     {
-        int i;
-
-        int get() const & { return i; }
+        int number;
     };
 
+    template <typename Pointer>
+    concept casts_to = requires { static_cast<Pointer>(&gauge::label); };
+
+    template <typename Type, typename Signature>
+    using member_function_like_operation = ::scl::member_function_like_t<Type, Signature>;
 } // namespace
 
-// a union is accepted as the class of the member function
-static_assert(::std::is_same_v<::scl::member_function_like_t<U const &, int()>, int (U::*)() const &>);
-static_assert(::std::is_same_v<::scl::member_like_t<U &&, int() noexcept>, int (U::*)() && noexcept>);
-
-// no ref-qualifier, no noexcept
-static_assert(::std::is_same_v<::scl::member_function_like_t<X, void()>, void (X::*)()>);
-static_assert(::std::is_same_v<::scl::member_function_like_t<X const, void()>, void (X::*)() const>);
-static_assert(::std::is_same_v<::scl::member_function_like_t<X volatile, void()>, void (X::*)() volatile>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const volatile, void()>, void (X::*)() const volatile>);
-
-// lvalue-qualified (&), no noexcept
-static_assert(::std::is_same_v<::scl::member_function_like_t<X &, void()>, void (X::*)() &>);
-static_assert(::std::is_same_v<::scl::member_function_like_t<X const &, void()>, void (X::*)() const &>);
-static_assert(
-    ::std::is_same_v<::scl::member_function_like_t<X volatile &, void()>, void (X::*)() volatile &>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const volatile &, void()>, void (X::*)() const volatile &>);
-
-// rvalue-qualified (&&), no noexcept
-static_assert(::std::is_same_v<::scl::member_function_like_t<X &&, void()>, void (X::*)() &&>);
-static_assert(::std::is_same_v<::scl::member_function_like_t<X const &&, void()>, void (X::*)() const &&>);
-static_assert(
-    ::std::is_same_v<::scl::member_function_like_t<X volatile &&, void()>, void (X::*)() volatile &&>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const volatile &&, void()>, void (X::*)() const volatile &&>);
-
-// no ref-qualifier, with noexcept
-static_assert(::std::is_same_v<::scl::member_function_like_t<X, void() noexcept>, void (X::*)() noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const, void() noexcept>, void (X::*)() const noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X volatile, void() noexcept>, void (X::*)() volatile noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const volatile, void() noexcept>, void (X::*)() const volatile noexcept>);
-
-// lvalue-qualified (&), with noexcept
-static_assert(
-    ::std::is_same_v<::scl::member_function_like_t<X &, void() noexcept>, void (X::*)() & noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const &, void() noexcept>, void (X::*)() const & noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X volatile &, void() noexcept>, void (X::*)() volatile & noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const volatile &, void() noexcept>,
-    void (X::*)() const volatile & noexcept>);
-
-// rvalue-qualified (&&), with noexcept
-static_assert(
-    ::std::is_same_v<::scl::member_function_like_t<X &&, void() noexcept>, void (X::*)() && noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const &&, void() noexcept>, void (X::*)() const && noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X volatile &&, void() noexcept>, void (X::*)() volatile && noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const volatile &&, void() noexcept>,
-    void (X::*)() const volatile && noexcept>);
-
-// with arguments retained
-static_assert(
-    ::std::is_same_v<::scl::member_function_like_t<X const &, int(short)>, int (X::*)(short) const &>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X volatile &&, void(double)>, void (X::*)(double) volatile &&>);
-static_assert(::std::is_same_v<
-    ::scl::member_function_like_t<X const volatile, void(int) noexcept>,
-    void (X::*)(int) const volatile noexcept>);
-
-// Object qualifiers do not affect the pointer type
-static_assert(::std::is_same_v<::scl::member_object_like_t<X, int>, int X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X const, int>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X volatile, int>, int volatile X::*>);
-static_assert(
-    ::std::is_same_v<::scl::member_object_like_t<X const volatile, int>, int const volatile X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X &, int>, int X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X const &, int>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X volatile &, int>, int volatile X::*>);
-static_assert(
-    ::std::is_same_v<::scl::member_object_like_t<X const volatile &, int>, int const volatile X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X &&, int>, int X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X const &&, int>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X volatile &&, int>, int volatile X::*>);
-static_assert(
-    ::std::is_same_v<::scl::member_object_like_t<X const volatile &&, int>, int const volatile X::*>);
-
-// Member's own cv is preserved in the pointer type
-static_assert(::std::is_same_v<::scl::member_object_like_t<X, int const>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_object_like_t<X, int volatile>, int volatile X::*>);
-static_assert(
-    ::std::is_same_v<::scl::member_object_like_t<X, int const volatile>, int const volatile X::*>);
-
-// Function members: no ref-qualifier, no noexcept
-static_assert(::std::is_same_v<::scl::member_like_t<X, void()>, void (X::*)()>);
-static_assert(::std::is_same_v<::scl::member_like_t<X const, void()>, void (X::*)() const>);
-static_assert(::std::is_same_v<::scl::member_like_t<X volatile, void()>, void (X::*)() volatile>);
-static_assert(
-    ::std::is_same_v<::scl::member_like_t<X const volatile, void()>, void (X::*)() const volatile>);
-
-// Function members: lvalue-qualified (&), no noexcept
-static_assert(::std::is_same_v<::scl::member_like_t<X &, void()>, void (X::*)() &>);
-static_assert(::std::is_same_v<::scl::member_like_t<X const &, void()>, void (X::*)() const &>);
-static_assert(::std::is_same_v<::scl::member_like_t<X volatile &, void()>, void (X::*)() volatile &>);
-static_assert(
-    ::std::is_same_v<::scl::member_like_t<X const volatile &, void()>, void (X::*)() const volatile &>);
-
-// Function members: rvalue-qualified (&&), no noexcept
-static_assert(::std::is_same_v<::scl::member_like_t<X &&, void()>, void (X::*)() &&>);
-static_assert(::std::is_same_v<::scl::member_like_t<X const &&, void()>, void (X::*)() const &&>);
-static_assert(::std::is_same_v<::scl::member_like_t<X volatile &&, void()>, void (X::*)() volatile &&>);
-static_assert(
-    ::std::is_same_v<::scl::member_like_t<X const volatile &&, void()>, void (X::*)() const volatile &&>);
-
-// Function members: no ref-qualifier, with noexcept
-static_assert(::std::is_same_v<::scl::member_like_t<X, void() noexcept>, void (X::*)() noexcept>);
-static_assert(
-    ::std::is_same_v<::scl::member_like_t<X const, void() noexcept>, void (X::*)() const noexcept>);
-static_assert(
-    ::std::is_same_v<::scl::member_like_t<X volatile, void() noexcept>, void (X::*)() volatile noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_like_t<X const volatile, void() noexcept>, void (X::*)() const volatile noexcept>);
-
-// Function members: lvalue-qualified (&), with noexcept
-static_assert(::std::is_same_v<::scl::member_like_t<X &, void() noexcept>, void (X::*)() & noexcept>);
-static_assert(
-    ::std::is_same_v<::scl::member_like_t<X const &, void() noexcept>, void (X::*)() const & noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_like_t<X volatile &, void() noexcept>, void (X::*)() volatile & noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_like_t<X const volatile &, void() noexcept>, void (X::*)() const volatile & noexcept>);
-
-// Function members: rvalue-qualified (&&), with noexcept
-static_assert(::std::is_same_v<::scl::member_like_t<X &&, void() noexcept>, void (X::*)() && noexcept>);
-static_assert(
-    ::std::is_same_v<::scl::member_like_t<X const &&, void() noexcept>, void (X::*)() const && noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_like_t<X volatile &&, void() noexcept>, void (X::*)() volatile && noexcept>);
-static_assert(::std::is_same_v<
-    ::scl::member_like_t<X const volatile &&, void() noexcept>, void (X::*)() const volatile && noexcept>);
-
-// Function members: with arguments retained
-static_assert(::std::is_same_v<::scl::member_like_t<X const &, int(short)>, int (X::*)(short) const &>);
-static_assert(
-    ::std::is_same_v<::scl::member_like_t<X volatile &&, void(double)>, void (X::*)(double) volatile &&>);
-static_assert(::std::is_same_v<
-    ::scl::member_like_t<X const volatile, void(int) noexcept>, void (X::*)(int) const volatile noexcept>);
-
-// Data members: object qualifiers affect member type cv
-static_assert(::std::is_same_v<::scl::member_like_t<X, int>, int X::*>);
-static_assert(::std::is_same_v<::scl::member_like_t<X const, int>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_like_t<X volatile, int>, int volatile X::*>);
-static_assert(::std::is_same_v<::scl::member_like_t<X const volatile, int>, int const volatile X::*>);
-static_assert(::std::is_same_v<::scl::member_like_t<X &, int>, int X::*>);
-static_assert(::std::is_same_v<::scl::member_like_t<X &&, int>, int X::*>);
-
-// Data members: member's own cv preserved
-static_assert(::std::is_same_v<::scl::member_like_t<X, int const>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_like_t<X, int volatile>, int volatile X::*>);
-static_assert(::std::is_same_v<::scl::member_like_t<X, int const volatile>, int const volatile X::*>);
-
-TEST(MemberFunctionLike, Invocation_LValueQualified)
+TEST(TypeTraitsMemberFunctionLikeT, TakesTheCvQualifiersFromTheType)
 {
-    // X::f2 is int(int) &; requires lvalue object
-    ::scl::member_function_like_t<X &, int(int)> pmf = &X::f2;
-    X x;
-    EXPECT_EQ((x.*pmf)(5), 5);
-
-    // The next line would fail to compile (rvalue object with &-qualified method):
-    // EXPECT_EQ((std::move(x).*pmf)(5), 5);
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_function_like_t<gauge, void()>, void (gauge::*)()>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::member_function_like_t<gauge const, void()>, void (gauge::*)() const>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge volatile, void()>, void (gauge::*)() volatile>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge const volatile, void()>, void (gauge::*)() const volatile>));
 }
 
-TEST(MemberFunctionLike, Invocation_ConstLValueQualified)
+TEST(TypeTraitsMemberFunctionLikeT, TakesTheRefQualifierFromTheReferenceOfTheType)
 {
-    // X::f3 is int(int) const &; works with const lvalue
-    ::scl::member_function_like_t<X const &, int(int)> pmf = &X::f3;
-    X const cx{};
-    EXPECT_EQ((cx.*pmf)(7), 7);
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_function_like_t<gauge &, void()>, void (gauge::*)() &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge const &, void()>, void (gauge::*)() const &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge volatile &, void()>, void (gauge::*)() volatile &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge const volatile &, void()>, void (gauge::*)() const volatile &>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_function_like_t<gauge &&, void()>, void (gauge::*)() &&>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge const &&, void()>, void (gauge::*)() const &&>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge volatile &&, void()>, void (gauge::*)() volatile &&>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge const volatile &&, void()>,
+        void (gauge::*)() const volatile &&>));
 }
 
-TEST(MemberFunctionLike, Invocation_RValueQualified)
+TEST(TypeTraitsMemberFunctionLikeT, KeepsTheNoexceptOfTheSignature)
 {
-    // X::f4 is int(int) &&; requires rvalue object
-    ::scl::member_function_like_t<X &&, int(int)> pmf = &X::f4;
-    X x;
-    EXPECT_EQ((std::move(x).*pmf)(9), 9);
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge, void() noexcept>, void (gauge::*)() noexcept>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge const, void() noexcept>, void (gauge::*)() const noexcept>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge volatile &, void() noexcept>,
+        void (gauge::*)() volatile & noexcept>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v < ::scl::member_function_like_t<gauge const volatile &&, void() noexcept>,
+        void (gauge::*)() const volatile && noexcept >));
 }
 
-TEST(MemberFunctionLike, Invocation_RValueQualified_Noexcept)
+TEST(TypeTraitsMemberFunctionLikeT, KeepsTheResultAndTheParametersOfTheSignature)
 {
-    // X::f5 is int(int) const && noexcept
-    ::scl::member_function_like_t<X const &&, int(int) noexcept> pmf = &X::f5;
-    X const cx{};
-    EXPECT_EQ((std::move(cx).*pmf)(11), 11);
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<gauge const &, int(short)>, int (gauge::*)(short) const &>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v < ::scl::member_function_like_t<gauge volatile &&, long(double, char) noexcept>,
+        long (gauge::*)(double, char) volatile && noexcept >));
 }
 
-TEST(MemberObjectLike, AccessThroughPointer)
+TEST(TypeTraitsMemberFunctionLikeT, AcceptsAUnion)
 {
-    X x;
-    x.a = 42;
-    ::scl::member_object_like_t<X, int> pm = &X::a;
-    EXPECT_EQ(x.*pm, 42);
-    x.*pm = 7;
-    EXPECT_EQ(x.a, 7);
-    X * px = &x;
-    EXPECT_EQ(px->*pm, 7);
-
-    X const cx{};
-    ::scl::member_object_like_t<X const, int> pb = &X::b;
-    EXPECT_EQ(cx.*pb, 1);
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_function_like_t<variant const &, int()>, int (variant::*)() const &>));
 }
 
-TEST(MemberLike, Invocation_LValueQualified)
+TEST(TypeTraitsMemberFunctionLikeT, ChoosesTheOverloadOfTheQualifiersOfTheType)
 {
-    // X::f2 is int(int) &; requires lvalue object
-    ::scl::member_like_t<X &, int(int)> pmf = &X::f2;
-    X x;
-    EXPECT_EQ((x.*pmf)(5), 5);
+    STATIC_EXPECT_TRUE((casts_to<::scl::member_function_like_t<gauge const &, long()>>));
+    STATIC_EXPECT_TRUE((casts_to<::scl::member_function_like_t<gauge &&, char()>>));
+    STATIC_EXPECT_FALSE((casts_to<::scl::member_function_like_t<gauge const, long()>>));
 }
 
-TEST(MemberLike, Invocation_ConstLValueQualified)
+TEST(TypeTraitsMemberFunctionLikeT, FailsSubstitutionForAnEllipsisOrAQualifiedFunctionType)
 {
-    // X::f3 is int(int) const &; works with const lvalue
-    ::scl::member_like_t<X const &, int(int)> pmf = &X::f3;
-    X const cx{};
-    EXPECT_EQ((cx.*pmf)(7), 7);
+    STATIC_EXPECT_TRUE((::scl::is_detected_v<member_function_like_operation, gauge, void(int)>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_v<member_function_like_operation, gauge, void(int, ...)>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_v<member_function_like_operation, gauge, void() const>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_v<member_function_like_operation, gauge, void() &>));
 }
 
-TEST(MemberLike, Invocation_RValueQualified)
+TEST(TypeTraitsMemberObjectLikeT, AddsTheCvQualifiersOfTheType)
 {
-    // X::f4 is int(int) &&; requires rvalue object
-    ::scl::member_like_t<X &&, int(int)> pmf = &X::f4;
-    X x;
-    EXPECT_EQ((std::move(x).*pmf)(9), 9);
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::member_object_like_t<gauge, int>, int gauge::*>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_object_like_t<gauge const, int>, int const gauge::*>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_object_like_t<gauge volatile, int>, int volatile gauge::*>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_object_like_t<gauge const volatile, int>, int const volatile gauge::*>));
 }
 
-TEST(MemberLike, Invocation_RValueQualified_Noexcept)
+TEST(TypeTraitsMemberObjectLikeT, IgnoresTheReferenceOfTheType)
 {
-    // X::f5 is int(int) const && noexcept
-    ::scl::member_like_t<X const &&, int(int) noexcept> pmf = &X::f5;
-    X const cx{};
-    EXPECT_EQ((std::move(cx).*pmf)(11), 11);
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::member_object_like_t<gauge &, int>, int gauge::*>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_object_like_t<gauge const &, int>, int const gauge::*>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::member_object_like_t<gauge volatile &&, int>, int volatile gauge::*>));
 }
 
-TEST(MemberLike, Object_AccessThroughPointer)
+TEST(TypeTraitsMemberObjectLikeT, KeepsTheCvQualifiersOfTheMember)
 {
-    X x;
-    x.a = 42;
-    ::scl::member_like_t<X, int> pm = &X::a;
-    EXPECT_EQ(x.*pm, 42);
-    x.*pm = 7;
-    EXPECT_EQ(x.a, 7);
-    X * px = &x;
-    EXPECT_EQ(px->*pm, 7);
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_object_like_t<gauge, int const>, int const gauge::*>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_object_like_t<gauge volatile, int const>, int const volatile gauge::*>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_object_like_t<gauge const, int const>, int const gauge::*>));
+}
 
-    X const cx{};
-    ::scl::member_like_t<X const, int> pb = &X::b;
-    EXPECT_EQ(cx.*pb, 1);
+TEST(TypeTraitsMemberObjectLikeT, AcceptsAUnion)
+{
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_object_like_t<variant const &, int>, int const variant::*>));
+}
+
+TEST(TypeTraitsMemberLikeT, IsMemberFunctionLikeTForAFunctionType)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::member_like_t<gauge const &, int(short)>, int (gauge::*)(short) const &>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v < ::scl::member_like_t<gauge &&, void() noexcept>,
+        void (gauge::*)() && noexcept >));
+}
+
+TEST(TypeTraitsMemberLikeT, IsMemberObjectLikeTForAnObjectType)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::member_like_t<gauge const &, int>, int const gauge::*>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_like_t<gauge, int volatile>, int volatile gauge::*>));
+}
+
+TEST(TypeTraitsMemberLikeT, PointsToADataMemberForAPointerToAFunction)
+{
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::member_like_t<gauge, void (*)(int)>, void (*gauge::*)(int)>));
 }

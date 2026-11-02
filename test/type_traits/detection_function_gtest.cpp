@@ -2,14 +2,32 @@
 
 #include <scl/utility/type_traits/detection/function.h>
 
-namespace
-{
-    void void_func() {}
-    int multiply(int a, int b) { return a * b; }
+#include <type_traits>
 
-    SCL_FUNCTION_DETECTION(void_func)
+namespace plain
+{
+    int multiply(int value, int factor);
+    double multiply(double value, double factor);
+    void reset();
+    void bind(int & value);
+    long calm(int value) noexcept;
+
+    long retire(int value) = delete;
+    long retire(long value);
+
+    inline auto deduced(int value) { return value * 2L; }
+
+    template <typename Type>
+    Type single(Type value);
+
     SCL_FUNCTION_DETECTION(multiply)
-} // namespace
+    SCL_FUNCTION_DETECTION(reset)
+    SCL_FUNCTION_DETECTION(bind)
+    SCL_FUNCTION_DETECTION(calm)
+    SCL_FUNCTION_DETECTION(retire)
+    SCL_FUNCTION_DETECTION(deduced)
+    SCL_FUNCTION_DETECTION(single)
+} // namespace plain
 
 namespace overloads
 {
@@ -20,144 +38,216 @@ namespace overloads
     Type echo(Type value);
     long echo(int value);
 
+    template <typename Type>
+    Type gather(Type value);
+    long gather(int value);
+    char gather(int && value);
+
     long settle(int value) noexcept;
     char settle(int && value);
 
-    long retire(int value) = delete;
-    long retire(long value);
-
     SCL_FUNCTION_DETECTION(pick)
     SCL_FUNCTION_DETECTION(echo)
+    SCL_FUNCTION_DETECTION(gather)
     SCL_FUNCTION_DETECTION(settle)
-    SCL_FUNCTION_DETECTION(retire)
 } // namespace overloads
 
-/**
- * @test Verify detection of global functions with correct arguments.
- */
-TEST(FunctionDetectionTest, PositiveCases)
+namespace shapes
 {
-    // No arguments
-    STATIC_EXPECT_TRUE(has_void_func_function_v<>);
-    STATIC_EXPECT_TRUE(has_void_func_function_exact_v<>);
+    struct square
+    {};
 
-    // Multiple arguments
-    STATIC_EXPECT_TRUE((has_multiply_function_v<int, int>));
-    STATIC_EXPECT_TRUE((has_multiply_function_v<double, double>));
-    STATIC_EXPECT_TRUE((has_multiply_function_exact_v<int, int>));
+    struct circle
+    {
+        friend double visit(circle, double factor) { return factor; }
+    };
+} // namespace shapes
 
-    // Type verification
-    using RetType = multiply_function_t<int, int>;
-    static_assert(std::is_same_v<RetType, int>);
-}
-
-/**
- * @test Verify that traits return false for incompatible arguments (SFINAE).
- */
-TEST(FunctionDetectionTest, NegativeCases)
+namespace later
 {
-    // Wrong number of arguments
-    STATIC_EXPECT_FALSE(has_void_func_function_v<int>);
-    STATIC_EXPECT_FALSE(has_multiply_function_v<int>);
+    void visit();
 
-    // Incompatible argument types
-    STATIC_EXPECT_FALSE((has_multiply_function_v<int, char const *>));
+    SCL_FUNCTION_DETECTION(visit)
+} // namespace later
 
-    // Exact detection should also fail for mismatched types
-    STATIC_EXPECT_FALSE((has_multiply_function_exact_v<double, double>));
-    STATIC_EXPECT_FALSE(has_void_func_function_exact_v<double>);
-}
-
-#if !defined(_MSC_VER) || defined(__clang__)
-/**
- * @test Verify that the exact form finds each overload where the plain call is ambiguous.
- */
-TEST(FunctionDetectionTest, ExactBesideAmbiguousCall)
+namespace shapes
 {
-    STATIC_EXPECT_FALSE(overloads::has_pick_function_v<int>);
-    STATIC_EXPECT_TRUE(overloads::has_pick_function_exact_v<int>);
-    STATIC_EXPECT_TRUE(overloads::has_pick_function_exact_v<int &&>);
-    STATIC_EXPECT_FALSE(overloads::has_pick_function_exact_v<long>);
-    STATIC_EXPECT_FALSE(overloads::has_pick_function_exact_v<int &>);
-    STATIC_EXPECT_TRUE((std::is_same_v<overloads::pick_function_exact_t<int>, long>));
-    STATIC_EXPECT_TRUE((std::is_same_v<overloads::pick_function_exact_t<int &&>, char>));
-}
-#endif
+    long visit(square shape);
+} // namespace shapes
 
-/**
- * @test Verify the exact form for an overload set holding a function template.
- */
-TEST(FunctionDetectionTest, ExactBesideTemplate)
+namespace callables
 {
-    STATIC_EXPECT_TRUE(overloads::has_echo_function_exact_v<int>);
-    STATIC_EXPECT_TRUE((std::is_same_v<overloads::echo_function_exact_t<int>, long>));
-    STATIC_EXPECT_TRUE(overloads::has_echo_function_exact_v<double>);
-}
+    struct doubler
+    {
+        int operator()(int value) const;
+    };
 
-#if !defined(_MSC_VER) || defined(__clang__)
-/**
- * @test Verify the exact form for a noexcept overload beside an ambiguous plain call.
- */
-TEST(FunctionDetectionTest, ExactNoexceptBesideAmbiguousCall)
+    inline constexpr doubler twice{};
+    inline constexpr int (*halve)(int) = nullptr;
+
+    SCL_FUNCTION_DETECTION(twice)
+    SCL_FUNCTION_DETECTION(halve)
+} // namespace callables
+
+namespace scoped
 {
-    STATIC_EXPECT_TRUE(overloads::has_settle_function_exact_v<int>);
-    STATIC_EXPECT_TRUE(overloads::has_settle_function_exact_v<int &&>);
-    STATIC_EXPECT_TRUE((std::is_same_v<overloads::settle_function_exact_t<int>, long>));
-}
-#endif
+    int multiply(int value, int factor);
 
-/**
- * @test Verify that the exact form does not find a deleted function.
- */
-TEST(FunctionDetectionTest, ExactDeleted)
-{
-    STATIC_EXPECT_FALSE(overloads::has_retire_function_exact_v<int>);
-    STATIC_EXPECT_TRUE(overloads::has_retire_function_exact_v<long>);
-}
-
-/**
- * @test Verify that a void argument type gives false rather than a build error.
- */
-TEST(FunctionDetectionTest, ExactVoidArgument)
-{
-    STATIC_EXPECT_FALSE(overloads::has_pick_function_exact_v<void>);
-    STATIC_EXPECT_FALSE(has_void_func_function_exact_v<void>);
-}
-
-TEST(FunctionDetectionTest, DetectionBeforeDefinition)
-{
-    // Found via marker
-    STATIC_EXPECT_TRUE((has_multiply_function_exact_v<int, int>));
-    STATIC_EXPECT_FALSE((has_multiply_function_exact_v<double, double>));
-}
-
-int multiply(double a, double b) { return static_cast<int>(a * b); }
-
-namespace test
-{
-    SCL_FUNCTION_DETECTION(multiply)
-} // namespace test
-
-TEST(FunctionDetectionTest, DetectionAfterDefinition)
-{
-    // Found via AdlType marker
-    STATIC_EXPECT_TRUE((test::has_multiply_function_exact_v<int, int>));
-    STATIC_EXPECT_TRUE((test::has_multiply_function_exact_v<double, double>));
-}
-
-namespace
-{
-    struct function_traits
+    struct class_traits
     {
         SCL_FUNCTION_DETECTION(multiply)
     };
-} // namespace
 
-TEST(FunctionDetectionTest, ClassScope)
+    double multiply(double value, double factor);
+} // namespace scoped
+
+TEST(TypeTraitsFunctionDetection, IsTrueWhereTheCallCompiles)
 {
-    STATIC_EXPECT_TRUE((function_traits::has_multiply_function_v<int, int>));
-    STATIC_EXPECT_TRUE((function_traits::has_multiply_function_exact_v<int, int>));
-    STATIC_EXPECT_FALSE((function_traits::has_multiply_function_exact_v<double, double>));
-    STATIC_EXPECT_FALSE(function_traits::has_multiply_function_v<int>);
-    STATIC_EXPECT_TRUE((::std::is_same_v<function_traits::multiply_function_t<int, int>, int>));
+    STATIC_EXPECT_TRUE((plain::has_multiply_function_v<int, int>));
+    STATIC_EXPECT_TRUE(plain::has_reset_function_v<>);
+}
+
+TEST(TypeTraitsFunctionDetection, ConvertsTheArgumentsImplicitly)
+{
+    STATIC_EXPECT_TRUE((plain::has_multiply_function_v<int, long>));
+}
+
+TEST(TypeTraitsFunctionDetection, IsFalseWhereTheCallDoesNotCompile)
+{
+    STATIC_EXPECT_FALSE(plain::has_multiply_function_v<int>);
+    STATIC_EXPECT_FALSE((plain::has_multiply_function_v<int, char const *>));
+    STATIC_EXPECT_FALSE(plain::has_reset_function_v<int>);
+}
+
+TEST(TypeTraitsFunctionDetection, ResultIsTheTypeOfTheCall)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<plain::multiply_function_t<double, double>, double>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<plain::reset_function_t<>, void>));
+}
+
+TEST(TypeTraitsFunctionDetection, ResultIsNonesuchWhereTheCallDoesNotCompile)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<plain::multiply_function_t<int>, ::scl::nonesuch>));
+}
+
+TEST(TypeTraitsFunctionDetection, FindsThroughTheArgumentsAFunctionDeclaredLater)
+{
+    STATIC_EXPECT_TRUE(later::has_visit_function_v<shapes::square>);
+    STATIC_EXPECT_TRUE((::std::is_same_v<later::visit_function_t<shapes::square>, long>));
+}
+
+TEST(TypeTraitsFunctionDetection, FindsAFriendDefinedInAClass)
+{
+    STATIC_EXPECT_TRUE((later::has_visit_function_v<shapes::circle, double>));
+}
+
+TEST(TypeTraitsFunctionDetection, CallsAVariableOfACallableType)
+{
+    STATIC_EXPECT_TRUE(callables::has_twice_function_v<int>);
+    STATIC_EXPECT_TRUE(callables::has_halve_function_v<int>);
+}
+
+TEST(TypeTraitsFunctionDetection, ExpandsInAClass)
+{
+    STATIC_EXPECT_TRUE((scoped::class_traits::has_multiply_function_v<int, int>));
+    STATIC_EXPECT_TRUE((scoped::class_traits::has_multiply_function_exact_v<int, int>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<scoped::class_traits::multiply_function_t<int, int>, int>));
+}
+
+TEST(TypeTraitsFunctionDetectionExact, IsTrueForExactlyTheParameterTypes)
+{
+    STATIC_EXPECT_TRUE((plain::has_multiply_function_exact_v<int, int>));
+    STATIC_EXPECT_TRUE((plain::has_multiply_function_exact_v<double, double>));
+    STATIC_EXPECT_TRUE(plain::has_reset_function_exact_v<>);
+}
+
+TEST(TypeTraitsFunctionDetectionExact, IsFalseWhereTheArgumentsOnlyConvert)
+{
+    STATIC_EXPECT_FALSE((plain::has_multiply_function_exact_v<int, long>));
+    STATIC_EXPECT_FALSE(plain::has_reset_function_exact_v<int>);
+}
+
+TEST(TypeTraitsFunctionDetectionExact, IgnoresTheTopLevelQualifiersOfTheArguments)
+{
+    STATIC_EXPECT_TRUE((plain::has_multiply_function_exact_v<int const, int const>));
+}
+
+TEST(TypeTraitsFunctionDetectionExact, CountsTheQualifiersBelowTheTopLevel)
+{
+    STATIC_EXPECT_TRUE(plain::has_bind_function_exact_v<int &>);
+    STATIC_EXPECT_FALSE(plain::has_bind_function_exact_v<int const &>);
+}
+
+TEST(TypeTraitsFunctionDetectionExact, IsFalseForADeletedFunction)
+{
+    STATIC_EXPECT_FALSE(plain::has_retire_function_exact_v<int>);
+    STATIC_EXPECT_TRUE(plain::has_retire_function_exact_v<long>);
+}
+
+TEST(TypeTraitsFunctionDetectionExact, IsFalseForAFunctionFoundOnlyThroughTheArguments)
+{
+    STATIC_EXPECT_FALSE(later::has_visit_function_exact_v<shapes::square>);
+    STATIC_EXPECT_FALSE((later::has_visit_function_exact_v<shapes::circle, double>));
+}
+
+TEST(TypeTraitsFunctionDetectionExact, IsFalseForAFunctionDeclaredAfterTheExpansion)
+{
+    STATIC_EXPECT_FALSE((scoped::class_traits::has_multiply_function_exact_v<double, double>));
+}
+
+TEST(TypeTraitsFunctionDetectionExact, IsFalseForAVariableOfACallableType)
+{
+    STATIC_EXPECT_FALSE(callables::has_twice_function_exact_v<int>);
+    STATIC_EXPECT_FALSE(callables::has_halve_function_exact_v<int>);
+}
+
+TEST(TypeTraitsFunctionDetectionExact, ResultIsTheResultTypeOfTheFunctionFound)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<plain::multiply_function_exact_t<double, double>, double>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<plain::multiply_function_exact_t<int, long>, ::scl::nonesuch>));
+}
+
+TEST(TypeTraitsFunctionDetectionExact, FindsAFunctionWithADeducedResultType)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<plain::deduced_function_exact_t<int>, long>));
+}
+
+TEST(TypeTraitsFunctionDetectionExact, FindsASpecializationOfAFunctionTemplate)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<plain::single_function_exact_t<double>, double>));
+}
+
+TEST(TypeTraitsFunctionDetectionExact, FindsANoexceptFunction)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<plain::calm_function_exact_t<int>, long>));
+}
+
+#if !defined(_MSC_VER) || defined(__clang__)
+TEST(TypeTraitsFunctionDetectionExact, FindsEachOverloadBesideAnAmbiguousPlainCall)
+{
+    STATIC_EXPECT_FALSE(overloads::has_pick_function_v<int>);
+    STATIC_EXPECT_TRUE((::std::is_same_v<overloads::pick_function_exact_t<int>, long>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<overloads::pick_function_exact_t<int &&>, char>));
+    STATIC_EXPECT_FALSE(overloads::has_pick_function_exact_v<int &>);
+    STATIC_EXPECT_TRUE((::std::is_same_v<overloads::settle_function_exact_t<int>, long>));
+}
+#else
+TEST(TypeTraitsFunctionDetectionExact, IsFalseBesideAnAmbiguousPlainCallOnMsvc)
+{
+    STATIC_EXPECT_FALSE(overloads::has_pick_function_v<int>);
+    STATIC_EXPECT_FALSE(overloads::has_pick_function_exact_v<int>);
+    STATIC_EXPECT_FALSE(overloads::has_settle_function_exact_v<int>);
+}
+#endif
+
+TEST(TypeTraitsFunctionDetectionExact, TakesTheOverloadOfThePlainCallBesideAFunctionTemplate)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<overloads::echo_function_exact_t<int>, long>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<overloads::echo_function_exact_t<double>, double>));
+}
+
+TEST(TypeTraitsFunctionDetectionExact, IsFalseBesideAFunctionTemplateWhereThePlainCallIsAmbiguous)
+{
+    STATIC_EXPECT_FALSE(overloads::has_gather_function_v<int>);
+    STATIC_EXPECT_FALSE(overloads::has_gather_function_exact_v<int>);
 }
