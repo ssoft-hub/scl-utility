@@ -2,8 +2,7 @@
 
 /**
  * @file
- * @brief Properties of a callable type at compile time: its function type, result, parameters,
- *        class and qualifiers.
+ * @brief The function type, result, parameters, class and qualifiers of a callable type.
  * @ingroup scl_utility_type_traits
  */
 
@@ -92,11 +91,10 @@ namespace scl::detail
         using with_object = ::scl::detail::callable_signature<Other, Function>;
     };
 
-    // A function type with a calling convention other than the default matches none of the shapes.
+    // A function type with a calling convention other than the default matches none of the
+    // shapes.
     template <typename Function>
-    concept plain_function = requires { typename ::scl::detail::function_parts<Function>::type; };
-
-    template <::scl::detail::plain_function Function>
+        requires requires { typename ::scl::detail::function_parts<Function>::type; }
     struct signature<Function *> : ::scl::detail::callable_signature<void, Function>
     {};
 
@@ -159,14 +157,11 @@ namespace scl::detail
     template <typename Object, typename Callable>
     using object_like_t = ::scl::detail::object_like<Object, Callable>::type;
 
-    template <typename Pointer>
-    concept member_signature = requires { typename ::scl::detail::signature<Pointer>::object_type; };
-
-    // A static member function reached through an object is an lvalue, whose address can be taken;
-    // any other member function is a prvalue usable only in a call ([expr.ref]).
-    template <typename Pointer, typename Callable>
-    concept explicit_object_pointer = ::std::is_pointer_v<Pointer> &&
-        !requires(Callable & callable) { &callable.operator(); };
+    // A static member function reached through an object is an lvalue, whose address can be
+    // taken; any other member function is a prvalue usable only in a call ([expr.ref]).
+    template <typename Callable>
+    inline constexpr bool call_operator_addressable_v = requires(
+        Callable & callable) { &callable.operator(); };
 
     template <typename Pointer>
     struct explicit_object_signature
@@ -197,21 +192,21 @@ namespace scl::detail
     struct call_operator_signature : ::scl::detail::signature<Pointer>
     {};
 
-    template <typename Callable, ::scl::detail::member_signature Pointer>
+    template <typename Callable, typename Pointer>
+        requires requires { typename ::scl::detail::signature<Pointer>::object_type; }
     struct call_operator_signature<Callable, Pointer>
         : ::scl::detail::signature<Pointer>::template with_object<::scl::detail::object_like_t<
               typename ::scl::detail::signature<Pointer>::object_type, Callable>>
     {};
 
-    template <typename Callable, ::scl::detail::explicit_object_pointer<Callable> Pointer>
+    template <typename Callable, typename Pointer>
+        requires(::std::is_pointer_v<Pointer> && !::scl::detail::call_operator_addressable_v<Callable>)
     struct call_operator_signature<Callable, Pointer> : ::scl::detail::explicit_object_signature<Pointer>
     {};
 
     template <typename Callable>
-    concept call_operator_class = (::std::is_class_v<Callable> || ::std::is_union_v<Callable>) &&
-        requires { &Callable::operator(); };
-
-    template <::scl::detail::call_operator_class Callable>
+        requires(::std::is_class_v<Callable> || ::std::is_union_v<Callable>) &&
+        requires { &Callable::operator(); }
     struct signature<Callable>
         : ::scl::detail::call_operator_signature<Callable, decltype(&Callable::operator())>
     {};
@@ -220,18 +215,17 @@ namespace scl::detail
     using signature_of = ::scl::detail::signature<::std::decay_t<Callable>>;
 
     template <typename Callable>
-    concept has_signature = requires { typename ::scl::detail::signature_of<Callable>::type; };
+    inline constexpr bool has_signature_v =
+        requires { typename ::scl::detail::signature_of<Callable>::type; };
 
     template <typename Callable, ::std::size_t Index>
-    concept parameter_index = ::scl::detail::has_signature<Callable> &&
-        (Index < ::std::tuple_size_v<typename ::scl::detail::signature_of<Callable>::parameter_types>);
-
-    template <typename Callable, typename Index>
     struct signature_parameter
     {};
 
-    template <::std::size_t Index, ::scl::detail::parameter_index<Index> Callable>
-    struct signature_parameter<Callable, ::std::integral_constant<::std::size_t, Index>>
+    template <typename Callable, ::std::size_t Index>
+        requires(::scl::detail::has_signature_v<Callable>) &&
+        (Index < ::std::tuple_size_v<typename ::scl::detail::signature_of<Callable>::parameter_types>)
+    struct signature_parameter<Callable, Index>
     {
         using type = ::std::tuple_element_t<Index, typename ::scl::detail::signature_of<Callable>::parameter_types>;
     };
@@ -240,29 +234,34 @@ namespace scl::detail
 
 namespace scl
 {
+#ifndef SCL_DOXYGEN
     template <typename Callable>
     using signature_t = ::scl::detail::signature_of<Callable>::type;
+#endif
 
 } // namespace scl
 
 namespace scl::signature
 {
+#ifndef SCL_DOXYGEN
     template <typename Callable>
     using result_t = ::scl::detail::signature_of<Callable>::result_type;
 
     template <typename Callable>
     using parameters_t = ::scl::detail::signature_of<Callable>::parameter_types;
+#endif
 
     template <typename Callable>
     inline constexpr ::std::size_t parameter_count_v =
         ::std::tuple_size_v<::scl::signature::parameters_t<Callable>>;
 
+#ifndef SCL_DOXYGEN
     template <typename Callable, ::std::size_t Index>
-    using parameter_t =
-        ::scl::detail::signature_parameter<Callable, ::std::integral_constant<::std::size_t, Index>>::type;
+    using parameter_t = ::scl::detail::signature_parameter<Callable, Index>::type;
 
     template <typename Callable>
     using object_t = ::scl::detail::signature_of<Callable>::object_type;
+#endif
 
     template <typename Callable>
     inline constexpr bool is_const_v = ::scl::detail::signature_of<Callable>::is_const;
@@ -285,19 +284,47 @@ namespace scl::signature
 } // namespace scl::signature
 
 // -----------------------------------------------------------------------------
+// Documentation-only declarations
+// -----------------------------------------------------------------------------
+
+#ifdef SCL_DOXYGEN
+namespace scl
+{
+    template <typename Callable>
+    using signature_t = unspecified;
+} // namespace scl
+
+namespace scl::signature
+{
+    template <typename Callable>
+    using result_t = unspecified;
+
+    template <typename Callable>
+    using parameters_t = unspecified;
+
+    template <typename Callable, ::std::size_t Index>
+    using parameter_t = unspecified;
+
+    template <typename Callable>
+    using object_t = unspecified;
+} // namespace scl::signature
+#endif
+
+// -----------------------------------------------------------------------------
 // Documentation
 // -----------------------------------------------------------------------------
 
 /**
  * @namespace scl::signature
  * @ingroup scl_utility_type_traits
- * @brief The parts of the signature of a callable type: result, parameters, object type,
- *        qualifiers, `noexcept` and a variable number of arguments, beside the function type
- *        ::scl::signature_t.
+ * @brief The parts of the signature of a callable type beside its function type ::scl::signature_t.
  *
- * Every template of the namespace takes the same callable types as ::scl::signature_t: a function
- * type, a pointer or a reference to a function, a pointer to a member function, and a class or a
- * union with one call operator that is not a template, the type of a lambda included.
+ * The parts are the result, the parameters, the object type, the qualifiers, `noexcept` and
+ * a variable number of arguments.
+ *
+ * Every template of the namespace takes the same callable types as ::scl::signature_t, that is
+ * a function type, a pointer or a reference to a function, a pointer to a member function, and
+ * a class or a union with one call operator that is not a template, the type of a lambda included.
  *
  * | Template | For `int (widget::*)(long, char) const & noexcept` |
  * |---|---|
@@ -318,29 +345,30 @@ namespace scl::signature
 /**
  * @typedef scl::signature_t
  * @ingroup scl_utility_type_traits
- * @brief The function type of the callable type `Callable`, with `noexcept` and a trailing `...`,
- *        without a pointer, a class or cv- and ref-qualifiers.
+ * @brief The function type of @p Callable, with `noexcept` and a trailing `...`.
+ *
+ * The pointer, the class and the cv- and ref-qualifiers are removed from it.
  *
  * `Callable` is one of:
- * - a function type, such as `int(long)`;
- * - a pointer or a reference to a function;
+ * - a function type, such as `int(long)`
+ * - a pointer or a reference to a function
  * - a pointer to a member function with any combination of cv-qualifiers, a ref-qualifier and
- *   `noexcept`;
+ *   `noexcept`
  * - a class or a union with one call operator that is not a template, the type of a lambda
- *   included; a class with cv-qualifiers or a reference to a class gives the signature of the
- *   class.
+ *   included. A class with cv-qualifiers or a reference to a class gives the signature of
+ *   the class.
  *
- * Each of them may be a C-style variadic function, one whose parameter list ends with `...`. The
- * explicit object parameter of a call operator (C++23) is not among the parameters, and a static
- * call operator (C++23) keeps every parameter. A class must be complete: asking about a class
- * before its definition makes the program ill-formed, no diagnostic required.
+ * Each of them may be a C-style variadic function, one whose parameter list ends with `...`.
+ * The explicit object parameter of a call operator (C++23) is not among the parameters, and
+ * a static call operator (C++23) keeps every parameter. A class must be complete, since asking
+ * about a class before its definition makes the program ill-formed, no diagnostic required.
  *
- * A generic lambda, a class with an overloaded call operator, a type that is not callable, a
- * pointer to a data member, a function type with cv- or ref-qualifiers and a function with a
- * calling convention other than the default, such as `__vectorcall`, or `__stdcall` on 32-bit x86,
- * have no signature, and the alias template names no type for them, so a requires-expression
- * tells whether a signature exists. One overload of an overloaded function is selected with the
- * function object ::scl::overload_cast first.
+ * A generic lambda, a class with an overloaded call operator, a type that is not callable,
+ * a pointer to a data member, a function type with cv- or ref-qualifiers and a function with
+ * a calling convention other than the default, such as `__vectorcall`, or `__stdcall` on 32-bit
+ * x86, have no signature, and the alias template names no type for them, so a requires-expression
+ * tells whether a signature exists. One overload of an overloaded function is selected with
+ * the function object ::scl::overload_cast first.
  *
  * A member function:
  * @snippet type_traits/signature/type_traits_signature_example.cpp types
@@ -376,11 +404,12 @@ namespace scl::signature
 /**
  * @typedef scl::signature::parameters_t
  * @ingroup scl_utility_type_traits
- * @brief `std::tuple` of the parameter types of the function type ::scl::signature_t<Callable>,
- *        in the order of declaration, a trailing `...` left out.
+ * @brief `std::tuple` of the parameter types of ::scl::signature_t<Callable>, in declaration order.
  *
- * The explicit object parameter of a call operator is not among the types; the parameters of a
- * static call operator all are.
+ * A trailing `...` is left out.
+ *
+ * The explicit object parameter of a call operator is not among the types, while the parameters
+ * of a static call operator all are.
  *
  * @snippet type_traits/signature/type_traits_signature_example.cpp types
  * @snippet type_traits/signature/type_traits_signature_example.cpp signature
@@ -393,8 +422,7 @@ namespace scl::signature
 /**
  * @var scl::signature::parameter_count_v
  * @ingroup scl_utility_type_traits
- * @brief The number of parameters of the function type ::scl::signature_t<Callable>, a trailing
- *        `...` left out.
+ * @brief The number of parameters of ::scl::signature_t<Callable>, a trailing `...` left out.
  *
  * The value is the number of declared parameters. Whether a variadic function takes more
  * arguments is told by ::scl::signature::is_variadic_v, so exactly two arguments are
@@ -431,23 +459,25 @@ namespace scl::signature
 /**
  * @typedef scl::signature::object_t
  * @ingroup scl_utility_type_traits
- * @brief The type of the object a member function or a call operator is called on: its class
- *        with the cv-qualifiers and the ref-qualifier the member function is declared with.
+ * @brief The type of the object a member function or a call operator is called on.
+ *
+ * It is the class with the cv-qualifiers and the ref-qualifier the member function is declared
+ * with.
  *
  * For a member function declared `const &` of the class `widget` it is `widget const &`, and for
- * a member function with no qualifiers it is `widget`; the class itself is
+ * a member function with no qualifiers it is `widget`. The class itself is
  * `std::remove_cvref_t<scl::signature::object_t<Callable>>`.
  *
  * The alias template ::scl::member_like_t takes the object type in this form, so
- * `scl::member_like_t<scl::signature::object_t<P>, scl::signature_t<P>>` is the pointer to a
- * member function `P` itself, where `P` is not variadic:
+ * `scl::member_like_t<scl::signature::object_t<P>, scl::signature_t<P>>` is the pointer to
+ * a member function `P` itself, where `P` is not variadic:
  * @snippet type_traits/signature/type_traits_signature_example.cpp types
  * @snippet type_traits/signature/type_traits_signature_example.cpp object
  *
- * For a class with a call operator it is that class, even where the call operator is declared in a
- * base class. For a call operator with an explicit object parameter it is the type of that
- * parameter, the base class included where the call operator is declared there. A function and a
- * static call operator have no object, and the alias template names no type for them.
+ * For a class with a call operator it is that class, even where the call operator is declared in
+ * a base class. For a call operator with an explicit object parameter it is the type of that
+ * parameter, the base class included where the call operator is declared there. A function and
+ * a static call operator have no object, and the alias template names no type for them.
  *
  * A lambda, a member function with the ref-qualifier `&&` and a call operator declared in a base
  * class:
@@ -463,8 +493,9 @@ namespace scl::signature
 /**
  * @var scl::signature::is_const_v
  * @ingroup scl_utility_type_traits
- * @brief Whether the member function or the call operator is declared `const`; `false` for a
- *        function.
+ * @brief Whether the member function or the call operator is declared `const`.
+ *
+ * The value is `false` for a function.
  *
  * The call operator of a lambda is `const` unless the lambda is declared `mutable`. For a call
  * operator with an explicit object parameter the value is read from the type of that parameter.
@@ -480,8 +511,9 @@ namespace scl::signature
 /**
  * @var scl::signature::is_volatile_v
  * @ingroup scl_utility_type_traits
- * @brief Whether the member function or the call operator is declared `volatile`; `false` for a
- *        function.
+ * @brief Whether the member function or the call operator is declared `volatile`.
+ *
+ * The value is `false` for a function.
  *
  * For a call operator with an explicit object parameter the value is read from the type of that
  * parameter.
@@ -496,8 +528,9 @@ namespace scl::signature
 /**
  * @var scl::signature::is_lvalue_reference_v
  * @ingroup scl_utility_type_traits
- * @brief Whether the member function or the call operator is declared with the ref-qualifier
- *        `&`; `false` for a function.
+ * @brief Whether the member function or the call operator has the ref-qualifier `&`.
+ *
+ * The value is `false` for a function.
  *
  * For a member function it equals `std::is_lvalue_reference_v` of
  * ::scl::signature::object_t<Callable>. With ::scl::signature::is_rvalue_reference_v also `false`,
@@ -514,8 +547,9 @@ namespace scl::signature
 /**
  * @var scl::signature::is_rvalue_reference_v
  * @ingroup scl_utility_type_traits
- * @brief Whether the member function or the call operator is declared with the ref-qualifier
- *        `&&`; `false` for a function.
+ * @brief Whether the member function or the call operator has the ref-qualifier `&&`.
+ *
+ * The value is `false` for a function.
  *
  * For a member function it equals `std::is_rvalue_reference_v` of
  * ::scl::signature::object_t<Callable>.
@@ -531,7 +565,7 @@ namespace scl::signature
  * @ingroup scl_utility_type_traits
  * @brief Whether the function, the member function or the call operator is declared `noexcept`.
  *
- * The value follows the declaration rather than a call: for the function
+ * The value follows the declaration rather than a call. For the function
  * `void f(std::string) noexcept` it is `true`, although copying an argument into the parameter can
  * throw. The function type ::scl::signature_t<Callable> keeps `noexcept` as well.
  *
@@ -546,12 +580,13 @@ namespace scl::signature
 /**
  * @var scl::signature::is_variadic_v
  * @ingroup scl_utility_type_traits
- * @brief Whether the function, the member function or the call operator is a C-style variadic
- *        function, one whose parameter list ends with `...`, as `int(char const *, ...)` does.
+ * @brief Whether the callable is a C-style variadic function, its parameters ending with `...`.
+ *
+ * An example is the function type `int(char const *, ...)`.
  *
  * The trailing `...` stays in ::scl::signature_t<Callable> and is left out of
  * ::scl::signature::parameters_t and ::scl::signature::parameter_count_v. A variadic template is
- * not meant: a specialization of one is already a concrete type.
+ * not meant here, since a specialization of one is already a concrete type.
  *
  * @snippet type_traits/signature/type_traits_signature_example.cpp variadic
  *

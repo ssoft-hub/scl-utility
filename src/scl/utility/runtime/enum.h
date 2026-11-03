@@ -82,7 +82,7 @@ namespace scl::detail::concepts
     // A call operator that is a template or is overloaded has no signature, and a function of (...)
     // alone has no first parameter, so only the call is checked for them.
     template <typename Format, typename Underlying>
-    concept enum_format_parameter = !::scl::detail::has_signature<Format> ||
+    concept enum_format_parameter = !::scl::detail::has_signature_v<Format> ||
         ::scl::signature::parameter_count_v<Format> == 0 ||
         ::scl::detail::concepts::takes_number<
             ::std::remove_cvref_t<::scl::signature::parameter_t<Format, 0>>, Underlying>;

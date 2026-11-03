@@ -705,3 +705,34 @@ TEST(OperatorDetectionTest, ArrowToPointerMemberExact)
     STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<NoOperators const &, int>));
     STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<NoOperators const &&, int>));
 }
+
+// ----------------------------------------------------------------------------
+// AMBIGUOUS PLAIN CALL
+// ----------------------------------------------------------------------------
+
+namespace
+{
+    struct AmbiguousCall
+    {
+        long operator()(int value) const;
+        char operator()(int && value) const;
+    };
+} // namespace
+
+#if !defined(_MSC_VER) || defined(__clang__)
+TEST(OperatorDetectionTest, CallMemberExactBesideAmbiguousCall)
+{
+    STATIC_EXPECT_FALSE((::scl::has_call_member_v<AmbiguousCall const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_call_member_exact_v<AmbiguousCall const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_call_member_exact_v<AmbiguousCall const, int &&>));
+    STATIC_EXPECT_FALSE((::scl::has_call_member_exact_v<AmbiguousCall, int>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::call_member_exact_t<AmbiguousCall const, int>, long>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::call_member_exact_t<AmbiguousCall const, int &&>, char>));
+}
+#endif
+
+TEST(OperatorDetectionTest, CallMemberExactVoidArgument)
+{
+    STATIC_EXPECT_FALSE((::scl::has_call_member_exact_v<AmbiguousCall const, void>));
+    STATIC_EXPECT_FALSE((::scl::has_plus_member_exact_v<AmbiguousCall const, void>));
+}

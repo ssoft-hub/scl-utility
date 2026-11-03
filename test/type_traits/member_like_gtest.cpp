@@ -18,7 +18,18 @@ namespace
         int f5(int v) const && noexcept { return v; }
     };
 
+    union U
+    {
+        int i;
+
+        int get() const & { return i; }
+    };
+
 } // namespace
+
+// a union is accepted as the class of the member function
+static_assert(::std::is_same_v<::scl::member_function_like_t<U const &, int()>, int (U::*)() const &>);
+static_assert(::std::is_same_v<::scl::member_like_t<U &&, int() noexcept>, int (U::*)() && noexcept>);
 
 // no ref-qualifier, no noexcept
 static_assert(::std::is_same_v<::scl::member_function_like_t<X, void()>, void (X::*)()>);
@@ -84,27 +95,27 @@ static_assert(::std::is_same_v<
     void (X::*)(int) const volatile noexcept>);
 
 // Object qualifiers do not affect the pointer type
-static_assert(::std::is_same_v<::scl::member_property_like_t<X, int>, int X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X const, int>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X volatile, int>, int volatile X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X, int>, int X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X const, int>, int const X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X volatile, int>, int volatile X::*>);
 static_assert(
-    ::std::is_same_v<::scl::member_property_like_t<X const volatile, int>, int const volatile X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X &, int>, int X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X const &, int>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X volatile &, int>, int volatile X::*>);
+    ::std::is_same_v<::scl::member_object_like_t<X const volatile, int>, int const volatile X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X &, int>, int X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X const &, int>, int const X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X volatile &, int>, int volatile X::*>);
 static_assert(
-    ::std::is_same_v<::scl::member_property_like_t<X const volatile &, int>, int const volatile X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X &&, int>, int X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X const &&, int>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X volatile &&, int>, int volatile X::*>);
+    ::std::is_same_v<::scl::member_object_like_t<X const volatile &, int>, int const volatile X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X &&, int>, int X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X const &&, int>, int const X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X volatile &&, int>, int volatile X::*>);
 static_assert(
-    ::std::is_same_v<::scl::member_property_like_t<X const volatile &&, int>, int const volatile X::*>);
+    ::std::is_same_v<::scl::member_object_like_t<X const volatile &&, int>, int const volatile X::*>);
 
 // Member's own cv is preserved in the pointer type
-static_assert(::std::is_same_v<::scl::member_property_like_t<X, int const>, int const X::*>);
-static_assert(::std::is_same_v<::scl::member_property_like_t<X, int volatile>, int volatile X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X, int const>, int const X::*>);
+static_assert(::std::is_same_v<::scl::member_object_like_t<X, int volatile>, int volatile X::*>);
 static_assert(
-    ::std::is_same_v<::scl::member_property_like_t<X, int const volatile>, int const volatile X::*>);
+    ::std::is_same_v<::scl::member_object_like_t<X, int const volatile>, int const volatile X::*>);
 
 // Function members: no ref-qualifier, no noexcept
 static_assert(::std::is_same_v<::scl::member_like_t<X, void()>, void (X::*)()>);
@@ -209,11 +220,11 @@ TEST(MemberFunctionLike, Invocation_RValueQualified_Noexcept)
     EXPECT_EQ((std::move(cx).*pmf)(11), 11);
 }
 
-TEST(MemberPropertyLike, AccessThroughPointer)
+TEST(MemberObjectLike, AccessThroughPointer)
 {
     X x;
     x.a = 42;
-    ::scl::member_property_like_t<X, int> pm = &X::a;
+    ::scl::member_object_like_t<X, int> pm = &X::a;
     EXPECT_EQ(x.*pm, 42);
     x.*pm = 7;
     EXPECT_EQ(x.a, 7);
@@ -221,7 +232,7 @@ TEST(MemberPropertyLike, AccessThroughPointer)
     EXPECT_EQ(px->*pm, 7);
 
     X const cx{};
-    ::scl::member_property_like_t<X const, int> pb = &X::b;
+    ::scl::member_object_like_t<X const, int> pb = &X::b;
     EXPECT_EQ(cx.*pb, 1);
 }
 
@@ -257,7 +268,7 @@ TEST(MemberLike, Invocation_RValueQualified_Noexcept)
     EXPECT_EQ((std::move(cx).*pmf)(11), 11);
 }
 
-TEST(MemberLike, Property_AccessThroughPointer)
+TEST(MemberLike, Object_AccessThroughPointer)
 {
     X x;
     x.a = 42;

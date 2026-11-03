@@ -31,6 +31,13 @@ namespace
         double compute() { return 3.14; }
     };
 
+    struct AcceptsAnything
+    {
+        template <typename Type>
+        AcceptsAnything(Type const &)
+        {}
+    };
+
     // Detection trait templates
     template <typename T>
     using has_foo_t = decltype(::std::declval<T>().foo());
@@ -93,7 +100,25 @@ TEST(DetectionTest, DetectedT_ValidType)
 TEST(DetectionTest, DetectedT_InvalidType)
 {
     using detected = ::scl::detected_t<value_type_t, NoValueType>;
-    EXPECT_TRUE((::std::is_same_v<detected, void>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<detected, ::scl::nonesuch>));
+}
+
+TEST(DetectionTest, DetectedT_VoidResultIsNotAFailure)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::detected_t<has_bar_t, NoFoo>, void>));
+    STATIC_EXPECT_TRUE((::scl::is_detected_exact_v<void, has_bar_t, NoFoo>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_exact_v<void, has_bar_t, HasFoo>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_convertible_v<void, has_bar_t, HasFoo>));
+}
+
+TEST(DetectionTest, Nonesuch_HasNoObject)
+{
+    STATIC_EXPECT_FALSE(::std::is_default_constructible_v<::scl::nonesuch>);
+    STATIC_EXPECT_FALSE(::std::is_destructible_v<::scl::nonesuch>);
+    STATIC_EXPECT_FALSE(::std::is_copy_constructible_v<::scl::nonesuch>);
+    STATIC_EXPECT_FALSE(::std::is_move_constructible_v<::scl::nonesuch>);
+    STATIC_EXPECT_FALSE(::std::is_copy_assignable_v<::scl::nonesuch>);
+    STATIC_EXPECT_FALSE(::std::is_move_assignable_v<::scl::nonesuch>);
 }
 
 TEST(DetectionTest, DetectedT_STLTypes)
@@ -158,6 +183,19 @@ TEST(DetectionTest, IsDetectedConvertible_ConvertibleType)
 TEST(DetectionTest, IsDetectedConvertible_InvalidDetection)
 {
     EXPECT_FALSE((::scl::is_detected_convertible_v<int, value_type_t, NoValueType>));
+}
+
+TEST(DetectionTest, IllFormedOperationNeverMatches)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected_exact<::scl::nonesuch, value_type_t, NoValueType>, ::std::false_type>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected_convertible<AcceptsAnything, value_type_t, NoValueType>, ::std::false_type>));
+    STATIC_EXPECT_FALSE(
+        (::scl::is_detected_convertible_v<::scl::nonesuch const &, value_type_t, NoValueType>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_convertible_v<::scl::nonesuch &&, value_type_t, NoValueType>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected_convertible<double, value_type_t, HasValueType>, ::std::true_type>));
 }
 
 TEST(DetectionTest, IsDetectedConvertible_ReturnType)

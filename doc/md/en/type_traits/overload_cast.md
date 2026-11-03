@@ -1,69 +1,128 @@
-# overload_cast
+# Choosing an overload of a function or a member function by parameter types
 
-Utility for disambiguating overloaded functions and member functions by argument types.
+The address of an overloaded function `&f` or of an overloaded member function `&Class::f` has no
+single type, so it cannot be stored in a variable declared with the specifier `auto` or passed to
+a function template. The function object `overload_cast<Arguments...>` chooses from the overload set
+the overload whose parameters are exactly the types `Arguments...`, and returns a pointer to it.
 
 - Header: `#include <scl/utility/type_traits/overload_cast.h>`
 
-Contents:
-- [`overload_cast<Args...>`](#overload_cast-args)
+```cpp
+namespace scl
+{
+    template <typename... Arguments>
+    inline constexpr auto overload_cast = unspecified;
+}
+```
+
+## Semantics
+
+### Function object `overload_cast`
+
+- **Call.** The calls `overload_cast<Arguments...>(&f)` and `overload_cast<Arguments...>(&Class::f)`
+  return a pointer to the overload of the function or the member function whose parameters are
+  exactly the types `Arguments...`. The result type and the specifier `noexcept` of the overload may
+  be any, and they stay in the type of the pointer returned. For the overloads `int twice(int)` and
+  `double twice(double) noexcept`, for example, the call `overload_cast<double>(&twice)` returns
+  a pointer of the type `double (*)(double) noexcept`. The call operator of the function object is
+  declared with the specifiers `constexpr` and `noexcept` and with the attribute `[[nodiscard]]`.
+- **Exact parameter types.** A parameter type has to be exactly the type from `Arguments...`, and no
+  implicit conversion counts in the choice. So for the overloads `f(int &)` and `f(int const &)`
+  the calls `overload_cast<int &>(&f)` and `overload_cast<int const &>(&f)` choose different
+  overloads. The top-level qualifiers `const` and `volatile` of the types `Arguments...` do not
+  count, as the section Notes explains.
+- **Qualifiers of a member function.** The qualifiers of the member function itself (`const`,
+  `volatile`, `&` and `&&`) do not count in the choice, that is a member function with the right
+  parameters is chosen whatever its qualifiers. The pointer returned has the type of the chosen
+  overload, these qualifiers included.
+- **No overload, or several.** The call does not compile if no overload has the parameters
+  `Arguments...`. Nor does it compile if several member functions with the parameters `Arguments...`
+  differ only in their qualifiers, such as `int f(int)` and `int f(int) const`, since the parameter
+  types cannot choose between them.
+- **Member function with an explicit object parameter.** The address of a member function with
+  an explicit object parameter (C++23), such as `int f(this Class const & self, int)`, is a plain
+  pointer to a function of the type `int (*)(Class const &, int)`. So such a member function is
+  chosen by the call `overload_cast<Class const &, int>(&Class::f)`, where the type of the object
+  parameter comes first.
+
+### Limitations
+
+- **Function templates.** The call does not compile if the overload set holds a function template,
+  even where the overload with the parameters `Arguments...` is not a template.
+- **Functions with an ellipsis.** An overload whose parameter list ends with a C-style ellipsis
+  `...` is never chosen. A set that holds, beside the overload with the parameters `Arguments...`,
+  an overload with the same parameters and an ellipsis is not supported, since the outcome of
+  the call for such a set depends on the compiler.
+
+## Examples
+
+The types of the examples:
+
+<!-- snippet: example/type_traits/overload_cast/type_traits_overload_cast_example.cpp types -->
+```cpp
+class canvas
+{
+private:
+    int m_width{};
+
+public:
+    void resize(int width) { m_width = width; }
+    void resize(int width, int height) noexcept { m_width = width * height; }
+    int width() const & { return m_width; }
+};
+
+int twice(int value);
+double twice(double value) noexcept;
+```
+
+Overloads of a member function that differ in their parameters. The member function `width` has no
+overloads, but the call `overload_cast<>` fits it as well and returns a pointer with the qualifiers
+`const &`:
+
+<!-- snippet: example/type_traits/overload_cast/type_traits_overload_cast_example.cpp member -->
+```cpp
+[[maybe_unused]]
+auto const resize_one = scl::overload_cast<int>(&canvas::resize);
+auto const resize_two = scl::overload_cast<int, int>(&canvas::resize);
+
+static_assert(std::is_same_v<decltype(resize_one), void (canvas::* const)(int)>);
+static_assert(std::is_same_v<decltype(resize_two), void (canvas::* const)(int, int) noexcept>);
+static_assert(std::is_same_v<decltype(scl::overload_cast<>(&canvas::width)), int (canvas::*)() const &>);
+```
+
+Overloads of a function. The specifier `noexcept` of an overload stays in the type of the pointer:
+
+<!-- snippet: example/type_traits/overload_cast/type_traits_overload_cast_example.cpp function -->
+```cpp
+auto const twice_int = scl::overload_cast<int>(&twice);
+[[maybe_unused]]
+auto const twice_double = scl::overload_cast<double>(&twice);
+
+static_assert(std::is_same_v<decltype(twice_int), int (* const)(int)>);
+static_assert(std::is_same_v<decltype(twice_double), double (* const)(double) noexcept>);
+```
+
+<!-- snippet: example/type_traits/overload_cast/type_traits_overload_cast_example.cpp call -->
+```cpp
+    canvas board;
+    (board.*resize_two)(3, 4);
+    std::cout << board.width() << ' ' << twice_int(21) << '\n'; // 12 42
+```
+
+## Notes
+
+- The top-level qualifiers `const` and `volatile` of a parameter type are not part of a function
+  type, so `void f(int)` and `void f(int const)` are declarations of the same function. For this
+  reason the call `overload_cast<int const>(&f)` chooses the overload `f(int)`.
+
+## See also
+
+- [Finding the signature of a callable type](signature.md) - the alias template `scl::signature_t`,
+  which applies to the type of the pointer returned by the function object `overload_cast`
+- [`example/type_traits/overload_cast/type_traits_overload_cast_example.cpp`](../../../../example/type_traits/overload_cast/type_traits_overload_cast_example.cpp)
 
 ---
 
-## `overload_cast<Args...>`
-
-Selects a specific overload of a function or member function pointer based on argument types.
-
-- Header: `#include <scl/utility/type_traits/overload_cast.h>`
-- Declaration: `template <typename... Args> inline constexpr auto overload_cast;`
-
-### Semantics
-
-- **Callable object:** `overload_cast<Args...>` is a `constexpr` variable template whose `operator()` accepts a function pointer or pointer-to-member and returns it unchanged, with the compiler selecting the correct overload.
-- **Qualifier support:** Handles all member function qualifier combinations:
-  - cv-qualifiers: `const`, `volatile`, `const volatile`
-  - ref-qualifiers: `&`, `&&`
-  - `noexcept` specifier
-- **Free functions:** Also works with free (non-member) function pointers.
-- **Zero overhead:** The call operator is `constexpr` and `noexcept`; it simply returns the pointer.
-
-### Motivation
-
-Taking the address of an overloaded function normally requires a verbose `static_cast` to the exact function pointer type. `overload_cast` provides a concise, readable alternative:
-
-```cpp
-// Without overload_cast — verbose and error-prone
-auto p = static_cast<void (Widget::*)(int)>(&Widget::update);
-
-// With overload_cast — concise and clear
-auto p = scl::overload_cast<int>(&Widget::update);
-```
-
-### Examples
-
-```cpp
-#include <scl/utility/type_traits/overload_cast.h>
-
-struct Widget {
-    void update(int);
-    void update(double) const;
-    void update(int, int) noexcept;
-};
-
-void process(int);
-void process(double) noexcept;
-
-// Member function overloads
-auto p1 = scl::overload_cast<int>(&Widget::update);          // void(int)
-auto p2 = scl::overload_cast<double>(&Widget::update);       // void(double) const
-auto p3 = scl::overload_cast<int, int>(&Widget::update);     // void(int, int) noexcept
-
-// Free function overloads
-auto f1 = scl::overload_cast<int>(&process);                 // void(int)
-auto f2 = scl::overload_cast<double>(&process);              // void(double) noexcept
-```
-
-### Typical Use Cases
-
-- Passing overloaded member functions to `std::bind`, `std::invoke`, or signal/slot systems where the compiler cannot deduce which overload is intended.
-- Connecting Qt signals to overloaded slots.
-- Registering overloaded callbacks in reflection or scripting bindings.
+Previous: [Building the member pointer type from the object type](member_like.md) |
+Next: [Finding the signature of a callable type](signature.md) | [Back to the group](index.md) |
+[Back to the main page](../Main.md)

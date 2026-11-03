@@ -4,10 +4,8 @@
 
 /**
  * @file
- * @brief Helpers for forwarding objects with combined cv/ref qualifiers (`forward_like_t`).
+ * @brief The type and the cast that pass an object on with the value category of another type.
  * @ingroup scl_utility_type_traits
- *
- * Contains type trait and forwarding utility that repeat the logic of C++23 std::forward_like.
  */
 
 namespace scl::detail
@@ -24,11 +22,10 @@ namespace scl::detail
 
     // Add both const and volatile from From to To (ignoring reference)
     template <typename From, typename To>
-    using add_cv_from_t = add_const_from_t<From, add_volatile_from_t<From, To>>;
+    using add_cv_from_t =
+        ::scl::detail::add_const_from_t<From, ::scl::detail::add_volatile_from_t<From, To>>;
 
-    // Copy ref from From onto To: lvalue ref → &, otherwise (rvalue ref or non-reference) → &&.
-    // Matches std::forward_like semantics: the result is always a reference.
-    // Don't add reference to void.
+    // The reference of From onto To: & for an lvalue reference, && otherwise, and none for void.
     template <typename From, typename To>
     using add_reference_like_t = ::std::conditional_t<
         ::std::is_lvalue_reference_v<From>,
@@ -39,57 +36,75 @@ namespace scl::detail
 
 namespace scl
 {
-    /**
-     * @brief Make a type `Type` "look like" `Base` for cv-ref qualifiers (matches ::std::forward_like rules).
-     * @ingroup scl_utility_type_traits
-     *
-     * @tparam Base  Type providing qualifiers/ref to propagate.
-     * @tparam Type  Type to which qualifiers/ref are applied.
-     *
-     * Semantics:
-     * - CV-qualifiers:
-     *      Applies `const` and `volatile` from `Base` onto `remove_reference_t<Type>`.
-     *      (i.e. union of qualifiers, not replacement)
-     * - Reference:
-     *      If `Base` is lvalue ref, result is lvalue ref; otherwise rvalue ref.
-     *      The result is always a reference (matching ::std::forward_like).
-     *      Reference is omitted for void.
-     *
-     * @par Examples
-     * @code{.cpp}
-     *    using P0 = forward_like_t<int const &, double>            // double const &
-     *    using P1 = forward_like_t<int &&, float const>            // float const &&
-     *    using P2 = forward_like_t<int volatile, char>             // char volatile &&
-     *    using P3 = forward_like_t<int const volatile &, short>    // short const volatile &
-     *    using P4 = forward_like_t<int, double&&>                  // double &&
-     * @endcode
-     */
+#ifndef SCL_DOXYGEN
     template <typename Base, typename Type>
     using forward_like_t = ::scl::detail::add_reference_like_t<
         Base, ::scl::detail::add_cv_from_t<Base, ::std::remove_reference_t<Type>>>;
+#endif
 
-    /**
-     * @brief Forwards a value with the cv-ref qualifiers of `Base` applied to `T`'s type,
-     *        matching ::std::forward_like semantics.
-     * @ingroup scl_utility_type_traits
-     *
-     * Example: `forward_like<const T&, x>(some_val)` will forward `some_val`
-     * as a `const` lvalue reference if `T` is const.
-     *
-     * @tparam Base  The type whose value category is imposed and whose cv-qualification is
-     *               added to what `T` already carries.
-     * @tparam T     Deduced from the argument; its reference is stripped, its own `const` and
-     *               `volatile` are kept and `Base`'s are added to them.
-     * @param  t     The object to forward. It is cast, never copied or moved here.
-     * @return A reference to @p t as ::scl::forward_like_t<Base, T &&> — an lvalue
-     *         reference when `Base` is one, an rvalue reference otherwise, carrying `Base`'s
-     *         `const` and `volatile` on top of whatever `T` already had.
-     */
-    template <typename Base, typename T>
+    template <typename Base, typename Type>
     [[nodiscard]]
-    constexpr decltype(auto) forward_like(T && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
+    constexpr decltype(auto) forward_like(Type && t) noexcept // NOLINT(cppcoreguidelines-missing-std-forward)
     {
-        return static_cast<forward_like_t<Base, T &&>>(t);
+        return static_cast<::scl::forward_like_t<Base, Type>>(t);
     }
 
 } // namespace scl
+
+// =============================================================================
+// Documentation-only declarations
+// =============================================================================
+
+#ifdef SCL_DOXYGEN
+namespace scl
+{
+    template <typename Base, typename Type>
+    using forward_like_t = unspecified;
+} // namespace scl
+#endif
+
+// =============================================================================
+// Documentation
+// =============================================================================
+
+/**
+ * @typedef scl::forward_like_t
+ * @ingroup scl_utility_type_traits
+ * @brief @p Type with the value category of @p Base and the cv-qualifiers of both types.
+ *
+ * The result is an lvalue reference where @p Base is one and an rvalue reference otherwise, and
+ * the reference of @p Type is dropped.
+ *
+ * The `const` and `volatile` of @p Base are added to those of @p Type, so the result has
+ * the cv-qualifiers of both types. For a @p Type that is `void`, with or without cv-qualifiers,
+ * the result is `void` with the cv-qualifiers of both types and with no reference.
+ *
+ * The qualifier `volatile` of @p Base is added to the type this alias template names, and not to
+ * the result type of the function template `std::forward_like` of C++23.
+ *
+ * @snippet type_traits/forward_like/type_traits_forward_like_example.cpp type
+ *
+ * @tparam Base Type whose value category and cv-qualifiers are given to @p Type.
+ * @tparam Type Type to qualify.
+ * @see ::scl::forward_like
+ */
+
+/**
+ * @fn scl::forward_like(Type && t)
+ * @ingroup scl_utility_type_traits
+ * @brief Returns @p t as ::scl::forward_like_t<Base, Type>.
+ *
+ * The result is an lvalue where @p Base is an lvalue reference and an rvalue otherwise, with
+ * the `const` and `volatile` of @p Base added.
+ *
+ * A member of an object is passed on with the value category of the object. The argument is cast
+ * to a reference type, and nothing is copied or moved by the call.
+ *
+ * @snippet type_traits/forward_like/type_traits_forward_like_example.cpp member
+ * @snippet type_traits/forward_like/type_traits_forward_like_example.cpp move
+ *
+ * @tparam Base Type whose value category and cv-qualifiers are given to @p t.
+ * @tparam Type Type of the argument, deduced.
+ * @param t Object to pass on.
+ * @return A reference to @p t.
+ */

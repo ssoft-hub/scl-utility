@@ -164,23 +164,25 @@ namespace scl::detail
         : ::std::bool_constant<tu_local_impl<C>::value || tu_local_impl<::std::remove_cv_t<T>>::value>
     {};
 
-    template <typename R, typename... Args>
-    struct tu_local_impl<R(Args...)>
+    template <typename R, typename... Arguments>
+    struct tu_local_impl<R(Arguments...)>
         : ::std::bool_constant<
-              tu_local_impl<::std::remove_cv_t<R>>::value || (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
+              tu_local_impl<::std::remove_cv_t<R>>::value ||
+              (tu_local_impl<::std::remove_cv_t<Arguments>>::value || ...)>
     {};
 
-    template <typename R, typename... Args>
-    struct tu_local_impl<R(Args...) noexcept>
+    template <typename R, typename... Arguments>
+    struct tu_local_impl<R(Arguments...) noexcept>
         : ::std::bool_constant<
-              tu_local_impl<::std::remove_cv_t<R>>::value || (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
+              tu_local_impl<::std::remove_cv_t<R>>::value ||
+              (tu_local_impl<::std::remove_cv_t<Arguments>>::value || ...)>
     {};
 
-    template <template <typename...> class Template, typename... Args>
-    struct tu_local_impl<Template<Args...>>
+    template <template <typename...> class Template, typename... Arguments>
+    struct tu_local_impl<Template<Arguments...>>
         : ::std::bool_constant<
-              ::scl::detail::contains_anonymous_namespace_marker(::scl::type_name<Template<Args...>>()) ||
-              (tu_local_impl<::std::remove_cv_t<Args>>::value || ...)>
+              ::scl::detail::contains_anonymous_namespace_marker(::scl::type_name<Template<Arguments...>>()) ||
+              (tu_local_impl<::std::remove_cv_t<Arguments>>::value || ...)>
     {};
 
 } // namespace scl::detail

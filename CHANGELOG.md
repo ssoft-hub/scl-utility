@@ -45,6 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [hash] Made `noexcept` of every hash function, hasher and `key` follow the range it reads
 - [meta] Broke `type_short_name<T>()` for a pointer, an array, a function or a member pointer
 - [preprocessor] Broke a `SCL_FORWARD` defined before its header: the header no longer yields to it
+- [type_traits] Broke `detected_t` of an ill-formed operation, now `scl::nonesuch`
+- [type_traits] Broke operator detection names and `member_property_like_t`, now as std names them
 - Marked the entry points of `hash`, `meta`, `forward_like` and `overload_cast` `[[nodiscard]]`
 
 ### Fixed
@@ -57,6 +59,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - [meta] Made `type_short_name<T>()` return the name of the type alone, without `const`, `volatile` and a reference, for a closure, an unnamed type and a name holding an operator as well, apart from two types GCC or Clang spell with one name
 - [meta] Made `symbol_name<S>()` return the full name and `symbol_short_name<S>()` the name alone, apart from a conversion operator with GCC and a virtual member function with MSVC
 - [preprocessor] Made the counter take a tag of any type or with commas, and yield a plain value
+- [type_traits] Accepted a union in `member_function_like_t` and the exact method form
+- [type_traits] Made `is_detected_exact` and `is_detected_convertible` false on a failed detection
+- [type_traits] Found an exact overload beside an ambiguous call, except on MSVC and for templates
 - Included `hash.h` in `<scl/utility.h>`, which left the hash group out
 - Fixed the installation steps, which added a directory with no `CMakeLists.txt`
 

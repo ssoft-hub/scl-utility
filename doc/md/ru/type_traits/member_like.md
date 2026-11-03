@@ -1,194 +1,165 @@
-# Member like типажи
+# Формирование типа указателя на член по типу объекта
 
-Это набор вспомогательных инструментов (типажей) для построения типов указателей 
-на члены класса на основе cv/ref-квалификаторов типа объекта и дескриптора целевого члена.
-Эти шаблоны помогают формировать типы указателей на методы и свойства класса
-единообразным и выразительным способом.
+Шаблонные типы `member_function_like_t`, `member_object_like_t` и `member_like_t` являются типами
+указателя на метод или на поле класса, построенными по типу объекта, для которого этот член
+используется. Класс указателя и квалификаторы члена берутся из типа объекта. Например, для объекта
+типа `gauge const &` указатель на метод имеет квалификаторы `const &`, а указатель на поле указывает
+на поле с квалификатором `const`.
 
-- Заголовочный файл: `#include <scl/utility/type_traits/member_like.h>`
+Такой тип нужен, например, когда перегрузки метода различаются только квалификаторами. Адрес
+`&gauge::label` в этом случае не имеет единственного типа, а перегрузка для данного типа объекта
+выбирается приведением адреса к построенному типу указателя.
 
-Содержание:
-- [`member_function_like_t<Type, Signature>`](#member_function_like_ttype-signature)
-- [`member_property_like_t<Type, Member>`](#member_property_like_ttype-member)
-- [`member_like_t<Type, T>`](#member_like_ttype-t)
-
----
-
-## `member_function_like_t<Type, Signature>`
-
-Формирует тип указателя на нестатическую функцию-член для класса `Type` и сигнатуры `Signature`, копируя cv- и ref-квалификаторы из `Type` и спецификатор `noexcept` из `Signature`.
-
-- Объявление: `template <typename Type, typename Signature> using member_function_like_t = ...;`
-
-### Семантика
-
-- Тип объекта:
-  - Классом в указателе становится `std::remove_cvref_t<Type>`.
-- Квалификаторы функции:
-  - `const`/`volatile` и ref-квалификатор (`&` или `&&`) функции-члена копируются из `Type`.
-  - Если `Type` не имеет ref-квалификатора (т.е. не является ссылкой), результирующая функция-член не будет ref-квалифицирована (без `&`/`&&`).
-- Спецификатор noexcept:
-  - Если `Signature` имеет вид `R(Args...) noexcept`, результирующий указатель на функцию-член будет `noexcept`; в противном случае — нет.
-- Сигнатура:
-  - Тип возвращаемого значения и типы параметров берутся непосредственно из `Signature`.
-
-### Примеры
+- Заголовок: `#include <scl/utility/type_traits/member_like.h>`
 
 ```cpp
-#include <type_traits>
-#include <scl/utility/type_traits/member_like.h>
+namespace scl
+{
+    template <typename Type, typename Signature>
+    using member_function_like_t = unspecified;
 
-struct X {};
+    template <typename Type, typename Member>
+    using member_object_like_t = unspecified;
 
-using ::scl::member_function_like_t;
-
-// Без ref-квалификатора и noexcept
-static_assert(std::is_same_v<member_function_like_t<X, void()>, void (X::*)()>);
-static_assert(std::is_same_v<member_function_like_t<X const, void()>, void (X::*)() const>);
-static_assert(std::is_same_v<member_function_like_t<X volatile, void()>, void (X::*)() volatile>);
-static_assert(std::is_same_v<member_function_like_t<X const volatile, void()>, void (X::*)() const volatile>);
-
-// С lvalue-квалификатором (&), без noexcept
-static_assert(std::is_same_v<member_function_like_t<X&, void()>, void (X::*)() &>);
-static_assert(std::is_same_v<member_function_like_t<X const&, void()>, void (X::*)() const &>);
-static_assert(std::is_same_v<member_function_like_t<X volatile&, void()>, void (X::*)() volatile &>);
-static_assert(std::is_same_v<member_function_like_t<X const volatile&, void()>, void (X::*)() const volatile &>);
-
-// С rvalue-квалификатором (&&), без noexcept
-static_assert(std::is_same_v<member_function_like_t<X&&, void()>, void (X::*)() &&>);
-static_assert(std::is_same_v<member_function_like_t<X const&&, void()>, void (X::*)() const &&>);
-static_assert(std::is_same_v<member_function_like_t<X volatile&&, void()>, void (X::*)() volatile &&>);
-static_assert(std::is_same_v<member_function_like_t<X const volatile&&, void()>, void (X::*)() const volatile &&>);
-
-// С noexcept
-static_assert(std::is_same_v<member_function_like_t<X, void() noexcept>, void (X::*)() noexcept>);
-static_assert(std::is_same_v<member_function_like_t<X const, void() noexcept>, void (X::*)() const noexcept>);
-
-// С сохранением аргументов
-static_assert(std::is_same_v<member_function_like_t<X const&, int(short)>, int (X::*)(short) const &>);
+    template <typename Type, typename Member>
+    using member_like_t = unspecified;
+}
 ```
 
-### Типичные сценарии использования
+## Семантика
 
-- Утилиты метапрограммирования, которым необходимо формировать указатели на функции-члены на основе cv/ref-квалификаторов типа объекта (например, при создании типажей для вызываемых объектов, адаптеров или утилит, подобных рефлексии).
-- Обеспечение ограничений на вызов на этапе компиляции путём кодирования требований к lvalue/rvalue и const/volatile объектам в типе указателя на функцию-член.
+### Общие правила
 
-### См. также
+- **Класс.** Каждый из шаблонных типов страницы является типом указателя на член класса
+  `std::remove_cvref_t<Type>`, то есть класса объекта без cv-квалификаторов и ссылки.
 
-- [`member_property_like_t`](#member_property_like_ttype-member) — Формирует типы указателей на члены-данные.
-- [`member_like_t`](#member_like_ttype-t) — Обобщённый селектор для формирования указателей на функции-члены и члены-данные.
+### Указатель на метод
 
----
+- **`member_function_like_t<Type, Signature>`.** Шаблонный тип является типом указателя на метод.
+  Тип результата, типы параметров и спецификатор `noexcept` метода берутся из типа функции
+  `Signature`, который записывается как `Result(Parameters...)`
+  или `Result(Parameters...) noexcept`. Cv-квалификаторы метода берутся из типа `Type`, а ссылочный
+  квалификатор равен `&` для типа `X &`, `&&` для типа `X &&` и отсутствует для типа `X` без ссылки.
+  Например, тип `member_function_like_t<gauge const &, std::string()>` является типом
+  `std::string (gauge::*)() const &`.
+- **Неподходящий тип `Signature`.** Для типа функции, список параметров которого заканчивается
+  многоточием `...` в стиле C, например `void(int, ...)`, и для типа функции с cv- или ссылочными
+  квалификаторами, например `void() const`, шаблонный тип `member_function_like_t` не определён.
+  Для такого типа подстановка завершается неудачей, а не ошибкой сборки, поэтому это можно проверить
+  шаблонами [обнаружения наличия выражения](detection.md). Если тип `Signature` вообще не является
+  типом функции, сборка завершается с ошибкой. Сборка завершается с ошибкой и тогда, когда тип
+  `Signature` имеет одну из двух форм выше, а тип `std::remove_cvref_t<Type>` не является классом
+  или объединением.
 
-## `member_property_like_t<Type, Member>`
+### Указатель на поле
 
-Формирует тип указателя на член-данное для класса `Type` и типа члена `Member`, накладывая cv-квалификаторы объекта на тип члена.
+- **`member_object_like_t<Type, Member>`.** Шаблонный тип является типом указателя на поле, тип
+  которого равен типу `Member` с добавленными квалификаторами `const` и `volatile` типа `Type`.
+  Собственные cv-квалификаторы типа `Member` сохраняются, а ссылка типа `Type` на результат
+  не влияет. Например, тип `member_object_like_t<gauge volatile, int const>` является типом
+  `int const volatile gauge::*`. Сборка завершается с ошибкой, если тип `Member` не является типом
+  объекта или тип `std::remove_cvref_t<Type>` не является классом или объединением.
 
-- Объявление: `template <typename Type, typename Member> using member_property_like_t = ...;`
+### Выбор между методом и полем
 
-### Семантика
+- **`member_like_t<Type, Member>`.** Если тип `Member` является типом функции, шаблонный тип
+  `member_like_t` является типом `member_function_like_t<Type, Member>`, в остальных случаях он
+  является типом `member_object_like_t<Type, Member>`. Сборка завершается с ошибкой, если тип
+  `Member` является ссылкой, в том числе ссылкой на функцию.
 
-- Тип объекта:
-  - Классом в указателе становится `std::remove_cvref_t<Type>`.
-- Квалификаторы члена:
-  - Квалификаторы `const`/`volatile` из `Type` добавляются к `Member` (сохраняя любые квалификаторы, уже имеющиеся у `Member`).
-  - Ref-квалификаторы у `Type` игнорируются (члены-данные не могут быть ref-квалифицированы).
-- Результат:
-  - Формирует тип `MemberLikeCv (std::remove_cvref_t<Type>::*)`, где `MemberLikeCv` — это `Member` с добавленными `const` и/или `volatile`, если они присутствуют в `Type`.
+## Примеры
 
-### Примеры
+Тип примеров:
 
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp types -->
 ```cpp
-#include <type_traits>
-#include <scl/utility/type_traits/member_like.h>
+struct gauge
+{
+    int level;
+    std::string unit;
 
-struct X { int a = 0; int const b = 1; };
-
-using ::scl::member_property_like_t;
-
-// Квалификаторы объекта накладываются на Member
-static_assert(std::is_same_v<member_property_like_t<X, int>, int X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const, int>, int const X::*>);
-static_assert(std::is_same_v<member_property_like_t<X volatile, int>, int volatile X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const volatile, int>, int const volatile X::*>);
-
-// Ссылки на Type не влияют на члены-данные
-static_assert(std::is_same_v<member_property_like_t<X&, int>, int X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const&, int>, int const X::*>);
-
-// Собственные cv-квалификаторы члена сохраняются (и объединяются с квалификаторами объекта)
-static_assert(std::is_same_v<member_property_like_t<X, int const>, int const X::*>);
-static_assert(std::is_same_v<member_property_like_t<X const, int volatile>, int const volatile X::*>);
+    std::string label() const & { return unit; }
+    std::string label() && { return std::move(unit); }
+    void set(int value) noexcept { level = value; }
+};
 ```
 
-### Типичные сценарии использования
+Указатель на метод с cv-квалификаторами и ссылкой типа объекта:
 
-- Создание типобезопасных указателей на члены-данные, которые отражают доступ к объекту с `const` или `volatile` квалификаторами, что помогает в обобщённом коде, где необходимо различать доступ к члену для чтения и для записи.
-- Построение типажей или вспомогательных утилит рефлексии, работающих с типами членов-данных.
-
-### См. также
-
-- [`member_function_like_t`](#member_function_like_ttype-signature) — Формирует типы указателей на функции-члены.
-- [`member_like_t`](#member_like_ttype-t) — Обобщённый селектор для формирования указателей на функции-члены и члены-данные.
-
----
-
-## `member_like_t<Type, T>`
-
-Обобщённый селектор, который создаёт тип указателя на член для класса `Type` и дескриптора `T`:
-- Если `T` — это функциональный тип (`R(Args...)` или `R(Args...) noexcept`), ведёт себя как `member_function_like_t<Type, T>`.
-- В противном случае, ведёт себя как `member_property_like_t<Type, T>`.
-
-- Объявление: `template <typename Type, typename T> using member_like_t = ...;`
-
-### Семантика
-
-- Случай функции:
-  - `member_like_t<Type, R(Args...) [noexcept]>` даёт
-    `R (std::remove_cvref_t<Type>::*)(Args...) [cv из Type] [ref из Type] [noexcept из T]`.
-- Случай данных:
-  - `member_like_t<Type, Member>` даёт
-    `MemberLikeCv (std::remove_cvref_t<Type>::*)`, где `MemberLikeCv` накладывает `const`/`volatile` из `Type` на `Member`.
-- Определение типа:
-  - Для выбора ветки функции `T` должен быть чистым функциональным типом (не указателем или ссылкой на функцию).
-  - Если вам нужно принимать `R(*)(Args...)` или `R(&)(Args...)`, сначала удалите указатель/ссылку.
-
-### Примеры
-
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp function -->
 ```cpp
-#include <type_traits>
-#include <scl/utility/type_traits/member_like.h>
-
-struct X { int a = 0; int const b = 1; };
-
-using ::scl::member_like_t;
-
-// Функции-члены
-static_assert(std::is_same_v<member_like_t<X, void()>, void (X::*)()>);
-static_assert(std::is_same_v<member_like_t<X const&, int(short)>, int (X::*)(short) const &>);
-static_assert(std::is_same_v<member_like_t<X const volatile, void(int) noexcept>, void (X::*)(int) const volatile noexcept>);
-
-// Члены-данные
-static_assert(std::is_same_v<member_like_t<X, int>, int X::*>);
-static_assert(std::is_same_v<member_like_t<X const, int>, int const X::*>);
-static_assert(std::is_same_v<member_like_t<X, int const>, int const X::*>);
+static_assert(std::is_same_v<
+    scl::member_function_like_t<gauge const &, std::string()>, std::string (gauge::*)() const &>);
+static_assert(
+    std::is_same_v<scl::member_function_like_t<gauge &&, std::string()>, std::string (gauge::*)() &&>);
+static_assert(
+    std::is_same_v<scl::member_function_like_t<gauge, void(int) noexcept>, void (gauge::*)(int) noexcept>);
 ```
 
-### Типичные сценарии использования
+Указатель на поле с cv-квалификаторами типа объекта:
 
-- Единая точка входа для построения указателей как на функции-члены, так и на члены-данные в обобщённых библиотеках и мета-алгоритмах, что позволяет избежать частичных специализаций в месте вызова.
-- Создание мостов между API, которые принимают дескрипторы как функций-членов, так и членов-данных, и нуждаются в едином типаже для формирования соответствующего типа указателя.
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp object -->
+```cpp
+static_assert(std::is_same_v<scl::member_object_like_t<gauge, int>, int gauge::*>);
+static_assert(std::is_same_v<scl::member_object_like_t<gauge const &, int>, int const gauge::*>);
+static_assert(
+    std::is_same_v<scl::member_object_like_t<gauge volatile, int const>, int const volatile gauge::*>);
+```
 
-### См. также
+Вид указателя в шаблонном типе `member_like_t` зависит от типа члена:
 
-- [`member_function_like_t`](#member_function_like_ttype-signature) — Конструктор указателей на функции-члены.
-- [`member_property_like_t`](#member_property_like_ttype-member) — Конструктор указателей на члены-данные.
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp member_like -->
+```cpp
+static_assert(std::is_same_v<scl::member_like_t<gauge, void(int) noexcept>, decltype(&gauge::set)>);
+static_assert(std::is_same_v<scl::member_like_t<gauge, int>, decltype(&gauge::level)>);
+```
 
----
+Выбор перегрузки по типу объекта. Методы `label` различаются только квалификаторами, поэтому
+переменная, объявленная со спецификатором `auto`, не может быть инициализирована адресом
+`&gauge::label`. Адрес приводится к типу указателя, построенному по типу объекта, поэтому перегрузка
+`const &` выбирается для константного lvalue, а перегрузка `&&` выбирается для неконстантного
+rvalue. Для неконстантного lvalue строится тип `std::string (gauge::*)() &`, а для константного
+rvalue тип `std::string (gauge::*)() const &&`. Перегрузок с такими квалификаторами нет, поэтому
+приведение не компилируется, хотя для неконстантного lvalue метод `label` вызвать можно.
+
+Тип `Object &&`, а не тип `Object`, передаётся шаблонному типу `member_like_t` первым аргументом.
+Для lvalue-аргумента параметр `Object` выводится как lvalue-ссылка, а для rvalue-аргумента как тип
+без ссылки. Тип `Object &&` в обоих случаях сохраняет категорию значения аргумента.
+
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp overload -->
+```cpp
+template <typename Object>
+std::string label_of(Object && object)
+{
+    auto const label = static_cast<scl::member_like_t<Object &&, std::string()>>(&gauge::label);
+    return (std::forward<Object>(object).*label)();
+}
+```
+
+<!-- snippet: example/type_traits/member_like/type_traits_member_like_example.cpp use -->
+```cpp
+    gauge tank{7, "litre"};
+    gauge const & view = tank;
+
+    std::string const copied = label_of(view);
+    std::string const moved = label_of(std::move(tank));
+    std::cout << copied << ' ' << moved << '\n'; // litre litre
+```
 
 ## Примечания
 
-- Ограничения:
-  - Для `member_function_like_t`: `Type` должен быть классовым типом; `Signature` должен быть функциональным типом (`R(Args...)` или `R(Args...) noexcept`).
-  - Для `member_property_like_t`: `Type` должен быть классом или объединением (union); `Member` не должен быть функциональным типом.
-- Как и для обычных указателей на члены, вызов функции или доступ к данным требует объектов с совместимыми cv/ref-категориями, что обеспечивается сформированным типом на этапе компиляции.
+- Тип указателя на функцию не является типом функции. Поэтому для типа `Member`, равного, например,
+  `void (*)(int)`, шаблонный тип `member_like_t` является типом указателя на поле, тип которого
+  равен типу указателя на функцию.
+
+## Смотрите также
+
+- [Определение сигнатуры вызываемого типа](signature.md) - шаблонный тип `scl::signature::object_t`,
+  который подходит первым аргументом шаблонного типа `member_like_t`
+- [`example/type_traits/member_like/type_traits_member_like_example.cpp`](../../../../example/type_traits/member_like/type_traits_member_like_example.cpp)
+
+---
+
+Назад: [Приведение значения к категории и cv-квалификаторам заданного типа](forward_like.md) |
+Далее: [Выбор перегрузки функции или метода по типам параметров](overload_cast.md) |
+[К группе](index.md) | [К главной странице](../Main.md)

@@ -494,160 +494,160 @@ TEST(OperatorDetectionTest, UnaryPlusMemberExact)
 // UNARY MINUS (-)
 // ----------------------------------------------------------------------------
 
-TEST(OperatorDetectionTest, UnaryMinus)
+TEST(OperatorDetectionTest, Negate)
 {
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<int>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<int &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<int &&>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<int const>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<int const &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<int const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<int>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<int &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<int &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<int const>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<int const &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<int const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithMember>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<WithMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<WithMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<WithMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithMember>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<WithMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<WithMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<WithMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithConstMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithRvalueMember>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<WithRvalueMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithRvalueMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<WithRvalueMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<WithRvalueMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<WithRvalueMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithRvalueMember>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<WithRvalueMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithRvalueMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<WithRvalueMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<WithRvalueMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<WithRvalueMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithLvalueConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithLvalueConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithLvalueConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithLvalueConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithLvalueConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithLvalueConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithLvalueConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithLvalueConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithLvalueConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithLvalueConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithLvalueConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithLvalueConstMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithGlobal>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithGlobal &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithGlobal &&>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithGlobal const>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithGlobal const &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_v<WithGlobal const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithGlobal>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithGlobal &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithGlobal &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithGlobal const>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithGlobal const &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_v<WithGlobal const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<NoOperators>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<NoOperators &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<NoOperators &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<NoOperators const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<NoOperators const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_v<NoOperators const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<NoOperators>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<NoOperators &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<NoOperators &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<NoOperators const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<NoOperators const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_v<NoOperators const &&>);
 }
 
-TEST(OperatorDetectionTest, UnaryMinusMember)
+TEST(OperatorDetectionTest, NegateMember)
 {
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<int>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<int &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<int &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<int const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<int const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<int const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<int>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<int &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<int &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<int const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<int const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<int const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithMember>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithMember>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithConstMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithRvalueMember>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithRvalueMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithRvalueMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithRvalueMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithRvalueMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithRvalueMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithRvalueMember>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithRvalueMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithRvalueMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithRvalueMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithRvalueMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithRvalueMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithLvalueConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithLvalueConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithLvalueConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithLvalueConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithLvalueConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_v<WithLvalueConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithLvalueConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithLvalueConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithLvalueConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithLvalueConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithLvalueConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_v<WithLvalueConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithGlobal>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithGlobal &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithGlobal &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithGlobal const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithGlobal const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<WithGlobal const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithGlobal>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithGlobal &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithGlobal &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithGlobal const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithGlobal const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<WithGlobal const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<NoOperators>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<NoOperators &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<NoOperators &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<NoOperators const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<NoOperators const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_v<NoOperators const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<NoOperators>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<NoOperators &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<NoOperators &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<NoOperators const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<NoOperators const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_v<NoOperators const &&>);
 }
 
-TEST(OperatorDetectionTest, UnaryMinusMemberExact)
+TEST(OperatorDetectionTest, NegateMemberExact)
 {
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<int>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<int &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<int &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<int const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<int const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<int const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<int>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<int &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<int &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<int const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<int const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<int const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_exact_v<WithMember>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_exact_v<WithMember>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithConstMember>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithConstMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_exact_v<WithConstMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithConstMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithConstMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithConstMember>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithConstMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_exact_v<WithConstMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithConstMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithRvalueMember>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithRvalueMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_exact_v<WithRvalueMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithRvalueMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithRvalueMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithRvalueMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithRvalueMember>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithRvalueMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_exact_v<WithRvalueMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithRvalueMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithRvalueMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithRvalueMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithLvalueConstMember>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithLvalueConstMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithLvalueConstMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithLvalueConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_unary_minus_member_exact_v<WithLvalueConstMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithLvalueConstMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithLvalueConstMember>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithLvalueConstMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithLvalueConstMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithLvalueConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_negate_member_exact_v<WithLvalueConstMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithLvalueConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithGlobal>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithGlobal &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithGlobal &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithGlobal const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithGlobal const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<WithGlobal const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithGlobal>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithGlobal &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithGlobal &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithGlobal const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithGlobal const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<WithGlobal const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<NoOperators>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<NoOperators &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<NoOperators &&>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<NoOperators const>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<NoOperators const &>);
-    STATIC_EXPECT_FALSE(::scl::has_unary_minus_member_exact_v<NoOperators const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<NoOperators>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<NoOperators &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<NoOperators &&>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<NoOperators const>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<NoOperators const &>);
+    STATIC_EXPECT_FALSE(::scl::has_negate_member_exact_v<NoOperators const &&>);
 }
 
 // ----------------------------------------------------------------------------
@@ -974,160 +974,160 @@ TEST(OperatorDetectionTest, PrefixDecrementMemberExact)
 // BITWISE NOT (~)
 // ----------------------------------------------------------------------------
 
-TEST(OperatorDetectionTest, BitwiseNot)
+TEST(OperatorDetectionTest, BitNot)
 {
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<int>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<int &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<int &&>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<int const>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<int const &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<int const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<int>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<int &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<int &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<int const>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<int const &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<int const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithMember>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<WithMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<WithMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<WithMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithMember>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<WithMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<WithMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<WithMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithConstMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithRvalueMember>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<WithRvalueMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithRvalueMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<WithRvalueMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<WithRvalueMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<WithRvalueMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithRvalueMember>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<WithRvalueMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithRvalueMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<WithRvalueMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<WithRvalueMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<WithRvalueMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithLvalueConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithLvalueConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithLvalueConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithLvalueConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithLvalueConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithLvalueConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithLvalueConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithLvalueConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithLvalueConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithLvalueConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithLvalueConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithLvalueConstMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithGlobal>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithGlobal &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithGlobal &&>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithGlobal const>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithGlobal const &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_v<WithGlobal const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithGlobal>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithGlobal &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithGlobal &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithGlobal const>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithGlobal const &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_v<WithGlobal const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<NoOperators>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<NoOperators &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<NoOperators &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<NoOperators const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<NoOperators const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_v<NoOperators const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<NoOperators>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<NoOperators &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<NoOperators &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<NoOperators const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<NoOperators const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_v<NoOperators const &&>);
 }
 
-TEST(OperatorDetectionTest, BitwiseNotMember)
+TEST(OperatorDetectionTest, BitNotMember)
 {
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<int>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<int &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<int &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<int const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<int const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<int const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<int>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<int &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<int &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<int const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<int const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<int const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithMember>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithMember>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithConstMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithRvalueMember>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithRvalueMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithRvalueMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithRvalueMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithRvalueMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithRvalueMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithRvalueMember>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithRvalueMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithRvalueMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithRvalueMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithRvalueMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithRvalueMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithLvalueConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithLvalueConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithLvalueConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithLvalueConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithLvalueConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_v<WithLvalueConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithLvalueConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithLvalueConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithLvalueConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithLvalueConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithLvalueConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_v<WithLvalueConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithGlobal>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithGlobal &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithGlobal &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithGlobal const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithGlobal const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<WithGlobal const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithGlobal>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithGlobal &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithGlobal &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithGlobal const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithGlobal const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<WithGlobal const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<NoOperators>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<NoOperators &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<NoOperators &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<NoOperators const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<NoOperators const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_v<NoOperators const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<NoOperators>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<NoOperators &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<NoOperators &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<NoOperators const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<NoOperators const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_v<NoOperators const &&>);
 }
 
-TEST(OperatorDetectionTest, BitwiseNotMemberExact)
+TEST(OperatorDetectionTest, BitNotMemberExact)
 {
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<int>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<int &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<int &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<int const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<int const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<int const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<int>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<int &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<int &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<int const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<int const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<int const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_exact_v<WithMember>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_exact_v<WithMember>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithConstMember>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithConstMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_exact_v<WithConstMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithConstMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithConstMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithConstMember>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithConstMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_exact_v<WithConstMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithConstMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithRvalueMember>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithRvalueMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_exact_v<WithRvalueMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithRvalueMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithRvalueMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithRvalueMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithRvalueMember>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithRvalueMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_exact_v<WithRvalueMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithRvalueMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithRvalueMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithRvalueMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithLvalueConstMember>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithLvalueConstMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithLvalueConstMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithLvalueConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_bitwise_not_member_exact_v<WithLvalueConstMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithLvalueConstMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithLvalueConstMember>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithLvalueConstMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithLvalueConstMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithLvalueConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_bit_not_member_exact_v<WithLvalueConstMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithLvalueConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithGlobal>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithGlobal &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithGlobal &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithGlobal const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithGlobal const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<WithGlobal const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithGlobal>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithGlobal &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithGlobal &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithGlobal const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithGlobal const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<WithGlobal const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<NoOperators>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<NoOperators &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<NoOperators &&>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<NoOperators const>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<NoOperators const &>);
-    STATIC_EXPECT_FALSE(::scl::has_bitwise_not_member_exact_v<NoOperators const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<NoOperators>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<NoOperators &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<NoOperators &&>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<NoOperators const>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<NoOperators const &>);
+    STATIC_EXPECT_FALSE(::scl::has_bit_not_member_exact_v<NoOperators const &&>);
 }
 
 // ----------------------------------------------------------------------------

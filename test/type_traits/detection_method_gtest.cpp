@@ -25,6 +25,51 @@ namespace
     };
 
     /**
+     * @brief Overloads a plain call cannot tell apart, and overloads beside a member template.
+     */
+    struct Overloads
+    {
+        long choose(int value) &;
+        char choose(int && value) &;
+
+        template <typename Type>
+        Type echo(Type value) const;
+        long echo(int value) const;
+
+        static long shared(int value);
+        static char shared(int && value);
+    };
+
+    /**
+     * @brief Class inheriting the overloads.
+     */
+    struct DerivedOverloads : Overloads
+    {};
+
+    /**
+     * @brief Class with a deleted and a private overload.
+     */
+    class Restricted
+    {
+    public:
+        long retire(int value) & = delete;
+        long retire(long value) &;
+
+    private:
+        long retire(short value) &;
+    };
+
+    /**
+     * @brief Union with a member function.
+     */
+    union Variant
+    {
+        int number;
+
+        int query(int x) & { return x; }
+    };
+
+    /**
      * @brief Class with no methods.
      */
     struct Empty
@@ -39,6 +84,10 @@ namespace
     SCL_METHOD_DETECTION(rvalue_only)
     SCL_METHOD_DETECTION(non_existent)
     SCL_METHOD_DETECTION(foo)
+    SCL_METHOD_DETECTION(choose)
+    SCL_METHOD_DETECTION(echo)
+    SCL_METHOD_DETECTION(shared)
+    SCL_METHOD_DETECTION(retire)
 
 } // namespace
 
@@ -119,4 +168,69 @@ TEST(MethodDetectionTest, Static)
     // lvalue_only() is not a static method
     STATIC_EXPECT_FALSE(has_lvalue_only_static_method_v<Mock>);
     STATIC_EXPECT_FALSE(has_lvalue_only_static_method_exact_v<Mock>);
+}
+
+#if !defined(_MSC_VER) || defined(__clang__)
+/**
+ * @test Verify that the exact forms find each overload where the plain call is ambiguous.
+ */
+TEST(MethodDetectionTest, ExactBesideAmbiguousCall)
+{
+    STATIC_EXPECT_FALSE((has_choose_method_v<Overloads &, int>));
+    STATIC_EXPECT_TRUE((has_choose_method_exact_v<Overloads &, int>));
+    STATIC_EXPECT_TRUE((has_choose_method_exact_v<Overloads &, int &&>));
+    STATIC_EXPECT_TRUE((has_choose_method_exact_v<DerivedOverloads &, int>));
+    STATIC_EXPECT_FALSE((has_choose_method_exact_v<Overloads, int>));
+    STATIC_EXPECT_TRUE((std::is_same_v<choose_method_exact_t<Overloads &, int>, long>));
+    STATIC_EXPECT_TRUE((std::is_same_v<choose_method_exact_t<Overloads &, int &&>, char>));
+
+    STATIC_EXPECT_FALSE((has_shared_static_method_v<Overloads, int>));
+    STATIC_EXPECT_TRUE((has_shared_static_method_exact_v<Overloads, int>));
+    STATIC_EXPECT_TRUE((std::is_same_v<shared_static_method_exact_t<Overloads, int &&>, char>));
+}
+#endif
+
+/**
+ * @test Verify the exact form for an overload set holding a member function template.
+ */
+TEST(MethodDetectionTest, ExactBesideTemplate)
+{
+    STATIC_EXPECT_TRUE((has_echo_method_exact_v<Overloads const, int>));
+    STATIC_EXPECT_TRUE((std::is_same_v<echo_method_exact_t<Overloads const, int>, long>));
+    STATIC_EXPECT_TRUE((has_echo_method_exact_v<Overloads const, double>));
+    STATIC_EXPECT_FALSE((has_echo_method_exact_v<Overloads, int>));
+    STATIC_EXPECT_TRUE((has_echo_method_exact_v<DerivedOverloads const, int>));
+    STATIC_EXPECT_TRUE((has_echo_method_exact_v<DerivedOverloads const, double>));
+}
+
+/**
+ * @test Verify that the exact form finds neither a deleted nor a private member function.
+ */
+TEST(MethodDetectionTest, ExactDeletedAndPrivate)
+{
+    STATIC_EXPECT_FALSE((has_retire_method_exact_v<Restricted &, int>));
+    STATIC_EXPECT_TRUE((has_retire_method_exact_v<Restricted &, long>));
+#if !defined(_MSC_VER) || defined(__clang__)
+    STATIC_EXPECT_FALSE((has_retire_method_exact_v<Restricted &, short>));
+#endif
+}
+
+/**
+ * @test Verify that a void argument type gives false rather than a build error.
+ */
+TEST(MethodDetectionTest, ExactVoidArgument)
+{
+    STATIC_EXPECT_FALSE((has_choose_method_exact_v<Overloads &, void>));
+    STATIC_EXPECT_FALSE((has_shared_static_method_exact_v<Overloads, void>));
+    STATIC_EXPECT_FALSE((has_query_method_exact_v<Mock &, void>));
+}
+
+/**
+ * @test Verify the exact form for a member function of a union.
+ */
+TEST(MethodDetectionTest, Union)
+{
+    STATIC_EXPECT_TRUE((has_query_method_v<Variant &, int>));
+    STATIC_EXPECT_TRUE((has_query_method_exact_v<Variant &, int>));
+    STATIC_EXPECT_FALSE((has_query_method_exact_v<Variant, int>));
 }
