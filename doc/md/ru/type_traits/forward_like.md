@@ -17,7 +17,7 @@ namespace scl
 
     template <typename Base, typename Type>
     [[nodiscard]]
-    constexpr decltype(auto) forward_like(Type && t) noexcept;
+    constexpr decltype(auto) forward_like(Type && t SCL_LIFETIMEBOUND) noexcept;
 }
 ```
 
@@ -43,6 +43,14 @@ namespace scl
   не имеет побочных эффектов. Аргумент не копируется и не перемещается, а возвращается ссылка на тот
   же объект. Функция объявлена со спецификаторами `constexpr` и `noexcept` и с атрибутом
   `[[nodiscard]]`.
+- **Время жизни аргумента.** Параметр функции `forward_like` отмечен макросом
+  [`SCL_LIFETIMEBOUND`](../attribute/lifetimebound.md). Поэтому компилятор, который проверяет время
+  жизни ссылок, например Clang, предупреждает, если возвращённая ссылка сохраняется дольше,
+  чем живёт аргумент. Такое предупреждение выдаётся, например, для ссылки на временный объект,
+  уничтоженный в конце полного выражения. Вместе с заголовком `forward_like.h` подключается
+  заголовок макроса `SCL_LIFETIMEBOUND`, поэтому правила
+  [макросов вызывающего кода](../attribute/index.md#макросы-вызывающего-кода) группы attribute
+  относятся и к каждой единице трансляции, в которую подключён заголовок `forward_like.h`.
 
 ### Отличие от `std::forward_like`
 

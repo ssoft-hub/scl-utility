@@ -10,8 +10,10 @@
 - объявлен ли оператор как метод класса с параметрами, которые в точности совпадают с заданными
   типами, и с квалификаторами, которые соответствуют типу объекта (строгое соответствие).
 
-Проверки выполняются при компиляции программы. Для каждой проверки объявлены шаблонная константа
-`has_..._v` и шаблонный тип `..._t` с типом результата.
+Кроме того, проверяется, объявлен ли оператор как метод с явным параметром объекта (C++23),
+а для операторов `()` и `[]` также как статический метод (C++23). Проверки выполняются
+при компиляции программы. Для каждой проверки объявлены шаблонная константа `has_..._v`
+и шаблонный тип `..._t` с типом результата.
 
 - Заголовок: `#include <scl/utility/type_traits/detection/operator.h>`
 
@@ -42,6 +44,14 @@ namespace scl
     inline constexpr auto has_plus_member_exact_v = is_detected_v<plus_member_exact_operation, Arguments...>;
     template <typename... Arguments>
     using plus_member_exact_t = detected_t<plus_member_exact_operation, Arguments...>;
+
+    template <typename Type, typename... Arguments>
+    using plus_explicit_member_exact_operation = unspecified;
+    template <typename... Arguments>
+    inline constexpr auto has_plus_explicit_member_exact_v =
+        is_detected_v<plus_explicit_member_exact_operation, Arguments...>;
+    template <typename... Arguments>
+    using plus_explicit_member_exact_t = detected_t<plus_explicit_member_exact_operation, Arguments...>;
 }
 ```
 
@@ -51,11 +61,11 @@ namespace scl
 |---|---|
 | Префиксные | `&` `address_of`, `*` `indirection`, `+` `unary_plus`, `-` `negate`, `++` `prefix_increment`, `--` `prefix_decrement`, `~` `bit_not`, `!` `logical_not` |
 | Постфиксные | `++` `postfix_increment`, `--` `postfix_decrement` |
-| Сравнения | `==` `equal_to`, `!=` `not_equal_to`, `<` `less`, `<=` `less_equal`, `>` `greater`, `>=` `greater_equal` |
+| Сравнения | `==` `equal_to`, `!=` `not_equal_to`, `<` `less`, `<=` `less_equal`, `>` `greater`, `>=` `greater_equal`, `<=>` `compare_three_way` |
 | Арифметические и поразрядные | `*` `multiplies`, `/` `divides`, `%` `modulus`, `+` `plus`, `-` `minus`, `<<` `left_shift`, `>>` `right_shift`, `&` `bit_and`, `\|` `bit_or`, `^` `bit_xor` |
 | Логические | `&&` `logical_and`, `\|\|` `logical_or` |
 | Присваивания | `=` `assign`, `*=` `multiplies_assign`, `/=` `divides_assign`, `%=` `modulus_assign`, `+=` `plus_assign`, `-=` `minus_assign`, `<<=` `left_shift_assign`, `>>=` `right_shift_assign`, `&=` `bit_and_assign`, `\|=` `bit_or_assign`, `^=` `bit_xor_assign` |
-| Прочие | `->*` `arrow_to_pointer`, `->` `arrow`, `,` `comma`, `[]` `subscript`, `()` `call` |
+| Прочие | `->*` `pointer_to_member_access`, `->` `member_access`, `,` `comma`, `[]` `subscript`, `()` `call` |
 
 Если в стандартной библиотеке есть функциональный объект для того же оператора, например
 `std::multiplies` или `std::bit_and`, имя оператора совпадает с именем этого шаблона класса.
@@ -93,7 +103,8 @@ namespace scl
   соответствуют типу `Type`, и этот метод не удалён и доступен. Квалификаторы должны соответствовать
   типу `Type` по тем же правилам, что на странице [обнаружения наличия метода](method_detection.md).
   Например, для типа `X const` нужен метод с квалификатором `const` без ссылочного квалификатора,
-  для типа `X &` нужен метод с квалификатором `&` и так далее.
+  для типа `X &` нужен метод с квалификатором `&` и так далее. В этой форме находится только метод
+  с неявным параметром объекта.
 - **Тип результата и неоднозначный вызов.** Тип результата метода в строгом соответствии
   не сравнивается. Шаблонный тип `plus_member_exact_t` является типом результата найденного метода.
   Метод находится и тогда, когда вызов метода `operator+` неоднозначен, например для перегрузок
@@ -103,15 +114,36 @@ namespace scl
 - **Спецификатор `noexcept`.** Спецификатор `noexcept` оператора в строгом соответствии
   не сравнивается. Его можно проверить оператором `noexcept`, применённым к вызову
   `std::declval<Type>().operator+(std::declval<Arguments>()...)`. Если этот вызов неоднозначен,
-  а перегрузки различаются не только квалификаторами, спецификатор виден в типе указателя на нужную
-  перегрузку, который возвращает [`scl::overload_cast`](overload_cast.md) для адреса оператора.
+  спецификатор виден в типе указателя на нужную перегрузку, который возвращает
+  [`scl::member_overload_cast`](overload_cast.md) для адреса оператора.
+
+### Явный параметр объекта и статические операторы
+
+- **Явный параметр объекта.** Шаблонная константа
+  `has_plus_explicit_member_exact_v<Type, Arguments...>` равна `true`, если объявлен метод
+  `operator+` с явным параметром объекта (C++23), тип которого в точности равен типу `Type`,
+  с остальными параметрами в точности типов `Arguments...`, и этот метод не удалён и доступен.
+  Правила этой формы те же, что у формы с явным параметром объекта на странице
+  [обнаружения наличия метода](method_detection.md). Статическими могут быть только операторы `()`
+  и `[]`, поэтому только для них оператор с явным параметром объекта не находится рядом
+  со статическим оператором, который принимает объект первым.
+- **Статические `operator()` и `operator[]`.** Шаблонная константа
+  `has_call_static_member_v<Type, Arguments...>` равна `true`, если вызов через имя класса
+  `std::remove_cvref_t<Type>::operator()(std::declval<Arguments>()...)` компилируется. Шаблонная
+  константа `has_call_static_member_exact_v<Type, Arguments...>` равна `true`, если объявлен
+  статический `operator()`, параметры которого имеют в точности типы `Arguments...`. Такие
+  же шаблоны с именем `subscript`, например `has_subscript_static_member_exact_v`, объявлены
+  для `operator[]`. Как и статическая строгая форма метода, шаблонная константа
+  `has_call_static_member_exact_v` равна `true` и для оператора `operator()` с явным параметром
+  объекта, если тип его параметра объекта совпадает с первым из типов `Arguments...`. На MSVC
+  для такого оператора шаблонная константа равна `false`, как описано в пункте "MSVC" ниже.
 
 ### Операторы с собственными правилами
 
 - **Операторы `->` и `->*`.** Для операторов `->` и `->*` выражение не проверяется, а шаблонные
-  константы `has_arrow_v` и `has_arrow_to_pointer_v` равны `true`, если компилируется вызов метода
-  `operator->` или `operator->*`. Поэтому для встроенного указателя и для свободной функции
-  `operator->*` эти шаблонные константы равны `false`.
+  константы `has_member_access_v` и `has_pointer_to_member_access_v` равны `true`,
+  если компилируется вызов метода `operator->` или `operator->*`. Поэтому для встроенного указателя
+  и для свободной функции `operator->*` эти шаблонные константы равны `false`.
 - **Постфиксные `++` и `--`.** Шаблонам `has_postfix_increment_member_v`,
   `has_postfix_increment_member_exact_v` и другим шаблонам постфиксных операторов `++` и `--`,
   которые проверяют метод, передаётся только тип объекта. Вызов `operator++(0)` или `operator--(0)`
@@ -124,7 +156,10 @@ namespace scl
   находятся в форме выражения и в нестрогой форме метода, а в строгой форме только в том случае,
   если в классе объявлены и другие перегрузки этого оператора. Строгое соответствие на MSVC
   также требует, чтобы вызов метода оператора компилировался, поэтому там при неоднозначном вызове
-  метода `operator+` шаблонная константа `has_plus_member_exact_v` равна `false`.
+  метода `operator+` шаблонная константа `has_plus_member_exact_v` равна `false`. Оператор
+  `operator()` или `operator[]` с явным параметром объекта нельзя вызвать через имя класса,
+  поэтому на MSVC шаблонные константы `has_call_static_member_exact_v`
+  и `has_subscript_static_member_exact_v` для такого оператора равны `false`.
 
 ## Примеры
 

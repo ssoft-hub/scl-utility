@@ -8,62 +8,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- [any] Added `scl::any` and `basic_any`, owning holders with no RTTI that work in constant evaluation
-- [any] Added `scl::any_view`, a non-owning view that reads a value or a `std::any`
-- [any] Added `scl::any_mutable_view`, a non-owning view that writes through
-- [any] Added `scl::any_arg`, a parameter-only handle that binds any value for one call
-- [any] Added `scl::any_cast` and `scl::bad_any_cast`, the cast of every any handle and its failure
-- [any] Added `scl::any_switch`, a chain of typed branches over an any handle
-- [any] Added `scl::any_anchor`, which lets a handle cast in constant evaluation on C++20
-- [attribute] Added `[[msvc::lifetimebound]]` to `SCL_LIFETIMEBOUND` on MSVC, whose code analysis then reports a result that outlives its argument
+- [any] Added `scl::any`, its views and `any_cast`, with no RTTI and in constant evaluation
+- [attribute] Added `[[msvc::lifetimebound]]` to `SCL_LIFETIMEBOUND` on MSVC
 - [concepts] Added concepts for the standard type traits that have no standard concept
 - [flags] Added `scl::flags`, a set of enumeration values usable in constant evaluation
-- [hash] Added `scl::hash::byte_view`, presenting wider elements as the bytes a hash takes
-- [hash] Added `hashable_range` and `byte_element`, stating what a hash function accepts
+- [hash] Added `scl::hash::byte_view`, `hashable_range` and `byte_element` for the input of a hash
 - [hierarchy] Added `scl::hierarchy::node` and `tree`, a tree that notifies an observer
-- [hierarchy] Added `observer_tuple` and the ADL algorithms such as `parent_of`
-- [meta] Added `scl::type_key`, an identity of a type that needs no RTTI
-- [meta] Added `scl::is_tu_local`, telling a type declared in an anonymous namespace
-- [preprocessor] Added `SCL_HAS_RTTI` and `SCL_HAS_EXCEPTIONS`, telling what a build enables
-- [preprocessor] Added `SCL_HAS_THREADS`, telling whether the standard library supports threads
-- [runtime] Added `scl::type_name(object)` and `type_short_name(object)` for a dynamic type
-- [runtime] Added `scl::enum_string`, spelling an enumeration value as `Type::N`, `N` in any form
-- [runtime] Added `scl::concepts::enum_string_format`, stating the format `scl::enum_string` takes
-- [type_traits] Added `scl::signature_t` and the namespace `scl::signature`, the parts of a callable type
-- Added runnable examples, a Quick start among them, each linked from the page of its subject
-- Added a version selector to the published reference, with one version per release
+- [meta] Added `scl::type_key`, a type identity with no RTTI, and `scl::is_tu_local`
+- [preprocessor] Added `SCL_HAS_RTTI`, `SCL_HAS_EXCEPTIONS` and `SCL_HAS_THREADS`
+- [runtime] Added `scl::type_name(object)`, `type_short_name(object)` and `scl::enum_string`
+- [type_traits] Added `signature_t`, `member_overload_cast`, `<=>` and C++23 member detection
+- Added runnable examples, a Quick start among them, and a version selector to the reference
 
 ### Changed
 
-- [attribute] Made `SCL_LIKELY_EXPR` and `SCL_UNLIKELY_EXPR` yield `bool` on GCC and Clang, as on MSVC
-- [attribute] Broke a macro defined before its header as a text its page does not list for the compiler at hand: the build stops with an error naming the macro
-- [attribute] Broke a build for MSVC under a caller's macro `noinline`, or for the MSVC ABI under `msvc`: the error names the macro of the group to define as empty
-- [attribute] Broke a build for MSVC under a caller's macro `msvc` or `lifetimebound` with no definition of `SCL_LIFETIMEBOUND` made before the header
-- [hash] Broke `fnv1a("text")`: every hash function and `key` refuse a bounded array
-- [hash] Refused a range of elements wider than a byte, a breaking change
-- [hash] Took the range of every hash function as a forwarding reference, so `fnv1a<T>(lvalue)` breaks
+- [attribute] Made `SCL_LIKELY_EXPR` and `SCL_UNLIKELY_EXPR` yield `bool` on GCC and Clang
+- [attribute] Broke a build under a macro of the group defined before its header as an unlisted text
+- [attribute] Broke an MSVC build under `noinline` or `lifetimebound`, an MSVC ABI one under `msvc`
+- [hash] Broke `fnv1a<T>(lvalue)` and a hash of a bounded array or of elements wider than a byte
 - [hash] Made `noexcept` of every hash function, hasher and `key` follow the range it reads
 - [meta] Broke `type_short_name<T>()` for a pointer, an array, a function or a member pointer
 - [preprocessor] Broke a `SCL_FORWARD` defined before its header: the header no longer yields to it
 - [type_traits] Broke `detected_t` of an ill-formed operation, now `scl::nonesuch`
 - [type_traits] Broke operator detection names and `member_property_like_t`, now as std names them
+- [type_traits] Let `SCL_FUNCTION_DETECTION` expand in a class, breaking an export of its traits
+- [type_traits] Marked `forward_like` lifetimebound, breaking MSVC under `msvc` or `lifetimebound`
 - Marked the entry points of `hash`, `meta`, `forward_like` and `overload_cast` `[[nodiscard]]`
 
 ### Fixed
 
-- [attribute] Kept the build and the attribute of every macro on GCC and Clang under a caller's macro named like an attribute token, such as `noinline` or `hot`
-- [hash] Accepted in `djb2` and `sdbm` a range whose end is a sentinel of its own type
-- [hash] Accepted a view that cannot be read through a `const` reference
-- [hash] Accepted `std::byte` and other single-byte trivially copyable elements
-- [meta] Returned an empty name from `enum_name<V>()` and `enum_short_name<V>()` for a value no constant of its type has
-- [meta] Made `type_short_name<T>()` return the name of the type alone, without `const`, `volatile` and a reference, for a closure, an unnamed type and a name holding an operator as well, apart from two types GCC or Clang spell with one name
-- [meta] Made `symbol_name<S>()` return the full name and `symbol_short_name<S>()` the name alone, apart from a conversion operator with GCC and a virtual member function with MSVC
+- [attribute] Kept every macro working on GCC and Clang under a caller's macro such as `hot`
+- [hash] Accepted one-byte elements, a non-`const` view and, in `djb2` and `sdbm`, a sentinel end
+- [meta] Fixed the names `enum_name`, `type_short_name`, `symbol_name` and their short forms give
 - [preprocessor] Made the counter take a tag of any type or with commas, and yield a plain value
 - [type_traits] Accepted a union in `member_function_like_t` and the exact method form
 - [type_traits] Made `is_detected_exact` and `is_detected_convertible` false on a failed detection
 - [type_traits] Found an exact overload beside an ambiguous call, except on MSVC and for templates
-- Included `hash.h` in `<scl/utility.h>`, which left the hash group out
-- Fixed the installation steps, which added a directory with no `CMakeLists.txt`
+- Included `hash.h` in `<scl/utility.h>` and fixed the installation steps
 
 ## [0.1.4] - 2026-04-15
 

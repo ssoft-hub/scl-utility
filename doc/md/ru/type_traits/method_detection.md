@@ -7,8 +7,10 @@
   неявно преобразовываться в типы параметров (нестрогое соответствие)
 - объявлен ли метод `add`, параметры которого в точности совпадают с заданными типами,
   а квалификаторы соответствуют типу объекта (строгое соответствие)
+- объявлен ли метод `add` с явным параметром объекта (C++23) заданного типа и с параметрами
+  в точности заданных типов
 - можно ли вызвать статический метод `add` через имя класса и объявлен ли статический метод
-  с заданными типами параметров.
+  с заданными типами параметров
 
 Проверки выполняются при компиляции программы, и для них достаточно объявления метода, определение
 не нужно. Имя проверяемого метода передаётся в макрос вместо имени `add`, и из него составляются
@@ -18,8 +20,9 @@
 
 - Заголовок: `#include <scl/utility/type_traits/detection/method.h>`
 
-Макрос можно раскрывать в пространстве имён или в классе. Раскрытие `SCL_METHOD_DETECTION(add)`
-содержит объявления ниже. Каждому шаблону раскрытия первым аргументом передаётся тип объекта `Type`
+Макрос следует раскрывать в отдельном пространстве имён или в классе, чтобы имена объявленных
+шаблонов не пересекались с другими объявлениями. Раскрытие `SCL_METHOD_DETECTION(add)` содержит
+объявления ниже. Каждому шаблону раскрытия первым аргументом передаётся тип объекта `Type`
 вместе с его cv-квалификаторами и ссылкой, а за ним передаются типы аргументов вызова. Например,
 шаблонная константа `has_add_method_v<counter &, int>` равна `true`, если метод `add` можно вызвать
 с аргументом типа `int` для lvalue типа `counter`.
@@ -55,6 +58,14 @@ inline static constexpr auto has_add_static_method_exact_v =
     scl::is_detected_v<add_static_method_exact_operation, Arguments...>;
 template <typename... Arguments>
 using add_static_method_exact_t = scl::detected_t<add_static_method_exact_operation, Arguments...>;
+
+template <typename Type, typename... Arguments>
+using add_explicit_method_exact_operation = unspecified;
+template <typename... Arguments>
+inline static constexpr auto has_add_explicit_method_exact_v =
+    scl::is_detected_v<add_explicit_method_exact_operation, Arguments...>;
+template <typename... Arguments>
+using add_explicit_method_exact_t = scl::detected_t<add_explicit_method_exact_operation, Arguments...>;
 ```
 
 ## Семантика
@@ -106,9 +117,8 @@ using add_static_method_exact_t = scl::detected_t<add_static_method_exact_operat
   константа `has_add_method_exact_v` равна `false`.
 - **Спецификатор `noexcept`.** Спецификатор `noexcept` метода в строгом соответствии
   не сравнивается. Его можно проверить оператором `noexcept`, применённым к вызову, как в примере
-  ниже. Если вызов неоднозначен, а перегрузки различаются не только квалификаторами, спецификатор
-  виден в типе указателя на нужную перегрузку, который возвращает
-  [`scl::overload_cast`](overload_cast.md).
+  ниже. Если вызов неоднозначен, спецификатор виден в типе указателя на нужную перегрузку, который
+  возвращает [`scl::member_overload_cast`](overload_cast.md).
 
 ### Статический метод и явный параметр объекта
 
@@ -119,6 +129,34 @@ using add_static_method_exact_t = scl::detected_t<add_static_method_exact_operat
   `Arguments...`. Как и в строгом соответствии метода, такой статический метод находится и тогда,
   когда вызов через имя класса неоднозначен. Тип объекта `Type` для статических форм задаёт
   только класс, его квалификаторы не учитываются.
+- **Явный параметр объекта.** Шаблонная константа
+  `has_add_explicit_method_exact_v<Type, Arguments...>` равна `true`, если объявлен метод `add`
+  с явным параметром объекта (C++23), тип которого в точности равен типу `Type`, с остальными
+  параметрами в точности типов `Arguments...`, и этот метод не удалён и доступен. Например,
+  для метода `int add(this X const & self, int)` шаблонная константа
+  `has_add_explicit_method_exact_v<X const &, int>` равна `true`, а шаблонная константа
+  `has_add_explicit_method_exact_v<X &, int>` равна `false`, хотя такой метод можно вызвать
+  и для объекта типа `X &`. Метод базового класса `Base` с параметром `this Base const & self`
+  для типа `Derived const &` не находится, потому что тип параметра объекта отличается от типа
+  `Type`. Шаблон метода с параметром `this Self && self` находится, потому что тип `Self` выводится
+  из типа `Type`.
+- **Статический метод рядом с методом с явным параметром объекта.** Указатель на статический метод
+  `static int add(X const &, int)` имеет тот же тип, что и указатель на метод
+  `int add(this X const &, int)`. Различаются эти методы только тем, что статический метод можно
+  вызвать через имя класса, например как `X::add(object, 1)`. Поэтому шаблонная константа
+  `has_add_explicit_method_exact_v<Type, Arguments...>` равна `false`, если вызов
+  `std::remove_cvref_t<Type>::add(std::declval<Type>(), std::declval<Arguments>()...)`
+  компилируется, то есть рядом с таким статическим методом метод с явным параметром объекта
+  не находится. Если этот вызов неоднозначен, например для статических методов `add(X, int)`
+  и `add(X const &, int)`, шаблонная константа `has_add_explicit_method_exact_v<X const &, int>`
+  равна `true`, хотя метода с явным параметром объекта нет. На MSVC в этом случае шаблонная
+  константа равна `false`, как описано в пункте "MSVC" ниже.
+- **Метод с явным параметром объекта в статической строгой форме.** По той же причине шаблонная
+  константа `has_add_static_method_exact_v` равна `true` и для метода с явным параметром объекта,
+  если тип его параметра объекта совпадает с первым из типов `Arguments...`. Например, для метода
+  `int add(this X const &, int)` шаблонная константа
+  `has_add_static_method_exact_v<X, X const &, int>` равна `true`, хотя статического метода `add`
+  нет. На MSVC здесь шаблонная константа равна `false`, как описано в пункте "MSVC" ниже.
 
 ### Ограничения
 
@@ -129,7 +167,12 @@ using add_static_method_exact_t = scl::detected_t<add_static_method_exact_operat
   имени. Адрес удалённого метода на MSVC тоже не отбрасывается, поэтому там строгое соответствие
   дополнительно требует, чтобы компилировался обычный вызов, а статическая строгая форма требует,
   чтобы компилировался вызов через имя класса. Поэтому на MSVC при неоднозначном вызове шаблонные
-  константы `has_add_method_exact_v` и `has_add_static_method_exact_v` равны `false`.
+  константы `has_add_method_exact_v`, `has_add_static_method_exact_v`
+  и `has_add_explicit_method_exact_v` равны `false`. Метод с явным параметром объекта нельзя
+  вызвать через имя класса, поэтому на MSVC шаблонная константа `has_add_static_method_exact_v`
+  для такого метода равна `false`. Для статических методов `add(X, int)` и `add(X const &, int)`
+  обычный вызов `object.add(1)` не компилируется, поэтому на MSVC шаблонная константа
+  `has_add_explicit_method_exact_v<X const &, int>` для них равна `false`.
 
 ## Примеры
 
@@ -148,21 +191,24 @@ public:
     static counter zero() { return {}; }
 };
 
-SCL_METHOD_DETECTION(value)
-SCL_METHOD_DETECTION(add)
-SCL_METHOD_DETECTION(zero)
+namespace counter_traits
+{
+    SCL_METHOD_DETECTION(value)
+    SCL_METHOD_DETECTION(add)
+    SCL_METHOD_DETECTION(zero)
+} // namespace counter_traits
 ```
 
 Нестрогое соответствие для объектов с разными квалификаторами и категорией значения:
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp call -->
 ```cpp
-static_assert(has_value_method_v<counter>);
-static_assert(has_value_method_v<counter const &>);
-static_assert(std::is_same_v<value_method_t<counter>, int>);
-static_assert(has_add_method_v<counter &, int>);
-static_assert(has_add_method_v<counter &, short>);
-static_assert(!has_add_method_v<counter, int>);
+static_assert(counter_traits::has_value_method_v<counter>);
+static_assert(counter_traits::has_value_method_v<counter const &>);
+static_assert(std::is_same_v<counter_traits::value_method_t<counter>, int>);
+static_assert(counter_traits::has_add_method_v<counter &, int>);
+static_assert(counter_traits::has_add_method_v<counter &, short>);
+static_assert(!counter_traits::has_add_method_v<counter, int>);
 ```
 
 Строгое соответствие квалификаторов объекта и типов параметров. Метод `value()` объявлен
@@ -172,17 +218,17 @@ static_assert(!has_add_method_v<counter, int>);
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp exact -->
 ```cpp
-static_assert(has_value_method_exact_v<counter const>);
-static_assert(!has_value_method_exact_v<counter>);
-static_assert(has_add_method_exact_v<counter &, int>);
-static_assert(!has_add_method_exact_v<counter &, short>);
+static_assert(counter_traits::has_value_method_exact_v<counter const>);
+static_assert(!counter_traits::has_value_method_exact_v<counter>);
+static_assert(counter_traits::has_add_method_exact_v<counter &, int>);
+static_assert(!counter_traits::has_add_method_exact_v<counter &, short>);
 ```
 
 Тип результата и спецификатор `noexcept`, проверенные отдельно:
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp properties -->
 ```cpp
-static_assert(std::is_same_v<value_method_exact_t<counter const>, int>);
+static_assert(std::is_same_v<counter_traits::value_method_exact_t<counter const>, int>);
 static_assert(noexcept(std::declval<counter const &>().value()));
 ```
 
@@ -190,9 +236,9 @@ static_assert(noexcept(std::declval<counter const &>().value()));
 
 <!-- snippet: example/type_traits/method_detection/type_traits_method_detection_example.cpp static -->
 ```cpp
-static_assert(has_zero_static_method_v<counter>);
-static_assert(has_zero_static_method_exact_v<counter>);
-static_assert(!has_value_static_method_v<counter>);
+static_assert(counter_traits::has_zero_static_method_v<counter>);
+static_assert(counter_traits::has_zero_static_method_exact_v<counter>);
+static_assert(!counter_traits::has_value_static_method_v<counter>);
 ```
 
 ## Примечания
@@ -206,6 +252,8 @@ static_assert(!has_value_static_method_v<counter>);
 - Квалификаторы `const` и `volatile` верхнего уровня у типа параметра не входят в тип функции.
   Поэтому в строгом соответствии они не учитываются, и для метода `add(int) &` шаблонная константа
   `has_add_method_exact_v<X &, int const>` тоже равна `true`.
+- Квалификаторы `const` и `volatile` верхнего уровня у явного параметра объекта, принятого
+  по значению, тоже не входят в тип функции и не учитываются.
 
 ## Смотрите также
 

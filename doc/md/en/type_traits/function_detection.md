@@ -14,8 +14,9 @@ the name `foo`, and the names of the declared templates are made from it. The ma
 
 - Header: `#include <scl/utility/type_traits/detection/function.h>`
 
-The macro should be expanded in a namespace after the declarations of the function to check.
-The expansion of `SCL_FUNCTION_DETECTION(foo)` contains the declarations below.
+The macro should be expanded after the declarations of the function to check, in a separate
+namespace or in a class, so that the names of the declared templates do not collide with other
+declarations. The expansion of `SCL_FUNCTION_DETECTION(foo)` contains the declarations below.
 
 ```cpp
 #define SCL_FUNCTION_DETECTION(name)
@@ -23,14 +24,14 @@ The expansion of `SCL_FUNCTION_DETECTION(foo)` contains the declarations below.
 template <typename... Arguments>
 using foo_function_operation = decltype(foo(std::declval<Arguments>()...));
 template <typename... Arguments>
-inline constexpr auto has_foo_function_v = scl::is_detected_v<foo_function_operation, Arguments...>;
+inline static constexpr auto has_foo_function_v = scl::is_detected_v<foo_function_operation, Arguments...>;
 template <typename... Arguments>
 using foo_function_t = scl::detected_t<foo_function_operation, Arguments...>;
 
 template <typename... Arguments>
 using foo_function_exact_operation = unspecified;
 template <typename... Arguments>
-inline constexpr auto has_foo_function_exact_v = scl::is_detected_v<foo_function_exact_operation, Arguments...>;
+inline static constexpr auto has_foo_function_exact_v = scl::is_detected_v<foo_function_exact_operation, Arguments...>;
 template <typename... Arguments>
 using foo_function_exact_t = scl::detected_t<foo_function_exact_operation, Arguments...>;
 ```
@@ -96,8 +97,11 @@ using foo_function_exact_t = scl::detected_t<foo_function_exact_operation, Argum
   such a function out of the strict match, on MSVC the strict match also requires the plain call
   `foo(std::declval<Arguments>()...)` to compile. So on MSVC the variable template
   `has_foo_function_exact_v` is `false` where the plain call is ambiguous.
+- **Inaccessible static member function.** Where the macro is expanded in a class, a static member
+  function `foo` of a base class that the class cannot access, such as a private one, is not
+  supported. For such a function the variable templates of both matches can be `true`.
 - **Place of expansion.** The build ends with an error if no declaration of `foo` is visible where
-  the macro is expanded, or if the macro is expanded inside a class.
+  the macro is expanded.
 
 ## Examples
 
@@ -108,32 +112,35 @@ Overloads of a function and the templates declared for them:
 int foo(int value, int factor);
 double foo(double value, double factor);
 
-SCL_FUNCTION_DETECTION(foo)
+namespace foo_traits
+{
+    SCL_FUNCTION_DETECTION(foo)
+} // namespace foo_traits
 ```
 
 The non-strict match, where the arguments convert to the parameter types:
 
 <!-- snippet: example/type_traits/function_detection/type_traits_function_detection_example.cpp call -->
 ```cpp
-static_assert(has_foo_function_v<int, int>);
-static_assert(has_foo_function_v<int, long>);
-static_assert(!has_foo_function_v<int>);
-static_assert(std::is_same_v<foo_function_t<double, double>, double>);
+static_assert(foo_traits::has_foo_function_v<int, int>);
+static_assert(foo_traits::has_foo_function_v<int, long>);
+static_assert(!foo_traits::has_foo_function_v<int>);
+static_assert(std::is_same_v<foo_traits::foo_function_t<double, double>, double>);
 ```
 
 The strict match of the parameter types:
 
 <!-- snippet: example/type_traits/function_detection/type_traits_function_detection_example.cpp exact -->
 ```cpp
-static_assert(has_foo_function_exact_v<int, int>);
-static_assert(!has_foo_function_exact_v<int, long>);
+static_assert(foo_traits::has_foo_function_exact_v<int, int>);
+static_assert(!foo_traits::has_foo_function_exact_v<int, long>);
 ```
 
 The result type and the specifier `noexcept`, checked apart:
 
 <!-- snippet: example/type_traits/function_detection/type_traits_function_detection_example.cpp properties -->
 ```cpp
-static_assert(std::is_same_v<foo_function_exact_t<double, double>, double>);
+static_assert(std::is_same_v<foo_traits::foo_function_exact_t<double, double>, double>);
 static_assert(!noexcept(foo(std::declval<int>(), std::declval<int>())));
 ```
 
@@ -152,8 +159,8 @@ namespace shapes
     };
 } // namespace shapes
 
-static_assert(has_foo_function_v<shapes::circle, double>);
-static_assert(!has_foo_function_exact_v<shapes::circle, double>);
+static_assert(foo_traits::has_foo_function_v<shapes::circle, double>);
+static_assert(!foo_traits::has_foo_function_exact_v<shapes::circle, double>);
 ```
 
 ## Notes

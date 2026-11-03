@@ -491,219 +491,226 @@ TEST(OperatorDetectionTest, CommaMemberExact)
 }
 
 // ----------------------------------------------------------------------------
-// ARROW (->)
+// MEMBER ACCESS (->)
 // ----------------------------------------------------------------------------
 
-TEST(OperatorDetectionTest, ArrowMember)
+TEST(OperatorDetectionTest, MemberAccessMember)
 {
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<int *>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<int *&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<int *&&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<int const *>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<int const *&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<int const *&&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<int *>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<int *&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<int *&&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<int const *>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<int const *&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<int const *&&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithMember>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithMember>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithConstMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithRvalueMember>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithRvalueMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithRvalueMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithRvalueMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithRvalueMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithRvalueMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithRvalueMember>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithRvalueMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithRvalueMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithRvalueMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithRvalueMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithRvalueMember const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithLvalueConstMember>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithLvalueConstMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithLvalueConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithLvalueConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithLvalueConstMember const &>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_v<WithLvalueConstMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithLvalueConstMember>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithLvalueConstMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithLvalueConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithLvalueConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithLvalueConstMember const &>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_v<WithLvalueConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithGlobal>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithGlobal &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithGlobal &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithGlobal const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithGlobal const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<WithGlobal const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithGlobal>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithGlobal &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithGlobal &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithGlobal const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithGlobal const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<WithGlobal const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<NoOperators>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<NoOperators &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<NoOperators &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<NoOperators const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<NoOperators const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_v<NoOperators const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<NoOperators>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<NoOperators &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<NoOperators &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<NoOperators const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<NoOperators const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_v<NoOperators const &&>);
 }
 
-TEST(OperatorDetectionTest, ArrowMemberExact)
+TEST(OperatorDetectionTest, MemberAccessMemberExact)
 {
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<int>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<int &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<int &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<int const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<int const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<int const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<int>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<int &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<int &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<int const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<int const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<int const &&>);
 
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_exact_v<WithMember>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithMember const &&>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_exact_v<WithMember>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithConstMember>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithConstMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithConstMember &&>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_exact_v<WithConstMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithConstMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithConstMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithConstMember>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithConstMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithConstMember &&>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_exact_v<WithConstMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithConstMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithRvalueMember>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithRvalueMember &>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_exact_v<WithRvalueMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithRvalueMember const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithRvalueMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithRvalueMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithRvalueMember>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithRvalueMember &>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_exact_v<WithRvalueMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithRvalueMember const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithRvalueMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithRvalueMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithLvalueConstMember>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithLvalueConstMember &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithLvalueConstMember &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithLvalueConstMember const>);
-    STATIC_EXPECT_TRUE(::scl::has_arrow_member_exact_v<WithLvalueConstMember const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithLvalueConstMember const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithLvalueConstMember>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithLvalueConstMember &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithLvalueConstMember &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithLvalueConstMember const>);
+    STATIC_EXPECT_TRUE(::scl::has_member_access_member_exact_v<WithLvalueConstMember const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithLvalueConstMember const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithGlobal>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithGlobal &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithGlobal &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithGlobal const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithGlobal const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<WithGlobal const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithGlobal>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithGlobal &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithGlobal &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithGlobal const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithGlobal const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<WithGlobal const &&>);
 
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<NoOperators>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<NoOperators &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<NoOperators &&>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<NoOperators const>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<NoOperators const &>);
-    STATIC_EXPECT_FALSE(::scl::has_arrow_member_exact_v<NoOperators const &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<NoOperators>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<NoOperators &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<NoOperators &&>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<NoOperators const>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<NoOperators const &>);
+    STATIC_EXPECT_FALSE(::scl::has_member_access_member_exact_v<NoOperators const &&>);
 }
 
 // ----------------------------------------------------------------------------
-// MEMBER POINTER ACCESS (->*)
+// POINTER TO MEMBER ACCESS (->*)
 // ----------------------------------------------------------------------------
 
-TEST(OperatorDetectionTest, ArrowToPointerMember)
+TEST(OperatorDetectionTest, PointerToMemberAccessMember)
 {
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<int, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<int &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<int &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<int const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<int const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<int const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithGlobal, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithGlobal &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithGlobal &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithGlobal const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithGlobal const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_v<NoOperators const &&, int>));
 }
 
-TEST(OperatorDetectionTest, ArrowToPointerMemberExact)
+TEST(OperatorDetectionTest, PointerToMemberAccessMemberExact)
 {
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<int, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<int &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<int &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<int const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<int const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<int const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<int const &&, int>));
 
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_exact_v<WithMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithMember const &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_exact_v<WithMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithConstMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithConstMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithConstMember &&, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_exact_v<WithConstMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithConstMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_exact_v<WithConstMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithConstMember const &, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_pointer_to_member_access_member_exact_v<WithConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithRvalueMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithRvalueMember &, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_exact_v<WithRvalueMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithRvalueMember const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithRvalueMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithRvalueMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_pointer_to_member_access_member_exact_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_pointer_to_member_access_member_exact_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_pointer_to_member_access_member_exact_v<WithRvalueMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithLvalueConstMember, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithLvalueConstMember &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithLvalueConstMember &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithLvalueConstMember const, int>));
-    STATIC_EXPECT_TRUE((::scl::has_arrow_to_pointer_member_exact_v<WithLvalueConstMember const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithLvalueConstMember const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_pointer_to_member_access_member_exact_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_pointer_to_member_access_member_exact_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE(
+        (::scl::has_pointer_to_member_access_member_exact_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_FALSE(
+        (::scl::has_pointer_to_member_access_member_exact_v<WithLvalueConstMember const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithGlobal, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithGlobal &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithGlobal &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithGlobal const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithGlobal const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<WithGlobal const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<WithGlobal const &&, int>));
 
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<NoOperators, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<NoOperators &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<NoOperators &&, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<NoOperators const, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<NoOperators const &, int>));
-    STATIC_EXPECT_FALSE((::scl::has_arrow_to_pointer_member_exact_v<NoOperators const &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_pointer_to_member_access_member_exact_v<NoOperators const &&, int>));
 }
 
 // ----------------------------------------------------------------------------

@@ -969,3 +969,163 @@ TEST(OperatorDetectionTest, GreaterEqualMemberExact)
     STATIC_EXPECT_FALSE((::scl::has_greater_equal_member_exact_v<NoOperators const &, int>));
     STATIC_EXPECT_FALSE((::scl::has_greater_equal_member_exact_v<NoOperators const &&, int>));
 }
+
+// ----------------------------------------------------------------------------
+// BINARY THREE-WAY COMPARISON (<=>)
+// ----------------------------------------------------------------------------
+
+TEST(OperatorDetectionTest, CompareThreeWay)
+{
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<int, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<int &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<int &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<int const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<int const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<int const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<WithMember const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithConstMember const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<WithRvalueMember const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithLvalueConstMember const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithGlobal, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithGlobal &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithGlobal &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithGlobal const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithGlobal const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_v<WithGlobal const &&, int>));
+
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_v<NoOperators const &&, int>));
+}
+
+TEST(OperatorDetectionTest, CompareThreeWayMember)
+{
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<int const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithMember const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithConstMember const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithRvalueMember const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_v<WithLvalueConstMember const &&, int>));
+
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<WithGlobal const &&, int>));
+
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_v<NoOperators const &&, int>));
+}
+
+TEST(OperatorDetectionTest, CompareThreeWayMemberExact)
+{
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<int, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<int &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<int &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<int const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<int const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<int const &&, int>));
+
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_exact_v<WithMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithMember const &&, int>));
+
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithConstMember &&, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_exact_v<WithConstMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithConstMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithConstMember const &&, int>));
+
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithRvalueMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithRvalueMember &, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_exact_v<WithRvalueMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithRvalueMember const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithRvalueMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithRvalueMember const &&, int>));
+
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithLvalueConstMember, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithLvalueConstMember &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithLvalueConstMember &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithLvalueConstMember const, int>));
+    STATIC_EXPECT_TRUE((::scl::has_compare_three_way_member_exact_v<WithLvalueConstMember const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithLvalueConstMember const &&, int>));
+
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithGlobal, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithGlobal &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithGlobal &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithGlobal const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithGlobal const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<WithGlobal const &&, int>));
+
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<NoOperators, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<NoOperators &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<NoOperators &&, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<NoOperators const, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<NoOperators const &, int>));
+    STATIC_EXPECT_FALSE((::scl::has_compare_three_way_member_exact_v<NoOperators const &&, int>));
+}

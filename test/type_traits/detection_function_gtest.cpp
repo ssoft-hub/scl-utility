@@ -144,3 +144,20 @@ TEST(FunctionDetectionTest, DetectionAfterDefinition)
     STATIC_EXPECT_TRUE((test::has_multiply_function_exact_v<int, int>));
     STATIC_EXPECT_TRUE((test::has_multiply_function_exact_v<double, double>));
 }
+
+namespace
+{
+    struct function_traits
+    {
+        SCL_FUNCTION_DETECTION(multiply)
+    };
+} // namespace
+
+TEST(FunctionDetectionTest, ClassScope)
+{
+    STATIC_EXPECT_TRUE((function_traits::has_multiply_function_v<int, int>));
+    STATIC_EXPECT_TRUE((function_traits::has_multiply_function_exact_v<int, int>));
+    STATIC_EXPECT_FALSE((function_traits::has_multiply_function_exact_v<double, double>));
+    STATIC_EXPECT_FALSE(function_traits::has_multiply_function_v<int>);
+    STATIC_EXPECT_TRUE((::std::is_same_v<function_traits::multiply_function_t<int, int>, int>));
+}

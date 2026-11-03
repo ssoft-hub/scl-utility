@@ -68,6 +68,7 @@ flowchart BT
         preprocessor
         attribute
     end
+    type_traits --> attribute
     type_traits --> preprocessor
     concepts -.-> type_traits
     meta --> concepts

@@ -23,7 +23,7 @@
 | `<scl/utility/type_traits/detection/operator.h>` | [Обнаружение наличия оператора](operator_detection.md) | `scl::has_plus_v`, `scl::plus_t`, `scl::has_plus_member_v` и такие же шаблоны для каждого оператора |
 | `<scl/utility/type_traits/forward_like.h>` | [Приведение значения к категории и cv-квалификаторам заданного типа](forward_like.md) | `scl::forward_like`, `scl::forward_like_t` |
 | `<scl/utility/type_traits/member_like.h>` | [Формирование типа указателя на член по типу объекта](member_like.md) | `scl::member_like_t`, `scl::member_function_like_t`, `scl::member_object_like_t` |
-| `<scl/utility/type_traits/overload_cast.h>` | [Выбор перегрузки функции или метода по типам параметров](overload_cast.md) | `scl::overload_cast` |
+| `<scl/utility/type_traits/overload_cast.h>` | [Выбор перегрузки функции или метода по типам параметров](overload_cast.md) | `scl::overload_cast`, `scl::member_overload_cast` |
 | `<scl/utility/type_traits/signature.h>` | [Определение сигнатуры вызываемого типа](signature.md) | `scl::signature_t`, `scl::signature::result_t` и остальные шаблоны пространства имён `scl::signature` |
 
 ## Документация группы
@@ -46,7 +46,7 @@
 - [Формирование типа указателя на член по типу объекта](member_like.md) - тип указателя на метод
   или на поле с квалификаторами, взятыми из типа объекта
 - [Выбор перегрузки функции или метода по типам параметров](overload_cast.md) - указатель
-  на перегрузку, параметры которой имеют в точности заданные типы
+  на перегрузку, выбранную по точным типам её параметров, а для метода также по типу объекта
 - [Определение сигнатуры вызываемого типа](signature.md) - тип результата, типы параметров,
   квалификаторы и другие свойства функций, методов и лямбда-выражений
 

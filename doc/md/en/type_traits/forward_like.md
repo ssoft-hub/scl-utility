@@ -17,7 +17,7 @@ namespace scl
 
     template <typename Base, typename Type>
     [[nodiscard]]
-    constexpr decltype(auto) forward_like(Type && t) noexcept;
+    constexpr decltype(auto) forward_like(Type && t SCL_LIFETIMEBOUND) noexcept;
 }
 ```
 
@@ -44,6 +44,14 @@ namespace scl
   `forward_like` has no side effects. The argument is not copied or moved, and a reference to
   the same object is returned. The function is declared with the specifiers `constexpr` and
   `noexcept` and with the attribute `[[nodiscard]]`.
+- **Lifetime of the argument.** The parameter of the function `forward_like` is marked with
+  the macro [`SCL_LIFETIMEBOUND`](../attribute/lifetimebound.md). So a compiler that checks
+  the lifetime of references, such as Clang, warns where the returned reference is kept longer than
+  the argument lives. The warning is given, for example, for a reference to a temporary object
+  destroyed at the end of the full expression. The header of the macro `SCL_LIFETIMEBOUND` is
+  included with the header `forward_like.h`, so the rules of
+  [macros of the caller](../attribute/index.md#macros-of-the-caller) of the attribute group apply
+  to every translation unit that includes the header `forward_like.h` as well.
 
 ### Difference from `std::forward_like`
 

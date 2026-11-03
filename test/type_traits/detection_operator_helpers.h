@@ -1,5 +1,7 @@
 #pragma once
 
+#include <compare>
+
 namespace test
 {
     // ========================================================================
@@ -32,6 +34,7 @@ namespace test
         bool operator>(int);
         bool operator<=(int);
         bool operator>=(int);
+        std::strong_ordering operator<=>(int);
 
         int operator<<(int);
         int operator>>(int);
@@ -87,6 +90,7 @@ namespace test
         bool operator>(int) const;
         bool operator<=(int) const;
         bool operator>=(int) const;
+        std::strong_ordering operator<=>(int) const;
 
         int operator<<(int) const;
         int operator>>(int) const;
@@ -142,6 +146,7 @@ namespace test
         bool operator>(int) &&;
         bool operator<=(int) &&;
         bool operator>=(int) &&;
+        std::strong_ordering operator<=>(int) &&;
 
         int operator<<(int) &&;
         int operator>>(int) &&;
@@ -197,6 +202,7 @@ namespace test
         bool operator>(int) const &;
         bool operator<=(int) const &;
         bool operator>=(int) const &;
+        std::strong_ordering operator<=>(int) const &;
 
         int operator<<(int) const &;
         int operator>>(int) const &;
@@ -256,6 +262,7 @@ namespace test
         bool operator>(WithGlobal, int);
         bool operator<=(WithGlobal, int);
         bool operator>=(WithGlobal, int);
+        std::strong_ordering operator<=>(WithGlobal, int);
         int operator<<(WithGlobal, int);
         int operator>>(WithGlobal, int);
         int operator&(WithGlobal, int);
@@ -292,6 +299,7 @@ namespace test
         bool operator>(int) = delete;
         bool operator<=(int) = delete;
         bool operator>=(int) = delete;
+        std::strong_ordering operator<=>(int) = delete;
         int operator<<(int) = delete;
         int operator>>(int) = delete;
         int operator&(int) = delete;

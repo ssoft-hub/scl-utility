@@ -100,3 +100,74 @@ TEST(OverloadCastTest, FullCoverage)
     EXPECT_NE(overload_cast<double const *>(&S::foo), nullptr);
     EXPECT_NE(overload_cast<float *>(&S::foo), nullptr);
 }
+
+namespace
+{
+    struct qualified
+    {
+        int m_width{};
+
+        int & width() & { return m_width; }
+        int width() const & { return m_width; }
+        int width() && { return m_width; }
+        int width() const && noexcept { return m_width; }
+
+        void set(int);
+        void set(int) const;
+        void set(int) volatile;
+        void set(int) const volatile noexcept;
+    };
+
+    struct derived_qualified : qualified
+    {};
+
+    using const_rvalue_width = int (qualified::*)() const && noexcept;
+} // namespace
+
+TEST(MemberOverloadCastTest, RefQualifiers)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified &>(&qualified::width)), int & (qualified::*)() &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified const &>(&qualified::width)), int (qualified::*)() const &>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified &&>(&qualified::width)), int (qualified::*)() &&>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified const &&>(&qualified::width)), const_rvalue_width>));
+}
+
+TEST(MemberOverloadCastTest, CvQualifiers)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified, int>(&qualified::set)), void (qualified::*)(int)>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified const, int>(&qualified::set)),
+        void (qualified::*)(int) const>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified volatile, int>(&qualified::set)),
+        void (qualified::*)(int) volatile>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified const volatile, int>(&qualified::set)),
+        void (qualified::*)(int) const volatile noexcept>));
+}
+
+TEST(MemberOverloadCastTest, TopLevelQualifiersOfParameters)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<qualified const, int const>(&qualified::set)),
+        void (qualified::*)(int) const>));
+}
+
+TEST(MemberOverloadCastTest, InheritedMember)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        decltype(member_overload_cast<derived_qualified const &>(&derived_qualified::width)),
+        int (qualified::*)() const &>));
+}
+
+TEST(MemberOverloadCastTest, ConstantAndNoexcept)
+{
+    constexpr auto pointer = member_overload_cast<qualified &&>(&qualified::width);
+    STATIC_EXPECT_TRUE(pointer == static_cast<int (qualified::*)() &&>(&qualified::width));
+    STATIC_EXPECT_TRUE(noexcept(member_overload_cast<qualified &&>(&qualified::width)));
+}

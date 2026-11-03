@@ -16,15 +16,15 @@
  * @ingroup scl_utility_type_traits
  * @brief The templates checking whether the function @p name can be called with given arguments.
  *
- * The macro should be expanded in a namespace after the declarations of the function to check;
- * if it is expanded inside a class, the build ends with an error.
- * `SCL_FUNCTION_DETECTION(foo)` expands to:
+ * The macro should be expanded after the declarations of the function to check, in a separate
+ * namespace or in a class, so that the names of the declared templates do not collide with other
+ * declarations. `SCL_FUNCTION_DETECTION(foo)` expands to:
  *
  * @code
  * template <typename... Arguments>
  * using foo_function_operation = decltype(foo(std::declval<Arguments>()...));
  * template <typename... Arguments>
- * inline constexpr auto has_foo_function_v =
+ * inline static constexpr auto has_foo_function_v =
  *     scl::is_detected_v<foo_function_operation, Arguments...>;
  * template <typename... Arguments>
  * using foo_function_t = scl::detected_t<foo_function_operation, Arguments...>;
@@ -32,7 +32,7 @@
  * template <typename... Arguments>
  * using foo_function_exact_operation = unspecified;
  * template <typename... Arguments>
- * inline constexpr auto has_foo_function_exact_v =
+ * inline static constexpr auto has_foo_function_exact_v =
  *     scl::is_detected_v<foo_function_exact_operation, Arguments...>;
  * template <typename... Arguments>
  * using foo_function_exact_t = scl::detected_t<foo_function_exact_operation, Arguments...>;
@@ -53,7 +53,8 @@
  * the overloads of @p name include a function template, only the overload whose result type is
  * that of the plain call is found, so for an ambiguous plain call the variable template is
  * `false`. On MSVC, where the address of a deleted function is not rejected during substitution,
- * the plain call has to compile as well.
+ * the plain call has to compile as well. Where the macro is expanded in a class, a static member
+ * function of a base class that the class cannot access is not supported.
  *
  * The exact form is built on the expression `&name`, and the name in it is looked up only where
  * the macro is expanded, without argument-dependent lookup. A friend function defined inside
@@ -76,7 +77,7 @@
     template <typename... Arguments>                                                      \
     using name##_function_operation = decltype(name(::std::declval<Arguments>()...));     \
     template <typename... Arguments>                                                      \
-    inline constexpr auto has_##name##_function_v =                                       \
+    inline static constexpr auto has_##name##_function_v =                                \
         ::scl::is_detected_v<name##_function_operation, Arguments...>;                    \
     template <typename... Arguments>                                                      \
     using name##_function_t = ::scl::detected_t<name##_function_operation, Arguments...>; \
@@ -86,7 +87,7 @@
         ::scl::detected_t<name##_function_operation, Arguments...>,                       \
         Arguments...>::select(&name)(::std::declval<Arguments>()...));                    \
     template <typename... Arguments>                                                      \
-    inline constexpr auto has_##name##_function_exact_v =                                 \
+    inline static constexpr auto has_##name##_function_exact_v =                          \
         ::scl::is_detected_v<name##_function_exact_operation, Arguments...>;              \
     template <typename... Arguments>                                                      \
     using name##_function_exact_t = ::scl::detected_t<name##_function_exact_operation, Arguments...>;
