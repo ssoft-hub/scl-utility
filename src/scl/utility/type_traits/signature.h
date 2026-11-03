@@ -7,8 +7,6 @@
  * @ingroup scl_utility_type_traits
  */
 
-#include <scl/utility/concepts/type_category.h>
-
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
@@ -167,7 +165,7 @@ namespace scl::detail
     // A static member function reached through an object is an lvalue, whose address can be taken;
     // any other member function is a prvalue usable only in a call ([expr.ref]).
     template <typename Pointer, typename Callable>
-    concept explicit_object_pointer = ::scl::concepts::pointer<Pointer> &&
+    concept explicit_object_pointer = ::std::is_pointer_v<Pointer> &&
         !requires(Callable & callable) { &callable.operator(); };
 
     template <typename Pointer>

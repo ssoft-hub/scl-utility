@@ -41,14 +41,51 @@ Header-only library of compile-time and low-level utilities for C++20 and later.
   or a `__cpp_*` macro
 - Headers compile with exceptions and RTTI off and against a standard library built without
   threads: `SCL_HAS_EXCEPTIONS`, `SCL_HAS_RTTI`, `SCL_HAS_THREADS` from `preprocessor/`
-- Groups by logical layer, from the most basic:
+- Dependencies between groups, below: the groups are arranged in layers, the most basic at
+  the bottom, and no arrow leads to a higher layer. A solid arrow leads from a group to a group its
+  headers include, a dashed arrow to a group they may include and do not yet. A header under
+  `src/scl/utility/` includes only headers of its own group and of the groups its arrows lead to;
+  the umbrella `src/scl/utility.h` includes every group. A new dependency adds its solid arrow or
+  turns its dashed arrow solid, and no arrow, solid or dashed, closes a cycle.
 
-| Layer | Groups |
-|---|---|
-| 0 | `preprocessor`, `attribute` |
-| 1 | `type_traits`, `concepts` |
-| 2 | `meta`, `runtime` |
-| 3 | `hash`, `flags`, `hierarchy`, `any` |
+```mermaid
+flowchart BT
+    subgraph layer3 [Layer 3: components]
+        hash
+        flags
+        hierarchy
+        any
+    end
+    subgraph layer2 [Layer 2: names and runtime]
+        meta
+        runtime
+    end
+    subgraph layer1 [Layer 1: types]
+        concepts
+        type_traits
+    end
+    subgraph layer0 [Layer 0: base]
+        preprocessor
+        attribute
+    end
+    type_traits --> preprocessor
+    concepts -.-> type_traits
+    meta --> concepts
+    runtime --> attribute
+    runtime --> concepts
+    runtime --> meta
+    runtime --> preprocessor
+    runtime --> type_traits
+    hash --> attribute
+    hash --> concepts
+    flags --> concepts
+    flags --> preprocessor
+    any --> attribute
+    any --> concepts
+    any --> meta
+    any --> preprocessor
+    any --> type_traits
+```
 
 ## Finding Related Code
 
