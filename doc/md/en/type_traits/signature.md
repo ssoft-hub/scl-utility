@@ -133,6 +133,7 @@ gives no type, so whether a signature exists can be checked with a requires-expr
 template <typename Callable>
 concept has_signature = requires { typename scl::signature_t<Callable>; };
 
+[[maybe_unused]]
 auto const generic = [](auto value) { return value; };
 static_assert(!has_signature<decltype(generic)>);
 static_assert(!has_signature<int>);
@@ -272,6 +273,7 @@ void on_port(Callback && callback)
 template <typename Callback>
 concept accepted_by_on_port = requires(Callback callback) { on_port(callback); };
 
+[[maybe_unused]]
 auto const narrow = [](std::uint8_t port) { return port; };
 static_assert(!accepted_by_on_port<decltype(narrow)>);
 ```
