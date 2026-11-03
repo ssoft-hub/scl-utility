@@ -2,116 +2,118 @@
 
 #include <scl/utility/type_traits/detection.h>
 
-#include <string>
+#include <concepts>
+#include <cstddef>
+#include <type_traits>
 #include <vector>
 
-// Test fixtures and helper types
 namespace
 {
-    struct HasFoo
-    {
-        int foo() { return 42; }
-    };
-
-    struct NoFoo
-    {
-        void bar() {}
-    };
-
-    struct HasValueType
+    struct with_value_type
     {
         using value_type = int;
     };
 
-    struct NoValueType
+    struct without_value_type
     {};
 
-    struct ReturnsDouble
+    struct with_reset
     {
-        double compute() { return 3.14; }
+        void reset();
     };
 
-    struct AcceptsAnything
+    struct from_anything
     {
         template <typename Type>
-        AcceptsAnything(Type const &)
-        {}
+        // NOLINTNEXTLINE(bugprone-forwarding-reference-overload)
+        from_anything(Type &&);
     };
 
-    // Detection trait templates
-    template <typename T>
-    using has_foo_t = decltype(::std::declval<T>().foo());
+    struct only_explicit_from_int
+    {
+        explicit only_explicit_from_int(int);
+    };
 
-    template <typename T>
-    using has_bar_t = decltype(::std::declval<T>().bar());
+    template <typename Container>
+    using value_type_operation = Container::value_type;
 
-    template <typename T>
-    using value_type_t = T::value_type;
+    template <typename Container>
+    using size_operation = decltype(::std::declval<Container const &>().size());
 
-    template <typename T>
-    using compute_result_t = decltype(::std::declval<T>().compute());
+    template <typename Container>
+    using front_operation = decltype(::std::declval<Container &>().front());
 
-    template <typename T>
-    using has_begin_t = decltype(::std::declval<T>().begin());
+    template <typename Object>
+    using reset_operation = decltype(::std::declval<Object &>().reset());
 
-    template <typename T>
-    using has_size_t = decltype(::std::declval<T>().size());
+    template <typename Type>
+    struct ill_formed_body
+    {
+        using type = Type::missing;
+    };
 
-    template <typename T>
-    using iterator_t = T::iterator;
+    template <typename Type>
+        requires ::std::integral<Type>
+    struct integral_only
+    {};
+} // namespace
 
-    template <typename T>
-    using inner_type_t = T::Inner::type;
-
-} // anonymous namespace
-
-// Test is_detected
-TEST(DetectionTest, IsDetected_MemberFunction)
+TEST(TypeTraitsIsDetected, IsTrueTypeForAWellFormedOperation)
 {
-    EXPECT_TRUE((::scl::is_detected_v<has_foo_t, HasFoo>));
-    EXPECT_FALSE((::scl::is_detected_v<has_foo_t, NoFoo>));
-    EXPECT_FALSE((::scl::is_detected_v<has_bar_t, HasFoo>));
-    EXPECT_TRUE((::scl::is_detected_v<has_bar_t, NoFoo>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::is_detected<size_operation, ::std::vector<int>>, ::std::true_type>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::is_detected<value_type_operation, with_value_type>, ::std::true_type>));
 }
 
-TEST(DetectionTest, IsDetected_MemberType)
+TEST(TypeTraitsIsDetected, IsFalseTypeForAnIllFormedOperation)
 {
-    EXPECT_TRUE((::scl::is_detected_v<value_type_t, HasValueType>));
-    EXPECT_FALSE((::scl::is_detected_v<value_type_t, NoValueType>));
-    EXPECT_TRUE((::scl::is_detected_v<value_type_t, ::std::vector<int>>));
-    EXPECT_TRUE((::scl::is_detected_v<value_type_t, ::std::string>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::is_detected<size_operation, int>, ::std::false_type>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected<value_type_operation, without_value_type>, ::std::false_type>));
 }
 
-TEST(DetectionTest, IsDetected_STLContainers)
+TEST(TypeTraitsIsDetected, ValueIsTheValueOfIsDetected)
 {
-    EXPECT_TRUE((::scl::is_detected_v<has_begin_t, ::std::vector<int>>));
-    EXPECT_TRUE((::scl::is_detected_v<has_size_t, ::std::vector<int>>));
-    EXPECT_FALSE((::scl::is_detected_v<has_begin_t, int>));
-    EXPECT_FALSE((::scl::is_detected_v<has_size_t, int>));
+    STATIC_EXPECT_TRUE((::scl::is_detected_v<size_operation, ::std::vector<int>>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_v<size_operation, int>));
 }
 
-// Test detected_t
-TEST(DetectionTest, DetectedT_ValidType)
+TEST(TypeTraitsIsDetected, ChecksNoBodyOfAClassTemplate)
 {
-    using detected = ::scl::detected_t<value_type_t, HasValueType>;
-    EXPECT_TRUE((::std::is_same_v<detected, int>));
+    STATIC_EXPECT_TRUE((::scl::is_detected_v<ill_formed_body, int>));
 }
 
-TEST(DetectionTest, DetectedT_InvalidType)
+TEST(TypeTraitsIsDetected, ChecksTheRequiresClauseOfAClassTemplate)
 {
-    using detected = ::scl::detected_t<value_type_t, NoValueType>;
-    STATIC_EXPECT_TRUE((::std::is_same_v<detected, ::scl::nonesuch>));
+    STATIC_EXPECT_TRUE((::scl::is_detected_v<integral_only, int>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_v<integral_only, double>));
 }
 
-TEST(DetectionTest, DetectedT_VoidResultIsNotAFailure)
+TEST(TypeTraitsDetectedT, IsTheTypeOfAWellFormedOperation)
 {
-    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::detected_t<has_bar_t, NoFoo>, void>));
-    STATIC_EXPECT_TRUE((::scl::is_detected_exact_v<void, has_bar_t, NoFoo>));
-    STATIC_EXPECT_FALSE((::scl::is_detected_exact_v<void, has_bar_t, HasFoo>));
-    STATIC_EXPECT_FALSE((::scl::is_detected_convertible_v<void, has_bar_t, HasFoo>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::detected_t<value_type_operation, with_value_type>, int>));
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::detected_t<size_operation, ::std::vector<int>>, ::std::size_t>));
 }
 
-TEST(DetectionTest, Nonesuch_HasNoObject)
+TEST(TypeTraitsDetectedT, KeepsTheReferenceOfTheExpression)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::detected_t<front_operation, ::std::vector<int>>, int &>));
+}
+
+TEST(TypeTraitsDetectedT, IsVoidForAWellFormedOperationOfTypeVoid)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<::scl::detected_t<reset_operation, with_reset>, void>));
+}
+
+TEST(TypeTraitsDetectedT, IsNonesuchForAnIllFormedOperation)
+{
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::detected_t<value_type_operation, without_value_type>, ::scl::nonesuch>));
+}
+
+TEST(TypeTraitsNonesuch, HasNoObject)
 {
     STATIC_EXPECT_FALSE(::std::is_default_constructible_v<::scl::nonesuch>);
     STATIC_EXPECT_FALSE(::std::is_destructible_v<::scl::nonesuch>);
@@ -121,122 +123,83 @@ TEST(DetectionTest, Nonesuch_HasNoObject)
     STATIC_EXPECT_FALSE(::std::is_move_assignable_v<::scl::nonesuch>);
 }
 
-TEST(DetectionTest, DetectedT_STLTypes)
+TEST(TypeTraitsDetectedOr, TypeIsTheTypeOfAWellFormedOperation)
 {
-    using vec_value = ::scl::detected_t<value_type_t, ::std::vector<double>>;
-    EXPECT_TRUE((::std::is_same_v<vec_value, double>));
-
-    using str_value = ::scl::detected_t<value_type_t, ::std::string>;
-    EXPECT_TRUE((::std::is_same_v<str_value, char>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::detected_or<long, value_type_operation, with_value_type>::type, int>));
 }
 
-// Test detected_or_t
-TEST(DetectionTest, DetectedOrT_ValidType)
-{
-    using detected = ::scl::detected_or_t<float, value_type_t, HasValueType>;
-    EXPECT_TRUE((::std::is_same_v<detected, int>));
-}
-
-TEST(DetectionTest, DetectedOrT_InvalidType_UsesDefault)
-{
-    using detected = ::scl::detected_or_t<float, value_type_t, NoValueType>;
-    EXPECT_TRUE((::std::is_same_v<detected, float>));
-}
-
-TEST(DetectionTest, DetectedOrT_ComplexDefault)
-{
-    using detected = ::scl::detected_or_t<::std::string, value_type_t, NoValueType>;
-    EXPECT_TRUE((::std::is_same_v<detected, ::std::string>));
-}
-
-// Test is_detected_exact
-TEST(DetectionTest, IsDetectedExact_MatchingType)
-{
-    EXPECT_TRUE((::scl::is_detected_exact_v<int, value_type_t, HasValueType>));
-    EXPECT_TRUE((::scl::is_detected_exact_v<double, value_type_t, ::std::vector<double>>));
-}
-
-TEST(DetectionTest, IsDetectedExact_NonMatchingType)
-{
-    EXPECT_FALSE((::scl::is_detected_exact_v<float, value_type_t, HasValueType>));
-    EXPECT_FALSE((::scl::is_detected_exact_v<int, value_type_t, NoValueType>));
-}
-
-TEST(DetectionTest, IsDetectedExact_ReturnType)
-{
-    EXPECT_TRUE((::scl::is_detected_exact_v<double, compute_result_t, ReturnsDouble>));
-    EXPECT_FALSE((::scl::is_detected_exact_v<float, compute_result_t, ReturnsDouble>));
-}
-
-// Test is_detected_convertible
-TEST(DetectionTest, IsDetectedConvertible_SameType)
-{
-    EXPECT_TRUE((::scl::is_detected_convertible_v<int, value_type_t, HasValueType>));
-}
-
-TEST(DetectionTest, IsDetectedConvertible_ConvertibleType)
-{
-    EXPECT_TRUE((::scl::is_detected_convertible_v<double, value_type_t, HasValueType>));
-    EXPECT_TRUE((::scl::is_detected_convertible_v<long, value_type_t, HasValueType>));
-}
-
-TEST(DetectionTest, IsDetectedConvertible_InvalidDetection)
-{
-    EXPECT_FALSE((::scl::is_detected_convertible_v<int, value_type_t, NoValueType>));
-}
-
-TEST(DetectionTest, IllFormedOperationNeverMatches)
+TEST(TypeTraitsDetectedOr, TypeIsDefaultForAnIllFormedOperation)
 {
     STATIC_EXPECT_TRUE((::std::is_same_v<
-        ::scl::is_detected_exact<::scl::nonesuch, value_type_t, NoValueType>, ::std::false_type>));
+        ::scl::detected_or<long, value_type_operation, without_value_type>::type, long>));
+}
+
+TEST(TypeTraitsDetectedOr, ValueTIsIsDetectedOfTheOperation)
+{
     STATIC_EXPECT_TRUE((::std::is_same_v<
-        ::scl::is_detected_convertible<AcceptsAnything, value_type_t, NoValueType>, ::std::false_type>));
+        ::scl::detected_or<long, value_type_operation, with_value_type>::value_t,
+        ::scl::is_detected<value_type_operation, with_value_type>>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::detected_or<long, value_type_operation, without_value_type>::value_t,
+        ::scl::is_detected<value_type_operation, without_value_type>>));
+}
+
+TEST(TypeTraitsDetectedOrT, IsTheTypeOfDetectedOr)
+{
+    STATIC_EXPECT_TRUE(
+        (::std::is_same_v<::scl::detected_or_t<long, value_type_operation, with_value_type>, int>));
+    STATIC_EXPECT_TRUE((
+        ::std::is_same_v<::scl::detected_or_t<long, value_type_operation, without_value_type>, long>));
+}
+
+TEST(TypeTraitsIsDetectedExact, IsTrueTypeForExactlyTheExpectedType)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected_exact<int &, front_operation, ::std::vector<int>>, ::std::true_type>));
+    STATIC_EXPECT_TRUE((::scl::is_detected_exact_v<int &, front_operation, ::std::vector<int>>));
+}
+
+TEST(TypeTraitsIsDetectedExact, IsFalseTypeForAnotherType)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected_exact<int, front_operation, ::std::vector<int>>, ::std::false_type>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_exact_v<int const &, front_operation, ::std::vector<int>>));
+}
+
+TEST(TypeTraitsIsDetectedExact, IsFalseTypeForAnIllFormedOperationWhateverTheExpectedType)
+{
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected_exact<int, value_type_operation, without_value_type>, ::std::false_type>));
     STATIC_EXPECT_FALSE(
-        (::scl::is_detected_convertible_v<::scl::nonesuch const &, value_type_t, NoValueType>));
-    STATIC_EXPECT_FALSE((::scl::is_detected_convertible_v<::scl::nonesuch &&, value_type_t, NoValueType>));
+        (::scl::is_detected_exact_v<::scl::nonesuch, value_type_operation, without_value_type>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_exact_v<void, reset_operation, without_value_type>));
+}
+
+TEST(TypeTraitsIsDetectedConvertible, IsTrueTypeForAnImplicitConversion)
+{
     STATIC_EXPECT_TRUE((::std::is_same_v<
-        ::scl::is_detected_convertible<double, value_type_t, HasValueType>, ::std::true_type>));
+        ::scl::is_detected_convertible<double, value_type_operation, with_value_type>, ::std::true_type>));
+    STATIC_EXPECT_TRUE((::scl::is_detected_convertible_v<int, value_type_operation, with_value_type>));
 }
 
-TEST(DetectionTest, IsDetectedConvertible_ReturnType)
+TEST(TypeTraitsIsDetectedConvertible, IsFalseTypeWithoutAnImplicitConversion)
 {
-    EXPECT_TRUE((::scl::is_detected_convertible_v<double, compute_result_t, ReturnsDouble>));
-    EXPECT_TRUE((::scl::is_detected_convertible_v<float, compute_result_t, ReturnsDouble>));
-    EXPECT_TRUE((::scl::is_detected_convertible_v<int, compute_result_t, ReturnsDouble>));
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected_convertible<only_explicit_from_int, value_type_operation, with_value_type>,
+        ::std::false_type>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_convertible_v<int *, value_type_operation, with_value_type>));
 }
 
-// Advanced use cases
-TEST(DetectionTest, ComplexTraits_Iterators)
+TEST(TypeTraitsIsDetectedConvertible, IsFalseTypeForAnIllFormedOperationWhateverTheTargetType)
 {
-    EXPECT_TRUE((::scl::is_detected_v<iterator_t, ::std::vector<int>>));
-    EXPECT_FALSE((::scl::is_detected_v<iterator_t, int>));
-}
-
-TEST(DetectionTest, ComplexTraits_NestedTypes)
-{
-    struct Nested
-    {
-        struct Inner
-        {
-            using type = double;
-        };
-    };
-
-    EXPECT_TRUE((::scl::is_detected_v<inner_type_t, Nested>));
-    EXPECT_TRUE((::scl::is_detected_exact_v<double, inner_type_t, Nested>));
-}
-
-TEST(DetectionTest, SFINAE_Integration)
-{
-    // Demonstrate use in constexpr if
-    auto process = []<typename T>(T && value) {
-        if constexpr (::scl::is_detected_v<has_size_t, T>)
-            return value.size();
-        else
-            return 1ul;
-    };
-
-    ::std::vector<int> vec{1, 2, 3};
-    EXPECT_EQ(process(vec), 3ul);
-    EXPECT_EQ(process(42), 1ul);
+    STATIC_EXPECT_TRUE((::std::is_same_v<
+        ::scl::is_detected_convertible<int, value_type_operation, without_value_type>, ::std::false_type>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_convertible_v<
+        ::scl::nonesuch const &, value_type_operation, without_value_type>));
+    STATIC_EXPECT_FALSE((
+        ::scl::is_detected_convertible_v<::scl::nonesuch &&, value_type_operation, without_value_type>));
+    STATIC_EXPECT_FALSE(
+        (::scl::is_detected_convertible_v<from_anything, value_type_operation, without_value_type>));
+    STATIC_EXPECT_FALSE((::scl::is_detected_convertible_v<void, reset_operation, without_value_type>));
 }
