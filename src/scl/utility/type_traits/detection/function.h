@@ -73,6 +73,7 @@
  *
  * @param name Name of the function, an identifier.
  */
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define SCL_FUNCTION_DETECTION(name)                                                      \
     template <typename... Arguments>                                                      \
     using name##_function_operation = decltype(name(::std::declval<Arguments>()...));     \
@@ -91,3 +92,4 @@
         ::scl::is_detected_v<name##_function_exact_operation, Arguments...>;              \
     template <typename... Arguments>                                                      \
     using name##_function_exact_t = ::scl::detected_t<name##_function_exact_operation, Arguments...>;
+// NOLINTEND(bugprone-macro-parentheses)

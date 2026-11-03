@@ -204,6 +204,7 @@ namespace scl::detail
     template <::scl::detail::member_function_cv Cv, ::scl::detail::member_function_reference Reference, typename... Arguments>
     struct member_overload_cast;
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define SCL_DETAIL_MEMBER_OVERLOAD_CAST(cv, reference, qualifiers)                                                \
     template <typename... Arguments>                                                                              \
     struct member_overload_cast<                                                                                  \
@@ -223,6 +224,7 @@ namespace scl::detail
             return ptr;                                                                                           \
         }                                                                                                         \
     };
+    // NOLINTEND(bugprone-macro-parentheses)
 
     SCL_DETAIL_MEMBER_OVERLOAD_CAST(none, none, )
     SCL_DETAIL_MEMBER_OVERLOAD_CAST(none, lvalue, &)

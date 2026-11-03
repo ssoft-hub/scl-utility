@@ -52,6 +52,7 @@ namespace scl::detail
         static auto select(Hint (Class::*member)(Arguments...)) -> decltype(member);
     };
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define SCL_DETAIL_EXACT_MEMBER(qualifiers)                                                     \
     template <typename Type, typename Hint, typename... Arguments>                              \
         requires(!::std::is_void_v<Arguments> && ...)                                           \
@@ -64,6 +65,7 @@ namespace scl::detail
         template <typename Class = Type>                                                        \
         static auto select(Hint (Class::*member)(Arguments...) qualifiers) -> decltype(member); \
     };
+    // NOLINTEND(bugprone-macro-parentheses)
 
     SCL_DETAIL_EXACT_MEMBER(const)
     SCL_DETAIL_EXACT_MEMBER(volatile)

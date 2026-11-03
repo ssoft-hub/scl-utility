@@ -101,6 +101,7 @@ namespace scl::detail
 // MSVC counts an empty macro argument as none (C4003), so an absent qualifier takes a marker.
 #define SCL_DETAIL_NO_QUALIFIER
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define SCL_DETAIL_MEMBER_SIGNATURE(qualifiers, object, exception)                        \
     template <typename Result, typename Class, typename... Parameters>                    \
     struct signature<Result (Class::*)(Parameters...) qualifiers>                         \
@@ -110,6 +111,7 @@ namespace scl::detail
     struct signature<Result (Class::*)(Parameters..., ...) qualifiers>                    \
         : ::scl::detail::callable_signature<object, Result(Parameters..., ...) exception> \
     {}
+    // NOLINTEND(bugprone-macro-parentheses)
 
     SCL_DETAIL_MEMBER_SIGNATURE(SCL_DETAIL_NO_QUALIFIER, Class, SCL_DETAIL_NO_QUALIFIER);
     SCL_DETAIL_MEMBER_SIGNATURE(noexcept, Class, noexcept);

@@ -16,6 +16,7 @@
 
 #ifndef SCL_DOXYGEN
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION(op, name)                                                   \
     namespace scl                                                                                           \
     {                                                                                                       \
@@ -65,6 +66,7 @@
         using name##_explicit_member_exact_t =                                                              \
             ::scl::detected_t<name##_explicit_member_exact_operation, Arguments...>;                        \
     }
+// NOLINTEND(bugprone-macro-parentheses)
 
 #define SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(op, name)                                         \
     namespace scl                                                                                    \
@@ -78,6 +80,7 @@
     }                                                                                                \
     SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION(SCL_FORWARD(op), name)
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define SCL_DETAIL_POSTFIX_UNARY_OPERATOR_DETECTION(op, name)                                                 \
     namespace scl                                                                                             \
     {                                                                                                         \
@@ -125,6 +128,7 @@
         using name##_explicit_member_exact_t =                                                                \
             ::scl::detected_t<name##_explicit_member_exact_operation, Type>;                                  \
     }
+// NOLINTEND(bugprone-macro-parentheses)
 
 #define SCL_DETAIL_BINARY_OPERATOR_DETECTION(op, name)                                               \
     namespace scl                                                                                    \
@@ -151,6 +155,7 @@
     }                                                                                                \
     SCL_DETAIL_ARGUMENTS_OPERATOR_DETECTION(SCL_FORWARD(op), name)
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define SCL_DETAIL_STATIC_OPERATOR_DETECTION(op, name)                                                  \
     namespace scl                                                                                       \
     {                                                                                                   \
@@ -175,6 +180,7 @@
         using name##_static_member_exact_t =                                                            \
             ::scl::detected_t<name##_static_member_exact_operation, Arguments...>;                      \
     }
+// NOLINTEND(bugprone-macro-parentheses)
 
 SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(&, address_of)
 SCL_DETAIL_PREFIX_UNARY_OPERATOR_DETECTION(*, indirection)
