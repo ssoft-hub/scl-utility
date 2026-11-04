@@ -39,6 +39,22 @@ namespace Namespace
     class TemplateClass
     {};
 
+    template <typename T>
+    struct operator_like
+    {
+        template <typename U>
+        struct Nested
+        {};
+    };
+
+    template <typename T>
+    struct smooth_operator
+    {
+        template <typename U>
+        struct Nested
+        {};
+    };
+
 } // namespace Namespace
 
 /**
@@ -197,6 +213,22 @@ TEST(MetaTypeTest, ShortNameRefusesDeclarator)
 }
 
 /**
+ * @test Verify that a pointer to type_name or to type_short_name returns the name when called at
+ *       run time.
+ */
+TEST(MetaTypeTest, NamesThroughPointer)
+{
+    auto const name_of_int = &::scl::type_name<int>;
+    auto const short_name_of_int = &::scl::type_short_name<int>;
+    auto const short_name_of_template_struct =
+        &::scl::type_short_name<Namespace::TemplateStruct<int> const &>;
+
+    EXPECT_EQ(name_of_int(), "int");
+    EXPECT_EQ(short_name_of_int(), "int");
+    EXPECT_EQ(short_name_of_template_struct(), "TemplateStruct");
+}
+
+/**
  * @test Verify that type_short_name names a union by its identifier.
  */
 TEST(MetaTypeTest, ShortNameOfUnion)
@@ -326,6 +358,8 @@ namespace
 
     int operator>(Ordered, Ordered) { return 0; }
 
+    int operator+(Ordered, Ordered) { return 0; }
+
     template <auto Function>
     struct Holder
     {
@@ -429,6 +463,18 @@ TEST(MetaTypeTest, TypeInOperatorShortName)
 }
 
 /**
+ * @test Verify that the word operator inside an identifier, followed by an underscore or by an
+ *       angle bracket, does not hide the last scope operator.
+ */
+TEST(MetaTypeTest, OperatorInIdentifierShortName)
+{
+    STATIC_EXPECT_EQ(::scl::type_short_name<Namespace::operator_like<int>>(), "operator_like");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Namespace::operator_like<int>::Nested<int>>(), "Nested");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Namespace::smooth_operator<int>>(), "smooth_operator");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Namespace::smooth_operator<int>::Nested<int>>(), "Nested");
+}
+
+/**
  * @test Verify that the symbol of an operator in a template argument does not hide the last scope
  *       operator.
  */
@@ -438,7 +484,10 @@ TEST(MetaTypeTest, OperatorInTemplateArgumentShortName)
     STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator-)>>(), "Holder");
     STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator<=)>>(), "Holder");
     STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator>)>>(), "Holder");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator+)>>(), "Holder");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Holder<(&operator+)>::Inner<(&operator+)>>(), "Inner");
     STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<(&operator-)>>>(), "Box");
+    STATIC_EXPECT_EQ(::scl::type_short_name<Box<Holder<(&operator+)>>>(), "Box");
     STATIC_EXPECT_EQ(::scl::type_short_name<Box<decltype(Ordered{} < Ordered{})>>(), "Box");
     STATIC_EXPECT_EQ(::scl::type_short_name<Box<decltype(Ordered{} <= Ordered{})>>(), "Box");
     STATIC_EXPECT_EQ(::scl::type_short_name<Box<cooperator<int>>>(), "Box");
