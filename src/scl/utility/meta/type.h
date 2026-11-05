@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -34,7 +35,9 @@ namespace scl::detail
 
     constexpr char char_or_null_at(::std::string_view str, ::std::size_t index) noexcept
     {
-        return index < str.size() ? str.substr(index, 1).front() : '\0';
+        auto const * const chars = str.data();
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        return index < str.size() ? chars[index] : '\0';
     }
 
     constexpr bool identifier_char(char ch) noexcept
@@ -42,27 +45,36 @@ namespace scl::detail
         return ch == '_' || (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
     }
 
+    struct char_set
+    {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays)
+        bool members[::std::numeric_limits<unsigned char>::max() + 1];
+
+        [[nodiscard]]
+        constexpr bool contains(char ch) const noexcept
+        {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
+            return members[static_cast<unsigned char>(ch)];
+        }
+    };
+
+    constexpr ::scl::detail::char_set make_char_set(::std::string_view chars) noexcept
+    {
+        ::scl::detail::char_set set{};
+        for (char const ch : chars)
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
+            set.members[static_cast<unsigned char>(ch)] = true;
+        return set;
+    }
+
+    inline constexpr ::scl::detail::char_set operator_symbols = ::scl::detail::make_char_set("<>=!+-*/%^&|~");
+
+    inline constexpr ::scl::detail::char_set chars_read_by_scope_scan = ::scl::detail::make_char_set(
+        "<>(){}'\":");
+
     constexpr bool operator_symbol_char(char ch) noexcept
     {
-        switch (ch)
-        {
-        case '<':
-        case '>':
-        case '=':
-        case '!':
-        case '+':
-        case '-':
-        case '*':
-        case '/':
-        case '%':
-        case '^':
-        case '&':
-        case '|':
-        case '~':
-            return true;
-        default:
-            return false;
-        }
+        return ::scl::detail::operator_symbols.contains(ch);
     }
 
     constexpr bool escaped_at(::std::string_view str, ::std::size_t index) noexcept
@@ -94,17 +106,24 @@ namespace scl::detail
         return index;
     }
 
+    inline constexpr ::std::string_view operator_keyword = "operator";
+
     // The length of the operator symbol holding an angle bracket that opens a string, such as 2
     // for the <= of "<=(int)"; 0 where no such symbol opens it.
     constexpr ::std::size_t angle_operator_length(::std::string_view str) noexcept
     {
-        if (str.starts_with("<=>") || str.starts_with("<<=") || str.starts_with(">>=") ||
-            str.starts_with("->*"))
-            return 3;
-        auto const pair = str.substr(0, 2);
-        if (pair == "<<" || pair == ">>" || pair == "<=" || pair == ">=" || pair == "->")
-            return 2;
-        return str.starts_with('<') || str.starts_with('>') ? 1 : 0;
+        char const first = ::scl::detail::char_or_null_at(str, 0);
+        char const second = ::scl::detail::char_or_null_at(str, 1);
+        char const third = ::scl::detail::char_or_null_at(str, 2);
+        if (first == '-')
+            return second != '>' ? 0 : third == '*' ? 3 : 2;
+        if (first != '<' && first != '>')
+            return 0;
+        if (second == '=')
+            return first == '<' && third == '>' ? 3 : 2;
+        if (second == first)
+            return third == '=' ? 3 : 2;
+        return 1;
     }
 
     // Where the keyword operator opens when the character at an index belongs to an angle-bracket
@@ -117,12 +136,13 @@ namespace scl::detail
         while (symbol > 0 &&
             ::scl::detail::operator_symbol_char(::scl::detail::char_or_null_at(str, symbol - 1)))
             --symbol;
-        auto const length = ::scl::detail::angle_operator_length(str.substr(symbol));
-        constexpr ::std::string_view keyword = "operator";
         auto const head = str.substr(0, str.substr(0, symbol).find_last_not_of(' ') + 1);
-        if (!head.ends_with(keyword) || index >= symbol + length)
+        if (!head.ends_with(::scl::detail::operator_keyword))
             return index;
-        auto const start = head.size() - keyword.size();
+        auto const length = ::scl::detail::angle_operator_length(str.substr(symbol));
+        if (index >= symbol + length)
+            return index;
+        auto const start = head.size() - ::scl::detail::operator_keyword.size();
         return start > 0 && ::scl::detail::identifier_char(::scl::detail::char_or_null_at(str, start - 1))
             ? index
             : start;
@@ -132,7 +152,7 @@ namespace scl::detail
     // argument list instead.
     constexpr bool glued_angle_symbol(::std::string_view str, ::std::size_t keyword) noexcept
     {
-        auto const rest = str.substr(keyword + ::std::string_view{"operator"}.size());
+        auto const rest = str.substr(keyword + ::scl::detail::operator_keyword.size());
         auto const start = rest.find_first_not_of(' ');
         auto const symbol = start == ::std::string_view::npos ? ::std::string_view{} : rest.substr(start);
         auto const length = ::scl::detail::angle_operator_length(symbol);
@@ -140,72 +160,134 @@ namespace scl::detail
         return length > 1 && (spelled.ends_with('>') || spelled == "->*");
     }
 
+    struct symbol_run
+    {
+        ::std::size_t plain_angles_from;
+        ::std::size_t keyword_at;
+        bool glued;
+    };
+
+    // The operator symbols and spaces that end at the angle bracket at an index: from which index
+    // their angle brackets are plain brackets, and where the keyword operator whose symbol they
+    // spell opens, npos where they follow no keyword operator.
+    constexpr ::scl::detail::symbol_run symbol_run_at(::std::string_view str, ::std::size_t index) noexcept
+    {
+        auto start = index;
+        while (start > 0 &&
+            (::scl::detail::operator_symbol_char(::scl::detail::char_or_null_at(str, start - 1)) ||
+                ::scl::detail::char_or_null_at(str, start - 1) == ' '))
+            --start;
+        ::scl::detail::symbol_run const plain{
+            .plain_angles_from = start, .keyword_at = ::std::string_view::npos, .glued = false};
+        auto const head = str.substr(0, start);
+        if (!head.ends_with(::scl::detail::operator_keyword))
+            return plain;
+        auto const keyword_at = head.size() - ::scl::detail::operator_keyword.size();
+        if (keyword_at > 0 &&
+            ::scl::detail::identifier_char(::scl::detail::char_or_null_at(str, keyword_at - 1)))
+            return plain;
+        auto const symbol = str.find_first_not_of(' ', start);
+        auto const length = ::scl::detail::angle_operator_length(str.substr(symbol));
+        auto const spelled = str.substr(symbol, length);
+        return {.plain_angles_from = symbol + length,
+            .keyword_at = keyword_at,
+            .glued = length > 1 && (spelled.ends_with('>') || spelled == "->*")};
+    }
+
     struct scope_scan
     {
         ::std::size_t position;
         int bracket_depth;
         unsigned glued_count;
+        ::std::size_t plain_angles_from;
     };
 
-    // Where the scan from the end goes on after the angle bracket at an index.
-    constexpr ::std::size_t scan_angle(
-        ::std::string_view str, ::std::size_t index, scope_scan & result, unsigned shorter_from_end) noexcept
+    // Where the scan from the end goes on after the angle bracket at an index inside the symbol of
+    // a keyword operator.
+    constexpr ::std::size_t scan_operator_symbol(
+        ::std::string_view str, ::std::size_t index, ::scl::detail::symbol_run const & run,
+        scope_scan & result, unsigned shorter_from_end) noexcept
     {
-        auto const keyword = ::scl::detail::operator_start(str, index);
-        if (keyword == index)
-        {
-            result.bracket_depth += ::scl::detail::char_or_null_at(str, index) == '>' ? 1 : -1;
-            return index;
-        }
-        if (!::scl::detail::glued_angle_symbol(str, keyword))
-            return keyword;
+        if (!run.glued)
+            return run.keyword_at;
         // No compiler writes :: right after the keyword operator and its symbol, so the > of
         // operator->:: closes an argument list.
-        auto const shorter = str.substr(index + 1).starts_with("::") || result.glued_count++ < shorter_from_end;
-        if (!shorter)
-            return keyword;
-        ++result.bracket_depth;
-        return keyword;
+        auto shorter_reading = str.substr(index + 1).starts_with("::");
+        if (!shorter_reading)
+        {
+            shorter_reading = result.glued_count < shorter_from_end;
+            ++result.glued_count;
+        }
+        if (shorter_reading)
+            ++result.bracket_depth;
+        return run.keyword_at;
+    }
+
+    // Where the scan from the end goes on after the character ch at an index, a colon aside.
+    constexpr ::std::size_t scan_bracket_or_literal(
+        char ch, ::std::string_view str, ::std::size_t index, scope_scan & result,
+        unsigned shorter_from_end) noexcept
+    {
+        if (ch == '<' || ch == '>')
+        {
+            char const before = ::scl::detail::char_or_null_at(str, index - 1);
+            auto const may_belong_to_operator = before == '<' || before == '>' || before == '=' ||
+                before == '-' || before == ' ' || before == ::scl::detail::operator_keyword.back();
+            if (may_belong_to_operator)
+            {
+                auto const run = ::scl::detail::symbol_run_at(str, index);
+                result.plain_angles_from = run.plain_angles_from;
+                if (index < run.plain_angles_from)
+                    return ::scl::detail::scan_operator_symbol(str, index, run, result, shorter_from_end);
+            }
+            result.bracket_depth += ch == '>' ? 1 : -1;
+        }
+        else if (ch == ')' || ch == '}')
+        {
+            ++result.bracket_depth;
+        }
+        else if (ch == '(' || ch == '{')
+        {
+            --result.bracket_depth;
+        }
+        else if (ch == '\'' || ch == '"')
+        {
+            return ::scl::detail::literal_start(str, index);
+        }
+        return index;
     }
 
     // The scan runs from the end, so the bare symbol MSVC writes for an operator scope, as in
     // <=::Local, lies before the last '::' and cannot hide it.
     constexpr scope_scan scan_scopes(::std::string_view str, unsigned shorter_from_end) noexcept
     {
-        scope_scan result{.position = ::std::string_view::npos, .bracket_depth = 0, .glued_count = 0};
+        scope_scan result{.position = ::std::string_view::npos,
+            .bracket_depth = 0,
+            .glued_count = 0,
+            .plain_angles_from = ::std::string_view::npos};
+        auto const * const chars = str.data();
         for (auto index = str.size(); index > 0;)
         {
-            --index;
-            switch (::scl::detail::char_or_null_at(str, index))
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            char const ch = chars[--index];
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-constant-array-index)
+            if (!::scl::detail::chars_read_by_scope_scan.members[static_cast<unsigned char>(ch)])
+                continue;
+            if ((ch == '<' || ch == '>') && index >= result.plain_angles_from)
             {
-            case '\'':
-            case '"':
-                index = ::scl::detail::literal_start(str, index);
-                break;
-            case '<':
-            case '>':
-                index = ::scl::detail::scan_angle(str, index, result, shorter_from_end);
-                break;
-            case ')':
-            case '}':
-                ++result.bracket_depth;
-                break;
-            case '(':
-            case '{':
-                --result.bracket_depth;
-                break;
-            case ':':
-                if (result.position == ::std::string_view::npos && result.bracket_depth == 0 &&
-                    ::scl::detail::char_or_null_at(str, index - 1) == ':')
-                {
-                    result.position = index - 1;
-                    // Only a glued symbol makes the whole name worth reading for its balance.
-                    if (result.glued_count == 0)
-                        return result;
-                }
-                break;
-            default:
-                break;
+                result.bracket_depth += ch == '>' ? 1 : -1;
+            }
+            else if (ch != ':')
+            {
+                index = ::scl::detail::scan_bracket_or_literal(ch, str, index, result, shorter_from_end);
+            }
+            else if (result.position == ::std::string_view::npos && result.bracket_depth == 0 &&
+                ::scl::detail::char_or_null_at(str, index - 1) == ':')
+            {
+                result.position = index - 1;
+                // Only a glued symbol makes the whole name worth reading for its balance.
+                if (result.glued_count == 0)
+                    return result;
             }
         }
         return result;
@@ -331,7 +413,8 @@ namespace scl
         static_assert(!pattern_text.empty());
 
         constexpr auto text_length = pattern_text.length() - prefix_length - suffix_length;
-        return pattern_text.substr(prefix_length, text_length);
+        constexpr auto result = pattern_text.substr(prefix_length, text_length);
+        return result;
     }
 
     /**
@@ -350,6 +433,9 @@ namespace scl
      * a union, an enumeration and a fundamental type, with or without `const`, `volatile` and
      * a reference. A pointer, an array, a function and a pointer to a member do not satisfy it.
      *
+     * The short name is computed while the program compiles, so a call made at run time, through
+     * a pointer to the function as well, costs as much as returning a constant.
+     *
      * @warning The result is for display, as the result of ::scl::type_name<T>() is: its
      * spelling differs between compilers and may change in a later version of the module.
      *
@@ -360,6 +446,14 @@ namespace scl
      * `Wrap<Holder<&P::operator-> >::Inner<&P::operator- >>` as
      * `Wrap<Holder<&P::operator->>::Inner<&P::operator->>`, so the function cannot tell the two
      * apart and returns `Wrap` for both, while the first is a specialization of `Inner`.
+     *
+     * @note The compiler limits the steps of the computation, so a call with a type whose name is
+     * longer than that limit allows does not compile. The steps a name takes depend on what it is
+     * made of: a pointer to an operator or a character literal in a template argument takes more of
+     * them than a class name. With the default limits of GCC 13.1, Clang 22.1 and MSVC 19.44, a call
+     * compiles for a name of up to 30 000 characters, whatever it is made of. A longer name may need
+     * a higher limit, set by `-fconstexpr-steps` with Clang, `/constexpr:steps` with MSVC and
+     * `-fconstexpr-loop-limit` with GCC.
      *
      * @snippet meta/type_name/meta_type_name_example.cpp type_short_name
      */
@@ -372,7 +466,9 @@ namespace scl
         requires(::scl::detail::concepts::short_named<::std::remove_cvref_t<T>>)
 #endif
     {
-        return ::scl::detail::short_name_from(::scl::type_name<::std::remove_cvref_t<T>>());
+        constexpr auto result = ::scl::detail::short_name_from(
+            ::scl::type_name<::std::remove_cvref_t<T>>());
+        return result;
     }
 
 } // namespace scl

@@ -7,6 +7,8 @@ the qualifiers of namespaces and classes, without template arguments, and withou
 
 - Header: `#include <scl/utility/meta/type.h>`
 - Both function templates need no RTTI and can be evaluated in a constant expression.
+- Both function templates compute the name while the program compiles, so a call made at run time,
+  through a pointer to the function as well, costs as much as returning a constant.
 
 ```cpp
 namespace scl
@@ -52,6 +54,14 @@ namespace scl
   `class_enum_or_fundamental` is satisfied by a class, a union, an enumeration and a fundamental
   type, with or without `const`, `volatile` and a reference. A pointer, an array, a function and
   a pointer to a member do not satisfy it, and a call with such a type does not compile.
+- **Length of a name:** the short name is computed while the program compiles, and the compiler
+  limits the steps of such a computation, so a call with a type whose name is longer than that
+  limit allows does not compile. The steps a name takes depend on what it is made of: a pointer to
+  an operator or a character literal in a template argument takes more of them than a class name.
+  With the default limits of GCC 13.1, Clang 22.1 and MSVC 19.44, a call compiles for a name of up
+  to 30 000 characters, whatever it is made of. A longer name may need a higher limit, set by
+  `-fconstexpr-steps` with Clang, `/constexpr:steps` with MSVC and `-fconstexpr-loop-limit` with
+  GCC.
 - **Two types of one name:** GCC and Clang spell a pointer to `operator-` before a closing `>` as
   `operator->`, so two types can get one name. Take a class `P` with both operators and class
   templates `Holder` and `Wrap`, each with a member template `Inner`. Clang names both
