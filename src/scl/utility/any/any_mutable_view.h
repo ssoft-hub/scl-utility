@@ -30,7 +30,7 @@ namespace scl
 {
     class any_mutable_view;
 
-    template <::scl::concepts::object_type Type, typename MutableView>
+    template <::scl::concepts::object Type, typename MutableView>
     [[nodiscard]]
     SCL_HOT
     constexpr Type * any_cast(MutableView * view) noexcept
@@ -132,14 +132,14 @@ namespace scl
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
 
-        template <::scl::concepts::object_type Type, typename MutableView>
+        template <::scl::concepts::object Type, typename MutableView>
         friend constexpr Type * scl::any_cast(MutableView * view) noexcept
             requires(::std::same_as<::std::remove_cv_t<MutableView>, any_mutable_view>);
     };
 
     // The view type is deduced so that a cv-qualified handle binds at all; its qualification governs
     // the handle, not the referent, so it takes no part in the request.
-    template <::scl::concepts::object_type Type, typename MutableView>
+    template <::scl::concepts::object Type, typename MutableView>
     [[nodiscard]]
     SCL_HOT
     constexpr Type * any_cast(MutableView * view) noexcept
@@ -178,7 +178,7 @@ namespace scl
     }
 
     // Not lifetime-bound: the result is a copy, and it outlives the view by design.
-    template <::scl::concepts::object_type Type, typename ValueView>
+    template <::scl::concepts::object Type, typename ValueView>
     [[nodiscard]]
     constexpr Type any_cast(ValueView & view)
         requires(::std::same_as<::std::remove_cv_t<ValueView>, any_mutable_view>)

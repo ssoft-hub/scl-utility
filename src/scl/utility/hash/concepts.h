@@ -47,7 +47,7 @@ namespace scl::hash::concepts
     template <typename Type>
     concept byte_element = sizeof(Type) == 1
             && ::scl::concepts::trivially_copyable<Type>
-            && !::scl::concepts::empty_type<Type>;
+            && !::scl::concepts::empty<Type>;
     // clang-format on
 
     /**

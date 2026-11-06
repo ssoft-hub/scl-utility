@@ -201,14 +201,14 @@ namespace scl::concepts
      * @tparam T type to check
      * @par Example
      * @code{.cpp}
-     * static_assert( scl::concepts::array_type<int[3]>);
-     * static_assert( scl::concepts::array_type<int[]>);
-     * static_assert(!scl::concepts::array_type<int*>);
-     * static_assert(!scl::concepts::array_type<int>);
+     * static_assert( scl::concepts::array<int[3]>);
+     * static_assert( scl::concepts::array<int[]>);
+     * static_assert(!scl::concepts::array<int*>);
+     * static_assert(!scl::concepts::array<int>);
      * @endcode
      */
     template <typename T>
-    concept array_type = ::std::is_array_v<T>;
+    concept array = ::std::is_array_v<T>;
 
     /**
      * @brief Satisfied when T is a bounded array type (e.g. int[3]).
@@ -250,14 +250,14 @@ namespace scl::concepts
      *       this concept; only bare function types like `void(int)` do.
      * @par Example
      * @code{.cpp}
-     * static_assert( scl::concepts::function_type<void(int)>);
-     * static_assert( scl::concepts::function_type<int(float, char)>);
-     * static_assert(!scl::concepts::function_type<void(*)(int)>);
-     * static_assert(!scl::concepts::function_type<int>);
+     * static_assert( scl::concepts::function<void(int)>);
+     * static_assert( scl::concepts::function<int(float, char)>);
+     * static_assert(!scl::concepts::function<void(*)(int)>);
+     * static_assert(!scl::concepts::function<int>);
      * @endcode
      */
     template <typename T>
-    concept function_type = ::std::is_function_v<T>;
+    concept function = ::std::is_function_v<T>;
 
     /**
      * @brief Satisfied when T is a (non-union) class type.
@@ -359,16 +359,16 @@ namespace scl::concepts
      * @code{.cpp}
      * struct S {};
      *
-     * static_assert( scl::concepts::object_type<int>);
-     * static_assert( scl::concepts::object_type<int*>);
-     * static_assert( scl::concepts::object_type<S>);
-     * static_assert(!scl::concepts::object_type<void>);
-     * static_assert(!scl::concepts::object_type<int&>);
-     * static_assert(!scl::concepts::object_type<void(int)>);
+     * static_assert( scl::concepts::object<int>);
+     * static_assert( scl::concepts::object<int*>);
+     * static_assert( scl::concepts::object<S>);
+     * static_assert(!scl::concepts::object<void>);
+     * static_assert(!scl::concepts::object<int&>);
+     * static_assert(!scl::concepts::object<void(int)>);
      * @endcode
      */
     template <typename T>
-    concept object_type = ::std::is_object_v<T>;
+    concept object = ::std::is_object_v<T>;
 
     /**
      * @brief Satisfied when T is a compound type (any non-fundamental type).

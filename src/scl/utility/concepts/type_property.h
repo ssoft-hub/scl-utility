@@ -12,24 +12,6 @@ namespace scl::concepts
 {
 
     /**
-     * @brief Satisfied when T is a trivial type.
-     * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * struct Pod { int x; };
-     * struct WithCtor { WithCtor() {} };
-     *
-     * static_assert( scl::concepts::trivial<int>);
-     * static_assert( scl::concepts::trivial<Pod>);
-     * static_assert(!scl::concepts::trivial<WithCtor>);
-     * static_assert(!scl::concepts::trivial<std::string>);
-     * @endcode
-     */
-    template <typename T>
-    concept trivial = ::std::is_trivial_v<T>;
-
-    /**
      * @brief Satisfied when T is trivially copyable.
      * @ingroup scl_utility_concepts
      * @tparam T type to check
@@ -82,17 +64,17 @@ namespace scl::concepts
      * struct Tag {};
      * struct WithData { int x; };
      *
-     * static_assert( scl::concepts::empty_type<Tag>);
-     * static_assert(!scl::concepts::empty_type<WithData>);
-     * static_assert(!scl::concepts::empty_type<int>);
+     * static_assert( scl::concepts::empty<Tag>);
+     * static_assert(!scl::concepts::empty<WithData>);
+     * static_assert(!scl::concepts::empty<int>);
      *
-     * // EBO: empty base adds zero overhead when it satisfies empty_type:
-     * template <scl::concepts::empty_type Policy>
+     * // EBO: empty base adds zero overhead when it satisfies empty:
+     * template <scl::concepts::empty Policy>
      * struct container : Policy {};
      * @endcode
      */
     template <typename T>
-    concept empty_type = ::std::is_empty_v<T>;
+    concept empty = ::std::is_empty_v<T>;
 
     /**
      * @brief Satisfied when T is a polymorphic class (has at least one virtual function).
@@ -125,18 +107,18 @@ namespace scl::concepts
      * struct Interface { virtual void f() = 0; };
      * struct Concrete  : Interface { void f() override {} };
      *
-     * static_assert( scl::concepts::abstract_type<Interface>);
-     * static_assert(!scl::concepts::abstract_type<Concrete>);
-     * static_assert(!scl::concepts::abstract_type<int>);
+     * static_assert( scl::concepts::abstract<Interface>);
+     * static_assert(!scl::concepts::abstract<Concrete>);
+     * static_assert(!scl::concepts::abstract<int>);
      *
      * // Reject abstract types that cannot be instantiated:
      * template <typename T>
-     *     requires (!scl::concepts::abstract_type<T>)
+     *     requires (!scl::concepts::abstract<T>)
      * T make_default() { return T{}; }
      * @endcode
      */
     template <typename T>
-    concept abstract_type = ::std::is_abstract_v<T>;
+    concept abstract = ::std::is_abstract_v<T>;
 
     /**
      * @brief Satisfied when T is declared final.
@@ -147,17 +129,17 @@ namespace scl::concepts
      * struct Open  {};
      * struct Closed final {};
      *
-     * static_assert( scl::concepts::final_type<Closed>);
-     * static_assert(!scl::concepts::final_type<Open>);
-     * static_assert(!scl::concepts::final_type<int>);
+     * static_assert( scl::concepts::final<Closed>);
+     * static_assert(!scl::concepts::final<Open>);
+     * static_assert(!scl::concepts::final<int>);
      *
      * // final types can be stored without vtable overhead:
-     * template <scl::concepts::final_type T>
+     * template <scl::concepts::final T>
      * struct inline_storage { T value; };
      * @endcode
      */
     template <typename T>
-    concept final_type = ::std::is_final_v<T>;
+    concept final = ::std::is_final_v<T>;
 
     /**
      * @brief Satisfied when T is an aggregate type.
