@@ -85,10 +85,11 @@ namespace scl::concepts
      */
 #if (defined(__cpp_lib_is_scoped_enum) && __cpp_lib_is_scoped_enum >= 202011L) || defined(SCL_DOXYGEN)
     template <typename T>
-    concept scoped_enum = enum_type<T> && ::std::is_scoped_enum_v<T>;
+    concept scoped_enum = ::scl::concepts::enum_type<T> && ::std::is_scoped_enum_v<T>;
 #else
     template <typename T>
-    concept scoped_enum = enum_type<T> && !::std::is_convertible_v<T, ::std::underlying_type_t<T>>;
+    concept scoped_enum = ::scl::concepts::enum_type<T> &&
+        !::std::is_convertible_v<T, ::std::underlying_type_t<T>>;
 #endif
 
     /**
