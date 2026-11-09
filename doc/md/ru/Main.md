@@ -75,7 +75,7 @@ target_link_libraries(your_target PRIVATE scl::utility)
 | Компонент | Заголовок | Описание |
 |-----------|-----------|----------|
 | `reference`, `lvalue_reference`, `rvalue_reference`, `non_reference` | `<scl/utility/concepts/reference.h>` | Классификаторы ссылок |
-| `const_type`, `volatile_type`, `cv_type` | `<scl/utility/concepts/qualifier.h>` | Классификаторы квалификаторов |
+| `const_qualified`, `volatile_qualified`, `cv_qualified` | `<scl/utility/concepts/qualifier.h>` | Классификаторы квалификаторов |
 | `enum_type` и другие классификаторы категорий | `<scl/utility/concepts/type_category.h>` | Классификаторы категорий типов |
 | Классификаторы свойств типов | `<scl/utility/concepts/type_property.h>` | Классификаторы свойств |
 
