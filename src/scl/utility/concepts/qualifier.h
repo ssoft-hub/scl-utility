@@ -64,6 +64,6 @@ namespace scl::concepts
      * @endcode
      */
     template <typename T>
-    concept cv_qualified = ::std::is_const_v<T> && ::std::is_volatile_v<T>;
+    concept cv_qualified = ::scl::concepts::const_qualified<T> && ::scl::concepts::volatile_qualified<T>;
 
 } // namespace scl::concepts

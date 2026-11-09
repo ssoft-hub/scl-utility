@@ -4,6 +4,33 @@
 
 using namespace scl::concepts;
 
+namespace
+{
+    template <const_qualified Type>
+    constexpr int const_rank()
+    {
+        return 1;
+    }
+
+    template <cv_qualified Type>
+    constexpr int const_rank()
+    {
+        return 2;
+    }
+
+    template <volatile_qualified Type>
+    constexpr int volatile_rank()
+    {
+        return 1;
+    }
+
+    template <cv_qualified Type>
+    constexpr int volatile_rank()
+    {
+        return 2;
+    }
+} // namespace
+
 TEST(Qualifier, const_qualified)
 {
     STATIC_EXPECT_TRUE(const_qualified<int const>);
@@ -55,4 +82,16 @@ TEST(Qualifier, cv_qualified_reference)
     STATIC_EXPECT_FALSE(cv_qualified<int &>);
     STATIC_EXPECT_FALSE(cv_qualified<int const volatile &>);
     STATIC_EXPECT_FALSE(cv_qualified<int const volatile &&>);
+}
+
+TEST(Qualifier, cv_qualified_subsumes_const_qualified)
+{
+    STATIC_EXPECT_EQ(const_rank<int const volatile>(), 2);
+    STATIC_EXPECT_EQ(const_rank<int const>(), 1);
+}
+
+TEST(Qualifier, cv_qualified_subsumes_volatile_qualified)
+{
+    STATIC_EXPECT_EQ(volatile_rank<int const volatile>(), 2);
+    STATIC_EXPECT_EQ(volatile_rank<int volatile>(), 1);
 }
