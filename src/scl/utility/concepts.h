@@ -2,14 +2,13 @@
 
 /**
  * @file
- * @brief ScL type-classifying concepts.
- * @details This header aggregates all ScL type-classifying concept utilities.
+ * @brief ScL concepts for the standard type traits.
+ * @details This header includes every header of the group.
  */
 
 /**
- * @defgroup scl_utility_concepts ScL Type-Classifying Concepts
- * @brief Concept wrappers for std type traits that have no std concept equivalent.
- * @details
+ * @defgroup scl_utility_concepts ScL Concepts
+ * @brief Concepts built on the standard type traits that have no standard concept.
  * @{
  */
 

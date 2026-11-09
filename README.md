@@ -46,11 +46,8 @@ Every group has its own umbrella header; `#include <scl/utility.h>` pulls in all
   - `SCL_LIFETIMEBOUND` - dangling-reference detection (Clang `-Wdangling`, MSVC code analysis)
   - `SCL_UNSEQUENCED` / `SCL_REPRODUCIBLE` - purity annotations (`gnu::const` and `gnu::pure` on GCC/Clang)
   - `SCL_INDETERMINATE` - C++26 opt-in to indeterminate storage
-- **Concepts** — concept form of the standard type traits that have no `std` concept
-  (`#include <scl/utility/concepts.h>`):
-  - reference and qualifier classifiers (`reference`, `lvalue_reference`, `const_qualified`,
-    `cv_qualified`, ...)
-  - type-category and type-property classifiers (`enum_type`, …)
+- **Concepts** - concept form of the standard type traits that have no `std` concept
+  (`#include <scl/utility/concepts.h>`)
 - **Meta** — compile-time name extraction without RTTI (`#include <scl/utility/meta.h>`):
   - `type_name<T>` / `type_short_name<T>` — human-readable type names
   - `enum_name<V>` / `enum_short_name<V>` — enum member names

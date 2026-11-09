@@ -70,14 +70,12 @@ target_link_libraries(your_target PRIVATE scl::utility)
 
 [К группе](attribute/index.md)
 
-### Concepts — концепты для стандартных свойств типов
+### Concepts - концепты для стандартных свойств типов
 
-| Компонент | Заголовок | Описание |
-|-----------|-----------|----------|
-| `reference`, `lvalue_reference`, `rvalue_reference`, `non_reference` | `<scl/utility/concepts/reference.h>` | Классификаторы ссылок |
-| `const_qualified`, `volatile_qualified`, `cv_qualified` | `<scl/utility/concepts/qualifier.h>` | Классификаторы квалификаторов |
-| `enum_type` и другие классификаторы категорий | `<scl/utility/concepts/type_category.h>` | Классификаторы категорий типов |
-| Классификаторы свойств типов | `<scl/utility/concepts/type_property.h>` | Классификаторы свойств |
+В группе собраны концепты для тех свойств типов из стандартной библиотеки, у которых нет своего
+концепта.
+
+[К группе](concepts/index.md)
 
 ### Hierarchy — иерархии «родитель-потомок»
 

@@ -68,14 +68,12 @@ before the first header of the module, in a spelling listed on its page for the 
 
 [To the group](attribute/index.md)
 
-### Concepts — concept form of the standard type traits
+### Concepts - concepts for the standard type traits
 
-| Component | Header | Description |
-|-----------|--------|-------------|
-| `reference`, `lvalue_reference`, `rvalue_reference`, `non_reference` | `<scl/utility/concepts/reference.h>` | Reference classifiers |
-| `const_qualified`, `volatile_qualified`, `cv_qualified` | `<scl/utility/concepts/qualifier.h>` | Qualifier classifiers |
-| `enum_type` and the other category classifiers | `<scl/utility/concepts/type_category.h>` | Type-category classifiers |
-| Type-property classifiers | `<scl/utility/concepts/type_property.h>` | Property classifiers |
+The group holds concepts for the type traits of the standard library that have no concept of their
+own.
+
+[To the group](concepts/index.md)
 
 ### Hierarchy — parent-child trees
 

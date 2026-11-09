@@ -2,7 +2,7 @@
 
 /**
  * @file
- * @brief Primary and composite type-category concepts.
+ * @brief Concepts of the categories of a type, such as enumeration, pointer, array and class.
  * @ingroup scl_utility_concepts
  */
 
@@ -12,76 +12,70 @@ namespace scl::concepts
 {
 
     /**
-     * @brief Satisfied when T is an enumeration type.
+     * @brief Satisfied by an enumeration type, scoped or unscoped.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * enum Color { Red, Green, Blue };
-     * enum class Dir { North, South };
      *
-     * static_assert( scl::concepts::enum_type<Color>);
-     * static_assert( scl::concepts::enum_type<Dir>);
-     * static_assert(!scl::concepts::enum_type<int>);
+     * The checked type satisfies the concept if it is an enumeration, scoped or unscoped.
+     * The result of the check equals the value of the trait `std::is_enum_v<T>`. For a type with
+     * cv-qualifiers the concept gives the same result as for the type without them, and a reference
+     * type does not satisfy the concept.
      *
-     * template <scl::concepts::enum_type E>
-     * auto to_int(E e)
-     * {
-     *     return static_cast<std::underlying_type_t<E>>(e);
-     * }
-     * @endcode
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp enum_type
+     * @snippet concepts/type_category/concepts_type_category_example.cpp underlying
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept enum_type = ::std::is_enum_v<T>;
 
     /**
-     * @brief Satisfied when V is a value of enumeration type.
+     * @brief Satisfied by a constant whose type is an enumeration type.
      * @ingroup scl_utility_concepts
-     * @tparam V value to check
-     * @note For template parameter lists prefer `enum_type auto V`; use this
-     *       concept in explicit requires-expressions or composed constraints.
-     * @par Example
-     * @code{.cpp}
-     * enum Color { Red, Green, Blue };
      *
-     * static_assert( scl::concepts::enum_value<Color::Red>);
-     * static_assert(!scl::concepts::enum_value<42>);
+     * The concept checks a constant, not a type. A constant satisfies the concept if its type is
+     * an enumeration. A template parameter declared as `::scl::concepts::enum_type auto V` accepts
+     * the same constants. The concept is meant for a `requires` clause and for any other place
+     * where a constant, rather than its type, is at hand. The result of the check equals the value
+     * of the trait `std::is_enum_v<decltype(V)>`.
      *
-     * // Abbreviated NTTP constraint via the type concept:
-     * template <scl::concepts::enum_type auto V>
-     * constexpr auto underlying()
-     * {
-     *     return static_cast<std::underlying_type_t<decltype(V)>>(V);
-     * }
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group. The module does not support overloads that
+     * differ only in the constraint on the type of a constant template parameter, such as
+     * `::scl::concepts::enum_type auto V` and `::scl::concepts::scoped_enum auto V`, since for
+     * a scoped enumeration Clang and GCC 16 choose the overload constrained by
+     * ::scl::concepts::scoped_enum, while earlier versions of GCC and MSVC reject the call as
+     * ambiguous.
      *
-     * // Or via an explicit requires-expression:
-     * template <auto V>
-     *     requires scl::concepts::enum_value<V>
-     * constexpr auto underlying();
-     * @endcode
+     * @snippet concepts/type_category/concepts_type_category_example.cpp enum_value
+     *
+     * @tparam V Constant to check.
      */
     template <auto V>
     concept enum_value = ::std::is_enum_v<decltype(V)>;
 
     /**
-     * @brief Satisfied when T is a scoped enumeration - an `enum class` or `enum struct`.
+     * @brief Satisfied by a scoped enumeration type, declared with `enum class` or `enum struct`.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @note A scoped enumeration is one whose enumerators do not implicitly convert
-     *       to the underlying type, so an enumerator cannot silently become an
-     *       integer.
-     * @note `std::is_scoped_enum` says the same thing but arrives in C++23; this concept
-     *       uses it where the standard library offers it and derives the answer from the
-     *       conversion otherwise.
-     * @par Example
-     * @code{.cpp}
-     * enum class Dir { North, South };
-     * enum Color { Red, Green };
      *
-     * static_assert( scl::concepts::scoped_enum<Dir>);
-     * static_assert(!scl::concepts::scoped_enum<Color>);
-     * static_assert(!scl::concepts::scoped_enum<int>);
-     * @endcode
+     * The checked type satisfies the concept if it is a scoped enumeration, that is, one declared
+     * with `enum class` or `enum struct`. If the standard library provides the trait
+     * `std::is_scoped_enum` of C++23 (the macro `__cpp_lib_is_scoped_enum` is at least `202011L`),
+     * the concept is built on that trait. Otherwise the concept checks that the enumeration does
+     * not convert implicitly to its underlying type. Both definitions give the same result. For
+     * a type with cv-qualifiers the concept gives the same result as for the type without them, and
+     * a reference type does not satisfy the concept.
+     *
+     * The concept is declared through ::scl::concepts::enum_type, so its constraint is stricter
+     * than the constraint of that concept. For a scoped enumeration the compiler chooses a function
+     * template constrained by the concept over one constrained by ::scl::concepts::enum_type.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp scoped_enum
+     * @snippet concepts/type_category/concepts_type_category_example.cpp describe
+     *
+     * @tparam T Type to check.
      */
 #if (defined(__cpp_lib_is_scoped_enum) && __cpp_lib_is_scoped_enum >= 202011L) || defined(SCL_DOXYGEN)
     template <typename T>
@@ -93,299 +87,331 @@ namespace scl::concepts
 #endif
 
     /**
-     * @brief Satisfied when T is void.
+     * @brief Satisfied by the type `void` with or without cv-qualifiers.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::void_type<void>);
-     * static_assert( scl::concepts::void_type<void const>);
-     * static_assert(!scl::concepts::void_type<int>);
-     * static_assert(!scl::concepts::void_type<void*>);
-     * @endcode
+     *
+     * The checked type satisfies the concept if it is the type `void`. The result of the check
+     * equals the value of the trait `std::is_void_v<T>`. For a type with cv-qualifiers the concept
+     * gives the same result as for the type without them, and a reference type does not satisfy
+     * the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp void_type
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept void_type = ::std::is_void_v<T>;
 
     /**
-     * @brief Satisfied when T is a (possibly cv-qualified) pointer to object or function.
+     * @brief Satisfied by a pointer to an object, to `void` or to a function.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::pointer<int*>);
-     * static_assert( scl::concepts::pointer<void (*)(int)>);
-     * static_assert(!scl::concepts::pointer<int&>);
-     * static_assert(!scl::concepts::pointer<std::nullptr_t>);
      *
-     * template <scl::concepts::pointer P>
-     * auto deref(P p) -> decltype(*p) { return *p; }
-     * @endcode
+     * The checked type satisfies the concept if it is a pointer to an object, to `void` or to
+     * a function. A pointer to a member and the type `std::nullptr_t` do not satisfy the concept.
+     * The result of the check equals the value of the trait `std::is_pointer_v<T>`. For a type with
+     * cv-qualifiers the concept gives the same result as for the type without them, and a reference
+     * type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp pointer
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept pointer = ::std::is_pointer_v<T>;
 
     /**
-     * @brief Satisfied when T is std::nullptr_t.
+     * @brief Satisfied by the type `std::nullptr_t` with or without cv-qualifiers.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::null_pointer<std::nullptr_t>);
-     * static_assert(!scl::concepts::null_pointer<int*>);
-     * static_assert(!scl::concepts::null_pointer<void*>);
      *
-     * template <scl::concepts::null_pointer T>
-     * void accept_null(T);            // overload for nullptr_t
-     * @endcode
+     * The checked type satisfies the concept if it is the type `std::nullptr_t`, that is, the type
+     * of the literal `nullptr`. The result of the check equals the value of the trait
+     * `std::is_null_pointer_v<T>`. For a type with cv-qualifiers the concept gives the same result
+     * as for the type without them, and a reference type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp null_pointer
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept null_pointer = ::std::is_null_pointer_v<T>;
 
     /**
-     * @brief Satisfied when T is a pointer-to-member (object or function).
+     * @brief Satisfied by a pointer to a data member and by a pointer to a member function.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * struct S { int x; void f(); };
      *
-     * static_assert( scl::concepts::member_pointer<int S::*>);
-     * static_assert( scl::concepts::member_pointer<void (S::*)()>);
-     * static_assert(!scl::concepts::member_pointer<int*>);
-     * @endcode
+     * The checked type satisfies the concept if it is a pointer to a data member or a pointer to
+     * a member function. The result of the check equals the value of the trait
+     * `std::is_member_pointer_v<T>`. For a type with cv-qualifiers the concept gives the same
+     * result as for the type without them, and a reference type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp member_pointer
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept member_pointer = ::std::is_member_pointer_v<T>;
 
     /**
-     * @brief Satisfied when T is a pointer-to-data-member.
+     * @brief Satisfied by a pointer to a data member.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * struct S { int x; void f(); };
      *
-     * static_assert( scl::concepts::member_object_pointer<int S::*>);
-     * static_assert(!scl::concepts::member_object_pointer<void (S::*)()>);
-     * static_assert(!scl::concepts::member_object_pointer<int*>);
+     * The checked type satisfies the concept if it is a pointer to a data member. The result of
+     * the check equals the value of the trait `std::is_member_object_pointer_v<T>`. For a type with
+     * cv-qualifiers the concept gives the same result as for the type without them, and a reference
+     * type does not satisfy the concept.
      *
-     * template <typename C, scl::concepts::member_object_pointer auto M>
-     * auto get(C& obj) { return obj.*M; }
-     * @endcode
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp member_object_pointer
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept member_object_pointer = ::std::is_member_object_pointer_v<T>;
 
     /**
-     * @brief Satisfied when T is a pointer-to-member-function.
+     * @brief Satisfied by a pointer to a member function.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * struct S { int x; void f(); };
      *
-     * static_assert( scl::concepts::member_function_pointer<void (S::*)()>);
-     * static_assert(!scl::concepts::member_function_pointer<int S::*>);
-     * static_assert(!scl::concepts::member_function_pointer<void (*)()>);
+     * The checked type satisfies the concept if it is a pointer to a member function, whatever
+     * the qualifiers of the member function. The result of the check equals the value of the trait
+     * `std::is_member_function_pointer_v<T>`. For a type with cv-qualifiers the concept gives
+     * the same result as for the type without them, and a reference type does not satisfy
+     * the concept.
      *
-     * template <typename C, scl::concepts::member_function_pointer auto M>
-     * auto invoke(C& obj) { return (obj.*M)(); }
-     * @endcode
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp member_function_pointer
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept member_function_pointer = ::std::is_member_function_pointer_v<T>;
 
     /**
-     * @brief Satisfied when T is an array type (bounded or unbounded).
+     * @brief Satisfied by an array type, with a known bound or with an unknown one.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::array<int[3]>);
-     * static_assert( scl::concepts::array<int[]>);
-     * static_assert(!scl::concepts::array<int*>);
-     * static_assert(!scl::concepts::array<int>);
-     * @endcode
+     *
+     * The checked type satisfies the concept if it is an array with a known bound, such as
+     * `int[3]`, or with an unknown bound, such as `int[]`. A pointer to an element does not satisfy
+     * the concept, since it is not an array. The result of the check equals the value of the trait
+     * `std::is_array_v<T>`. For a type with cv-qualifiers the concept gives the same result as for
+     * the type without them, and a reference type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp array
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept array = ::std::is_array_v<T>;
 
     /**
-     * @brief Satisfied when T is a bounded array type (e.g. int[3]).
+     * @brief Satisfied by an array type with a known bound, such as `int[3]`.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::bounded_array<int[3]>);
-     * static_assert( scl::concepts::bounded_array<char[256]>);
-     * static_assert(!scl::concepts::bounded_array<int[]>);
-     * static_assert(!scl::concepts::bounded_array<int*>);
      *
-     * template <scl::concepts::bounded_array T>
-     * constexpr std::size_t array_size() { return std::extent_v<T>; }
-     * @endcode
+     * The checked type satisfies the concept if it is an array with a known bound. For example,
+     * the array `int[2][3]` is an array with a known bound whose elements are such arrays too.
+     * The result of the check equals the value of the trait `std::is_bounded_array_v<T>`. For
+     * a type with cv-qualifiers the concept gives the same result as for the type without them, and
+     * a reference type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp bounded_array
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept bounded_array = ::std::is_bounded_array_v<T>;
 
     /**
-     * @brief Satisfied when T is an unbounded array type (e.g. int[]).
+     * @brief Satisfied by an array type with an unknown bound, such as `int[]`.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::unbounded_array<int[]>);
-     * static_assert(!scl::concepts::unbounded_array<int[3]>);
-     * static_assert(!scl::concepts::unbounded_array<int*>);
-     * @endcode
+     *
+     * The checked type satisfies the concept if it is an array with an unknown bound, the type
+     * `int[][3]` included. The result of the check equals the value of the trait
+     * `std::is_unbounded_array_v<T>`. For a type with cv-qualifiers the concept gives the same
+     * result as for the type without them, and a reference type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp unbounded_array
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept unbounded_array = ::std::is_unbounded_array_v<T>;
 
     /**
-     * @brief Satisfied when T is a function type (not a pointer-to-function).
+     * @brief Satisfied by a function type, such as `void(int)`.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @note Pointer-to-function types such as `void(*)(int)` do **not** satisfy
-     *       this concept; only bare function types like `void(int)` do.
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::function<void(int)>);
-     * static_assert( scl::concepts::function<int(float, char)>);
-     * static_assert(!scl::concepts::function<void(*)(int)>);
-     * static_assert(!scl::concepts::function<int>);
-     * @endcode
+     *
+     * The checked type satisfies the concept if it is a function type, such as `void(int)`, with
+     * cv-qualifiers, a reference qualifier or the specifier `noexcept` included. A pointer to
+     * a function and a reference to a function do not satisfy the concept. The result of the check
+     * equals the value of the trait `std::is_function_v<T>`.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp function
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept function = ::std::is_function_v<T>;
 
     /**
-     * @brief Satisfied when T is a (non-union) class type.
+     * @brief Satisfied by a class type other than a union.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * struct Point { int x, y; };
-     * union U { int i; float f; };
      *
-     * static_assert( scl::concepts::class_type<Point>);
-     * static_assert(!scl::concepts::class_type<U>);
-     * static_assert(!scl::concepts::class_type<int>);
+     * The checked type satisfies the concept if it is a class other than a union. The closure type
+     * of a lambda expression is a class too. A union and an enumeration do not satisfy the concept.
+     * The result of the check equals the value of the trait `std::is_class_v<T>`. For a type with
+     * cv-qualifiers the concept gives the same result as for the type without them, and a reference
+     * type does not satisfy the concept.
      *
-     * template <scl::concepts::class_type T>
-     * void accept_class(const T&);
-     * @endcode
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp class_type
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept class_type = ::std::is_class_v<T>;
 
     /**
-     * @brief Satisfied when T is a union type.
+     * @brief Satisfied by a union type.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * union Variant { int i; float f; };
-     * struct S { int x; };
      *
-     * static_assert( scl::concepts::union_type<Variant>);
-     * static_assert(!scl::concepts::union_type<S>);
-     * static_assert(!scl::concepts::union_type<int>);
-     * @endcode
+     * The checked type satisfies the concept if it is a union. The result of the check equals
+     * the value of the trait `std::is_union_v<T>`. For a type with cv-qualifiers the concept gives
+     * the same result as for the type without them, and a reference type does not satisfy
+     * the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp union_type
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept union_type = ::std::is_union_v<T>;
 
     /**
-     * @brief Satisfied when T is a fundamental type (arithmetic, void, or std::nullptr_t).
+     * @brief Satisfied by an arithmetic type, by `void` and by `std::nullptr_t`.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::fundamental<int>);
-     * static_assert( scl::concepts::fundamental<double>);
-     * static_assert( scl::concepts::fundamental<void>);
-     * static_assert( scl::concepts::fundamental<std::nullptr_t>);
-     * static_assert(!scl::concepts::fundamental<int*>);
-     * static_assert(!scl::concepts::fundamental<std::string>);
-     * @endcode
+     *
+     * The checked type satisfies the concept if it is an arithmetic type, the type `void` or
+     * the type `std::nullptr_t`. The result of the check equals the value of the trait
+     * `std::is_fundamental_v<T>`. For a type with cv-qualifiers the concept gives the same result
+     * as for the type without them, and a reference type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp fundamental
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept fundamental = ::std::is_fundamental_v<T>;
 
     /**
-     * @brief Satisfied when T is an arithmetic type (integral or floating-point).
+     * @brief Satisfied by an integral type and by a floating-point type.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * static_assert( scl::concepts::arithmetic<int>);
-     * static_assert( scl::concepts::arithmetic<double>);
-     * static_assert( scl::concepts::arithmetic<bool>);
-     * static_assert(!scl::concepts::arithmetic<void>);
-     * static_assert(!scl::concepts::arithmetic<int*>);
      *
-     * template <scl::concepts::arithmetic T>
-     * T add(T a, T b) { return a + b; }
-     * @endcode
+     * The checked type satisfies the concept if it is an integral type or a floating-point type,
+     * `bool` and the character types included. An enumeration does not satisfy the concept, since
+     * it is not an arithmetic type. The result of the check equals the value of the trait
+     * `std::is_arithmetic_v<T>`. For a type with cv-qualifiers the concept gives the same result as
+     * for the type without them, and a reference type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp arithmetic
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept arithmetic = ::std::is_arithmetic_v<T>;
 
     /**
-     * @brief Satisfied when T is a scalar type (arithmetic, pointer, enum, or std::nullptr_t).
+     * @brief Satisfied by a scalar type, such as an arithmetic type, an enumeration or a pointer.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * enum E { A };
      *
-     * static_assert( scl::concepts::scalar<int>);
-     * static_assert( scl::concepts::scalar<int*>);
-     * static_assert( scl::concepts::scalar<E>);
-     * static_assert( scl::concepts::scalar<std::nullptr_t>);
-     * static_assert(!scl::concepts::scalar<int[3]>);
-     * static_assert(!scl::concepts::scalar<void>);
-     * @endcode
+     * The checked type satisfies the concept if it is an arithmetic type, an enumeration,
+     * a pointer, a pointer to a member or the type `std::nullptr_t`. The result of the check equals
+     * the value of the trait `std::is_scalar_v<T>`. For a type with cv-qualifiers the concept gives
+     * the same result as for the type without them, and a reference type does not satisfy
+     * the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp scalar
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept scalar = ::std::is_scalar_v<T>;
 
     /**
-     * @brief Satisfied when T is an object type (not void, reference, or function).
+     * @brief Satisfied by every type other than a function type, a reference type and `void`.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * struct S {};
      *
-     * static_assert( scl::concepts::object<int>);
-     * static_assert( scl::concepts::object<int*>);
-     * static_assert( scl::concepts::object<S>);
-     * static_assert(!scl::concepts::object<void>);
-     * static_assert(!scl::concepts::object<int&>);
-     * static_assert(!scl::concepts::object<void(int)>);
-     * @endcode
+     * The checked type satisfies the concept if it is not a function type, a reference type or
+     * the type `void`. An array is an object type too. The result of the check equals the value of
+     * the trait `std::is_object_v<T>`. For a type with cv-qualifiers the concept gives the same
+     * result as for the type without them, and a reference type does not satisfy the concept.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp object
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept object = ::std::is_object_v<T>;
 
     /**
-     * @brief Satisfied when T is a compound type (any non-fundamental type).
+     * @brief Satisfied by every type that is not a fundamental type.
      * @ingroup scl_utility_concepts
-     * @tparam T type to check
-     * @par Example
-     * @code{.cpp}
-     * struct S {};
      *
-     * static_assert( scl::concepts::compound<int*>);
-     * static_assert( scl::concepts::compound<int&>);
-     * static_assert( scl::concepts::compound<S>);
-     * static_assert( scl::concepts::compound<void(int)>);
-     * static_assert(!scl::concepts::compound<int>);
-     * static_assert(!scl::concepts::compound<void>);
-     * @endcode
+     * The checked type satisfies the concept if it is not fundamental, that is, if it is a pointer,
+     * a pointer to a member, a reference, an array, a function, a class, a union or an enumeration.
+     * The result of the check equals the value of the trait `std::is_compound_v<T>`. For a type
+     * with cv-qualifiers the concept gives the same result as for the type without them.
+     *
+     * The concept is declared through no other concept, so its constraint is not stricter than
+     * the constraint of any other concept of the group.
+     *
+     * @snippet concepts/type_category/concepts_type_category_example.cpp compound
+     *
+     * @tparam T Type to check.
      */
     template <typename T>
     concept compound = ::std::is_compound_v<T>;
