@@ -1,11 +1,16 @@
 # Concepts of type properties
 
 Applying the concepts of type properties determines whether the checked type can be copied as bytes,
-whether it has standard layout, whether it is an aggregate, for a class or a union also whether it
-is final, and for a class also whether it is empty, polymorphic or abstract. The standard defines
-these properties apart from the type categories.
+whether it has standard layout, whether it is an aggregate, whether its objects can be created
+implicitly, for a class or a union also whether it is final, and for a class also whether it is
+empty, polymorphic or abstract. The standard defines these properties apart from the type
+categories.
 
 - Header: `#include <scl/utility/concepts/type_category.h>`
+
+```cpp
+#define SCL_HAS_IMPLICIT_LIFETIME_CONCEPT /* 1 or 0 */
+```
 
 ```cpp
 namespace scl::concepts
@@ -15,6 +20,16 @@ namespace scl::concepts
 
     template <typename T>
     concept standard_layout = ::scl::concepts::object<T> && ::std::is_standard_layout_v<T>;
+
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+#if defined(__cpp_lib_is_implicit_lifetime) && __cpp_lib_is_implicit_lifetime >= 202302L
+    template <typename T>
+    concept implicit_lifetime = ::scl::concepts::object<T> && ::std::is_implicit_lifetime_v<T>;
+#else
+    template <typename T>
+    concept implicit_lifetime = ::scl::concepts::object<T> && __builtin_is_implicit_lifetime(T);
+#endif
+#endif
 
     template <typename T>
     concept aggregate = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
@@ -45,6 +60,18 @@ namespace scl::concepts
 - **Complete type.** The checked type must meet the requirements that the standard-library trait
   underlying the concept places on its argument. The subsection of each concept states its
   requirement. A caller must not check with the concepts a type that breaks these requirements.
+
+### `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+
+- **Value.** The macro tells whether the concept `implicit_lifetime` is declared. The macro expands
+  to `1` if the standard library provides the trait `std::is_implicit_lifetime` (the macro
+  `__cpp_lib_is_implicit_lifetime` is at least `202302L`) or the compiler provides the built-in
+  function `__builtin_is_implicit_lifetime`. Otherwise the macro expands to `0`, and the concept
+  `implicit_lifetime` is not declared.
+- **Testing the macro.** The macro is always defined, so a caller should test it with `#if`, not
+  with `#ifdef`. Under `#if` a misspelled name of the macro reads as `0` and draws the warning
+  `-Wundef` where that option of GCC or Clang is given, while under `#ifdef` it reads as false with
+  no warning.
 
 ### `trivially_copyable<T>`
 
@@ -120,6 +147,24 @@ namespace scl::concepts
 - **Standard-library trait.** The result of the check equals the value of the trait
   `std::is_aggregate_v<T>`.
 
+### `implicit_lifetime<T>`
+
+- **Declaration.** The concept is declared only if the macro `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+  expands to `1`.
+- **Condition.** The checked type satisfies the concept if its objects can be created implicitly,
+  that is, if the type is a scalar type, an array type or an implicit-lifetime class.
+  An implicit-lifetime class is an aggregate whose destructor is not user-provided, or a class with
+  a trivial eligible constructor and a trivial destructor that is not deleted.
+- **Implicit creation.** An object of such a type is created implicitly in the storage allocated,
+  for example, by the function `std::malloc`, or in the storage into which, for example,
+  the function `std::memcpy` copies bytes, if creating the object would give the program defined
+  behaviour.
+- **Example.** The class `record` of the examples holds a member of the type `std::string` and still
+  satisfies the concept, since it is an aggregate with no user-provided destructor.
+- **Complete type.** The type must be an array type, a complete type or `void`.
+- **Standard-library trait.** The result of the check equals the value of the trait
+  `std::is_implicit_lifetime_v<T>` of C++23.
+
 ### Choice of an overload
 
 - **Rule.** Each concept of a property is declared through its trait and through the concept of
@@ -136,6 +181,7 @@ namespace scl::concepts
 |---|---|
 | `trivially_copyable` | `object`, `non_reference` |
 | `standard_layout` | `object`, `non_reference` |
+| `implicit_lifetime` | `object`, `non_reference` |
 | `aggregate` | `object`, `non_reference`, `compound` |
 | `empty` | `class_type`, `object`, `non_reference`, `compound` |
 | `polymorphic` | `class_type`, `object`, `non_reference`, `compound` |
@@ -148,7 +194,9 @@ namespace scl::concepts
   the constraints of the concepts `trivially_copyable` and `standard_layout`, and for the type `int`
   the compiler chooses a function template constrained by the concept `scalar` over one constrained
   by the concept `trivially_copyable`. The constraint of the concept `array` is stricter than
-  the constraint of the concept `aggregate`.
+  the constraint of the concept `aggregate`. If the macro `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+  expands to `1`, the constraints of the concepts `scalar` and `array` are also stricter than
+  the constraint of the concept `implicit_lifetime`.
 - **The concept `final`.** The concept `final` is declared through the disjunction of the concepts
   `class_type` and `union_type`, so its constraint is stricter than that disjunction but not
   stricter than either of those concepts alone. If one template is constrained by the concept
@@ -201,6 +249,11 @@ struct counter
     {}
 
     int count = 0;
+};
+
+struct record
+{
+    std::string name;
 };
 ```
 
@@ -270,6 +323,18 @@ static_assert(!scl::concepts::aggregate<counter>);
 static_assert(!scl::concepts::aggregate<int>);
 ```
 
+Checking whether objects can be created implicitly, if the macro `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+expands to `1`:
+
+<!-- snippet: example/concepts/type_property/concepts_type_property_example.cpp implicit_lifetime -->
+```cpp
+static_assert(scl::concepts::implicit_lifetime<sample>);
+static_assert(scl::concepts::implicit_lifetime<record>);
+static_assert(scl::concepts::implicit_lifetime<int[3]>);
+static_assert(!scl::concepts::implicit_lifetime<std::string>);
+static_assert(!scl::concepts::implicit_lifetime<square>);
+```
+
 Copying an object as bytes, allowed only for a type that satisfies the concept `trivially_copyable`:
 
 <!-- snippet: example/concepts/type_property/concepts_type_property_example.cpp copy_bytes -->
@@ -325,5 +390,6 @@ constexpr std::string_view describe()
 
 ---
 
-Previous: [Concepts of type categories](type_category.md) | [Back to the group](index.md) |
+Previous: [Concepts of type categories](type_category.md) |
+Next: [Concepts of type relations](type_relation.md) | [Back to the group](index.md) |
 [Back to the main page](../Main.md)

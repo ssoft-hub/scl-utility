@@ -41,7 +41,8 @@ Every concept of the group is declared in the namespace `scl::concepts`.
 | `<scl/utility/concepts/qualifier.h>` | [Concepts of cv-qualifiers](qualifier.md) | `const_qualified`, `volatile_qualified`, `cv_qualified` |
 | `<scl/utility/concepts/reference.h>` | [Concepts of reference types](reference.md) | `reference`, `lvalue_reference`, `rvalue_reference` |
 | `<scl/utility/concepts/type_category.h>` | [Concepts of type categories](type_category.md) | `non_reference`, `enum_type`, `enum_value`, `scoped_enum`, `void_type`, `pointer`, `null_pointer`, `member_pointer`, `member_object_pointer`, `member_function_pointer`, `array`, `bounded_array`, `unbounded_array`, `function`, `class_type`, `union_type`, `fundamental`, `arithmetic`, `scalar`, `object`, `compound` |
-| `<scl/utility/concepts/type_category.h>` | [Concepts of type properties](type_property.md) | `trivially_copyable`, `standard_layout`, `empty`, `polymorphic`, `abstract`, `final`, `aggregate` |
+| `<scl/utility/concepts/type_category.h>` | [Concepts of type properties](type_property.md) | `trivially_copyable`, `standard_layout`, `empty`, `polymorphic`, `abstract`, `final`, `aggregate`, `implicit_lifetime`, `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT` |
+| `<scl/utility/concepts/type_relation.h>` | [Concepts of type relations](type_relation.md) | `base_of`, `virtual_base_of`, `SCL_HAS_VIRTUAL_BASE_OF_CONCEPT` |
 
 ## Documentation of the group
 
@@ -55,6 +56,8 @@ Every concept of the group is declared in the namespace `scl::concepts`.
   a type
 - [Concepts of type properties](type_property.md) - checking the properties of a type the standard
   defines apart from the categories
+- [Concepts of type relations](type_relation.md) - checking whether one class is a base class of
+  another
 
 ### Examples
 
@@ -62,6 +65,7 @@ Every concept of the group is declared in the namespace `scl::concepts`.
 - [`example/concepts/reference`](../../../../example/concepts/reference/concepts_reference_example.cpp)
 - [`example/concepts/type_category`](../../../../example/concepts/type_category/concepts_type_category_example.cpp)
 - [`example/concepts/type_property`](../../../../example/concepts/type_property/concepts_type_property_example.cpp)
+- [`example/concepts/type_relation`](../../../../example/concepts/type_relation/concepts_type_relation_example.cpp)
 
 ---
 

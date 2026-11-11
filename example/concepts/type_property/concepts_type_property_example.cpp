@@ -6,7 +6,8 @@
  * satisfies scl::concepts::trivially_copyable is copied here with std::memcpy. The concept
  * scl::concepts::abstract subsumes scl::concepts::polymorphic, and both subsume
  * scl::concepts::class_type, so the compiler chooses the overload constrained by the narrowest
- * concept a class satisfies.
+ * concept a class satisfies. The concept scl::concepts::implicit_lifetime is checked where
+ * the header declares it.
  */
 
 #include <scl/utility/concepts/type_category.h>
@@ -52,6 +53,11 @@ struct counter
     {}
 
     int count = 0;
+};
+
+struct record
+{
+    std::string name;
 };
 //! [types]
 
@@ -99,6 +105,16 @@ static_assert(scl::concepts::aggregate<int[3]>);
 static_assert(!scl::concepts::aggregate<counter>);
 static_assert(!scl::concepts::aggregate<int>);
 //! [aggregate]
+
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+//! [implicit_lifetime]
+static_assert(scl::concepts::implicit_lifetime<sample>);
+static_assert(scl::concepts::implicit_lifetime<record>);
+static_assert(scl::concepts::implicit_lifetime<int[3]>);
+static_assert(!scl::concepts::implicit_lifetime<std::string>);
+static_assert(!scl::concepts::implicit_lifetime<square>);
+//! [implicit_lifetime]
+#endif
 
 //! [copy_bytes]
 template <scl::concepts::trivially_copyable Value>

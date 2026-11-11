@@ -8,6 +8,19 @@
 
 #include <type_traits>
 
+#if (defined(__cpp_lib_is_implicit_lifetime) && __cpp_lib_is_implicit_lifetime >= 202302L) || \
+    defined(SCL_DOXYGEN)
+#define SCL_HAS_IMPLICIT_LIFETIME_CONCEPT 1
+#elif defined(__has_builtin)
+#if __has_builtin(__builtin_is_implicit_lifetime)
+#define SCL_HAS_IMPLICIT_LIFETIME_CONCEPT 1
+#else
+#define SCL_HAS_IMPLICIT_LIFETIME_CONCEPT 0
+#endif
+#else
+#define SCL_HAS_IMPLICIT_LIFETIME_CONCEPT 0
+#endif
+
 namespace scl::concepts
 {
 
@@ -147,6 +160,44 @@ namespace scl::concepts
     concept standard_layout = ::scl::concepts::object<T> && ::std::is_standard_layout_v<T>;
 
     /**
+     * @brief Satisfied by a type whose objects can be created implicitly.
+     * @ingroup scl_utility_concepts
+     *
+     * The concept is declared only if the macro ::SCL_HAS_IMPLICIT_LIFETIME_CONCEPT expands to `1`.
+     * The checked type satisfies the concept if its objects can be created implicitly, that is, if
+     * the type is a scalar type, an array type or an implicit-lifetime class. An implicit-lifetime
+     * class is an aggregate whose destructor is not user-provided, or a class with a trivial
+     * eligible constructor and a trivial destructor that is not deleted. An object of such a type
+     * is created implicitly in the storage allocated, for example, by the function `std::malloc`,
+     * or in the storage into which, for example, the function `std::memcpy` copies bytes, if
+     * creating the object would give the program defined behaviour. For example, an aggregate with
+     * a member of the type `std::string` and no user-provided destructor satisfies the concept.
+     * The result of the check equals the value of the trait `std::is_implicit_lifetime_v<T>` of
+     * C++23. For a type with cv-qualifiers the concept gives the same result as for the type
+     * without them, and a reference type does not satisfy the concept.
+     *
+     * The type must be an array type, a complete type or `void`, as `std::is_implicit_lifetime`
+     * requires. The concept is declared through ::scl::concepts::object, so its constraint is
+     * stricter than the constraint of that concept and of every concept it is declared through. For
+     * an implicit-lifetime type the compiler chooses a function template constrained by the concept
+     * over one constrained by any of them.
+     *
+     * @snippet concepts/type_property/concepts_type_property_example.cpp implicit_lifetime
+     *
+     * @tparam T Type to check.
+     */
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+#if (defined(__cpp_lib_is_implicit_lifetime) && __cpp_lib_is_implicit_lifetime >= 202302L) || \
+    defined(SCL_DOXYGEN)
+    template <typename T>
+    concept implicit_lifetime = ::scl::concepts::object<T> && ::std::is_implicit_lifetime_v<T>;
+#else
+    template <typename T>
+    concept implicit_lifetime = ::scl::concepts::object<T> && __builtin_is_implicit_lifetime(T);
+#endif
+#endif
+
+    /**
      * @brief Satisfied by an aggregate, that is, an array or a restricted class or union.
      * @ingroup scl_utility_concepts
      *
@@ -186,8 +237,9 @@ namespace scl::concepts
      *
      * The concept is declared through ::scl::concepts::object, ::scl::concepts::trivially_copyable
      * and ::scl::concepts::standard_layout, since the standard counts every scalar type among
-     * the trivially copyable types and the standard-layout types. So its constraint is stricter
-     * than the constraints of
+     * the trivially copyable types and the standard-layout types. If the macro
+     * ::SCL_HAS_IMPLICIT_LIFETIME_CONCEPT expands to `1`, the concept is also declared through
+     * ::scl::concepts::implicit_lifetime. So its constraint is stricter than the constraints of
      * those concepts and of ::scl::concepts::non_reference, and for the type `int` the compiler
      * chooses a function template constrained by the concept over one constrained by any of them.
      *
@@ -195,9 +247,16 @@ namespace scl::concepts
      *
      * @tparam T Type to check.
      */
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+    template <typename T>
+    concept scalar = ::scl::concepts::object<T> && ::std::is_scalar_v<T> &&
+        ::scl::concepts::trivially_copyable<T> && ::scl::concepts::standard_layout<T> &&
+        ::scl::concepts::implicit_lifetime<T>;
+#else
     template <typename T>
     concept scalar = ::scl::concepts::object<T> && ::std::is_scalar_v<T> &&
         ::scl::concepts::trivially_copyable<T> && ::scl::concepts::standard_layout<T>;
+#endif
 
     /**
      * @brief Satisfied by an integral type and by a floating-point type.
@@ -448,7 +507,8 @@ namespace scl::concepts
      * the type without them, and a reference type does not satisfy the concept.
      *
      * The concept is declared through ::scl::concepts::object, ::scl::concepts::compound and
-     * ::scl::concepts::aggregate. So its constraint is stricter than
+     * ::scl::concepts::aggregate, and if the macro ::SCL_HAS_IMPLICIT_LIFETIME_CONCEPT expands to
+     * `1`, also through ::scl::concepts::implicit_lifetime. So its constraint is stricter than
      * the constraints of those concepts and of ::scl::concepts::non_reference, and for an array
      * the compiler chooses a function template constrained by the concept over one constrained by
      * any of them.
@@ -457,9 +517,15 @@ namespace scl::concepts
      *
      * @tparam T Type to check.
      */
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+    template <typename T>
+    concept array = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_array_v<T> && ::scl::concepts::aggregate<T> && ::scl::concepts::implicit_lifetime<T>;
+#else
     template <typename T>
     concept array = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
         ::std::is_array_v<T> && ::scl::concepts::aggregate<T>;
+#endif
 
     /**
      * @brief Satisfied by an array type with a known bound, such as `int[3]`.
@@ -675,3 +741,25 @@ namespace scl::concepts
         ::std::is_final_v<T>;
 
 } // namespace scl::concepts
+
+// -----------------------------------------------------------------------------
+// Documentation
+// -----------------------------------------------------------------------------
+
+/**
+ * @def SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+ * @brief Whether the header declares the concept ::scl::concepts::implicit_lifetime.
+ * @ingroup scl_utility_concepts
+ *
+ * The macro tells whether the concept ::scl::concepts::implicit_lifetime is declared. The macro
+ * expands to `1` if the standard library provides the trait `std::is_implicit_lifetime` (the macro
+ * `__cpp_lib_is_implicit_lifetime` is at least `202302L`) or the compiler provides the built-in
+ * function `__builtin_is_implicit_lifetime`. Otherwise the macro expands to `0`, and the concept
+ * ::scl::concepts::implicit_lifetime is not declared. If the macro expands to `1`, the concepts
+ * ::scl::concepts::scalar and ::scl::concepts::array are also declared through the concept
+ * ::scl::concepts::implicit_lifetime.
+ *
+ * The macro is always defined, so a caller should test it with `#if`, not with `#ifdef`. Under
+ * `#if` a misspelled name of the macro reads as `0` and draws the warning `-Wundef` where that
+ * option of GCC or Clang is given, while under `#ifdef` it reads as false with no warning.
+ */

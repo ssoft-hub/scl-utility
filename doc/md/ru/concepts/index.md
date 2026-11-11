@@ -40,7 +40,8 @@
 | `<scl/utility/concepts/qualifier.h>` | [Концепты cv-квалификаторов](qualifier.md) | `const_qualified`, `volatile_qualified`, `cv_qualified` |
 | `<scl/utility/concepts/reference.h>` | [Концепты ссылочных типов](reference.md) | `reference`, `lvalue_reference`, `rvalue_reference` |
 | `<scl/utility/concepts/type_category.h>` | [Концепты категорий типов](type_category.md) | `non_reference`, `enum_type`, `enum_value`, `scoped_enum`, `void_type`, `pointer`, `null_pointer`, `member_pointer`, `member_object_pointer`, `member_function_pointer`, `array`, `bounded_array`, `unbounded_array`, `function`, `class_type`, `union_type`, `fundamental`, `arithmetic`, `scalar`, `object`, `compound` |
-| `<scl/utility/concepts/type_category.h>` | [Концепты свойств типов](type_property.md) | `trivially_copyable`, `standard_layout`, `empty`, `polymorphic`, `abstract`, `final`, `aggregate` |
+| `<scl/utility/concepts/type_category.h>` | [Концепты свойств типов](type_property.md) | `trivially_copyable`, `standard_layout`, `empty`, `polymorphic`, `abstract`, `final`, `aggregate`, `implicit_lifetime`, `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT` |
+| `<scl/utility/concepts/type_relation.h>` | [Концепты отношений между типами](type_relation.md) | `base_of`, `virtual_base_of`, `SCL_HAS_VIRTUAL_BASE_OF_CONCEPT` |
 
 ## Документация группы
 
@@ -53,6 +54,8 @@
 - [Концепты категорий типов](type_category.md) - проверка основной или составной категории типа
 - [Концепты свойств типов](type_property.md) - проверка свойств типа, которые определены в стандарте
   отдельно от категорий
+- [Концепты отношений между типами](type_relation.md) - проверка того, является ли один класс
+  базовым классом другого
 
 ### Примеры
 
@@ -60,6 +63,7 @@
 - [`example/concepts/reference`](../../../../example/concepts/reference/concepts_reference_example.cpp)
 - [`example/concepts/type_category`](../../../../example/concepts/type_category/concepts_type_category_example.cpp)
 - [`example/concepts/type_property`](../../../../example/concepts/type_property/concepts_type_property_example.cpp)
+- [`example/concepts/type_relation`](../../../../example/concepts/type_relation/concepts_type_relation_example.cpp)
 
 ---
 

@@ -1,12 +1,16 @@
 # Концепты свойств типов
 
 Применение концептов свойств типов позволяет определить, допускает ли проверяемый тип побайтное
-копирование, имеет ли он стандартное размещение, является ли агрегатом, для класса или объединения
-также является ли он финальным, а для класса также является ли он пустым, полиморфным
-или абстрактным. Эти свойства определены в стандарте
+копирование, имеет ли он стандартное размещение, является ли агрегатом, могут ли его объекты
+создаваться неявно, для класса или объединения также является ли он финальным, а для класса
+также является ли он пустым, полиморфным или абстрактным. Эти свойства определены в стандарте
 отдельно от категорий типов.
 
 - Заголовок: `#include <scl/utility/concepts/type_category.h>`
+
+```cpp
+#define SCL_HAS_IMPLICIT_LIFETIME_CONCEPT /* 1 or 0 */
+```
 
 ```cpp
 namespace scl::concepts
@@ -16,6 +20,16 @@ namespace scl::concepts
 
     template <typename T>
     concept standard_layout = ::scl::concepts::object<T> && ::std::is_standard_layout_v<T>;
+
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+#if defined(__cpp_lib_is_implicit_lifetime) && __cpp_lib_is_implicit_lifetime >= 202302L
+    template <typename T>
+    concept implicit_lifetime = ::scl::concepts::object<T> && ::std::is_implicit_lifetime_v<T>;
+#else
+    template <typename T>
+    concept implicit_lifetime = ::scl::concepts::object<T> && __builtin_is_implicit_lifetime(T);
+#endif
+#endif
 
     template <typename T>
     concept aggregate = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
@@ -47,6 +61,19 @@ namespace scl::concepts
   стандартной библиотеки, на котором построен концепт. Требование для каждого концепта приведено
   в его подразделе. Код, который использует концепты, не должен проверять ими тип,
   который не отвечает этим требованиям.
+
+### `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+
+- **Значение.** Макрос показывает, объявлен ли концепт `implicit_lifetime`. Макрос раскрывается
+  в `1`, если стандартная библиотека содержит свойство `std::is_implicit_lifetime` (макрос
+  `__cpp_lib_is_implicit_lifetime` не меньше `202302L`) или компилятор предоставляет встроенную
+  функцию `__builtin_is_implicit_lifetime`. В остальных случаях макрос раскрывается в `0`, и концепт
+  `implicit_lifetime` не объявляется.
+- **Проверка макроса.** Макрос определён всегда, поэтому коду, который использует макрос, следует
+  проверять его через `#if`, а не через `#ifdef`. При проверке через `#if` опечатка в имени макроса
+  читается как `0` и приводит к предупреждению `-Wundef`, если компилятору GCC или Clang задан
+  параметр, который включает это предупреждение, а при проверке через `#ifdef` опечатка читается
+  как ложь без предупреждения.
 
 ### `trivially_copyable<T>`
 
@@ -124,6 +151,23 @@ namespace scl::concepts
 - **Свойство стандартной библиотеки.** Результат проверки совпадает со значением свойства
   `std::is_aggregate_v<T>`.
 
+### `implicit_lifetime<T>`
+
+- **Объявление.** Концепт объявлен, только если макрос `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+  раскрывается в `1`.
+- **Условие.** Проверяемый тип удовлетворяет концепту, если его объекты могут создаваться неявно,
+  то есть если тип является скалярным типом, массивом или классом с неявным временем жизни. Класс
+  с неявным временем жизни является агрегатом, деструктор которого не предоставлен пользователем,
+  или классом с тривиальным подходящим конструктором и тривиальным неудалённым деструктором.
+- **Неявное создание.** Объект такого типа создаётся неявно, например, в памяти, выделенной функцией
+  `std::malloc`, или в памяти, в которую функция `std::memcpy` копирует байты, если при создании
+  объекта поведение программы становится определённым.
+- **Пример.** Класс `record` из примеров содержит поле типа `std::string` и всё же удовлетворяет
+  концепту, поскольку является агрегатом без предоставленного пользователем деструктора.
+- **Полный тип.** Тип должен быть массивом, полным типом или типом `void`.
+- **Свойство стандартной библиотеки.** Результат проверки совпадает со значением свойства
+  `std::is_implicit_lifetime_v<T>` из C++23.
+
 ### Выбор перегрузки
 
 - **Правило.** Каждый концепт свойства объявлен через своё свойство и через концепт каждого более
@@ -139,6 +183,7 @@ namespace scl::concepts
 |---|---|
 | `trivially_copyable` | `object`, `non_reference` |
 | `standard_layout` | `object`, `non_reference` |
+| `implicit_lifetime` | `object`, `non_reference` |
 | `aggregate` | `object`, `non_reference`, `compound` |
 | `empty` | `class_type`, `object`, `non_reference`, `compound` |
 | `polymorphic` | `class_type`, `object`, `non_reference`, `compound` |
@@ -150,7 +195,9 @@ namespace scl::concepts
   ограничение концепта `scalar` строже ограничений концептов `trivially_copyable`
   и `standard_layout`, и для типа `int` компилятор выбирает шаблон функции, ограниченный концептом
   `scalar`, а не шаблон, ограниченный концептом `trivially_copyable`. Ограничение концепта `array`
-  строже ограничения концепта `aggregate`.
+  строже ограничения концепта `aggregate`. Если макрос `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+  раскрывается в `1`, ограничения концептов `scalar` и `array` также строже ограничения концепта
+  `implicit_lifetime`.
 - **Концепт `final`.** Концепт `final` объявлен через дизъюнкцию концептов `class_type`
   и `union_type`, поэтому его ограничение строже этой дизъюнкции, но не строже ограничения ни одного
   из этих концептов в отдельности. Если один шаблон ограничен концептом `final`, а другой концептом
@@ -203,6 +250,11 @@ struct counter
     {}
 
     int count = 0;
+};
+
+struct record
+{
+    std::string name;
 };
 ```
 
@@ -272,6 +324,18 @@ static_assert(!scl::concepts::aggregate<counter>);
 static_assert(!scl::concepts::aggregate<int>);
 ```
 
+Проверка возможности неявного создания объектов, если макрос `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+раскрывается в `1`:
+
+<!-- snippet: example/concepts/type_property/concepts_type_property_example.cpp implicit_lifetime -->
+```cpp
+static_assert(scl::concepts::implicit_lifetime<sample>);
+static_assert(scl::concepts::implicit_lifetime<record>);
+static_assert(scl::concepts::implicit_lifetime<int[3]>);
+static_assert(!scl::concepts::implicit_lifetime<std::string>);
+static_assert(!scl::concepts::implicit_lifetime<square>);
+```
+
 Побайтное копирование объекта, допустимое только для типа, который удовлетворяет концепту
 `trivially_copyable`:
 
@@ -327,5 +391,6 @@ constexpr std::string_view describe()
 
 ---
 
-Назад: [Концепты категорий типов](type_category.md) | [К группе](index.md) |
+Назад: [Концепты категорий типов](type_category.md) |
+Далее: [Концепты отношений между типами](type_relation.md) | [К группе](index.md) |
 [К главной странице](../Main.md)

@@ -652,5 +652,108 @@ TEST(TypeProperty, aggregate_and_class_or_union_are_unordered)
     STATIC_EXPECT_FALSE(union_or_aggregate_resolves<AggregateUnion>);
 }
 
+TEST(TypeProperty, scl_has_implicit_lifetime_concept)
+{
+#if defined(__cpp_lib_is_implicit_lifetime) && __cpp_lib_is_implicit_lifetime >= 202302L
+    STATIC_EXPECT_EQ(SCL_HAS_IMPLICIT_LIFETIME_CONCEPT, 1);
+#elif defined(__has_builtin)
+#if __has_builtin(__builtin_is_implicit_lifetime)
+    STATIC_EXPECT_EQ(SCL_HAS_IMPLICIT_LIFETIME_CONCEPT, 1);
+#else
+    STATIC_EXPECT_EQ(SCL_HAS_IMPLICIT_LIFETIME_CONCEPT, 0);
+#endif
+#else
+    STATIC_EXPECT_EQ(SCL_HAS_IMPLICIT_LIFETIME_CONCEPT, 0);
+#endif
+}
+
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
 namespace
-{} // namespace
+{
+    template <object Type>
+    constexpr int implicit_lifetime_over_object()
+    {
+        return 1;
+    }
+
+    template <implicit_lifetime Type>
+    constexpr int implicit_lifetime_over_object()
+    {
+        return 2;
+    }
+
+    template <non_reference Type>
+    constexpr int implicit_lifetime_over_non_reference()
+    {
+        return 1;
+    }
+
+    template <implicit_lifetime Type>
+    constexpr int implicit_lifetime_over_non_reference()
+    {
+        return 2;
+    }
+
+    struct TrivialConstructor
+    {
+        TrivialConstructor() = default;
+
+        explicit TrivialConstructor(int value)
+            : x{value}
+        {}
+
+        int x;
+    };
+
+    struct DeletedDestructor
+    {
+        explicit DeletedDestructor(int) {}
+
+        ~DeletedDestructor() = delete;
+    };
+
+    struct AggregateDeletedDestructor
+    {
+        int x;
+
+        ~AggregateDeletedDestructor() = delete;
+    };
+} // namespace
+
+TEST(TypeProperty, implicit_lifetime)
+{
+    STATIC_EXPECT_TRUE(implicit_lifetime<int>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<int const>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<int *>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<int[3]>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<int[]>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<Trivial>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<NonTrivial>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<NonTrivial[2]>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<UserDestructor[2]>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<PolymorphicBase[]>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<TrivialConstructor const volatile>);
+    STATIC_EXPECT_FALSE(implicit_lifetime<UserDestructor>);
+    STATIC_EXPECT_FALSE(implicit_lifetime<PolymorphicBase>);
+    STATIC_EXPECT_FALSE(implicit_lifetime<void>);
+    STATIC_EXPECT_FALSE(implicit_lifetime<int &>);
+    STATIC_EXPECT_FALSE(implicit_lifetime<void()>);
+    STATIC_EXPECT_FALSE(aggregate<TrivialConstructor>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<TrivialConstructor>);
+    STATIC_EXPECT_FALSE(implicit_lifetime<DeletedDestructor>);
+    STATIC_EXPECT_TRUE(aggregate<AggregateDeletedDestructor>);
+    STATIC_EXPECT_TRUE(implicit_lifetime<AggregateDeletedDestructor>);
+}
+
+TEST(TypeProperty, implicit_lifetime_subsumes_object)
+{
+    STATIC_EXPECT_EQ(implicit_lifetime_over_object<Trivial>(), 2);
+    STATIC_EXPECT_EQ(implicit_lifetime_over_object<UserDestructor>(), 1);
+}
+
+TEST(TypeProperty, implicit_lifetime_subsumes_non_reference)
+{
+    STATIC_EXPECT_EQ(implicit_lifetime_over_non_reference<Trivial>(), 2);
+    STATIC_EXPECT_EQ(implicit_lifetime_over_non_reference<void>(), 1);
+}
+#endif

@@ -1719,3 +1719,44 @@ TEST(TypeCategory, unbounded_array_subsumes_aggregate)
     STATIC_EXPECT_EQ(unbounded_array_over_aggregate<int[]>(), 2);
     STATIC_EXPECT_EQ(unbounded_array_over_aggregate<int[3]>(), 1);
 }
+
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+namespace
+{
+    template <implicit_lifetime Type>
+    constexpr int scalar_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <scalar Type>
+    constexpr int scalar_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <implicit_lifetime Type>
+    constexpr int array_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <array Type>
+    constexpr int array_over_implicit_lifetime()
+    {
+        return 2;
+    }
+} // namespace
+
+TEST(TypeCategory, scalar_subsumes_implicit_lifetime)
+{
+    STATIC_EXPECT_EQ(scalar_over_implicit_lifetime<int>(), 2);
+    STATIC_EXPECT_EQ(scalar_over_implicit_lifetime<S>(), 1);
+}
+
+TEST(TypeCategory, array_subsumes_implicit_lifetime)
+{
+    STATIC_EXPECT_EQ(array_over_implicit_lifetime<NonAggregate[2]>(), 2);
+    STATIC_EXPECT_EQ(array_over_implicit_lifetime<S>(), 1);
+}
+#endif

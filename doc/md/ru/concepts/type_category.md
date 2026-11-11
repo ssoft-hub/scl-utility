@@ -24,9 +24,16 @@ namespace scl::concepts
     template <typename T>
     concept fundamental = ::scl::concepts::non_reference<T> && ::std::is_fundamental_v<T>;
 
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+    template <typename T>
+    concept scalar = ::scl::concepts::object<T> && ::std::is_scalar_v<T> &&
+        ::scl::concepts::trivially_copyable<T> && ::scl::concepts::standard_layout<T> &&
+        ::scl::concepts::implicit_lifetime<T>;
+#else
     template <typename T>
     concept scalar = ::scl::concepts::object<T> && ::std::is_scalar_v<T> &&
         ::scl::concepts::trivially_copyable<T> && ::scl::concepts::standard_layout<T>;
+#endif
 
     template <typename T>
     concept arithmetic = ::scl::concepts::fundamental<T> && ::scl::concepts::scalar<T> &&
@@ -70,9 +77,15 @@ namespace scl::concepts
     concept member_function_pointer = ::scl::concepts::member_pointer<T> &&
         ::std::is_member_function_pointer_v<T>;
 
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+    template <typename T>
+    concept array = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_array_v<T> && ::scl::concepts::aggregate<T> && ::scl::concepts::implicit_lifetime<T>;
+#else
     template <typename T>
     concept array = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
         ::std::is_array_v<T> && ::scl::concepts::aggregate<T>;
+#endif
 
     template <typename T>
     concept bounded_array = ::scl::concepts::array<T> && ::std::is_bounded_array_v<T>;
@@ -227,6 +240,10 @@ namespace scl::concepts
 | `class_type` | `object`, `non_reference`, `compound` |
 | `union_type` | `object`, `non_reference`, `compound` |
 
+- **Концепт `implicit_lifetime`.** Если макрос `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT` раскрывается
+  в `1`, концепты `scalar` и `array` объявлены также через концепт `implicit_lifetime`, поэтому
+  ограничения этих концептов и всех концептов, объявленных через них, строже ограничения концепта
+  `implicit_lifetime`.
 - **Неоднозначный выбор.** Если тип удовлетворяет двум концептам и ни одно из их ограничений
   не строже другого, а для вызова подходят шаблоны функции, ограниченные этими концептами,
   компилятор отклоняет вызов как неоднозначный. Например, так происходит с указателем и шаблонами,
