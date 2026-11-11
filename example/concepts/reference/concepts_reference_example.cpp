@@ -4,7 +4,9 @@
  *
  * The concept scl::concepts::reference is satisfied by an lvalue and an rvalue reference, and
  * scl::concepts::non_reference by every other type. The type deduced for a forwarding reference
- * satisfies scl::concepts::lvalue_reference only for an lvalue argument.
+ * satisfies scl::concepts::lvalue_reference only for an lvalue argument. The concepts of the two
+ * kinds of reference subsume scl::concepts::reference, so an overload constrained by one of them is
+ * preferred.
  */
 
 #include <scl/utility/concepts/reference.h>
@@ -53,6 +55,20 @@ std::string_view category(Argument &&)
 }
 //! [forwarding]
 
+//! [binding]
+template <scl::concepts::reference Type>
+constexpr std::string_view binding()
+{
+    return "reference";
+}
+
+template <scl::concepts::lvalue_reference Type>
+constexpr std::string_view binding()
+{
+    return "lvalue reference";
+}
+//! [binding]
+
 //! [box]
 template <scl::concepts::non_reference Value>
 struct box
@@ -70,5 +86,8 @@ int main()
 
     box<std::string> const label{text};
     std::cout << label.value << '\n'; // text
+
+    std::cout << binding<int &>() << '\n';  // lvalue reference
+    std::cout << binding<int &&>() << '\n'; // reference
     //! [use]
 }

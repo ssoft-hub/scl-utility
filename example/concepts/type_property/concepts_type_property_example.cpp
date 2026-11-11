@@ -3,14 +3,18 @@
  * @brief Checks the properties of a type, such as trivial copying and standard layout.
  *
  * Each concept is satisfied exactly where its standard type trait is true. An object of a type that
- * satisfies scl::concepts::trivially_copyable is copied here with std::memcpy.
+ * satisfies scl::concepts::trivially_copyable is copied here with std::memcpy. The concept
+ * scl::concepts::abstract subsumes scl::concepts::polymorphic, and both subsume
+ * scl::concepts::class_type, so the compiler chooses the overload constrained by the narrowest
+ * concept a class satisfies.
  */
 
-#include <scl/utility/concepts/type_property.h>
+#include <scl/utility/concepts/type_category.h>
 
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <string_view>
 
 //! [types]
 struct sample
@@ -104,6 +108,26 @@ void copy_bytes(Value & target, Value const & source) noexcept
 }
 //! [copy_bytes]
 
+//! [describe]
+template <scl::concepts::class_type Class>
+constexpr std::string_view describe()
+{
+    return "class";
+}
+
+template <scl::concepts::polymorphic Class>
+constexpr std::string_view describe()
+{
+    return "polymorphic class";
+}
+
+template <scl::concepts::abstract Class>
+constexpr std::string_view describe()
+{
+    return "abstract class";
+}
+//! [describe]
+
 int main()
 {
     //! [use]
@@ -111,5 +135,9 @@ int main()
     sample target{};
     copy_bytes(target, source);
     std::cout << target.id << ' ' << target.value << '\n'; // 7 2.5
+
+    std::cout << describe<sample>() << '\n'; // class
+    std::cout << describe<square>() << '\n'; // polymorphic class
+    std::cout << describe<shape>() << '\n';  // abstract class
     //! [use]
 }

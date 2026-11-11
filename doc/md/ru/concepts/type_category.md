@@ -13,7 +13,35 @@
 namespace scl::concepts
 {
     template <typename T>
-    concept enum_type = ::std::is_enum_v<T>;
+    concept non_reference = !::std::is_reference_v<T>;
+
+    template <typename T>
+    concept object = ::scl::concepts::non_reference<T> && ::std::is_object_v<T>;
+
+    template <typename T>
+    concept compound = ::std::is_compound_v<T>;
+
+    template <typename T>
+    concept fundamental = ::scl::concepts::non_reference<T> && ::std::is_fundamental_v<T>;
+
+    template <typename T>
+    concept scalar = ::scl::concepts::object<T> && ::std::is_scalar_v<T> &&
+        ::scl::concepts::trivially_copyable<T> && ::scl::concepts::standard_layout<T>;
+
+    template <typename T>
+    concept arithmetic = ::scl::concepts::fundamental<T> && ::scl::concepts::scalar<T> &&
+        ::std::is_arithmetic_v<T>;
+
+    template <typename T>
+    concept void_type = ::scl::concepts::non_reference<T> && ::scl::concepts::fundamental<T> &&
+        ::std::is_void_v<T>;
+
+    template <typename T>
+    concept null_pointer = ::scl::concepts::fundamental<T> && ::scl::concepts::scalar<T> &&
+        ::std::is_null_pointer_v<T>;
+
+    template <typename T>
+    concept enum_type = ::scl::concepts::scalar<T> && ::scl::concepts::compound<T> && ::std::is_enum_v<T>;
 
     template <auto V>
     concept enum_value = ::std::is_enum_v<decltype(V)>;
@@ -28,55 +56,41 @@ namespace scl::concepts
 #endif
 
     template <typename T>
-    concept void_type = ::std::is_void_v<T>;
+    concept pointer = ::scl::concepts::scalar<T> && ::scl::concepts::compound<T> && ::std::is_pointer_v<T>;
 
     template <typename T>
-    concept pointer = ::std::is_pointer_v<T>;
+    concept member_pointer = ::scl::concepts::scalar<T> && ::scl::concepts::compound<T> &&
+        ::std::is_member_pointer_v<T>;
 
     template <typename T>
-    concept null_pointer = ::std::is_null_pointer_v<T>;
+    concept member_object_pointer = ::scl::concepts::member_pointer<T> &&
+        ::std::is_member_object_pointer_v<T>;
 
     template <typename T>
-    concept member_pointer = ::std::is_member_pointer_v<T>;
+    concept member_function_pointer = ::scl::concepts::member_pointer<T> &&
+        ::std::is_member_function_pointer_v<T>;
 
     template <typename T>
-    concept member_object_pointer = ::std::is_member_object_pointer_v<T>;
+    concept array = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_array_v<T> && ::scl::concepts::aggregate<T>;
 
     template <typename T>
-    concept member_function_pointer = ::std::is_member_function_pointer_v<T>;
+    concept bounded_array = ::scl::concepts::array<T> && ::std::is_bounded_array_v<T>;
 
     template <typename T>
-    concept array = ::std::is_array_v<T>;
+    concept unbounded_array = ::scl::concepts::array<T> && ::std::is_unbounded_array_v<T>;
 
     template <typename T>
-    concept bounded_array = ::std::is_bounded_array_v<T>;
+    concept function = ::scl::concepts::non_reference<T> && ::scl::concepts::compound<T> &&
+        ::std::is_function_v<T>;
 
     template <typename T>
-    concept unbounded_array = ::std::is_unbounded_array_v<T>;
+    concept class_type = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_class_v<T>;
 
     template <typename T>
-    concept function = ::std::is_function_v<T>;
-
-    template <typename T>
-    concept class_type = ::std::is_class_v<T>;
-
-    template <typename T>
-    concept union_type = ::std::is_union_v<T>;
-
-    template <typename T>
-    concept fundamental = ::std::is_fundamental_v<T>;
-
-    template <typename T>
-    concept arithmetic = ::std::is_arithmetic_v<T>;
-
-    template <typename T>
-    concept scalar = ::std::is_scalar_v<T>;
-
-    template <typename T>
-    concept object = ::std::is_object_v<T>;
-
-    template <typename T>
-    concept compound = ::std::is_compound_v<T>;
+    concept union_type = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_union_v<T>;
 }
 ```
 
@@ -93,6 +107,10 @@ namespace scl::concepts
   которого состоит из префикса `is_` и имени концепта без суффикса `_type`. Например, результат
   концепта `pointer` совпадает со значением свойства `std::is_pointer_v<T>`, а результат концепта
   `enum_type` совпадает со значением свойства `std::is_enum_v<T>`.
+- **Другие концепты заголовочного файла.** Концепт `non_reference` объявлен в этом заголовочном
+  файле и описан на странице [Концепты ссылочных типов](reference.md). Концепты свойств типов
+  также объявлены в этом заголовочном файле и описаны на странице
+  [Концепты свойств типов](type_property.md).
 
 ### Перечисления
 
@@ -174,15 +192,49 @@ namespace scl::concepts
 
 ### Выбор перегрузки
 
-- **Правило.** Каждый концепт категории, кроме концепта `scoped_enum`, объявлен только через своё
-  свойство, поэтому его ограничение не строже ограничения ни одного другого концепта группы. Концепт
-  `scoped_enum` объявлен через концепт `enum_type`, поэтому его ограничение строже ограничения
-  концепта `enum_type`, и для перечисления с областью видимости компилятор выбирает шаблон функции,
-  ограниченный концептом `scoped_enum`, а не шаблон, ограниченный концептом `enum_type`.
+- **Правило.** Каждый концепт категории объявлен через своё свойство и через концепт каждого более
+  широкого множества типов, к которому относятся все удовлетворяющие ему типы. Поэтому ограничение
+  концепта строже ограничений концептов, через которые он объявлен. Если проверяемый тип
+  удовлетворяет двум концептам и ограничение одного из них строже, компилятор выбирает шаблон
+  функции, ограниченный более строгим концептом.
+- **Пример.** Концепт `scalar` объявлен через концепты `object`, `trivially_copyable`
+  и `standard_layout`, поскольку в стандарте каждый скалярный тип отнесён к тривиально копируемым
+  типам и к типам со стандартным размещением.
+- **Более слабые ограничения.** Для каждого концепта перечислены концепты с более слабым
+  ограничением:
+
+| Концепт | Концепты с более слабым ограничением |
+|---|---|
+| `non_reference` | нет |
+| `object` | `non_reference` |
+| `compound` | нет |
+| `fundamental` | `non_reference` |
+| `scalar` | `object`, `non_reference`, `trivially_copyable`, `standard_layout` |
+| `arithmetic` | `fundamental`, `non_reference`, `scalar`, `object`, `trivially_copyable`, `standard_layout` |
+| `void_type` | `non_reference`, `fundamental` |
+| `null_pointer` | `fundamental`, `non_reference`, `scalar`, `object`, `trivially_copyable`, `standard_layout` |
+| `enum_type` | `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `enum_value` | нет |
+| `scoped_enum` | `enum_type`, `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `pointer` | `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `member_pointer` | `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `member_object_pointer` | `member_pointer`, `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `member_function_pointer` | `member_pointer`, `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `array` | `object`, `non_reference`, `compound`, `aggregate` |
+| `bounded_array` | `array`, `object`, `non_reference`, `compound`, `aggregate` |
+| `unbounded_array` | `array`, `object`, `non_reference`, `compound`, `aggregate` |
+| `function` | `non_reference`, `compound` |
+| `class_type` | `object`, `non_reference`, `compound` |
+| `union_type` | `object`, `non_reference`, `compound` |
+
 - **Неоднозначный выбор.** Если тип удовлетворяет двум концептам и ни одно из их ограничений
   не строже другого, а для вызова подходят шаблоны функции, ограниченные этими концептами,
-  компилятор отклоняет вызов как неоднозначный. Например, так происходит с массивом `int[3]`
-  и шаблонами, ограниченными концептами `array` и `bounded_array`.
+  компилятор отклоняет вызов как неоднозначный. Например, так происходит с указателем и шаблонами,
+  ограниченными концептами `object` и `compound`.
+- **Концепт `std::integral`.** Концепт `std::integral` стандартной библиотеки объявлен
+  только через своё свойство, поэтому, если для типа `int` подходят шаблон, ограниченный концептом
+  `std::integral`, и шаблон, ограниченный концептом `arithmetic`, компилятор отклоняет вызов как
+  неоднозначный.
 
 ## Примеры
 
@@ -276,12 +328,47 @@ std::string_view describe(Enum)
 }
 ```
 
-Вызовы функции `describe`:
+### Выбор перегрузки
+
+Выбор перегрузки по категории типа. Ограничения концептов `arithmetic` и `pointer` строже
+ограничения концепта `scalar`. Для арифметического типа компилятор выбирает перегрузку, ограниченную
+концептом `arithmetic`, для указателя выбирает перегрузку, ограниченную концептом `pointer`,
+а для типа `std::nullptr_t` и для перечисления, которые из этих трёх концептов удовлетворяют
+только концепту `scalar`, выбирает перегрузку, ограниченную концептом `scalar`:
+
+<!-- snippet: example/concepts/type_category/concepts_type_category_example.cpp kind -->
+```cpp
+template <scl::concepts::scalar Type>
+std::string_view kind(Type)
+{
+    return "scalar";
+}
+
+template <scl::concepts::arithmetic Type>
+std::string_view kind(Type)
+{
+    return "arithmetic";
+}
+
+template <scl::concepts::pointer Type>
+std::string_view kind(Type)
+{
+    return "pointer";
+}
+```
+
+Вызовы функций `describe` и `kind`:
 
 <!-- snippet: example/concepts/type_category/concepts_type_category_example.cpp use -->
 ```cpp
     std::cout << describe(green) << '\n';            // enumeration
     std::cout << describe(direction::north) << '\n'; // scoped enumeration
+
+    point const origin{0, 0};
+    std::cout << kind(&origin) << '\n'; // pointer
+    std::cout << kind(2.5) << '\n';     // arithmetic
+    std::cout << kind(nullptr) << '\n'; // scalar
+    std::cout << kind(green) << '\n';   // scalar
 ```
 
 ### `void` и указатели

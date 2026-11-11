@@ -6,31 +6,33 @@
 или абстрактным. Эти свойства определены в стандарте
 отдельно от категорий типов.
 
-- Заголовок: `#include <scl/utility/concepts/type_property.h>`
+- Заголовок: `#include <scl/utility/concepts/type_category.h>`
 
 ```cpp
 namespace scl::concepts
 {
     template <typename T>
-    concept trivially_copyable = ::std::is_trivially_copyable_v<T>;
+    concept trivially_copyable = ::scl::concepts::object<T> && ::std::is_trivially_copyable_v<T>;
 
     template <typename T>
-    concept standard_layout = ::std::is_standard_layout_v<T>;
+    concept standard_layout = ::scl::concepts::object<T> && ::std::is_standard_layout_v<T>;
 
     template <typename T>
-    concept empty = ::std::is_empty_v<T>;
+    concept aggregate = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_aggregate_v<T>;
 
     template <typename T>
-    concept polymorphic = ::std::is_polymorphic_v<T>;
+    concept empty = ::scl::concepts::class_type<T> && ::std::is_empty_v<T>;
 
     template <typename T>
-    concept abstract = ::std::is_abstract_v<T>;
+    concept polymorphic = ::scl::concepts::class_type<T> && ::std::is_polymorphic_v<T>;
 
     template <typename T>
-    concept final = ::std::is_final_v<T>;
+    concept abstract = ::scl::concepts::polymorphic<T> && ::std::is_abstract_v<T>;
 
     template <typename T>
-    concept aggregate = ::std::is_aggregate_v<T>;
+    concept final = (::scl::concepts::class_type<T> || ::scl::concepts::union_type<T>) &&
+        ::std::is_final_v<T>;
 }
 ```
 
@@ -124,12 +126,41 @@ namespace scl::concepts
 
 ### Выбор перегрузки
 
-- **Правило.** Каждый концепт свойства объявлен только через своё свойство, поэтому его ограничение
-  не строже ограничения ни одного другого концепта группы.
-- **Неоднозначный выбор.** Если тип удовлетворяет двум концептам, а для вызова подходят шаблоны
-  функции, ограниченные этими концептами, компилятор отклоняет вызов как неоднозначный. Например,
-  так происходит с абстрактным классом и шаблонами, ограниченными концептами `abstract`
-  и `polymorphic`.
+- **Правило.** Каждый концепт свойства объявлен через своё свойство и через концепт каждого более
+  широкого множества типов, к которому относятся все удовлетворяющие ему типы. Эти множества описаны
+  на странице [Концепты категорий типов](type_category.md), а концепт `abstract` объявлен
+  ещё и через концепт `polymorphic`. Поэтому ограничение концепта строже ограничений концептов,
+  через которые он объявлен. Если проверяемый тип удовлетворяет двум концептам и ограничение одного
+  из них строже, компилятор выбирает шаблон функции, ограниченный более строгим концептом.
+- **Более слабые ограничения.** Для каждого концепта перечислены концепты с более слабым
+  ограничением и более слабые ограничения:
+
+| Концепт | Концепты и ограничения, которые слабее |
+|---|---|
+| `trivially_copyable` | `object`, `non_reference` |
+| `standard_layout` | `object`, `non_reference` |
+| `aggregate` | `object`, `non_reference`, `compound` |
+| `empty` | `class_type`, `object`, `non_reference`, `compound` |
+| `polymorphic` | `class_type`, `object`, `non_reference`, `compound` |
+| `abstract` | `polymorphic`, `class_type`, `object`, `non_reference`, `compound` |
+| `final` | ограничение `class_type<T> || union_type<T>`, `object`, `non_reference`, `compound` |
+
+- **Концепты категорий.** Если в стандарте каждый тип категории отнесён к типам с некоторым
+  свойством, ограничение концепта категории строже ограничения концепта этого свойства. Так,
+  ограничение концепта `scalar` строже ограничений концептов `trivially_copyable`
+  и `standard_layout`, и для типа `int` компилятор выбирает шаблон функции, ограниченный концептом
+  `scalar`, а не шаблон, ограниченный концептом `trivially_copyable`. Ограничение концепта `array`
+  строже ограничения концепта `aggregate`.
+- **Концепт `final`.** Концепт `final` объявлен через дизъюнкцию концептов `class_type`
+  и `union_type`, поэтому его ограничение строже этой дизъюнкции, но не строже ограничения ни одного
+  из этих концептов в отдельности. Если один шаблон ограничен концептом `final`, а другой концептом
+  `class_type`, то для финального класса компилятор отклоняет вызов как неоднозначный.
+  То же относится к концепту `union_type` и финальному объединению.
+- **Неоднозначный выбор.** Компилятор отклоняет вызов как неоднозначный и тогда, когда тип
+  удовлетворяет двум концептам и ни одно из их ограничений не строже другого, например концептам
+  `trivially_copyable` и `standard_layout` для типа `int`, концептам `aggregate` и `class_type`
+  для класса, который является агрегатом, или концептам `aggregate` и `union_type` для объединения,
+  которое является агрегатом.
 
 ## Примеры
 
@@ -253,12 +284,41 @@ void copy_bytes(Value & target, Value const & source) noexcept
 }
 ```
 
+Выбор перегрузки по свойствам класса. Ограничение концепта `abstract` строже ограничения концепта
+`polymorphic`, а ограничения обоих строже ограничения концепта `class_type`. Для каждого класса
+компилятор выбирает перегрузку с самым строгим ограничением, которому удовлетворяет класс:
+
+<!-- snippet: example/concepts/type_property/concepts_type_property_example.cpp describe -->
+```cpp
+template <scl::concepts::class_type Class>
+constexpr std::string_view describe()
+{
+    return "class";
+}
+
+template <scl::concepts::polymorphic Class>
+constexpr std::string_view describe()
+{
+    return "polymorphic class";
+}
+
+template <scl::concepts::abstract Class>
+constexpr std::string_view describe()
+{
+    return "abstract class";
+}
+```
+
 <!-- snippet: example/concepts/type_property/concepts_type_property_example.cpp use -->
 ```cpp
     sample const source{7, 2.5};
     sample target{};
     copy_bytes(target, source);
     std::cout << target.id << ' ' << target.value << '\n'; // 7 2.5
+
+    std::cout << describe<sample>() << '\n'; // class
+    std::cout << describe<square>() << '\n'; // polymorphic class
+    std::cout << describe<shape>() << '\n';  // abstract class
 ```
 
 ## Смотрите также

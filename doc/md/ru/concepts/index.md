@@ -12,14 +12,12 @@
 а не концептом. Такое свойство записывается в условии `requires` шаблона, например
 `template <typename T> requires std::is_pointer_v<T>`.
 
-Большинство концептов объявлено только через своё свойство, поэтому ограничение такого концепта
-не строже ограничения ни одного другого концепта группы. Если тип удовлетворяет двум таким
-концептам, а для вызова подходят шаблоны функции, ограниченные этими концептами, компилятор
-отклоняет вызов как неоднозначный. Концепт `scoped_enum` объявлен через концепт `enum_type`,
-а концепт `cv_qualified` через концепты `const_qualified` и `volatile_qualified`, поэтому для типа,
-который удовлетворяет такому концепту, компилятор выбирает шаблон функции, ограниченный этим
-концептом, а не шаблон, ограниченный концептом, через который объявлен этот концепт. На каждой
-странице группы описан выбор перегрузки для концептов её заголовочного файла.
+Каждый концепт объявлен через своё свойство и через концепты более широких множеств типов, к которым
+относятся все удовлетворяющие ему типы. Например, концепт `pointer` объявлен через концепты `scalar`
+и `compound`. Поэтому ограничение концепта `pointer` строже ограничений этих концептов,
+и для указателя компилятор выбирает шаблон функции, ограниченный концептом `pointer`, а не шаблон,
+ограниченный концептом `scalar` или `compound`. На каждой странице группы для концептов, объявленных
+через другие концепты, перечислены концепты с более слабым ограничением.
 
 Имя концепта совпадает с именем соответствующего свойства без префикса `is_`, как имена концептов
 `std::integral` и `std::floating_point` стандартной библиотеки. Например, концепт
@@ -40,9 +38,9 @@
 | Заголовочный файл | Страница | Объявляет |
 |---|---|---|
 | `<scl/utility/concepts/qualifier.h>` | [Концепты cv-квалификаторов](qualifier.md) | `const_qualified`, `volatile_qualified`, `cv_qualified` |
-| `<scl/utility/concepts/reference.h>` | [Концепты ссылочных типов](reference.md) | `reference`, `lvalue_reference`, `rvalue_reference`, `non_reference` |
-| `<scl/utility/concepts/type_category.h>` | [Концепты категорий типов](type_category.md) | `enum_type`, `enum_value`, `scoped_enum`, `void_type`, `pointer`, `null_pointer`, `member_pointer`, `member_object_pointer`, `member_function_pointer`, `array`, `bounded_array`, `unbounded_array`, `function`, `class_type`, `union_type`, `fundamental`, `arithmetic`, `scalar`, `object`, `compound` |
-| `<scl/utility/concepts/type_property.h>` | [Концепты свойств типов](type_property.md) | `trivially_copyable`, `standard_layout`, `empty`, `polymorphic`, `abstract`, `final`, `aggregate` |
+| `<scl/utility/concepts/reference.h>` | [Концепты ссылочных типов](reference.md) | `reference`, `lvalue_reference`, `rvalue_reference` |
+| `<scl/utility/concepts/type_category.h>` | [Концепты категорий типов](type_category.md) | `non_reference`, `enum_type`, `enum_value`, `scoped_enum`, `void_type`, `pointer`, `null_pointer`, `member_pointer`, `member_object_pointer`, `member_function_pointer`, `array`, `bounded_array`, `unbounded_array`, `function`, `class_type`, `union_type`, `fundamental`, `arithmetic`, `scalar`, `object`, `compound` |
+| `<scl/utility/concepts/type_category.h>` | [Концепты свойств типов](type_property.md) | `trivially_copyable`, `standard_layout`, `empty`, `polymorphic`, `abstract`, `final`, `aggregate` |
 
 ## Документация группы
 

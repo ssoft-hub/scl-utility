@@ -2,9 +2,9 @@
  * @example concepts_type_category_example.cpp
  * @brief Checks the category of a type, such as enumeration, pointer, array and class.
  *
- * Each concept is satisfied exactly where its standard type trait is true. The concept
- * scl::concepts::scoped_enum subsumes scl::concepts::enum_type, so an overload constrained by it is
- * chosen for a scoped enumeration.
+ * Each concept is satisfied exactly where its standard type trait is true. Each concept subsumes
+ * the concepts of the categories its types belong to, so for a type that satisfies several
+ * concepts the compiler chooses the overload constrained by the narrowest of them.
  */
 
 #include <scl/utility/concepts/type_category.h>
@@ -195,6 +195,26 @@ std::string_view describe(Enum)
 }
 //! [describe]
 
+//! [kind]
+template <scl::concepts::scalar Type>
+std::string_view kind(Type)
+{
+    return "scalar";
+}
+
+template <scl::concepts::arithmetic Type>
+std::string_view kind(Type)
+{
+    return "arithmetic";
+}
+
+template <scl::concepts::pointer Type>
+std::string_view kind(Type)
+{
+    return "pointer";
+}
+//! [kind]
+
 //! [underlying]
 template <scl::concepts::enum_type Enum>
 constexpr std::underlying_type_t<Enum> to_underlying(Enum value) noexcept
@@ -214,5 +234,11 @@ int main()
     //! [use]
     std::cout << describe(green) << '\n';            // enumeration
     std::cout << describe(direction::north) << '\n'; // scoped enumeration
+
+    point const origin{0, 0};
+    std::cout << kind(&origin) << '\n'; // pointer
+    std::cout << kind(2.5) << '\n';     // arithmetic
+    std::cout << kind(nullptr) << '\n'; // scalar
+    std::cout << kind(green) << '\n';   // scalar
     //! [use]
 }

@@ -9,14 +9,22 @@ it is, which kind, an lvalue reference or an rvalue reference.
 namespace scl::concepts
 {
     template <typename T>
-    concept reference = ::std::is_reference_v<T>;
+    concept reference = ::scl::concepts::compound<T> && ::std::is_reference_v<T>;
 
     template <typename T>
-    concept lvalue_reference = ::std::is_lvalue_reference_v<T>;
+    concept lvalue_reference = ::scl::concepts::reference<T> && ::std::is_lvalue_reference_v<T>;
 
     template <typename T>
-    concept rvalue_reference = ::std::is_rvalue_reference_v<T>;
+    concept rvalue_reference = ::scl::concepts::reference<T> && ::std::is_rvalue_reference_v<T>;
+}
+```
 
+The concept `non_reference`, the opposite of the concept `reference`, is declared in the header
+[`type_category.h`](type_category.md), which the header `reference.h` includes:
+
+```cpp
+namespace scl::concepts
+{
     template <typename T>
     concept non_reference = !::std::is_reference_v<T>;
 }
@@ -63,12 +71,24 @@ namespace scl::concepts
 
 ### Choice of an overload
 
-- **Rule.** Each concept of reference types is declared through its trait alone, so its constraint
-  is not stricter than the constraint of any other concept of the group.
-- **Ambiguous choice.** If a type satisfies two concepts, the choice between function templates
-  constrained by those concepts is ambiguous. For example, for an lvalue reference the choice
-  between templates constrained by the concept `reference` and by the concept `lvalue_reference` is
-  ambiguous.
+- **Rule.** Each concept of reference types is declared through the concept
+  [`compound`](type_category.md) or through the concept `reference`, so its constraint is stricter
+  than the constraints of those concepts. If the checked type satisfies two concepts and
+  the constraint of one of them is stricter, the compiler chooses the function template constrained
+  by the stricter concept.
+- **Weaker constraints.** For each concept the concepts with a weaker constraint are listed:
+
+| Concept | Concepts with a weaker constraint |
+|---|---|
+| `reference` | `compound` |
+| `lvalue_reference` | `reference`, `compound` |
+| `rvalue_reference` | `reference`, `compound` |
+
+- **The concept `non_reference`.** The concept `non_reference` is declared through no other concept,
+  so its constraint is not stricter than the constraint of any other concept of the group.
+  The concepts `object`, `fundamental`, `function` and `void_type` of the page
+  [Concepts of type categories](type_category.md), however, are declared through the concept
+  `non_reference`, and their constraints are stricter than the constraint of `non_reference`.
 
 ## Examples
 
@@ -140,6 +160,25 @@ struct box
 };
 ```
 
+Choosing an overload by the kind of a reference. For an lvalue reference the compiler chooses
+the overload constrained by the concept `lvalue_reference`, and for an rvalue reference it chooses
+the overload constrained by the concept `reference`:
+
+<!-- snippet: example/concepts/reference/concepts_reference_example.cpp binding -->
+```cpp
+template <scl::concepts::reference Type>
+constexpr std::string_view binding()
+{
+    return "reference";
+}
+
+template <scl::concepts::lvalue_reference Type>
+constexpr std::string_view binding()
+{
+    return "lvalue reference";
+}
+```
+
 <!-- snippet: example/concepts/reference/concepts_reference_example.cpp use -->
 ```cpp
     std::string text{"text"};
@@ -148,6 +187,9 @@ struct box
 
     box<std::string> const label{text};
     std::cout << label.value << '\n'; // text
+
+    std::cout << binding<int &>() << '\n';  // lvalue reference
+    std::cout << binding<int &&>() << '\n'; // reference
 ```
 
 ## See also

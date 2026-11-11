@@ -15,6 +15,5 @@
 #include <scl/utility/concepts/qualifier.h>
 #include <scl/utility/concepts/reference.h>
 #include <scl/utility/concepts/type_category.h>
-#include <scl/utility/concepts/type_property.h>
 
 /** @} */ // end of group scl_utility_concepts
