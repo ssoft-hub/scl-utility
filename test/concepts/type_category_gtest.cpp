@@ -5,1304 +5,1051 @@
 #include <concepts>
 #include <cstddef>
 
-using namespace scl::concepts;
-
 namespace
 {
-    enum Plain
+    enum unscoped_enum
     {
-        a,
-        b
+        unscoped_value
     };
 
-    union U
+    enum unscoped_sized_enum : unsigned char
     {
-        int i;
-        float f;
+        unscoped_sized_value
     };
 
-    struct S
-    {};
-
-    struct NonAggregate
+    enum class scoped_class_enum
     {
-        explicit NonAggregate(int) {}
+        scoped_class_value
     };
 
-    enum class Scoped
+    enum struct scoped_struct_enum
     {
-        x,
-        y
+        scoped_struct_value
     };
 
-    enum class ScopedSized : unsigned char
+    enum class scoped_sized_enum : unsigned char
     {
-        x
+        scoped_sized_value
     };
 
-    enum PlainSized : unsigned char
+    struct plain_class
     {
-        c
+        int member;
+
+        void method();
     };
 
-    // A scoped_enum argument picks the second: both definitions of the concept conjoin
-    // enum_type, so scoped_enum is the more constrained of the two.
-    template <enum_type Enum>
-    constexpr int more_constrained()
+    union plain_union
     {
-        return 1;
+        int integer;
+        float real;
+    };
+
+    using closure = decltype([] {});
+
+    template <typename Type>
+    using with_const = Type const;
+
+    template <typename Type>
+    using with_volatile = Type volatile;
+
+    template <typename Type>
+    using with_const_volatile = Type const volatile;
+
+    template <typename Type>
+    using lvalue_reference_to = Type &;
+
+    template <typename Type>
+    using rvalue_reference_to = Type &&;
+
+    template <::scl::concepts::enum_type auto Value>
+    constexpr bool enum_type_constant()
+    {
+        return true;
     }
 
-    template <scoped_enum Enum>
-    constexpr int more_constrained()
-    {
-        return 2;
-    }
-} // namespace
+    template <auto Value>
+    constexpr bool accepted_as_enum_type_constant = requires { enum_type_constant<Value>(); };
 
-TEST(TypeCategory, enum_type)
-{
-    STATIC_EXPECT_TRUE(enum_type<Plain>);
-    STATIC_EXPECT_FALSE(enum_type<int>);
-    STATIC_EXPECT_FALSE(enum_type<S>);
-}
-
-TEST(TypeCategory, scoped_enum)
-{
-    STATIC_EXPECT_TRUE(scoped_enum<Scoped>);
-    STATIC_EXPECT_TRUE(scoped_enum<ScopedSized>);
-    STATIC_EXPECT_FALSE(scoped_enum<Plain>);
-    STATIC_EXPECT_FALSE(scoped_enum<PlainSized>);
-    STATIC_EXPECT_FALSE(scoped_enum<int>);
-    STATIC_EXPECT_FALSE(scoped_enum<S>);
-    STATIC_EXPECT_TRUE(scoped_enum<Scoped const>);
-    STATIC_EXPECT_FALSE(scoped_enum<Scoped &>);
-}
-
-TEST(TypeCategory, scoped_enum_subsumes_enum_type)
-{
-    STATIC_EXPECT_EQ(more_constrained<Scoped>(), 2);
-    STATIC_EXPECT_EQ(more_constrained<Plain>(), 1);
-}
-
-TEST(TypeCategory, enum_value)
-{
-    STATIC_EXPECT_TRUE(enum_value<Plain::a>);
-    STATIC_EXPECT_TRUE(enum_value<Plain::b>);
-    STATIC_EXPECT_FALSE(enum_value<0>);
-    STATIC_EXPECT_FALSE(enum_value<nullptr>);
-}
-
-TEST(TypeCategory, void_type)
-{
-    STATIC_EXPECT_TRUE(void_type<void>);
-    STATIC_EXPECT_FALSE(void_type<int>);
-    STATIC_EXPECT_FALSE(void_type<void *>);
-}
-
-TEST(TypeCategory, pointer)
-{
-    STATIC_EXPECT_TRUE(pointer<int *>);
-    STATIC_EXPECT_TRUE(pointer<void *>);
-    STATIC_EXPECT_TRUE(pointer<int const *>);
-    STATIC_EXPECT_FALSE(pointer<int>);
-    STATIC_EXPECT_FALSE(pointer<int &>);
-    STATIC_EXPECT_FALSE(pointer<::std::nullptr_t>);
-}
-
-TEST(TypeCategory, null_pointer)
-{
-    STATIC_EXPECT_TRUE(null_pointer<::std::nullptr_t>);
-    STATIC_EXPECT_FALSE(null_pointer<int *>);
-    STATIC_EXPECT_FALSE(null_pointer<int>);
-}
-
-TEST(TypeCategory, member_pointer)
-{
-    STATIC_EXPECT_TRUE(member_pointer<int S::*>);
-    STATIC_EXPECT_TRUE(member_pointer<int (S::*)()>);
-    STATIC_EXPECT_FALSE(member_pointer<int *>);
-    STATIC_EXPECT_FALSE(member_pointer<int>);
-}
-
-TEST(TypeCategory, member_object_pointer)
-{
-    STATIC_EXPECT_TRUE(member_object_pointer<int S::*>);
-    STATIC_EXPECT_FALSE(member_object_pointer<int (S::*)()>);
-    STATIC_EXPECT_FALSE(member_object_pointer<int *>);
-}
-
-TEST(TypeCategory, member_function_pointer)
-{
-    STATIC_EXPECT_TRUE(member_function_pointer<int (S::*)()>);
-    STATIC_EXPECT_FALSE(member_function_pointer<int S::*>);
-    STATIC_EXPECT_FALSE(member_function_pointer<int *>);
-}
-
-TEST(TypeCategory, array)
-{
-    STATIC_EXPECT_TRUE(array<int[3]>);
-    STATIC_EXPECT_TRUE(array<int[]>);
-    STATIC_EXPECT_TRUE(array<NonAggregate[2]>);
-    STATIC_EXPECT_TRUE(array<NonAggregate const[]>);
-    STATIC_EXPECT_FALSE(array<int>);
-    STATIC_EXPECT_FALSE(array<int *>);
-}
-
-TEST(TypeCategory, bounded_array)
-{
-    STATIC_EXPECT_TRUE(bounded_array<int[3]>);
-    STATIC_EXPECT_FALSE(bounded_array<int[]>);
-    STATIC_EXPECT_FALSE(bounded_array<int>);
-}
-
-TEST(TypeCategory, unbounded_array)
-{
-    STATIC_EXPECT_TRUE(unbounded_array<int[]>);
-    STATIC_EXPECT_FALSE(unbounded_array<int[3]>);
-    STATIC_EXPECT_FALSE(unbounded_array<int>);
-}
-
-TEST(TypeCategory, function)
-{
-    STATIC_EXPECT_TRUE(function<void()>);
-    STATIC_EXPECT_TRUE(function<int(int, double)>);
-    STATIC_EXPECT_FALSE(function<int>);
-    STATIC_EXPECT_FALSE(function<void (*)()>);
-}
-
-TEST(TypeCategory, class_type)
-{
-    STATIC_EXPECT_TRUE(class_type<S>);
-    STATIC_EXPECT_FALSE(class_type<int>);
-    STATIC_EXPECT_FALSE(class_type<U>);
-    STATIC_EXPECT_FALSE(class_type<Plain>);
-}
-
-TEST(TypeCategory, union_type)
-{
-    STATIC_EXPECT_TRUE(union_type<U>);
-    STATIC_EXPECT_FALSE(union_type<S>);
-    STATIC_EXPECT_FALSE(union_type<int>);
-}
-
-TEST(TypeCategory, fundamental)
-{
-    STATIC_EXPECT_TRUE(fundamental<int>);
-    STATIC_EXPECT_TRUE(fundamental<double>);
-    STATIC_EXPECT_TRUE(fundamental<void>);
-    STATIC_EXPECT_TRUE(fundamental<::std::nullptr_t>);
-    STATIC_EXPECT_FALSE(fundamental<S>);
-    STATIC_EXPECT_FALSE(fundamental<int *>);
-}
-
-TEST(TypeCategory, arithmetic)
-{
-    STATIC_EXPECT_TRUE(arithmetic<int>);
-    STATIC_EXPECT_TRUE(arithmetic<double>);
-    STATIC_EXPECT_TRUE(arithmetic<bool>);
-    STATIC_EXPECT_FALSE(arithmetic<void>);
-    STATIC_EXPECT_FALSE(arithmetic<int *>);
-    STATIC_EXPECT_FALSE(arithmetic<S>);
-}
-
-TEST(TypeCategory, scalar)
-{
-    STATIC_EXPECT_TRUE(scalar<int>);
-    STATIC_EXPECT_TRUE(scalar<int *>);
-    STATIC_EXPECT_TRUE(scalar<Plain>);
-    STATIC_EXPECT_TRUE(scalar<::std::nullptr_t>);
-    STATIC_EXPECT_TRUE(scalar<int volatile>);
-    STATIC_EXPECT_TRUE(scalar<int const volatile>);
-    STATIC_EXPECT_TRUE(scalar<int * volatile>);
-    STATIC_EXPECT_TRUE(scalar<Plain volatile>);
-    STATIC_EXPECT_TRUE(scalar<int S::* volatile>);
-    STATIC_EXPECT_FALSE(scalar<S>);
-    STATIC_EXPECT_FALSE(scalar<void>);
-    STATIC_EXPECT_FALSE(scalar<void()>);
-}
-
-TEST(TypeCategory, object)
-{
-    STATIC_EXPECT_TRUE(object<int>);
-    STATIC_EXPECT_TRUE(object<S>);
-    STATIC_EXPECT_TRUE(object<int *>);
-    STATIC_EXPECT_TRUE(object<int[3]>);
-    STATIC_EXPECT_FALSE(object<void>);
-    STATIC_EXPECT_FALSE(object<void()>);
-    STATIC_EXPECT_FALSE(object<int &>);
-}
-
-TEST(TypeCategory, compound)
-{
-    STATIC_EXPECT_TRUE(compound<int *>);
-    STATIC_EXPECT_TRUE(compound<S>);
-    STATIC_EXPECT_TRUE(compound<int[3]>);
-    STATIC_EXPECT_TRUE(compound<void()>);
-    STATIC_EXPECT_FALSE(compound<int>);
-    STATIC_EXPECT_FALSE(compound<void>);
-    STATIC_EXPECT_FALSE(compound<double>);
-}
-
-namespace
-{
-    template <object Type>
-    constexpr int scalar_over_object()
-    {
-        return 1;
-    }
-
-    template <scalar Type>
-    constexpr int scalar_over_object()
-    {
-        return 2;
-    }
-
-    template <fundamental Type>
-    constexpr int arithmetic_over_fundamental()
-    {
-        return 1;
-    }
-
-    template <arithmetic Type>
-    constexpr int arithmetic_over_fundamental()
-    {
-        return 2;
-    }
-
-    template <scalar Type>
-    constexpr int arithmetic_over_scalar()
-    {
-        return 1;
-    }
-
-    template <arithmetic Type>
-    constexpr int arithmetic_over_scalar()
-    {
-        return 2;
-    }
-
-    template <fundamental Type>
-    constexpr int null_pointer_over_fundamental()
-    {
-        return 1;
-    }
-
-    template <null_pointer Type>
-    constexpr int null_pointer_over_fundamental()
-    {
-        return 2;
-    }
-
-    template <scalar Type>
-    constexpr int null_pointer_over_scalar()
-    {
-        return 1;
-    }
-
-    template <null_pointer Type>
-    constexpr int null_pointer_over_scalar()
-    {
-        return 2;
-    }
-
-    template <fundamental Type>
-    constexpr int void_type_over_fundamental()
-    {
-        return 1;
-    }
-
-    template <void_type Type>
-    constexpr int void_type_over_fundamental()
-    {
-        return 2;
-    }
-
-    template <scalar Type>
-    constexpr int enum_type_over_scalar()
-    {
-        return 1;
-    }
-
-    template <enum_type Type>
-    constexpr int enum_type_over_scalar()
-    {
-        return 2;
-    }
-
-    template <compound Type>
-    constexpr int enum_type_over_compound()
-    {
-        return 1;
-    }
-
-    template <enum_type Type>
-    constexpr int enum_type_over_compound()
-    {
-        return 2;
-    }
-
-    template <scalar Type>
-    constexpr int pointer_over_scalar()
-    {
-        return 1;
-    }
-
-    template <pointer Type>
-    constexpr int pointer_over_scalar()
-    {
-        return 2;
-    }
-
-    template <compound Type>
-    constexpr int pointer_over_compound()
-    {
-        return 1;
-    }
-
-    template <pointer Type>
-    constexpr int pointer_over_compound()
-    {
-        return 2;
-    }
-
-    template <scalar Type>
-    constexpr int member_pointer_over_scalar()
-    {
-        return 1;
-    }
-
-    template <member_pointer Type>
-    constexpr int member_pointer_over_scalar()
-    {
-        return 2;
-    }
-
-    template <compound Type>
-    constexpr int member_pointer_over_compound()
-    {
-        return 1;
-    }
-
-    template <member_pointer Type>
-    constexpr int member_pointer_over_compound()
-    {
-        return 2;
-    }
-
-    template <member_pointer Type>
-    constexpr int member_object_pointer_over_member_pointer()
-    {
-        return 1;
-    }
-
-    template <member_object_pointer Type>
-    constexpr int member_object_pointer_over_member_pointer()
-    {
-        return 2;
-    }
-
-    template <member_pointer Type>
-    constexpr int member_function_pointer_over_member_pointer()
-    {
-        return 1;
-    }
-
-    template <member_function_pointer Type>
-    constexpr int member_function_pointer_over_member_pointer()
-    {
-        return 2;
-    }
-
-    template <object Type>
-    constexpr int array_over_object()
-    {
-        return 1;
-    }
-
-    template <array Type>
-    constexpr int array_over_object()
-    {
-        return 2;
-    }
-
-    template <compound Type>
-    constexpr int array_over_compound()
-    {
-        return 1;
-    }
-
-    template <array Type>
-    constexpr int array_over_compound()
-    {
-        return 2;
-    }
-
-    template <array Type>
-    constexpr int bounded_array_over_array()
-    {
-        return 1;
-    }
-
-    template <bounded_array Type>
-    constexpr int bounded_array_over_array()
-    {
-        return 2;
-    }
-
-    template <array Type>
-    constexpr int unbounded_array_over_array()
-    {
-        return 1;
-    }
-
-    template <unbounded_array Type>
-    constexpr int unbounded_array_over_array()
-    {
-        return 2;
-    }
-
-    template <compound Type>
-    constexpr int function_over_compound()
-    {
-        return 1;
-    }
-
-    template <function Type>
-    constexpr int function_over_compound()
-    {
-        return 2;
-    }
-
-    template <object Type>
-    constexpr int class_type_over_object()
-    {
-        return 1;
-    }
-
-    template <class_type Type>
-    constexpr int class_type_over_object()
-    {
-        return 2;
-    }
-
-    template <compound Type>
-    constexpr int class_type_over_compound()
-    {
-        return 1;
-    }
-
-    template <class_type Type>
-    constexpr int class_type_over_compound()
-    {
-        return 2;
-    }
-
-    template <object Type>
-    constexpr int union_type_over_object()
-    {
-        return 1;
-    }
-
-    template <union_type Type>
-    constexpr int union_type_over_object()
-    {
-        return 2;
-    }
-
-    template <compound Type>
-    constexpr int union_type_over_compound()
-    {
-        return 1;
-    }
-
-    template <union_type Type>
-    constexpr int union_type_over_compound()
-    {
-        return 2;
-    }
-} // namespace
-
-TEST(TypeCategory, scalar_subsumes_object)
-{
-    STATIC_EXPECT_EQ(scalar_over_object<int>(), 2);
-    STATIC_EXPECT_EQ(scalar_over_object<S>(), 1);
-}
-
-TEST(TypeCategory, arithmetic_subsumes_fundamental)
-{
-    STATIC_EXPECT_EQ(arithmetic_over_fundamental<int>(), 2);
-    STATIC_EXPECT_EQ(arithmetic_over_fundamental<void>(), 1);
-}
-
-TEST(TypeCategory, arithmetic_subsumes_scalar)
-{
-    STATIC_EXPECT_EQ(arithmetic_over_scalar<int>(), 2);
-    STATIC_EXPECT_EQ(arithmetic_over_scalar<int *>(), 1);
-}
-
-TEST(TypeCategory, null_pointer_subsumes_fundamental)
-{
-    STATIC_EXPECT_EQ(null_pointer_over_fundamental<::std::nullptr_t>(), 2);
-    STATIC_EXPECT_EQ(null_pointer_over_fundamental<int>(), 1);
-}
-
-TEST(TypeCategory, null_pointer_subsumes_scalar)
-{
-    STATIC_EXPECT_EQ(null_pointer_over_scalar<::std::nullptr_t>(), 2);
-    STATIC_EXPECT_EQ(null_pointer_over_scalar<int>(), 1);
-}
-
-TEST(TypeCategory, void_type_subsumes_fundamental)
-{
-    STATIC_EXPECT_EQ(void_type_over_fundamental<void>(), 2);
-    STATIC_EXPECT_EQ(void_type_over_fundamental<int>(), 1);
-}
-
-TEST(TypeCategory, enum_type_subsumes_scalar)
-{
-    STATIC_EXPECT_EQ(enum_type_over_scalar<Plain>(), 2);
-    STATIC_EXPECT_EQ(enum_type_over_scalar<int>(), 1);
-}
-
-TEST(TypeCategory, enum_type_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(enum_type_over_compound<Plain>(), 2);
-    STATIC_EXPECT_EQ(enum_type_over_compound<S>(), 1);
-}
-
-TEST(TypeCategory, pointer_subsumes_scalar)
-{
-    STATIC_EXPECT_EQ(pointer_over_scalar<int *>(), 2);
-    STATIC_EXPECT_EQ(pointer_over_scalar<int>(), 1);
-}
-
-TEST(TypeCategory, pointer_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(pointer_over_compound<int *>(), 2);
-    STATIC_EXPECT_EQ(pointer_over_compound<S>(), 1);
-}
-
-TEST(TypeCategory, member_pointer_subsumes_scalar)
-{
-    STATIC_EXPECT_EQ(member_pointer_over_scalar<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_pointer_over_scalar<int>(), 1);
-}
-
-TEST(TypeCategory, member_pointer_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(member_pointer_over_compound<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_pointer_over_compound<S>(), 1);
-}
-
-TEST(TypeCategory, member_object_pointer_subsumes_member_pointer)
-{
-    STATIC_EXPECT_EQ(member_object_pointer_over_member_pointer<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_object_pointer_over_member_pointer<int (S::*)()>(), 1);
-}
-
-TEST(TypeCategory, member_function_pointer_subsumes_member_pointer)
-{
-    STATIC_EXPECT_EQ(member_function_pointer_over_member_pointer<int (S::*)()>(), 2);
-    STATIC_EXPECT_EQ(member_function_pointer_over_member_pointer<int S::*>(), 1);
-}
-
-TEST(TypeCategory, array_subsumes_object)
-{
-    STATIC_EXPECT_EQ(array_over_object<int[3]>(), 2);
-    STATIC_EXPECT_EQ(array_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, array_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(array_over_compound<int[3]>(), 2);
-    STATIC_EXPECT_EQ(array_over_compound<S>(), 1);
-}
-
-TEST(TypeCategory, bounded_array_subsumes_array)
-{
-    STATIC_EXPECT_EQ(bounded_array_over_array<int[3]>(), 2);
-    STATIC_EXPECT_EQ(bounded_array_over_array<int[]>(), 1);
-}
-
-TEST(TypeCategory, unbounded_array_subsumes_array)
-{
-    STATIC_EXPECT_EQ(unbounded_array_over_array<int[]>(), 2);
-    STATIC_EXPECT_EQ(unbounded_array_over_array<int[3]>(), 1);
-}
-
-TEST(TypeCategory, function_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(function_over_compound<void()>(), 2);
-    STATIC_EXPECT_EQ(function_over_compound<S>(), 1);
-}
-
-TEST(TypeCategory, class_type_subsumes_object)
-{
-    STATIC_EXPECT_EQ(class_type_over_object<S>(), 2);
-    STATIC_EXPECT_EQ(class_type_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, class_type_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(class_type_over_compound<S>(), 2);
-    STATIC_EXPECT_EQ(class_type_over_compound<int *>(), 1);
-}
-
-TEST(TypeCategory, union_type_subsumes_object)
-{
-    STATIC_EXPECT_EQ(union_type_over_object<U>(), 2);
-    STATIC_EXPECT_EQ(union_type_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, union_type_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(union_type_over_compound<U>(), 2);
-    STATIC_EXPECT_EQ(union_type_over_compound<S>(), 1);
-}
-
-namespace
-{
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int object_over_non_reference()
     {
         return 1;
     }
 
-    template <object Type>
+    template <::scl::concepts::object Type>
     constexpr int object_over_non_reference()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
+    constexpr int fundamental_over_non_reference()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::fundamental Type>
+    constexpr int fundamental_over_non_reference()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
+    constexpr int scalar_over_object()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::scalar Type>
+    constexpr int scalar_over_object()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int scalar_over_non_reference()
     {
         return 1;
     }
 
-    template <scalar Type>
+    template <::scl::concepts::scalar Type>
     constexpr int scalar_over_non_reference()
     {
         return 2;
     }
 
-    template <object Type>
-    constexpr int arithmetic_over_object()
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int scalar_over_trivially_copyable()
     {
         return 1;
     }
 
-    template <arithmetic Type>
-    constexpr int arithmetic_over_object()
+    template <::scl::concepts::scalar Type>
+    constexpr int scalar_over_trivially_copyable()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::standard_layout Type>
+    constexpr int scalar_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::scalar Type>
+    constexpr int scalar_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::fundamental Type>
+    constexpr int arithmetic_over_fundamental()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::arithmetic Type>
+    constexpr int arithmetic_over_fundamental()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int arithmetic_over_non_reference()
     {
         return 1;
     }
 
-    template <arithmetic Type>
+    template <::scl::concepts::arithmetic Type>
     constexpr int arithmetic_over_non_reference()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::scalar Type>
+    constexpr int arithmetic_over_scalar()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::arithmetic Type>
+    constexpr int arithmetic_over_scalar()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
+    constexpr int arithmetic_over_object()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::arithmetic Type>
+    constexpr int arithmetic_over_object()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int arithmetic_over_trivially_copyable()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::arithmetic Type>
+    constexpr int arithmetic_over_trivially_copyable()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::standard_layout Type>
+    constexpr int arithmetic_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::arithmetic Type>
+    constexpr int arithmetic_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int void_type_over_non_reference()
     {
         return 1;
     }
 
-    template <void_type Type>
+    template <::scl::concepts::void_type Type>
     constexpr int void_type_over_non_reference()
     {
         return 2;
     }
 
-    template <object Type>
-    constexpr int null_pointer_over_object()
+    template <::scl::concepts::fundamental Type>
+    constexpr int void_type_over_fundamental()
     {
         return 1;
     }
 
-    template <null_pointer Type>
-    constexpr int null_pointer_over_object()
+    template <::scl::concepts::void_type Type>
+    constexpr int void_type_over_fundamental()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::fundamental Type>
+    constexpr int null_pointer_over_fundamental()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::null_pointer Type>
+    constexpr int null_pointer_over_fundamental()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int null_pointer_over_non_reference()
     {
         return 1;
     }
 
-    template <null_pointer Type>
+    template <::scl::concepts::null_pointer Type>
     constexpr int null_pointer_over_non_reference()
     {
         return 2;
     }
 
-    template <object Type>
+    template <::scl::concepts::scalar Type>
+    constexpr int null_pointer_over_scalar()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::null_pointer Type>
+    constexpr int null_pointer_over_scalar()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
+    constexpr int null_pointer_over_object()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::null_pointer Type>
+    constexpr int null_pointer_over_object()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int null_pointer_over_trivially_copyable()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::null_pointer Type>
+    constexpr int null_pointer_over_trivially_copyable()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::standard_layout Type>
+    constexpr int null_pointer_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::null_pointer Type>
+    constexpr int null_pointer_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::scalar Type>
+    constexpr int enum_type_over_scalar()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::enum_type Type>
+    constexpr int enum_type_over_scalar()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
     constexpr int enum_type_over_object()
     {
         return 1;
     }
 
-    template <enum_type Type>
+    template <::scl::concepts::enum_type Type>
     constexpr int enum_type_over_object()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int enum_type_over_non_reference()
     {
         return 1;
     }
 
-    template <enum_type Type>
+    template <::scl::concepts::enum_type Type>
     constexpr int enum_type_over_non_reference()
     {
         return 2;
     }
 
-    template <scalar Type>
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int enum_type_over_trivially_copyable()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::enum_type Type>
+    constexpr int enum_type_over_trivially_copyable()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::standard_layout Type>
+    constexpr int enum_type_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::enum_type Type>
+    constexpr int enum_type_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
+    constexpr int enum_type_over_compound()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::enum_type Type>
+    constexpr int enum_type_over_compound()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::enum_type Type>
+    constexpr int scoped_enum_over_enum_type()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::scoped_enum Type>
+    constexpr int scoped_enum_over_enum_type()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::scalar Type>
     constexpr int scoped_enum_over_scalar()
     {
         return 1;
     }
 
-    template <scoped_enum Type>
+    template <::scl::concepts::scoped_enum Type>
     constexpr int scoped_enum_over_scalar()
     {
         return 2;
     }
 
-    template <object Type>
+    template <::scl::concepts::object Type>
     constexpr int scoped_enum_over_object()
     {
         return 1;
     }
 
-    template <scoped_enum Type>
+    template <::scl::concepts::scoped_enum Type>
     constexpr int scoped_enum_over_object()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int scoped_enum_over_non_reference()
     {
         return 1;
     }
 
-    template <scoped_enum Type>
+    template <::scl::concepts::scoped_enum Type>
     constexpr int scoped_enum_over_non_reference()
     {
         return 2;
     }
 
-    template <compound Type>
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int scoped_enum_over_trivially_copyable()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::scoped_enum Type>
+    constexpr int scoped_enum_over_trivially_copyable()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::standard_layout Type>
+    constexpr int scoped_enum_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::scoped_enum Type>
+    constexpr int scoped_enum_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
     constexpr int scoped_enum_over_compound()
     {
         return 1;
     }
 
-    template <scoped_enum Type>
+    template <::scl::concepts::scoped_enum Type>
     constexpr int scoped_enum_over_compound()
     {
         return 2;
     }
 
-    template <object Type>
+    template <::scl::concepts::scalar Type>
+    constexpr int pointer_over_scalar()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::pointer Type>
+    constexpr int pointer_over_scalar()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
     constexpr int pointer_over_object()
     {
         return 1;
     }
 
-    template <pointer Type>
+    template <::scl::concepts::pointer Type>
     constexpr int pointer_over_object()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int pointer_over_non_reference()
     {
         return 1;
     }
 
-    template <pointer Type>
+    template <::scl::concepts::pointer Type>
     constexpr int pointer_over_non_reference()
     {
         return 2;
     }
 
-    template <object Type>
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int pointer_over_trivially_copyable()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::pointer Type>
+    constexpr int pointer_over_trivially_copyable()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::standard_layout Type>
+    constexpr int pointer_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::pointer Type>
+    constexpr int pointer_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
+    constexpr int pointer_over_compound()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::pointer Type>
+    constexpr int pointer_over_compound()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::scalar Type>
+    constexpr int member_pointer_over_scalar()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_pointer Type>
+    constexpr int member_pointer_over_scalar()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
     constexpr int member_pointer_over_object()
     {
         return 1;
     }
 
-    template <member_pointer Type>
+    template <::scl::concepts::member_pointer Type>
     constexpr int member_pointer_over_object()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int member_pointer_over_non_reference()
     {
         return 1;
     }
 
-    template <member_pointer Type>
+    template <::scl::concepts::member_pointer Type>
     constexpr int member_pointer_over_non_reference()
     {
         return 2;
     }
 
-    template <scalar Type>
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int member_pointer_over_trivially_copyable()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_pointer Type>
+    constexpr int member_pointer_over_trivially_copyable()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::standard_layout Type>
+    constexpr int member_pointer_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_pointer Type>
+    constexpr int member_pointer_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
+    constexpr int member_pointer_over_compound()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_pointer Type>
+    constexpr int member_pointer_over_compound()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::member_pointer Type>
+    constexpr int member_object_pointer_over_member_pointer()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_object_pointer Type>
+    constexpr int member_object_pointer_over_member_pointer()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::scalar Type>
     constexpr int member_object_pointer_over_scalar()
     {
         return 1;
     }
 
-    template <member_object_pointer Type>
+    template <::scl::concepts::member_object_pointer Type>
     constexpr int member_object_pointer_over_scalar()
     {
         return 2;
     }
 
-    template <object Type>
+    template <::scl::concepts::object Type>
     constexpr int member_object_pointer_over_object()
     {
         return 1;
     }
 
-    template <member_object_pointer Type>
+    template <::scl::concepts::member_object_pointer Type>
     constexpr int member_object_pointer_over_object()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int member_object_pointer_over_non_reference()
     {
         return 1;
     }
 
-    template <member_object_pointer Type>
+    template <::scl::concepts::member_object_pointer Type>
     constexpr int member_object_pointer_over_non_reference()
     {
         return 2;
     }
 
-    template <compound Type>
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int member_object_pointer_over_trivially_copyable()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_object_pointer Type>
+    constexpr int member_object_pointer_over_trivially_copyable()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::standard_layout Type>
+    constexpr int member_object_pointer_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_object_pointer Type>
+    constexpr int member_object_pointer_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
     constexpr int member_object_pointer_over_compound()
     {
         return 1;
     }
 
-    template <member_object_pointer Type>
+    template <::scl::concepts::member_object_pointer Type>
     constexpr int member_object_pointer_over_compound()
     {
         return 2;
     }
 
-    template <scalar Type>
+    template <::scl::concepts::member_pointer Type>
+    constexpr int member_function_pointer_over_member_pointer()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_function_pointer Type>
+    constexpr int member_function_pointer_over_member_pointer()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::scalar Type>
     constexpr int member_function_pointer_over_scalar()
     {
         return 1;
     }
 
-    template <member_function_pointer Type>
+    template <::scl::concepts::member_function_pointer Type>
     constexpr int member_function_pointer_over_scalar()
     {
         return 2;
     }
 
-    template <object Type>
+    template <::scl::concepts::object Type>
     constexpr int member_function_pointer_over_object()
     {
         return 1;
     }
 
-    template <member_function_pointer Type>
+    template <::scl::concepts::member_function_pointer Type>
     constexpr int member_function_pointer_over_object()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int member_function_pointer_over_non_reference()
     {
         return 1;
     }
 
-    template <member_function_pointer Type>
+    template <::scl::concepts::member_function_pointer Type>
     constexpr int member_function_pointer_over_non_reference()
     {
         return 2;
     }
 
-    template <compound Type>
+    template <::scl::concepts::trivially_copyable Type>
+    constexpr int member_function_pointer_over_trivially_copyable()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_function_pointer Type>
+    constexpr int member_function_pointer_over_trivially_copyable()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::standard_layout Type>
+    constexpr int member_function_pointer_over_standard_layout()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_function_pointer Type>
+    constexpr int member_function_pointer_over_standard_layout()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
     constexpr int member_function_pointer_over_compound()
     {
         return 1;
     }
 
-    template <member_function_pointer Type>
+    template <::scl::concepts::member_function_pointer Type>
     constexpr int member_function_pointer_over_compound()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::object Type>
+    constexpr int array_over_object()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::array Type>
+    constexpr int array_over_object()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int array_over_non_reference()
     {
         return 1;
     }
 
-    template <array Type>
+    template <::scl::concepts::array Type>
     constexpr int array_over_non_reference()
     {
         return 2;
     }
 
-    template <object Type>
+    template <::scl::concepts::compound Type>
+    constexpr int array_over_compound()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::array Type>
+    constexpr int array_over_compound()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::aggregate Type>
+    constexpr int array_over_aggregate()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::array Type>
+    constexpr int array_over_aggregate()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::array Type>
+    constexpr int bounded_array_over_array()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::bounded_array Type>
+    constexpr int bounded_array_over_array()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
     constexpr int bounded_array_over_object()
     {
         return 1;
     }
 
-    template <bounded_array Type>
+    template <::scl::concepts::bounded_array Type>
     constexpr int bounded_array_over_object()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int bounded_array_over_non_reference()
     {
         return 1;
     }
 
-    template <bounded_array Type>
+    template <::scl::concepts::bounded_array Type>
     constexpr int bounded_array_over_non_reference()
     {
         return 2;
     }
 
-    template <compound Type>
+    template <::scl::concepts::compound Type>
     constexpr int bounded_array_over_compound()
     {
         return 1;
     }
 
-    template <bounded_array Type>
+    template <::scl::concepts::bounded_array Type>
     constexpr int bounded_array_over_compound()
     {
         return 2;
     }
 
-    template <object Type>
+    template <::scl::concepts::aggregate Type>
+    constexpr int bounded_array_over_aggregate()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::bounded_array Type>
+    constexpr int bounded_array_over_aggregate()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::array Type>
+    constexpr int unbounded_array_over_array()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::unbounded_array Type>
+    constexpr int unbounded_array_over_array()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
     constexpr int unbounded_array_over_object()
     {
         return 1;
     }
 
-    template <unbounded_array Type>
+    template <::scl::concepts::unbounded_array Type>
     constexpr int unbounded_array_over_object()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::non_reference Type>
     constexpr int unbounded_array_over_non_reference()
     {
         return 1;
     }
 
-    template <unbounded_array Type>
+    template <::scl::concepts::unbounded_array Type>
     constexpr int unbounded_array_over_non_reference()
     {
         return 2;
     }
 
-    template <compound Type>
+    template <::scl::concepts::compound Type>
     constexpr int unbounded_array_over_compound()
     {
         return 1;
     }
 
-    template <unbounded_array Type>
+    template <::scl::concepts::unbounded_array Type>
     constexpr int unbounded_array_over_compound()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::aggregate Type>
+    constexpr int unbounded_array_over_aggregate()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::unbounded_array Type>
+    constexpr int unbounded_array_over_aggregate()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int function_over_non_reference()
     {
         return 1;
     }
 
-    template <function Type>
+    template <::scl::concepts::function Type>
     constexpr int function_over_non_reference()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::compound Type>
+    constexpr int function_over_compound()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::function Type>
+    constexpr int function_over_compound()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
+    constexpr int class_type_over_object()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::class_type Type>
+    constexpr int class_type_over_object()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int class_type_over_non_reference()
     {
         return 1;
     }
 
-    template <class_type Type>
+    template <::scl::concepts::class_type Type>
     constexpr int class_type_over_non_reference()
     {
         return 2;
     }
 
-    template <non_reference Type>
+    template <::scl::concepts::compound Type>
+    constexpr int class_type_over_compound()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::class_type Type>
+    constexpr int class_type_over_compound()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::object Type>
+    constexpr int union_type_over_object()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::union_type Type>
+    constexpr int union_type_over_object()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int union_type_over_non_reference()
     {
         return 1;
     }
 
-    template <union_type Type>
+    template <::scl::concepts::union_type Type>
     constexpr int union_type_over_non_reference()
     {
         return 2;
     }
-} // namespace
 
-TEST(TypeCategory, object_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(object_over_non_reference<int>(), 2);
-    STATIC_EXPECT_EQ(object_over_non_reference<void>(), 1);
-}
+    template <::scl::concepts::compound Type>
+    constexpr int union_type_over_compound()
+    {
+        return 1;
+    }
 
-TEST(TypeCategory, scalar_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(scalar_over_non_reference<int>(), 2);
-    STATIC_EXPECT_EQ(scalar_over_non_reference<void>(), 1);
-}
+    template <::scl::concepts::union_type Type>
+    constexpr int union_type_over_compound()
+    {
+        return 2;
+    }
 
-TEST(TypeCategory, arithmetic_subsumes_object)
-{
-    STATIC_EXPECT_EQ(arithmetic_over_object<int>(), 2);
-    STATIC_EXPECT_EQ(arithmetic_over_object<::std::nullptr_t>(), 1);
-}
-
-TEST(TypeCategory, arithmetic_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(arithmetic_over_non_reference<int>(), 2);
-    STATIC_EXPECT_EQ(arithmetic_over_non_reference<void>(), 1);
-}
-
-TEST(TypeCategory, void_type_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(void_type_over_non_reference<void>(), 2);
-    STATIC_EXPECT_EQ(void_type_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, null_pointer_subsumes_object)
-{
-    STATIC_EXPECT_EQ(null_pointer_over_object<::std::nullptr_t>(), 2);
-    STATIC_EXPECT_EQ(null_pointer_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, null_pointer_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(null_pointer_over_non_reference<::std::nullptr_t>(), 2);
-    STATIC_EXPECT_EQ(null_pointer_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, enum_type_subsumes_object)
-{
-    STATIC_EXPECT_EQ(enum_type_over_object<Plain>(), 2);
-    STATIC_EXPECT_EQ(enum_type_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, enum_type_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(enum_type_over_non_reference<Plain>(), 2);
-    STATIC_EXPECT_EQ(enum_type_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, scoped_enum_subsumes_scalar)
-{
-    STATIC_EXPECT_EQ(scoped_enum_over_scalar<Scoped>(), 2);
-    STATIC_EXPECT_EQ(scoped_enum_over_scalar<int>(), 1);
-}
-
-TEST(TypeCategory, scoped_enum_subsumes_object)
-{
-    STATIC_EXPECT_EQ(scoped_enum_over_object<Scoped>(), 2);
-    STATIC_EXPECT_EQ(scoped_enum_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, scoped_enum_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(scoped_enum_over_non_reference<Scoped>(), 2);
-    STATIC_EXPECT_EQ(scoped_enum_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, scoped_enum_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(scoped_enum_over_compound<Scoped>(), 2);
-    STATIC_EXPECT_EQ(scoped_enum_over_compound<Plain>(), 1);
-}
-
-TEST(TypeCategory, pointer_subsumes_object)
-{
-    STATIC_EXPECT_EQ(pointer_over_object<int *>(), 2);
-    STATIC_EXPECT_EQ(pointer_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, pointer_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(pointer_over_non_reference<int *>(), 2);
-    STATIC_EXPECT_EQ(pointer_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, member_pointer_subsumes_object)
-{
-    STATIC_EXPECT_EQ(member_pointer_over_object<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_pointer_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, member_pointer_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(member_pointer_over_non_reference<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_pointer_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, member_object_pointer_subsumes_scalar)
-{
-    STATIC_EXPECT_EQ(member_object_pointer_over_scalar<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_object_pointer_over_scalar<int>(), 1);
-}
-
-TEST(TypeCategory, member_object_pointer_subsumes_object)
-{
-    STATIC_EXPECT_EQ(member_object_pointer_over_object<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_object_pointer_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, member_object_pointer_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(member_object_pointer_over_non_reference<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_object_pointer_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, member_object_pointer_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(member_object_pointer_over_compound<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_object_pointer_over_compound<Plain>(), 1);
-}
-
-TEST(TypeCategory, member_function_pointer_subsumes_scalar)
-{
-    STATIC_EXPECT_EQ(member_function_pointer_over_scalar<int (S::*)()>(), 2);
-    STATIC_EXPECT_EQ(member_function_pointer_over_scalar<int>(), 1);
-}
-
-TEST(TypeCategory, member_function_pointer_subsumes_object)
-{
-    STATIC_EXPECT_EQ(member_function_pointer_over_object<int (S::*)()>(), 2);
-    STATIC_EXPECT_EQ(member_function_pointer_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, member_function_pointer_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(member_function_pointer_over_non_reference<int (S::*)()>(), 2);
-    STATIC_EXPECT_EQ(member_function_pointer_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, member_function_pointer_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(member_function_pointer_over_compound<int (S::*)()>(), 2);
-    STATIC_EXPECT_EQ(member_function_pointer_over_compound<Plain>(), 1);
-}
-
-TEST(TypeCategory, array_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(array_over_non_reference<int[3]>(), 2);
-    STATIC_EXPECT_EQ(array_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, bounded_array_subsumes_object)
-{
-    STATIC_EXPECT_EQ(bounded_array_over_object<int[3]>(), 2);
-    STATIC_EXPECT_EQ(bounded_array_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, bounded_array_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(bounded_array_over_non_reference<int[3]>(), 2);
-    STATIC_EXPECT_EQ(bounded_array_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, bounded_array_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(bounded_array_over_compound<int[3]>(), 2);
-    STATIC_EXPECT_EQ(bounded_array_over_compound<Plain>(), 1);
-}
-
-TEST(TypeCategory, unbounded_array_subsumes_object)
-{
-    STATIC_EXPECT_EQ(unbounded_array_over_object<int[]>(), 2);
-    STATIC_EXPECT_EQ(unbounded_array_over_object<int>(), 1);
-}
-
-TEST(TypeCategory, unbounded_array_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(unbounded_array_over_non_reference<int[]>(), 2);
-    STATIC_EXPECT_EQ(unbounded_array_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, unbounded_array_subsumes_compound)
-{
-    STATIC_EXPECT_EQ(unbounded_array_over_compound<int[]>(), 2);
-    STATIC_EXPECT_EQ(unbounded_array_over_compound<Plain>(), 1);
-}
-
-TEST(TypeCategory, function_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(function_over_non_reference<void()>(), 2);
-    STATIC_EXPECT_EQ(function_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, class_type_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(class_type_over_non_reference<S>(), 2);
-    STATIC_EXPECT_EQ(class_type_over_non_reference<int>(), 1);
-}
-
-TEST(TypeCategory, union_type_subsumes_non_reference)
-{
-    STATIC_EXPECT_EQ(union_type_over_non_reference<U>(), 2);
-    STATIC_EXPECT_EQ(union_type_over_non_reference<int>(), 1);
-}
-
-namespace
-{
-    template <object Type>
+    template <::scl::concepts::object Type>
     constexpr int object_or_compound()
     {
         return 1;
     }
 
-    template <compound Type>
+    template <::scl::concepts::compound Type>
     constexpr int object_or_compound()
     {
         return 2;
@@ -1317,7 +1064,7 @@ namespace
         return 1;
     }
 
-    template <arithmetic Type>
+    template <::scl::concepts::arithmetic Type>
     constexpr int integral_or_arithmetic()
     {
         return 2;
@@ -1327,436 +1074,1440 @@ namespace
     constexpr bool integral_or_arithmetic_resolves = requires { integral_or_arithmetic<Type>(); };
 } // namespace
 
-TEST(TypeCategory, object_and_compound_are_unordered)
+TEST(ConceptsEnumType, HoldsForAnUnscopedEnumeration)
 {
-    STATIC_EXPECT_FALSE(object_or_compound_resolves<int *>);
-    STATIC_EXPECT_TRUE(object_or_compound_resolves<int>);
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_type<unscoped_enum>);
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_type<unscoped_sized_enum>);
 }
 
-TEST(TypeCategory, std_integral_and_arithmetic_are_unordered)
+TEST(ConceptsEnumType, HoldsForAScopedEnumeration)
 {
-    STATIC_EXPECT_FALSE(integral_or_arithmetic_resolves<int>);
-    STATIC_EXPECT_TRUE(integral_or_arithmetic_resolves<double>);
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_type<scoped_class_enum>);
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_type<scoped_struct_enum>);
 }
 
-namespace
+TEST(ConceptsEnumType, FailsForATypeThatIsNotAnEnumeration)
 {
-    template <trivially_copyable Type>
-    constexpr int scalar_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <scalar Type>
-    constexpr int scalar_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int scalar_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <scalar Type>
-    constexpr int scalar_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <trivially_copyable Type>
-    constexpr int arithmetic_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <arithmetic Type>
-    constexpr int arithmetic_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int arithmetic_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <arithmetic Type>
-    constexpr int arithmetic_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <trivially_copyable Type>
-    constexpr int null_pointer_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <null_pointer Type>
-    constexpr int null_pointer_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int null_pointer_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <null_pointer Type>
-    constexpr int null_pointer_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <trivially_copyable Type>
-    constexpr int enum_type_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <enum_type Type>
-    constexpr int enum_type_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int enum_type_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <enum_type Type>
-    constexpr int enum_type_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <trivially_copyable Type>
-    constexpr int scoped_enum_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <scoped_enum Type>
-    constexpr int scoped_enum_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int scoped_enum_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <scoped_enum Type>
-    constexpr int scoped_enum_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <trivially_copyable Type>
-    constexpr int pointer_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <pointer Type>
-    constexpr int pointer_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int pointer_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <pointer Type>
-    constexpr int pointer_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <trivially_copyable Type>
-    constexpr int member_pointer_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <member_pointer Type>
-    constexpr int member_pointer_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int member_pointer_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <member_pointer Type>
-    constexpr int member_pointer_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <trivially_copyable Type>
-    constexpr int member_object_pointer_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <member_object_pointer Type>
-    constexpr int member_object_pointer_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int member_object_pointer_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <member_object_pointer Type>
-    constexpr int member_object_pointer_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <trivially_copyable Type>
-    constexpr int member_function_pointer_over_trivially_copyable()
-    {
-        return 1;
-    }
-
-    template <member_function_pointer Type>
-    constexpr int member_function_pointer_over_trivially_copyable()
-    {
-        return 2;
-    }
-
-    template <standard_layout Type>
-    constexpr int member_function_pointer_over_standard_layout()
-    {
-        return 1;
-    }
-
-    template <member_function_pointer Type>
-    constexpr int member_function_pointer_over_standard_layout()
-    {
-        return 2;
-    }
-
-    template <aggregate Type>
-    constexpr int array_over_aggregate()
-    {
-        return 1;
-    }
-
-    template <array Type>
-    constexpr int array_over_aggregate()
-    {
-        return 2;
-    }
-
-    template <aggregate Type>
-    constexpr int bounded_array_over_aggregate()
-    {
-        return 1;
-    }
-
-    template <bounded_array Type>
-    constexpr int bounded_array_over_aggregate()
-    {
-        return 2;
-    }
-
-    template <aggregate Type>
-    constexpr int unbounded_array_over_aggregate()
-    {
-        return 1;
-    }
-
-    template <unbounded_array Type>
-    constexpr int unbounded_array_over_aggregate()
-    {
-        return 2;
-    }
-} // namespace
-
-TEST(TypeCategory, scalar_subsumes_trivially_copyable)
-{
-    STATIC_EXPECT_EQ(scalar_over_trivially_copyable<int>(), 2);
-    STATIC_EXPECT_EQ(scalar_over_trivially_copyable<int[3]>(), 1);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_type<int>);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_type<plain_class>);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_type<plain_union>);
 }
 
-TEST(TypeCategory, scalar_subsumes_standard_layout)
+TEST(ConceptsEnumType, HoldsForACvQualifiedTypeOfTheCategory)
 {
-    STATIC_EXPECT_EQ(scalar_over_standard_layout<int>(), 2);
-    STATIC_EXPECT_EQ(scalar_over_standard_layout<int[3]>(), 1);
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_type<with_const<unscoped_enum>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_type<with_volatile<unscoped_enum>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_type<with_const_volatile<unscoped_enum>>);
 }
 
-TEST(TypeCategory, arithmetic_subsumes_trivially_copyable)
+TEST(ConceptsEnumType, FailsForACvQualifiedTypeOfAnotherCategory)
 {
-    STATIC_EXPECT_EQ(arithmetic_over_trivially_copyable<int>(), 2);
-    STATIC_EXPECT_EQ(arithmetic_over_trivially_copyable<::std::nullptr_t>(), 1);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_type<with_const<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_type<with_volatile<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_type<with_const_volatile<int>>);
 }
 
-TEST(TypeCategory, arithmetic_subsumes_standard_layout)
+TEST(ConceptsEnumType, FailsForAReferenceToATypeOfTheCategory)
 {
-    STATIC_EXPECT_EQ(arithmetic_over_standard_layout<int>(), 2);
-    STATIC_EXPECT_EQ(arithmetic_over_standard_layout<::std::nullptr_t>(), 1);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_type<lvalue_reference_to<unscoped_enum>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_type<rvalue_reference_to<unscoped_enum>>);
 }
 
-TEST(TypeCategory, null_pointer_subsumes_trivially_copyable)
+TEST(ConceptsEnumType, IsSatisfiedAsAConstantParameterTypeByTheConstantsOfEnumValue)
 {
-    STATIC_EXPECT_EQ(null_pointer_over_trivially_copyable<::std::nullptr_t>(), 2);
-    STATIC_EXPECT_EQ(null_pointer_over_trivially_copyable<int>(), 1);
+    STATIC_EXPECT_TRUE(accepted_as_enum_type_constant<unscoped_value>);
+    STATIC_EXPECT_TRUE(accepted_as_enum_type_constant<scoped_class_enum::scoped_class_value>);
+    STATIC_EXPECT_FALSE(accepted_as_enum_type_constant<0>);
+    STATIC_EXPECT_FALSE(accepted_as_enum_type_constant<'a'>);
+    STATIC_EXPECT_FALSE(accepted_as_enum_type_constant<nullptr>);
 }
 
-TEST(TypeCategory, null_pointer_subsumes_standard_layout)
+TEST(ConceptsEnumType, SubsumesScalar)
 {
-    STATIC_EXPECT_EQ(null_pointer_over_standard_layout<::std::nullptr_t>(), 2);
-    STATIC_EXPECT_EQ(null_pointer_over_standard_layout<int>(), 1);
+    STATIC_EXPECT_EQ(enum_type_over_scalar<unscoped_enum>(), 2);
 }
 
-TEST(TypeCategory, enum_type_subsumes_trivially_copyable)
+TEST(ConceptsEnumType, SubsumesObject)
 {
-    STATIC_EXPECT_EQ(enum_type_over_trivially_copyable<Plain>(), 2);
-    STATIC_EXPECT_EQ(enum_type_over_trivially_copyable<int>(), 1);
+    STATIC_EXPECT_EQ(enum_type_over_object<unscoped_enum>(), 2);
 }
 
-TEST(TypeCategory, enum_type_subsumes_standard_layout)
+TEST(ConceptsEnumType, SubsumesNonReference)
 {
-    STATIC_EXPECT_EQ(enum_type_over_standard_layout<Plain>(), 2);
-    STATIC_EXPECT_EQ(enum_type_over_standard_layout<int>(), 1);
+    STATIC_EXPECT_EQ(enum_type_over_non_reference<unscoped_enum>(), 2);
 }
 
-TEST(TypeCategory, scoped_enum_subsumes_trivially_copyable)
+TEST(ConceptsEnumType, SubsumesTriviallyCopyable)
 {
-    STATIC_EXPECT_EQ(scoped_enum_over_trivially_copyable<Scoped>(), 2);
-    STATIC_EXPECT_EQ(scoped_enum_over_trivially_copyable<int>(), 1);
+    STATIC_EXPECT_EQ(enum_type_over_trivially_copyable<unscoped_enum>(), 2);
 }
 
-TEST(TypeCategory, scoped_enum_subsumes_standard_layout)
+TEST(ConceptsEnumType, SubsumesStandardLayout)
 {
-    STATIC_EXPECT_EQ(scoped_enum_over_standard_layout<Scoped>(), 2);
-    STATIC_EXPECT_EQ(scoped_enum_over_standard_layout<int>(), 1);
+    STATIC_EXPECT_EQ(enum_type_over_standard_layout<unscoped_enum>(), 2);
 }
 
-TEST(TypeCategory, pointer_subsumes_trivially_copyable)
+TEST(ConceptsEnumType, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(enum_type_over_compound<unscoped_enum>(), 2);
+}
+
+TEST(ConceptsEnumValue, HoldsForAConstantOfAnUnscopedEnumeration)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_value<unscoped_value>);
+}
+
+TEST(ConceptsEnumValue, HoldsForAConstantOfAScopedEnumeration)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::enum_value<scoped_class_enum::scoped_class_value>);
+}
+
+TEST(ConceptsEnumValue, FailsForAConstantOfAnotherType)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_value<0>);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_value<'a'>);
+    STATIC_EXPECT_FALSE(::scl::concepts::enum_value<nullptr>);
+}
+
+TEST(ConceptsScopedEnum, HoldsForAnEnumerationDeclaredEnumClass)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scoped_enum<scoped_class_enum>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scoped_enum<scoped_sized_enum>);
+}
+
+TEST(ConceptsScopedEnum, HoldsForAnEnumerationDeclaredEnumStruct)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scoped_enum<scoped_struct_enum>);
+}
+
+TEST(ConceptsScopedEnum, FailsForAnUnscopedEnumeration)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<unscoped_enum>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<unscoped_sized_enum>);
+}
+
+TEST(ConceptsScopedEnum, FailsForATypeThatIsNotAnEnumeration)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<int>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<plain_class>);
+}
+
+TEST(ConceptsScopedEnum, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scoped_enum<with_const<scoped_class_enum>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scoped_enum<with_volatile<scoped_class_enum>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scoped_enum<with_const_volatile<scoped_class_enum>>);
+}
+
+TEST(ConceptsScopedEnum, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<with_const<unscoped_enum>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<with_volatile<unscoped_enum>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<with_const_volatile<unscoped_enum>>);
+}
+
+TEST(ConceptsScopedEnum, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<lvalue_reference_to<scoped_class_enum>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scoped_enum<rvalue_reference_to<scoped_class_enum>>);
+}
+
+TEST(ConceptsScopedEnum, SubsumesEnumType)
+{
+    STATIC_EXPECT_EQ(scoped_enum_over_enum_type<scoped_class_enum>(), 2);
+}
+
+TEST(ConceptsScopedEnum, SubsumesScalar)
+{
+    STATIC_EXPECT_EQ(scoped_enum_over_scalar<scoped_class_enum>(), 2);
+}
+
+TEST(ConceptsScopedEnum, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(scoped_enum_over_object<scoped_class_enum>(), 2);
+}
+
+TEST(ConceptsScopedEnum, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(scoped_enum_over_non_reference<scoped_class_enum>(), 2);
+}
+
+TEST(ConceptsScopedEnum, SubsumesTriviallyCopyable)
+{
+    STATIC_EXPECT_EQ(scoped_enum_over_trivially_copyable<scoped_class_enum>(), 2);
+}
+
+TEST(ConceptsScopedEnum, SubsumesStandardLayout)
+{
+    STATIC_EXPECT_EQ(scoped_enum_over_standard_layout<scoped_class_enum>(), 2);
+}
+
+TEST(ConceptsScopedEnum, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(scoped_enum_over_compound<scoped_class_enum>(), 2);
+}
+
+TEST(ConceptsVoidType, HoldsForVoid) { STATIC_EXPECT_TRUE(::scl::concepts::void_type<void>); }
+
+TEST(ConceptsVoidType, FailsForATypeOtherThanVoid)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::void_type<void *>);
+    STATIC_EXPECT_FALSE(::scl::concepts::void_type<int>);
+    STATIC_EXPECT_FALSE(::scl::concepts::void_type<::std::nullptr_t>);
+}
+
+TEST(ConceptsVoidType, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::void_type<with_const<void>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::void_type<with_volatile<void>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::void_type<with_const_volatile<void>>);
+}
+
+TEST(ConceptsVoidType, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::void_type<with_const<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::void_type<with_volatile<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::void_type<with_const_volatile<int>>);
+}
+
+TEST(ConceptsVoidType, FailsForAReferenceType)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::void_type<lvalue_reference_to<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::void_type<rvalue_reference_to<int>>);
+}
+
+TEST(ConceptsVoidType, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(void_type_over_non_reference<void>(), 2);
+}
+
+TEST(ConceptsVoidType, SubsumesFundamental)
+{
+    STATIC_EXPECT_EQ(void_type_over_fundamental<void>(), 2);
+}
+
+TEST(ConceptsPointer, HoldsForAPointerToAnObject)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::pointer<int *>);
+    STATIC_EXPECT_TRUE(::scl::concepts::pointer<int const *>);
+    STATIC_EXPECT_TRUE(::scl::concepts::pointer<plain_class *>);
+}
+
+TEST(ConceptsPointer, HoldsForAPointerToVoid)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::pointer<void *>);
+}
+
+TEST(ConceptsPointer, HoldsForAPointerToAFunction)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::pointer<void (*)(int)>);
+}
+
+TEST(ConceptsPointer, FailsForAPointerToAMember)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<int plain_class::*>);
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<void (plain_class::*)()>);
+}
+
+TEST(ConceptsPointer, FailsForTheTypeOfNullptr)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<::std::nullptr_t>);
+}
+
+TEST(ConceptsPointer, FailsForATypeThatIsNotAPointer)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<int>);
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<int[3]>);
+}
+
+TEST(ConceptsPointer, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::pointer<with_const<int *>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::pointer<with_volatile<int *>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::pointer<with_const_volatile<int *>>);
+}
+
+TEST(ConceptsPointer, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<with_const<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<with_volatile<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<with_const_volatile<int>>);
+}
+
+TEST(ConceptsPointer, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<lvalue_reference_to<int *>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::pointer<rvalue_reference_to<int *>>);
+}
+
+TEST(ConceptsPointer, SubsumesScalar) { STATIC_EXPECT_EQ(pointer_over_scalar<int *>(), 2); }
+
+TEST(ConceptsPointer, SubsumesObject) { STATIC_EXPECT_EQ(pointer_over_object<int *>(), 2); }
+
+TEST(ConceptsPointer, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(pointer_over_non_reference<int *>(), 2);
+}
+
+TEST(ConceptsPointer, SubsumesTriviallyCopyable)
 {
     STATIC_EXPECT_EQ(pointer_over_trivially_copyable<int *>(), 2);
-    STATIC_EXPECT_EQ(pointer_over_trivially_copyable<int>(), 1);
 }
 
-TEST(TypeCategory, pointer_subsumes_standard_layout)
+TEST(ConceptsPointer, SubsumesStandardLayout)
 {
     STATIC_EXPECT_EQ(pointer_over_standard_layout<int *>(), 2);
-    STATIC_EXPECT_EQ(pointer_over_standard_layout<int>(), 1);
 }
 
-TEST(TypeCategory, member_pointer_subsumes_trivially_copyable)
+TEST(ConceptsPointer, SubsumesCompound) { STATIC_EXPECT_EQ(pointer_over_compound<int *>(), 2); }
+
+TEST(ConceptsNullPointer, HoldsForTheTypeOfNullptr)
 {
-    STATIC_EXPECT_EQ(member_pointer_over_trivially_copyable<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_pointer_over_trivially_copyable<int>(), 1);
+    STATIC_EXPECT_TRUE(::scl::concepts::null_pointer<::std::nullptr_t>);
 }
 
-TEST(TypeCategory, member_pointer_subsumes_standard_layout)
+TEST(ConceptsNullPointer, FailsForAPointer)
 {
-    STATIC_EXPECT_EQ(member_pointer_over_standard_layout<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_pointer_over_standard_layout<int>(), 1);
+    STATIC_EXPECT_FALSE(::scl::concepts::null_pointer<int *>);
+    STATIC_EXPECT_FALSE(::scl::concepts::null_pointer<void *>);
 }
 
-TEST(TypeCategory, member_object_pointer_subsumes_trivially_copyable)
+TEST(ConceptsNullPointer, FailsForAnArithmeticType)
 {
-    STATIC_EXPECT_EQ(member_object_pointer_over_trivially_copyable<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_object_pointer_over_trivially_copyable<int>(), 1);
+    STATIC_EXPECT_FALSE(::scl::concepts::null_pointer<int>);
 }
 
-TEST(TypeCategory, member_object_pointer_subsumes_standard_layout)
+TEST(ConceptsNullPointer, HoldsForACvQualifiedTypeOfTheCategory)
 {
-    STATIC_EXPECT_EQ(member_object_pointer_over_standard_layout<int S::*>(), 2);
-    STATIC_EXPECT_EQ(member_object_pointer_over_standard_layout<int>(), 1);
+    STATIC_EXPECT_TRUE(::scl::concepts::null_pointer<with_const<::std::nullptr_t>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::null_pointer<with_volatile<::std::nullptr_t>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::null_pointer<with_const_volatile<::std::nullptr_t>>);
 }
 
-TEST(TypeCategory, member_function_pointer_subsumes_trivially_copyable)
+TEST(ConceptsNullPointer, FailsForACvQualifiedTypeOfAnotherCategory)
 {
-    STATIC_EXPECT_EQ(member_function_pointer_over_trivially_copyable<int (S::*)()>(), 2);
-    STATIC_EXPECT_EQ(member_function_pointer_over_trivially_copyable<int>(), 1);
+    STATIC_EXPECT_FALSE(::scl::concepts::null_pointer<with_const<int *>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::null_pointer<with_volatile<int *>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::null_pointer<with_const_volatile<int *>>);
 }
 
-TEST(TypeCategory, member_function_pointer_subsumes_standard_layout)
+TEST(ConceptsNullPointer, FailsForAReferenceToATypeOfTheCategory)
 {
-    STATIC_EXPECT_EQ(member_function_pointer_over_standard_layout<int (S::*)()>(), 2);
-    STATIC_EXPECT_EQ(member_function_pointer_over_standard_layout<int>(), 1);
+    STATIC_EXPECT_FALSE(::scl::concepts::null_pointer<lvalue_reference_to<::std::nullptr_t>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::null_pointer<rvalue_reference_to<::std::nullptr_t>>);
 }
 
-TEST(TypeCategory, array_subsumes_aggregate)
+TEST(ConceptsNullPointer, SubsumesFundamental)
 {
-    STATIC_EXPECT_EQ(array_over_aggregate<int[3]>(), 2);
-    STATIC_EXPECT_EQ(array_over_aggregate<S>(), 1);
+    STATIC_EXPECT_EQ(null_pointer_over_fundamental<::std::nullptr_t>(), 2);
 }
 
-TEST(TypeCategory, bounded_array_subsumes_aggregate)
+TEST(ConceptsNullPointer, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(null_pointer_over_non_reference<::std::nullptr_t>(), 2);
+}
+
+TEST(ConceptsNullPointer, SubsumesScalar)
+{
+    STATIC_EXPECT_EQ(null_pointer_over_scalar<::std::nullptr_t>(), 2);
+}
+
+TEST(ConceptsNullPointer, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(null_pointer_over_object<::std::nullptr_t>(), 2);
+}
+
+TEST(ConceptsNullPointer, SubsumesTriviallyCopyable)
+{
+    STATIC_EXPECT_EQ(null_pointer_over_trivially_copyable<::std::nullptr_t>(), 2);
+}
+
+TEST(ConceptsNullPointer, SubsumesStandardLayout)
+{
+    STATIC_EXPECT_EQ(null_pointer_over_standard_layout<::std::nullptr_t>(), 2);
+}
+
+TEST(ConceptsMemberPointer, HoldsForAPointerToADataMember)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::member_pointer<int plain_class::*>);
+}
+
+TEST(ConceptsMemberPointer, HoldsForAPointerToAMemberFunction)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::member_pointer<void (plain_class::*)()>);
+}
+
+TEST(ConceptsMemberPointer, FailsForAPointer)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_pointer<int *>);
+    STATIC_EXPECT_FALSE(::scl::concepts::member_pointer<void (*)()>);
+}
+
+TEST(ConceptsMemberPointer, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::member_pointer<with_const<int plain_class::*>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_pointer<with_volatile<int plain_class::*>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_pointer<with_const_volatile<int plain_class::*>>);
+}
+
+TEST(ConceptsMemberPointer, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_pointer<with_const<int *>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::member_pointer<with_volatile<int *>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::member_pointer<with_const_volatile<int *>>);
+}
+
+TEST(ConceptsMemberPointer, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_pointer<lvalue_reference_to<int plain_class::*>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::member_pointer<rvalue_reference_to<int plain_class::*>>);
+}
+
+TEST(ConceptsMemberPointer, SubsumesScalar)
+{
+    STATIC_EXPECT_EQ(member_pointer_over_scalar<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberPointer, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(member_pointer_over_object<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberPointer, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(member_pointer_over_non_reference<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberPointer, SubsumesTriviallyCopyable)
+{
+    STATIC_EXPECT_EQ(member_pointer_over_trivially_copyable<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberPointer, SubsumesStandardLayout)
+{
+    STATIC_EXPECT_EQ(member_pointer_over_standard_layout<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberPointer, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(member_pointer_over_compound<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberObjectPointer, HoldsForAPointerToADataMember)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::member_object_pointer<int plain_class::*>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_object_pointer<int const plain_class::*>);
+}
+
+TEST(ConceptsMemberObjectPointer, FailsForAPointerToAMemberFunction)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_object_pointer<void (plain_class::*)()>);
+}
+
+TEST(ConceptsMemberObjectPointer, FailsForAPointer)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_object_pointer<int *>);
+}
+
+TEST(ConceptsMemberObjectPointer, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::member_object_pointer<with_const<int plain_class::*>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_object_pointer<with_volatile<int plain_class::*>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_object_pointer<with_const_volatile<int plain_class::*>>);
+}
+
+TEST(ConceptsMemberObjectPointer, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_object_pointer<with_const<void (plain_class::*)()>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::member_object_pointer<with_volatile<void (plain_class::*)()>>);
+    STATIC_EXPECT_FALSE(
+        ::scl::concepts::member_object_pointer<with_const_volatile<void (plain_class::*)()>>);
+}
+
+TEST(ConceptsMemberObjectPointer, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_object_pointer<lvalue_reference_to<int plain_class::*>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::member_object_pointer<rvalue_reference_to<int plain_class::*>>);
+}
+
+TEST(ConceptsMemberObjectPointer, SubsumesMemberPointer)
+{
+    STATIC_EXPECT_EQ(member_object_pointer_over_member_pointer<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberObjectPointer, SubsumesScalar)
+{
+    STATIC_EXPECT_EQ(member_object_pointer_over_scalar<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberObjectPointer, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(member_object_pointer_over_object<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberObjectPointer, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(member_object_pointer_over_non_reference<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberObjectPointer, SubsumesTriviallyCopyable)
+{
+    STATIC_EXPECT_EQ(member_object_pointer_over_trivially_copyable<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberObjectPointer, SubsumesStandardLayout)
+{
+    STATIC_EXPECT_EQ(member_object_pointer_over_standard_layout<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberObjectPointer, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(member_object_pointer_over_compound<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberFunctionPointer, HoldsForAPointerToAMemberFunction)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::member_function_pointer<void (plain_class::*)()>);
+}
+
+TEST(ConceptsMemberFunctionPointer, HoldsWhateverTheQualifiersOfTheMemberFunction)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::member_function_pointer<void (plain_class::*)() const>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_function_pointer<void (plain_class::*)() volatile>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_function_pointer<void (plain_class::*)() &>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_function_pointer<void (plain_class::*)() const &&>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_function_pointer<void (plain_class::*)() noexcept>);
+}
+
+TEST(ConceptsMemberFunctionPointer, FailsForAPointerToADataMember)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_function_pointer<int plain_class::*>);
+}
+
+TEST(ConceptsMemberFunctionPointer, FailsForAPointerToAFunction)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_function_pointer<void (*)()>);
+}
+
+TEST(ConceptsMemberFunctionPointer, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::member_function_pointer<with_const<void (plain_class::*)()>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::member_function_pointer<with_volatile<void (plain_class::*)()>>);
+    STATIC_EXPECT_TRUE(
+        ::scl::concepts::member_function_pointer<with_const_volatile<void (plain_class::*)()>>);
+}
+
+TEST(ConceptsMemberFunctionPointer, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::member_function_pointer<with_const<int plain_class::*>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::member_function_pointer<with_volatile<int plain_class::*>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::member_function_pointer<with_const_volatile<int plain_class::*>>);
+}
+
+TEST(ConceptsMemberFunctionPointer, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(
+        ::scl::concepts::member_function_pointer<lvalue_reference_to<void (plain_class::*)()>>);
+    STATIC_EXPECT_FALSE(
+        ::scl::concepts::member_function_pointer<rvalue_reference_to<void (plain_class::*)()>>);
+}
+
+TEST(ConceptsMemberFunctionPointer, SubsumesMemberPointer)
+{
+    STATIC_EXPECT_EQ(member_function_pointer_over_member_pointer<void (plain_class::*)()>(), 2);
+}
+
+TEST(ConceptsMemberFunctionPointer, SubsumesScalar)
+{
+    STATIC_EXPECT_EQ(member_function_pointer_over_scalar<void (plain_class::*)()>(), 2);
+}
+
+TEST(ConceptsMemberFunctionPointer, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(member_function_pointer_over_object<void (plain_class::*)()>(), 2);
+}
+
+TEST(ConceptsMemberFunctionPointer, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(member_function_pointer_over_non_reference<void (plain_class::*)()>(), 2);
+}
+
+TEST(ConceptsMemberFunctionPointer, SubsumesTriviallyCopyable)
+{
+    STATIC_EXPECT_EQ(member_function_pointer_over_trivially_copyable<void (plain_class::*)()>(), 2);
+}
+
+TEST(ConceptsMemberFunctionPointer, SubsumesStandardLayout)
+{
+    STATIC_EXPECT_EQ(member_function_pointer_over_standard_layout<void (plain_class::*)()>(), 2);
+}
+
+TEST(ConceptsMemberFunctionPointer, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(member_function_pointer_over_compound<void (plain_class::*)()>(), 2);
+}
+
+TEST(ConceptsArray, HoldsForAnArrayWithAKnownBound)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::array<int[3]>);
+    STATIC_EXPECT_TRUE(::scl::concepts::array<int[2][3]>);
+}
+
+TEST(ConceptsArray, HoldsForAnArrayWithAnUnknownBound)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::array<int[]>);
+    STATIC_EXPECT_TRUE(::scl::concepts::array<int[][3]>);
+}
+
+TEST(ConceptsArray, FailsForAPointerToAnElement)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::array<int *>);
+}
+
+TEST(ConceptsArray, FailsForATypeThatIsNotAnArray)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::array<int>);
+    STATIC_EXPECT_FALSE(::scl::concepts::array<plain_class>);
+}
+
+TEST(ConceptsArray, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::array<with_const<int[3]>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::array<with_volatile<int[3]>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::array<with_const_volatile<int[3]>>);
+}
+
+TEST(ConceptsArray, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::array<with_const<int *>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::array<with_volatile<int *>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::array<with_const_volatile<int *>>);
+}
+
+TEST(ConceptsArray, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::array<lvalue_reference_to<int[3]>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::array<rvalue_reference_to<int[3]>>);
+}
+
+TEST(ConceptsArray, SubsumesObject) { STATIC_EXPECT_EQ(array_over_object<int[3]>(), 2); }
+
+TEST(ConceptsArray, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(array_over_non_reference<int[3]>(), 2);
+}
+
+TEST(ConceptsArray, SubsumesCompound) { STATIC_EXPECT_EQ(array_over_compound<int[3]>(), 2); }
+
+TEST(ConceptsArray, SubsumesAggregate) { STATIC_EXPECT_EQ(array_over_aggregate<int[3]>(), 2); }
+
+TEST(ConceptsBoundedArray, HoldsForAnArrayWithAKnownBound)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::bounded_array<int[3]>);
+    STATIC_EXPECT_TRUE(::scl::concepts::bounded_array<plain_class[1]>);
+}
+
+TEST(ConceptsBoundedArray, HoldsForABoundedArrayOfBoundedArrays)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::bounded_array<int[2][3]>);
+}
+
+TEST(ConceptsBoundedArray, FailsForAnArrayWithAnUnknownBound)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::bounded_array<int[]>);
+    STATIC_EXPECT_FALSE(::scl::concepts::bounded_array<int[][3]>);
+}
+
+TEST(ConceptsBoundedArray, FailsForAPointerToAnElement)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::bounded_array<int *>);
+}
+
+TEST(ConceptsBoundedArray, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::bounded_array<with_const<int[3]>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::bounded_array<with_volatile<int[3]>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::bounded_array<with_const_volatile<int[3]>>);
+}
+
+TEST(ConceptsBoundedArray, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::bounded_array<with_const<int[]>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::bounded_array<with_volatile<int[]>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::bounded_array<with_const_volatile<int[]>>);
+}
+
+TEST(ConceptsBoundedArray, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::bounded_array<lvalue_reference_to<int[3]>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::bounded_array<rvalue_reference_to<int[3]>>);
+}
+
+TEST(ConceptsBoundedArray, SubsumesArray)
+{
+    STATIC_EXPECT_EQ(bounded_array_over_array<int[3]>(), 2);
+}
+
+TEST(ConceptsBoundedArray, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(bounded_array_over_object<int[3]>(), 2);
+}
+
+TEST(ConceptsBoundedArray, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(bounded_array_over_non_reference<int[3]>(), 2);
+}
+
+TEST(ConceptsBoundedArray, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(bounded_array_over_compound<int[3]>(), 2);
+}
+
+TEST(ConceptsBoundedArray, SubsumesAggregate)
 {
     STATIC_EXPECT_EQ(bounded_array_over_aggregate<int[3]>(), 2);
-    STATIC_EXPECT_EQ(bounded_array_over_aggregate<int[]>(), 1);
 }
 
-TEST(TypeCategory, unbounded_array_subsumes_aggregate)
+TEST(ConceptsUnboundedArray, HoldsForAnArrayWithAnUnknownBound)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::unbounded_array<int[]>);
+    STATIC_EXPECT_TRUE(::scl::concepts::unbounded_array<plain_class[]>);
+}
+
+TEST(ConceptsUnboundedArray, HoldsForAnUnboundedArrayOfBoundedArrays)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::unbounded_array<int[][3]>);
+}
+
+TEST(ConceptsUnboundedArray, FailsForAnArrayWithAKnownBound)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::unbounded_array<int[3]>);
+    STATIC_EXPECT_FALSE(::scl::concepts::unbounded_array<int[2][3]>);
+}
+
+TEST(ConceptsUnboundedArray, FailsForAPointerToAnElement)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::unbounded_array<int *>);
+}
+
+TEST(ConceptsUnboundedArray, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::unbounded_array<with_const<int[]>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::unbounded_array<with_volatile<int[]>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::unbounded_array<with_const_volatile<int[]>>);
+}
+
+TEST(ConceptsUnboundedArray, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::unbounded_array<with_const<int[3]>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::unbounded_array<with_volatile<int[3]>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::unbounded_array<with_const_volatile<int[3]>>);
+}
+
+TEST(ConceptsUnboundedArray, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::unbounded_array<lvalue_reference_to<int[]>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::unbounded_array<rvalue_reference_to<int[]>>);
+}
+
+TEST(ConceptsUnboundedArray, SubsumesArray)
+{
+    STATIC_EXPECT_EQ(unbounded_array_over_array<int[]>(), 2);
+}
+
+TEST(ConceptsUnboundedArray, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(unbounded_array_over_object<int[]>(), 2);
+}
+
+TEST(ConceptsUnboundedArray, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(unbounded_array_over_non_reference<int[]>(), 2);
+}
+
+TEST(ConceptsUnboundedArray, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(unbounded_array_over_compound<int[]>(), 2);
+}
+
+TEST(ConceptsUnboundedArray, SubsumesAggregate)
 {
     STATIC_EXPECT_EQ(unbounded_array_over_aggregate<int[]>(), 2);
-    STATIC_EXPECT_EQ(unbounded_array_over_aggregate<int[3]>(), 1);
+}
+
+TEST(ConceptsFunction, HoldsForAFunctionType)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::function<void(int)>);
+    STATIC_EXPECT_TRUE(::scl::concepts::function<int()>);
+}
+
+TEST(ConceptsFunction, HoldsForAFunctionTypeWithQualifiersOrNoexcept)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::function<void() const>);
+    STATIC_EXPECT_TRUE(::scl::concepts::function<void() volatile>);
+    STATIC_EXPECT_TRUE(::scl::concepts::function<void() &>);
+    STATIC_EXPECT_TRUE(::scl::concepts::function<void() &&>);
+    STATIC_EXPECT_TRUE(::scl::concepts::function<void() noexcept>);
+}
+
+TEST(ConceptsFunction, FailsForAPointerToAFunction)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::function<void (*)(int)>);
+}
+
+TEST(ConceptsFunction, FailsForAReferenceToAFunction)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::function<void (&)(int)>);
+    STATIC_EXPECT_FALSE(::scl::concepts::function<void (&&)(int)>);
+}
+
+TEST(ConceptsFunction, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(function_over_non_reference<void()>(), 2);
+}
+
+TEST(ConceptsFunction, SubsumesCompound) { STATIC_EXPECT_EQ(function_over_compound<void()>(), 2); }
+
+TEST(ConceptsClassType, HoldsForAClass)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::class_type<plain_class>);
+}
+
+TEST(ConceptsClassType, HoldsForTheClosureTypeOfALambda)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::class_type<closure>);
+}
+
+TEST(ConceptsClassType, FailsForAUnion)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<plain_union>);
+}
+
+TEST(ConceptsClassType, FailsForAnEnumeration)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<unscoped_enum>);
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<scoped_class_enum>);
+}
+
+TEST(ConceptsClassType, FailsForATypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<int>);
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<plain_class *>);
+}
+
+TEST(ConceptsClassType, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::class_type<with_const<plain_class>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::class_type<with_volatile<plain_class>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::class_type<with_const_volatile<plain_class>>);
+}
+
+TEST(ConceptsClassType, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<with_const<plain_union>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<with_volatile<plain_union>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<with_const_volatile<plain_union>>);
+}
+
+TEST(ConceptsClassType, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<lvalue_reference_to<plain_class>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::class_type<rvalue_reference_to<plain_class>>);
+}
+
+TEST(ConceptsClassType, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(class_type_over_object<plain_class>(), 2);
+}
+
+TEST(ConceptsClassType, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(class_type_over_non_reference<plain_class>(), 2);
+}
+
+TEST(ConceptsClassType, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(class_type_over_compound<plain_class>(), 2);
+}
+
+TEST(ConceptsUnionType, HoldsForAUnion)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::union_type<plain_union>);
+}
+
+TEST(ConceptsUnionType, FailsForAClass)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<plain_class>);
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<closure>);
+}
+
+TEST(ConceptsUnionType, FailsForATypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<int>);
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<unscoped_enum>);
+}
+
+TEST(ConceptsUnionType, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::union_type<with_const<plain_union>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::union_type<with_volatile<plain_union>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::union_type<with_const_volatile<plain_union>>);
+}
+
+TEST(ConceptsUnionType, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<with_const<plain_class>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<with_volatile<plain_class>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<with_const_volatile<plain_class>>);
+}
+
+TEST(ConceptsUnionType, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<lvalue_reference_to<plain_union>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::union_type<rvalue_reference_to<plain_union>>);
+}
+
+TEST(ConceptsUnionType, SubsumesObject)
+{
+    STATIC_EXPECT_EQ(union_type_over_object<plain_union>(), 2);
+}
+
+TEST(ConceptsUnionType, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(union_type_over_non_reference<plain_union>(), 2);
+}
+
+TEST(ConceptsUnionType, SubsumesCompound)
+{
+    STATIC_EXPECT_EQ(union_type_over_compound<plain_union>(), 2);
+}
+
+TEST(ConceptsFundamental, HoldsForAnArithmeticType)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::fundamental<int>);
+    STATIC_EXPECT_TRUE(::scl::concepts::fundamental<double>);
+    STATIC_EXPECT_TRUE(::scl::concepts::fundamental<bool>);
+}
+
+TEST(ConceptsFundamental, HoldsForVoid) { STATIC_EXPECT_TRUE(::scl::concepts::fundamental<void>); }
+
+TEST(ConceptsFundamental, HoldsForTheTypeOfNullptr)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::fundamental<::std::nullptr_t>);
+}
+
+TEST(ConceptsFundamental, FailsForACompoundType)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<int *>);
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<unscoped_enum>);
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<plain_class>);
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<int[3]>);
+}
+
+TEST(ConceptsFundamental, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::fundamental<with_const<int>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::fundamental<with_volatile<int>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::fundamental<with_const_volatile<int>>);
+}
+
+TEST(ConceptsFundamental, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<with_const<plain_class>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<with_volatile<plain_class>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<with_const_volatile<plain_class>>);
+}
+
+TEST(ConceptsFundamental, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<lvalue_reference_to<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::fundamental<rvalue_reference_to<int>>);
+}
+
+TEST(ConceptsFundamental, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(fundamental_over_non_reference<int>(), 2);
+}
+
+TEST(ConceptsArithmetic, HoldsForAnIntegralType)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<int>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<unsigned long long>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<short>);
+}
+
+TEST(ConceptsArithmetic, HoldsForAFloatingPointType)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<float>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<double>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<long double>);
+}
+
+TEST(ConceptsArithmetic, HoldsForBool) { STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<bool>); }
+
+TEST(ConceptsArithmetic, HoldsForACharacterType)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<char>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<wchar_t>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<char8_t>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<char16_t>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<char32_t>);
+}
+
+TEST(ConceptsArithmetic, FailsForAnEnumeration)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<unscoped_enum>);
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<scoped_class_enum>);
+}
+
+TEST(ConceptsArithmetic, FailsForATypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<int *>);
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<::std::nullptr_t>);
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<void>);
+}
+
+TEST(ConceptsArithmetic, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<with_const<int>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<with_volatile<int>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::arithmetic<with_const_volatile<int>>);
+}
+
+TEST(ConceptsArithmetic, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<with_const<unscoped_enum>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<with_volatile<unscoped_enum>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<with_const_volatile<unscoped_enum>>);
+}
+
+TEST(ConceptsArithmetic, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<lvalue_reference_to<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::arithmetic<rvalue_reference_to<int>>);
+}
+
+TEST(ConceptsArithmetic, IsUnorderedWithStdIntegral)
+{
+    STATIC_EXPECT_FALSE(integral_or_arithmetic_resolves<int>);
+}
+
+TEST(ConceptsArithmetic, SubsumesFundamental)
+{
+    STATIC_EXPECT_EQ(arithmetic_over_fundamental<int>(), 2);
+}
+
+TEST(ConceptsArithmetic, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(arithmetic_over_non_reference<int>(), 2);
+}
+
+TEST(ConceptsArithmetic, SubsumesScalar) { STATIC_EXPECT_EQ(arithmetic_over_scalar<int>(), 2); }
+
+TEST(ConceptsArithmetic, SubsumesObject) { STATIC_EXPECT_EQ(arithmetic_over_object<int>(), 2); }
+
+TEST(ConceptsArithmetic, SubsumesTriviallyCopyable)
+{
+    STATIC_EXPECT_EQ(arithmetic_over_trivially_copyable<int>(), 2);
+}
+
+TEST(ConceptsArithmetic, SubsumesStandardLayout)
+{
+    STATIC_EXPECT_EQ(arithmetic_over_standard_layout<int>(), 2);
+}
+
+TEST(ConceptsScalar, HoldsForAnArithmeticType)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<int>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<double>);
+}
+
+TEST(ConceptsScalar, HoldsForAnEnumeration)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<unscoped_enum>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<scoped_class_enum>);
+}
+
+TEST(ConceptsScalar, HoldsForAPointer)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<int *>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<void (*)()>);
+}
+
+TEST(ConceptsScalar, HoldsForAPointerToAMember)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<int plain_class::*>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<void (plain_class::*)()>);
+}
+
+TEST(ConceptsScalar, HoldsForTheTypeOfNullptr)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<::std::nullptr_t>);
+}
+
+TEST(ConceptsScalar, FailsForATypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<plain_class>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<plain_union>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<int[3]>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<void>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<void()>);
+}
+
+TEST(ConceptsScalar, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<with_const<int>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<with_volatile<int>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::scalar<with_const_volatile<int>>);
+}
+
+TEST(ConceptsScalar, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<with_const<plain_class>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<with_volatile<plain_class>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<with_const_volatile<plain_class>>);
+}
+
+TEST(ConceptsScalar, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<lvalue_reference_to<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::scalar<rvalue_reference_to<int>>);
+}
+
+TEST(ConceptsScalar, SubsumesObject) { STATIC_EXPECT_EQ(scalar_over_object<int>(), 2); }
+
+TEST(ConceptsScalar, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(scalar_over_non_reference<int>(), 2);
+}
+
+TEST(ConceptsScalar, SubsumesTriviallyCopyable)
+{
+    STATIC_EXPECT_EQ(scalar_over_trivially_copyable<int>(), 2);
+}
+
+TEST(ConceptsScalar, SubsumesStandardLayout)
+{
+    STATIC_EXPECT_EQ(scalar_over_standard_layout<int>(), 2);
+}
+
+TEST(ConceptsObject, HoldsForAScalarType)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::object<int>);
+    STATIC_EXPECT_TRUE(::scl::concepts::object<int *>);
+    STATIC_EXPECT_TRUE(::scl::concepts::object<unscoped_enum>);
+}
+
+TEST(ConceptsObject, HoldsForAnArrayType)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::object<int[3]>);
+    STATIC_EXPECT_TRUE(::scl::concepts::object<int[]>);
+}
+
+TEST(ConceptsObject, HoldsForAClassOrAUnion)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::object<plain_class>);
+    STATIC_EXPECT_TRUE(::scl::concepts::object<plain_union>);
+}
+
+TEST(ConceptsObject, FailsForAFunctionType)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::object<void()>);
+}
+
+TEST(ConceptsObject, FailsForVoid) { STATIC_EXPECT_FALSE(::scl::concepts::object<void>); }
+
+TEST(ConceptsObject, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::object<with_const<int>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::object<with_volatile<int>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::object<with_const_volatile<int>>);
+}
+
+TEST(ConceptsObject, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::object<with_const<void>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::object<with_volatile<void>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::object<with_const_volatile<void>>);
+}
+
+TEST(ConceptsObject, FailsForAReferenceToATypeOfTheCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::object<lvalue_reference_to<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::object<rvalue_reference_to<int>>);
+}
+
+TEST(ConceptsObject, IsUnorderedWithCompound)
+{
+    STATIC_EXPECT_FALSE(object_or_compound_resolves<int *>);
+}
+
+TEST(ConceptsObject, SubsumesNonReference)
+{
+    STATIC_EXPECT_EQ(object_over_non_reference<int>(), 2);
+}
+
+TEST(ConceptsCompound, HoldsForAPointer) { STATIC_EXPECT_TRUE(::scl::concepts::compound<int *>); }
+
+TEST(ConceptsCompound, HoldsForAPointerToAMember)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<int plain_class::*>);
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<void (plain_class::*)()>);
+}
+
+TEST(ConceptsCompound, HoldsForAReference)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<int &>);
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<int &&>);
+}
+
+TEST(ConceptsCompound, HoldsForAnArray)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<int[3]>);
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<int[]>);
+}
+
+TEST(ConceptsCompound, HoldsForAFunction) { STATIC_EXPECT_TRUE(::scl::concepts::compound<void()>); }
+
+TEST(ConceptsCompound, HoldsForAClassOrAUnion)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<plain_class>);
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<plain_union>);
+}
+
+TEST(ConceptsCompound, HoldsForAnEnumeration)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<unscoped_enum>);
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<scoped_class_enum>);
+}
+
+TEST(ConceptsCompound, FailsForAFundamentalType)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::compound<int>);
+    STATIC_EXPECT_FALSE(::scl::concepts::compound<double>);
+    STATIC_EXPECT_FALSE(::scl::concepts::compound<void>);
+    STATIC_EXPECT_FALSE(::scl::concepts::compound<::std::nullptr_t>);
+}
+
+TEST(ConceptsCompound, HoldsForACvQualifiedTypeOfTheCategory)
+{
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<with_const<int *>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<with_volatile<int *>>);
+    STATIC_EXPECT_TRUE(::scl::concepts::compound<with_const_volatile<int *>>);
+}
+
+TEST(ConceptsCompound, FailsForACvQualifiedTypeOfAnotherCategory)
+{
+    STATIC_EXPECT_FALSE(::scl::concepts::compound<with_const<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::compound<with_volatile<int>>);
+    STATIC_EXPECT_FALSE(::scl::concepts::compound<with_const_volatile<int>>);
 }
 
 #if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
 namespace
 {
-    template <implicit_lifetime Type>
+    template <::scl::concepts::implicit_lifetime Type>
     constexpr int scalar_over_implicit_lifetime()
     {
         return 1;
     }
 
-    template <scalar Type>
+    template <::scl::concepts::scalar Type>
     constexpr int scalar_over_implicit_lifetime()
     {
         return 2;
     }
 
-    template <implicit_lifetime Type>
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int arithmetic_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::arithmetic Type>
+    constexpr int arithmetic_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int null_pointer_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::null_pointer Type>
+    constexpr int null_pointer_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int enum_type_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::enum_type Type>
+    constexpr int enum_type_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int scoped_enum_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::scoped_enum Type>
+    constexpr int scoped_enum_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int pointer_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::pointer Type>
+    constexpr int pointer_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int member_pointer_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_pointer Type>
+    constexpr int member_pointer_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int member_object_pointer_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_object_pointer Type>
+    constexpr int member_object_pointer_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int member_function_pointer_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::member_function_pointer Type>
+    constexpr int member_function_pointer_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
     constexpr int array_over_implicit_lifetime()
     {
         return 1;
     }
 
-    template <array Type>
+    template <::scl::concepts::array Type>
     constexpr int array_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int bounded_array_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::bounded_array Type>
+    constexpr int bounded_array_over_implicit_lifetime()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::implicit_lifetime Type>
+    constexpr int unbounded_array_over_implicit_lifetime()
+    {
+        return 1;
+    }
+
+    template <::scl::concepts::unbounded_array Type>
+    constexpr int unbounded_array_over_implicit_lifetime()
     {
         return 2;
     }
 } // namespace
 
-TEST(TypeCategory, scalar_subsumes_implicit_lifetime)
+TEST(ConceptsScalar, SubsumesImplicitLifetime)
 {
     STATIC_EXPECT_EQ(scalar_over_implicit_lifetime<int>(), 2);
-    STATIC_EXPECT_EQ(scalar_over_implicit_lifetime<S>(), 1);
 }
 
-TEST(TypeCategory, array_subsumes_implicit_lifetime)
+TEST(ConceptsArithmetic, SubsumesImplicitLifetime)
 {
-    STATIC_EXPECT_EQ(array_over_implicit_lifetime<NonAggregate[2]>(), 2);
-    STATIC_EXPECT_EQ(array_over_implicit_lifetime<S>(), 1);
+    STATIC_EXPECT_EQ(arithmetic_over_implicit_lifetime<int>(), 2);
+}
+
+TEST(ConceptsNullPointer, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(null_pointer_over_implicit_lifetime<::std::nullptr_t>(), 2);
+}
+
+TEST(ConceptsEnumType, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(enum_type_over_implicit_lifetime<unscoped_enum>(), 2);
+}
+
+TEST(ConceptsScopedEnum, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(scoped_enum_over_implicit_lifetime<scoped_class_enum>(), 2);
+}
+
+TEST(ConceptsPointer, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(pointer_over_implicit_lifetime<int *>(), 2);
+}
+
+TEST(ConceptsMemberPointer, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(member_pointer_over_implicit_lifetime<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberObjectPointer, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(member_object_pointer_over_implicit_lifetime<int plain_class::*>(), 2);
+}
+
+TEST(ConceptsMemberFunctionPointer, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(member_function_pointer_over_implicit_lifetime<void (plain_class::*)()>(), 2);
+}
+
+TEST(ConceptsArray, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(array_over_implicit_lifetime<int[3]>(), 2);
+}
+
+TEST(ConceptsBoundedArray, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(bounded_array_over_implicit_lifetime<int[3]>(), 2);
+}
+
+TEST(ConceptsUnboundedArray, SubsumesImplicitLifetime)
+{
+    STATIC_EXPECT_EQ(unbounded_array_over_implicit_lifetime<int[]>(), 2);
 }
 #endif
