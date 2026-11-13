@@ -34,8 +34,9 @@ namespace scl::concepts
      *
      * The concept is declared through no other concept, so its constraint is not stricter than
      * the constraint of any other concept of the group. The concepts ::scl::concepts::object,
-     * ::scl::concepts::fundamental, ::scl::concepts::function and ::scl::concepts::void_type are
-     * declared through it, and their constraints are stricter than its constraint.
+     * ::scl::concepts::fundamental, ::scl::concepts::function, ::scl::concepts::void_type,
+     * ::scl::concepts::const_qualified and ::scl::concepts::volatile_qualified are declared through
+     * it, and their constraints are stricter than its constraint.
      *
      * @snippet concepts/reference/concepts_reference_example.cpp non_reference
      * @snippet concepts/reference/concepts_reference_example.cpp box

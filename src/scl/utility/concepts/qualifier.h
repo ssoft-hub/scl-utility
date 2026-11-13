@@ -6,6 +6,8 @@
  * @ingroup scl_utility_concepts
  */
 
+#include <scl/utility/concepts/type_category.h>
+
 #include <type_traits>
 
 namespace scl::concepts
@@ -22,8 +24,12 @@ namespace scl::concepts
      * `int const &` satisfy it, since a reference cannot carry qualifiers of its own. The result of
      * the check equals the value of the trait `std::is_const_v<T>`.
      *
-     * The concept is declared through no other concept, so its constraint is not stricter than
-     * the constraint of any other concept of the group.
+     * A reference type cannot carry cv-qualifiers, so every `const` type satisfies
+     * ::scl::concepts::non_reference, and the concept is declared through
+     * ::scl::concepts::non_reference. The constraint of the concept is therefore stricter than
+     * the constraint of ::scl::concepts::non_reference, and for a `const` type the compiler chooses
+     * a function template constrained by the concept over one constrained by
+     * ::scl::concepts::non_reference.
      *
      * @snippet concepts/qualifier/concepts_qualifier_example.cpp const_qualified
      * @snippet concepts/qualifier/concepts_qualifier_example.cpp reset
@@ -31,7 +37,7 @@ namespace scl::concepts
      * @tparam T Type to check.
      */
     template <typename T>
-    concept const_qualified = ::std::is_const_v<T>;
+    concept const_qualified = ::scl::concepts::non_reference<T> && ::std::is_const_v<T>;
 
     /**
      * @brief Satisfied by a type with the top-level qualifier `volatile`.
@@ -42,15 +48,17 @@ namespace scl::concepts
      * `int volatile[3]` satisfy the concept, while the types `int volatile *` and `int volatile &`
      * do not. The result of the check equals the value of the trait `std::is_volatile_v<T>`.
      *
-     * The concept is declared through no other concept, so its constraint is not stricter than
-     * the constraint of any other concept of the group.
+     * A reference type cannot carry cv-qualifiers, so the concept is declared through
+     * ::scl::concepts::non_reference, and its constraint is stricter than the constraint of
+     * ::scl::concepts::non_reference. For a `volatile` type the compiler chooses a function
+     * template constrained by the concept over one constrained by ::scl::concepts::non_reference.
      *
      * @snippet concepts/qualifier/concepts_qualifier_example.cpp volatile_qualified
      *
      * @tparam T Type to check.
      */
     template <typename T>
-    concept volatile_qualified = ::std::is_volatile_v<T>;
+    concept volatile_qualified = ::scl::concepts::non_reference<T> && ::std::is_volatile_v<T>;
 
     /**
      * @brief Satisfied by a type with both top-level qualifiers `const` and `volatile`.
@@ -62,10 +70,11 @@ namespace scl::concepts
      *
      * The concept is declared through ::scl::concepts::const_qualified and
      * ::scl::concepts::volatile_qualified, so its constraint is stricter than the constraints of
-     * those concepts. For a type with both qualifiers the compiler chooses a function template
-     * constrained by the concept over one constrained by either of them. If no template constrained
-     * by the concept is declared, and both a template constrained by
-     * ::scl::concepts::const_qualified and a template constrained by
+     * ::scl::concepts::const_qualified, ::scl::concepts::volatile_qualified and
+     * ::scl::concepts::non_reference. For a type with both qualifiers the compiler chooses
+     * a function template constrained by the concept over one constrained by any of those three
+     * concepts. If no template constrained by the concept is declared, and both a template
+     * constrained by ::scl::concepts::const_qualified and a template constrained by
      * ::scl::concepts::volatile_qualified accept such a type, the compiler rejects the call as
      * ambiguous.
      *

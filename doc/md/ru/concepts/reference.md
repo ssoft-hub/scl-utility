@@ -86,8 +86,9 @@ namespace scl::concepts
 - **Концепт `non_reference`.** Концепт `non_reference` не объявлен через другие концепты, поэтому
   его ограничение не строже ограничения ни одного другого концепта группы. При этом концепты
   `object`, `fundamental`, `function` и `void_type` со страницы
-  [Концепты категорий типов](type_category.md) объявлены через концепт `non_reference`, и их
-  ограничения строже ограничения концепта `non_reference`.
+  [Концепты категорий типов](type_category.md) и концепты `const_qualified` и `volatile_qualified`
+  со страницы [Концепты cv-квалификаторов](qualifier.md) объявлены через концепт `non_reference`,
+  и их ограничения строже ограничения концепта `non_reference`.
 
 ## Примеры
 

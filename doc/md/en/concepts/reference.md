@@ -87,8 +87,10 @@ namespace scl::concepts
 - **The concept `non_reference`.** The concept `non_reference` is declared through no other concept,
   so its constraint is not stricter than the constraint of any other concept of the group.
   The concepts `object`, `fundamental`, `function` and `void_type` of the page
-  [Concepts of type categories](type_category.md), however, are declared through the concept
-  `non_reference`, and their constraints are stricter than the constraint of `non_reference`.
+  [Concepts of type categories](type_category.md) and the concepts `const_qualified` and
+  `volatile_qualified` of the page [Concepts of cv-qualifiers](qualifier.md), however, are declared
+  through the concept `non_reference`, and their constraints are stricter than the constraint of
+  `non_reference`.
 
 ## Examples
 
