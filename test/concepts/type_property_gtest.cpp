@@ -47,14 +47,6 @@ namespace
     };
 } // namespace
 
-TEST(TypeProperty, trivial)
-{
-    STATIC_EXPECT_TRUE(trivial<int>);
-    STATIC_EXPECT_TRUE(trivial<Trivial>);
-    STATIC_EXPECT_FALSE(trivial<NonTrivial>);
-    STATIC_EXPECT_FALSE(trivial<PolymorphicBase>);
-}
-
 TEST(TypeProperty, trivially_copyable)
 {
     STATIC_EXPECT_TRUE(trivially_copyable<int>);
@@ -69,11 +61,11 @@ TEST(TypeProperty, standard_layout)
     STATIC_EXPECT_FALSE(standard_layout<PolymorphicBase>);
 }
 
-TEST(TypeProperty, empty_type)
+TEST(TypeProperty, empty)
 {
-    STATIC_EXPECT_TRUE(empty_type<Empty>);
-    STATIC_EXPECT_FALSE(empty_type<int>);
-    STATIC_EXPECT_FALSE(empty_type<Trivial>);
+    STATIC_EXPECT_TRUE(empty<Empty>);
+    STATIC_EXPECT_FALSE(empty<int>);
+    STATIC_EXPECT_FALSE(empty<Trivial>);
 }
 
 TEST(TypeProperty, polymorphic)
@@ -83,18 +75,18 @@ TEST(TypeProperty, polymorphic)
     STATIC_EXPECT_FALSE(polymorphic<Trivial>);
 }
 
-TEST(TypeProperty, abstract_type)
+TEST(TypeProperty, abstract)
 {
-    STATIC_EXPECT_TRUE(abstract_type<Abstract>);
-    STATIC_EXPECT_FALSE(abstract_type<PolymorphicBase>);
-    STATIC_EXPECT_FALSE(abstract_type<int>);
+    STATIC_EXPECT_TRUE(abstract<Abstract>);
+    STATIC_EXPECT_FALSE(abstract<PolymorphicBase>);
+    STATIC_EXPECT_FALSE(abstract<int>);
 }
 
-TEST(TypeProperty, final_type)
+TEST(TypeProperty, final)
 {
-    STATIC_EXPECT_TRUE(final_type<Final>);
-    STATIC_EXPECT_FALSE(final_type<int>);
-    STATIC_EXPECT_FALSE(final_type<Trivial>);
+    STATIC_EXPECT_TRUE(final<Final>);
+    STATIC_EXPECT_FALSE(final<int>);
+    STATIC_EXPECT_FALSE(final<Trivial>);
 }
 
 TEST(TypeProperty, aggregate)

@@ -30,7 +30,7 @@ namespace scl
 {
     class any_argument;
 
-    template <::scl::concepts::object_type Type>
+    template <::scl::concepts::object Type>
     [[nodiscard]]
     SCL_HOT
     constexpr Type * any_cast(any_argument const * arg) noexcept;
@@ -178,13 +178,13 @@ namespace scl
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
 
-        template <::scl::concepts::object_type Type>
+        template <::scl::concepts::object Type>
         friend constexpr Type * scl::any_cast(any_argument const * arg) noexcept;
     };
 
     using any_arg = any_argument const &;
 
-    template <::scl::concepts::object_type Type>
+    template <::scl::concepts::object Type>
     [[nodiscard]]
     SCL_HOT
     constexpr Type * any_cast(any_argument const * arg) noexcept
@@ -225,7 +225,7 @@ namespace scl
     // ability to answer during constant evaluation. Reading supplies the `const` itself,
     // as the view does.
     // Not lifetime-bound: the result is a copy, and it outlives the argument by design.
-    template <::scl::concepts::object_type Type, typename ValueArgument>
+    template <::scl::concepts::object Type, typename ValueArgument>
     [[nodiscard]]
     constexpr Type any_cast(ValueArgument & arg)
         requires(::std::same_as<::std::remove_cv_t<ValueArgument>, any_argument>)

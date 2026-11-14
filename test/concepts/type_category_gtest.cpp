@@ -133,12 +133,12 @@ TEST(TypeCategory, member_function_pointer)
     STATIC_EXPECT_FALSE(member_function_pointer<int *>);
 }
 
-TEST(TypeCategory, array_type)
+TEST(TypeCategory, array)
 {
-    STATIC_EXPECT_TRUE(array_type<int[3]>);
-    STATIC_EXPECT_TRUE(array_type<int[]>);
-    STATIC_EXPECT_FALSE(array_type<int>);
-    STATIC_EXPECT_FALSE(array_type<int *>);
+    STATIC_EXPECT_TRUE(array<int[3]>);
+    STATIC_EXPECT_TRUE(array<int[]>);
+    STATIC_EXPECT_FALSE(array<int>);
+    STATIC_EXPECT_FALSE(array<int *>);
 }
 
 TEST(TypeCategory, bounded_array)
@@ -155,12 +155,12 @@ TEST(TypeCategory, unbounded_array)
     STATIC_EXPECT_FALSE(unbounded_array<int>);
 }
 
-TEST(TypeCategory, function_type)
+TEST(TypeCategory, function)
 {
-    STATIC_EXPECT_TRUE(function_type<void()>);
-    STATIC_EXPECT_TRUE(function_type<int(int, double)>);
-    STATIC_EXPECT_FALSE(function_type<int>);
-    STATIC_EXPECT_FALSE(function_type<void (*)()>);
+    STATIC_EXPECT_TRUE(function<void()>);
+    STATIC_EXPECT_TRUE(function<int(int, double)>);
+    STATIC_EXPECT_FALSE(function<int>);
+    STATIC_EXPECT_FALSE(function<void (*)()>);
 }
 
 TEST(TypeCategory, class_type)
@@ -209,15 +209,15 @@ TEST(TypeCategory, scalar)
     STATIC_EXPECT_FALSE(scalar<void()>);
 }
 
-TEST(TypeCategory, object_type)
+TEST(TypeCategory, object)
 {
-    STATIC_EXPECT_TRUE(object_type<int>);
-    STATIC_EXPECT_TRUE(object_type<S>);
-    STATIC_EXPECT_TRUE(object_type<int *>);
-    STATIC_EXPECT_TRUE(object_type<int[3]>);
-    STATIC_EXPECT_FALSE(object_type<void>);
-    STATIC_EXPECT_FALSE(object_type<void()>);
-    STATIC_EXPECT_FALSE(object_type<int &>);
+    STATIC_EXPECT_TRUE(object<int>);
+    STATIC_EXPECT_TRUE(object<S>);
+    STATIC_EXPECT_TRUE(object<int *>);
+    STATIC_EXPECT_TRUE(object<int[3]>);
+    STATIC_EXPECT_FALSE(object<void>);
+    STATIC_EXPECT_FALSE(object<void()>);
+    STATIC_EXPECT_FALSE(object<int &>);
 }
 
 TEST(TypeCategory, compound)

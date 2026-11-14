@@ -118,14 +118,14 @@ namespace scl
         friend class ::scl::detail::any_base;
         friend struct ::scl::detail::any_handle_access;
 
-        template <::scl::concepts::object_type Type, typename View>
+        template <::scl::concepts::object Type, typename View>
         friend constexpr Type const * any_cast(View * view) noexcept
             requires(::std::same_as<::std::remove_cv_t<View>, any_view>);
     };
 
     // View is deduced so that a cv-qualified handle binds at all; its qualification governs
     // the handle, not the referent, so it takes no part in the request.
-    template <::scl::concepts::object_type Type, typename View>
+    template <::scl::concepts::object Type, typename View>
     [[nodiscard]]
     SCL_HOT
     constexpr Type const * any_cast(View * view) noexcept

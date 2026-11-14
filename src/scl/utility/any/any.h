@@ -27,7 +27,7 @@ namespace scl
     class any_mutable_view;
     class any_view;
 
-    template <::scl::concepts::object_type ValueType, typename AnyType>
+    template <::scl::concepts::object ValueType, typename AnyType>
     [[nodiscard]]
     constexpr auto any_cast(AnyType * any) noexcept
         -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
@@ -612,7 +612,7 @@ namespace scl
         friend class ::scl::any_mutable_view;
         friend class ::scl::any_view;
 
-        template <::scl::concepts::object_type ValueType, typename AnyType>
+        template <::scl::concepts::object ValueType, typename AnyType>
         friend constexpr auto ::scl::any_cast(AnyType * any) noexcept
             -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
             requires(::std::is_base_of_v<detail::any_owner_tag, ::std::remove_cv_t<AnyType>>);
@@ -620,7 +620,7 @@ namespace scl
 
     using any = basic_any<>;
 
-    template <::scl::concepts::object_type ValueType, typename AnyType>
+    template <::scl::concepts::object ValueType, typename AnyType>
     [[nodiscard]]
     constexpr auto any_cast(AnyType * any) noexcept
         -> ::std::conditional_t<::std::is_const_v<AnyType>, ValueType const *, ValueType *>
