@@ -9,14 +9,22 @@
 namespace scl::concepts
 {
     template <typename T>
-    concept reference = ::std::is_reference_v<T>;
+    concept reference = ::scl::concepts::compound<T> && ::std::is_reference_v<T>;
 
     template <typename T>
-    concept lvalue_reference = ::std::is_lvalue_reference_v<T>;
+    concept lvalue_reference = ::scl::concepts::reference<T> && ::std::is_lvalue_reference_v<T>;
 
     template <typename T>
-    concept rvalue_reference = ::std::is_rvalue_reference_v<T>;
+    concept rvalue_reference = ::scl::concepts::reference<T> && ::std::is_rvalue_reference_v<T>;
+}
+```
 
+Концепт `non_reference`, обратный концепту `reference`, объявлен в заголовочном файле
+[`type_category.h`](type_category.md), который включается заголовочным файлом `reference.h`:
+
+```cpp
+namespace scl::concepts
+{
     template <typename T>
     concept non_reference = !::std::is_reference_v<T>;
 }
@@ -62,12 +70,25 @@ namespace scl::concepts
 
 ### Выбор перегрузки
 
-- **Правило.** Каждый концепт ссылочных типов объявлен только через своё свойство, поэтому его
-  ограничение не строже ограничения ни одного другого концепта группы.
-- **Неоднозначный выбор.** Если тип удовлетворяет двум концептам, а для вызова подходят шаблоны
-  функции, ограниченные этими концептами, компилятор отклоняет вызов как неоднозначный. Например,
-  так происходит с lvalue-ссылкой и шаблонами, ограниченными концептами `reference`
-  и `lvalue_reference`.
+- **Правило.** Каждый концепт ссылочных типов объявлен через концепт [`compound`](type_category.md)
+  или через концепт `reference`, поэтому его ограничение строже ограничений этих концептов.
+  Если проверяемый тип удовлетворяет двум концептам и ограничение одного из них строже, компилятор
+  выбирает шаблон функции, ограниченный более строгим концептом.
+- **Более слабые ограничения.** Для каждого концепта перечислены концепты с более слабым
+  ограничением:
+
+| Концепт | Концепты с более слабым ограничением |
+|---|---|
+| `reference` | `compound` |
+| `lvalue_reference` | `reference`, `compound` |
+| `rvalue_reference` | `reference`, `compound` |
+
+- **Концепт `non_reference`.** Концепт `non_reference` не объявлен через другие концепты, поэтому
+  его ограничение не строже ограничения ни одного другого концепта группы. При этом концепты
+  `object`, `fundamental`, `function` и `void_type` со страницы
+  [Концепты категорий типов](type_category.md) и концепты `const_qualified` и `volatile_qualified`
+  со страницы [Концепты cv-квалификаторов](qualifier.md) объявлены через концепт `non_reference`,
+  и их ограничения строже ограничения концепта `non_reference`.
 
 ## Примеры
 
@@ -138,6 +159,25 @@ struct box
 };
 ```
 
+Выбор перегрузки по виду ссылки. Для lvalue-ссылки компилятор выбирает перегрузку, ограниченную
+концептом `lvalue_reference`, а для rvalue-ссылки выбирает перегрузку, ограниченную концептом
+`reference`:
+
+<!-- snippet: example/concepts/reference/concepts_reference_example.cpp binding -->
+```cpp
+template <scl::concepts::reference Type>
+constexpr std::string_view binding()
+{
+    return "reference";
+}
+
+template <scl::concepts::lvalue_reference Type>
+constexpr std::string_view binding()
+{
+    return "lvalue reference";
+}
+```
+
 <!-- snippet: example/concepts/reference/concepts_reference_example.cpp use -->
 ```cpp
     std::string text{"text"};
@@ -146,6 +186,9 @@ struct box
 
     box<std::string> const label{text};
     std::cout << label.value << '\n'; // text
+
+    std::cout << binding<int &>() << '\n';  // lvalue reference
+    std::cout << binding<int &&>() << '\n'; // reference
 ```
 
 ## Смотрите также

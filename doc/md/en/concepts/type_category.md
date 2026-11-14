@@ -14,7 +14,42 @@ categories. The concepts of reference types are described on the page
 namespace scl::concepts
 {
     template <typename T>
-    concept enum_type = ::std::is_enum_v<T>;
+    concept non_reference = !::std::is_reference_v<T>;
+
+    template <typename T>
+    concept object = ::scl::concepts::non_reference<T> && ::std::is_object_v<T>;
+
+    template <typename T>
+    concept compound = ::std::is_compound_v<T>;
+
+    template <typename T>
+    concept fundamental = ::scl::concepts::non_reference<T> && ::std::is_fundamental_v<T>;
+
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+    template <typename T>
+    concept scalar = ::scl::concepts::object<T> && ::std::is_scalar_v<T> &&
+        ::scl::concepts::trivially_copyable<T> && ::scl::concepts::standard_layout<T> &&
+        ::scl::concepts::implicit_lifetime<T>;
+#else
+    template <typename T>
+    concept scalar = ::scl::concepts::object<T> && ::std::is_scalar_v<T> &&
+        ::scl::concepts::trivially_copyable<T> && ::scl::concepts::standard_layout<T>;
+#endif
+
+    template <typename T>
+    concept arithmetic = ::scl::concepts::fundamental<T> && ::scl::concepts::scalar<T> &&
+        ::std::is_arithmetic_v<T>;
+
+    template <typename T>
+    concept void_type = ::scl::concepts::non_reference<T> && ::scl::concepts::fundamental<T> &&
+        ::std::is_void_v<T>;
+
+    template <typename T>
+    concept null_pointer = ::scl::concepts::fundamental<T> && ::scl::concepts::scalar<T> &&
+        ::std::is_null_pointer_v<T>;
+
+    template <typename T>
+    concept enum_type = ::scl::concepts::scalar<T> && ::scl::concepts::compound<T> && ::std::is_enum_v<T>;
 
     template <auto V>
     concept enum_value = ::std::is_enum_v<decltype(V)>;
@@ -29,55 +64,47 @@ namespace scl::concepts
 #endif
 
     template <typename T>
-    concept void_type = ::std::is_void_v<T>;
+    concept pointer = ::scl::concepts::scalar<T> && ::scl::concepts::compound<T> && ::std::is_pointer_v<T>;
 
     template <typename T>
-    concept pointer = ::std::is_pointer_v<T>;
+    concept member_pointer = ::scl::concepts::scalar<T> && ::scl::concepts::compound<T> &&
+        ::std::is_member_pointer_v<T>;
 
     template <typename T>
-    concept null_pointer = ::std::is_null_pointer_v<T>;
+    concept member_object_pointer = ::scl::concepts::member_pointer<T> &&
+        ::std::is_member_object_pointer_v<T>;
 
     template <typename T>
-    concept member_pointer = ::std::is_member_pointer_v<T>;
+    concept member_function_pointer = ::scl::concepts::member_pointer<T> &&
+        ::std::is_member_function_pointer_v<T>;
+
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+    template <typename T>
+    concept array = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_array_v<T> && ::scl::concepts::aggregate<T> && ::scl::concepts::implicit_lifetime<T>;
+#else
+    template <typename T>
+    concept array = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_array_v<T> && ::scl::concepts::aggregate<T>;
+#endif
 
     template <typename T>
-    concept member_object_pointer = ::std::is_member_object_pointer_v<T>;
+    concept bounded_array = ::scl::concepts::array<T> && ::std::is_bounded_array_v<T>;
 
     template <typename T>
-    concept member_function_pointer = ::std::is_member_function_pointer_v<T>;
+    concept unbounded_array = ::scl::concepts::array<T> && ::std::is_unbounded_array_v<T>;
 
     template <typename T>
-    concept array = ::std::is_array_v<T>;
+    concept function = ::scl::concepts::non_reference<T> && ::scl::concepts::compound<T> &&
+        ::std::is_function_v<T>;
 
     template <typename T>
-    concept bounded_array = ::std::is_bounded_array_v<T>;
+    concept class_type = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_class_v<T>;
 
     template <typename T>
-    concept unbounded_array = ::std::is_unbounded_array_v<T>;
-
-    template <typename T>
-    concept function = ::std::is_function_v<T>;
-
-    template <typename T>
-    concept class_type = ::std::is_class_v<T>;
-
-    template <typename T>
-    concept union_type = ::std::is_union_v<T>;
-
-    template <typename T>
-    concept fundamental = ::std::is_fundamental_v<T>;
-
-    template <typename T>
-    concept arithmetic = ::std::is_arithmetic_v<T>;
-
-    template <typename T>
-    concept scalar = ::std::is_scalar_v<T>;
-
-    template <typename T>
-    concept object = ::std::is_object_v<T>;
-
-    template <typename T>
-    concept compound = ::std::is_compound_v<T>;
+    concept union_type = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_union_v<T>;
 }
 ```
 
@@ -94,6 +121,10 @@ namespace scl::concepts
   followed by the name of the concept without the suffix `_type`. For example, the result of
   the concept `pointer` equals the value of the trait `std::is_pointer_v<T>`, and the result of
   the concept `enum_type` equals the value of the trait `std::is_enum_v<T>`.
+- **Other concepts of the header.** The concept `non_reference` is declared in this header and
+  described on the page [Concepts of reference types](reference.md). The concepts of type properties
+  are declared in this header too and described on the page
+  [Concepts of type properties](type_property.md).
 
 ### Enumerations
 
@@ -175,15 +206,51 @@ namespace scl::concepts
 
 ### Choice of an overload
 
-- **Rule.** Each concept of a category but `scoped_enum` is declared through its trait alone, so its
-  constraint is not stricter than the constraint of any other concept of the group. The concept
-  `scoped_enum` is declared through the concept `enum_type`, so its constraint is stricter than
-  the constraint of `enum_type`, and for a scoped enumeration the compiler chooses a function
-  template constrained by the concept `scoped_enum` over one constrained by the concept `enum_type`.
+- **Rule.** Each concept of a category is declared through its trait and through the concept of
+  every wider set of types to which all the types satisfying it belong. So the constraint of
+  a concept is stricter than the constraints of the concepts it is declared through. If the checked
+  type satisfies two concepts and the constraint of one of them is stricter, the compiler chooses
+  the function template constrained by the stricter concept.
+- **Example.** The concept `scalar` is declared through the concepts `object`, `trivially_copyable`
+  and `standard_layout`, since the standard counts every scalar type among the trivially copyable
+  types and the standard-layout types.
+- **Weaker constraints.** For each concept the concepts with a weaker constraint are listed:
+
+| Concept | Concepts with a weaker constraint |
+|---|---|
+| `non_reference` | none |
+| `object` | `non_reference` |
+| `compound` | none |
+| `fundamental` | `non_reference` |
+| `scalar` | `object`, `non_reference`, `trivially_copyable`, `standard_layout` |
+| `arithmetic` | `fundamental`, `non_reference`, `scalar`, `object`, `trivially_copyable`, `standard_layout` |
+| `void_type` | `non_reference`, `fundamental` |
+| `null_pointer` | `fundamental`, `non_reference`, `scalar`, `object`, `trivially_copyable`, `standard_layout` |
+| `enum_type` | `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `enum_value` | none |
+| `scoped_enum` | `enum_type`, `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `pointer` | `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `member_pointer` | `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `member_object_pointer` | `member_pointer`, `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `member_function_pointer` | `member_pointer`, `scalar`, `object`, `non_reference`, `trivially_copyable`, `standard_layout`, `compound` |
+| `array` | `object`, `non_reference`, `compound`, `aggregate` |
+| `bounded_array` | `array`, `object`, `non_reference`, `compound`, `aggregate` |
+| `unbounded_array` | `array`, `object`, `non_reference`, `compound`, `aggregate` |
+| `function` | `non_reference`, `compound` |
+| `class_type` | `object`, `non_reference`, `compound` |
+| `union_type` | `object`, `non_reference`, `compound` |
+
+- **The concept `implicit_lifetime`.** If the macro `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT` expands to
+  `1`, the concepts `scalar` and `array` are also declared through the concept `implicit_lifetime`,
+  so their constraints and the constraints of every concept declared through them are stricter than
+  the constraint of the concept `implicit_lifetime`.
 - **Ambiguous choice.** If a type satisfies two concepts and neither constraint is stricter than
   the other, the choice between function templates constrained by those concepts is ambiguous. For
-  example, for an array with a known bound the choice between templates constrained by the concept
-  `array` and by the concept `bounded_array` is ambiguous.
+  example, for a pointer the choice between templates constrained by the concept `object` and by
+  the concept `compound` is ambiguous.
+- **The concept `std::integral`.** The concept `std::integral` of the standard library is declared
+  through its trait alone, so for the type `int` the choice between a template constrained by
+  the concept `std::integral` and a template constrained by the concept `arithmetic` is ambiguous.
 
 ## Examples
 
@@ -277,12 +344,48 @@ std::string_view describe(Enum)
 }
 ```
 
-The calls of the function `describe`:
+### Choice of an overload
+
+Choosing an overload by the category of a type. The constraints of the concepts `arithmetic` and
+`pointer` are stricter than the constraint of the concept `scalar`. For an arithmetic type
+the compiler chooses the overload constrained by the concept `arithmetic`, for a pointer it chooses
+the overload constrained by the concept `pointer`, and for the type `std::nullptr_t` and for
+an enumeration, which satisfy only `scalar` of the three concepts, it chooses the overload
+constrained by the concept `scalar`:
+
+<!-- snippet: example/concepts/type_category/concepts_type_category_example.cpp kind -->
+```cpp
+template <scl::concepts::scalar Type>
+std::string_view kind(Type)
+{
+    return "scalar";
+}
+
+template <scl::concepts::arithmetic Type>
+std::string_view kind(Type)
+{
+    return "arithmetic";
+}
+
+template <scl::concepts::pointer Type>
+std::string_view kind(Type)
+{
+    return "pointer";
+}
+```
+
+The calls of the functions `describe` and `kind`:
 
 <!-- snippet: example/concepts/type_category/concepts_type_category_example.cpp use -->
 ```cpp
     std::cout << describe(green) << '\n';            // enumeration
     std::cout << describe(direction::north) << '\n'; // scoped enumeration
+
+    point const origin{0, 0};
+    std::cout << kind(&origin) << '\n'; // pointer
+    std::cout << kind(2.5) << '\n';     // arithmetic
+    std::cout << kind(nullptr) << '\n'; // scalar
+    std::cout << kind(green) << '\n';   // scalar
 ```
 
 ### `void` and pointers

@@ -1,36 +1,52 @@
 # Концепты свойств типов
 
 Применение концептов свойств типов позволяет определить, допускает ли проверяемый тип побайтное
-копирование, имеет ли он стандартное размещение, является ли агрегатом, для класса или объединения
-также является ли он финальным, а для класса также является ли он пустым, полиморфным
-или абстрактным. Эти свойства определены в стандарте
+копирование, имеет ли он стандартное размещение, является ли агрегатом, могут ли его объекты
+создаваться неявно, для класса или объединения также является ли он финальным, а для класса
+также является ли он пустым, полиморфным или абстрактным. Эти свойства определены в стандарте
 отдельно от категорий типов.
 
-- Заголовок: `#include <scl/utility/concepts/type_property.h>`
+- Заголовок: `#include <scl/utility/concepts/type_category.h>`
+
+```cpp
+#define SCL_HAS_IMPLICIT_LIFETIME_CONCEPT /* 1 or 0 */
+```
 
 ```cpp
 namespace scl::concepts
 {
     template <typename T>
-    concept trivially_copyable = ::std::is_trivially_copyable_v<T>;
+    concept trivially_copyable = ::scl::concepts::object<T> && ::std::is_trivially_copyable_v<T>;
 
     template <typename T>
-    concept standard_layout = ::std::is_standard_layout_v<T>;
+    concept standard_layout = ::scl::concepts::object<T> && ::std::is_standard_layout_v<T>;
+
+#if SCL_HAS_IMPLICIT_LIFETIME_CONCEPT
+#if defined(__cpp_lib_is_implicit_lifetime) && __cpp_lib_is_implicit_lifetime >= 202302L
+    template <typename T>
+    concept implicit_lifetime = ::scl::concepts::object<T> && ::std::is_implicit_lifetime_v<T>;
+#else
+    template <typename T>
+    concept implicit_lifetime = ::scl::concepts::object<T> && __builtin_is_implicit_lifetime(T);
+#endif
+#endif
 
     template <typename T>
-    concept empty = ::std::is_empty_v<T>;
+    concept aggregate = ::scl::concepts::object<T> && ::scl::concepts::compound<T> &&
+        ::std::is_aggregate_v<T>;
 
     template <typename T>
-    concept polymorphic = ::std::is_polymorphic_v<T>;
+    concept empty = ::scl::concepts::class_type<T> && ::std::is_empty_v<T>;
 
     template <typename T>
-    concept abstract = ::std::is_abstract_v<T>;
+    concept polymorphic = ::scl::concepts::class_type<T> && ::std::is_polymorphic_v<T>;
 
     template <typename T>
-    concept final = ::std::is_final_v<T>;
+    concept abstract = ::scl::concepts::polymorphic<T> && ::std::is_abstract_v<T>;
 
     template <typename T>
-    concept aggregate = ::std::is_aggregate_v<T>;
+    concept final = (::scl::concepts::class_type<T> || ::scl::concepts::union_type<T>) &&
+        ::std::is_final_v<T>;
 }
 ```
 
@@ -45,6 +61,19 @@ namespace scl::concepts
   стандартной библиотеки, на котором построен концепт. Требование для каждого концепта приведено
   в его подразделе. Код, который использует концепты, не должен проверять ими тип,
   который не отвечает этим требованиям.
+
+### `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+
+- **Значение.** Макрос показывает, объявлен ли концепт `implicit_lifetime`. Макрос раскрывается
+  в `1`, если стандартная библиотека содержит свойство `std::is_implicit_lifetime` (макрос
+  `__cpp_lib_is_implicit_lifetime` не меньше `202302L`) или компилятор предоставляет встроенную
+  функцию `__builtin_is_implicit_lifetime`. В остальных случаях макрос раскрывается в `0`, и концепт
+  `implicit_lifetime` не объявляется.
+- **Проверка макроса.** Макрос определён всегда, поэтому коду, который использует макрос, следует
+  проверять его через `#if`, а не через `#ifdef`. При проверке через `#if` опечатка в имени макроса
+  читается как `0` и приводит к предупреждению `-Wundef`, если компилятору GCC или Clang задан
+  параметр, который включает это предупреждение, а при проверке через `#ifdef` опечатка читается
+  как ложь без предупреждения.
 
 ### `trivially_copyable<T>`
 
@@ -122,14 +151,63 @@ namespace scl::concepts
 - **Свойство стандартной библиотеки.** Результат проверки совпадает со значением свойства
   `std::is_aggregate_v<T>`.
 
+### `implicit_lifetime<T>`
+
+- **Объявление.** Концепт объявлен, только если макрос `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+  раскрывается в `1`.
+- **Условие.** Проверяемый тип удовлетворяет концепту, если его объекты могут создаваться неявно,
+  то есть если тип является скалярным типом, массивом или классом с неявным временем жизни. Класс
+  с неявным временем жизни является агрегатом, деструктор которого не предоставлен пользователем,
+  или классом с тривиальным подходящим конструктором и тривиальным неудалённым деструктором.
+- **Неявное создание.** Объект такого типа создаётся неявно, например, в памяти, выделенной функцией
+  `std::malloc`, или в памяти, в которую функция `std::memcpy` копирует байты, если при создании
+  объекта поведение программы становится определённым.
+- **Пример.** Класс `record` из примеров содержит поле типа `std::string` и всё же удовлетворяет
+  концепту, поскольку является агрегатом без предоставленного пользователем деструктора.
+- **Полный тип.** Тип должен быть массивом, полным типом или типом `void`.
+- **Свойство стандартной библиотеки.** Результат проверки совпадает со значением свойства
+  `std::is_implicit_lifetime_v<T>` из C++23.
+
 ### Выбор перегрузки
 
-- **Правило.** Каждый концепт свойства объявлен только через своё свойство, поэтому его ограничение
-  не строже ограничения ни одного другого концепта группы.
-- **Неоднозначный выбор.** Если тип удовлетворяет двум концептам, а для вызова подходят шаблоны
-  функции, ограниченные этими концептами, компилятор отклоняет вызов как неоднозначный. Например,
-  так происходит с абстрактным классом и шаблонами, ограниченными концептами `abstract`
-  и `polymorphic`.
+- **Правило.** Каждый концепт свойства объявлен через своё свойство и через концепт каждого более
+  широкого множества типов, к которому относятся все удовлетворяющие ему типы. Эти множества описаны
+  на странице [Концепты категорий типов](type_category.md), а концепт `abstract` объявлен
+  ещё и через концепт `polymorphic`. Поэтому ограничение концепта строже ограничений концептов,
+  через которые он объявлен. Если проверяемый тип удовлетворяет двум концептам и ограничение одного
+  из них строже, компилятор выбирает шаблон функции, ограниченный более строгим концептом.
+- **Более слабые ограничения.** Для каждого концепта перечислены концепты с более слабым
+  ограничением и более слабые ограничения:
+
+| Концепт | Концепты и ограничения, которые слабее |
+|---|---|
+| `trivially_copyable` | `object`, `non_reference` |
+| `standard_layout` | `object`, `non_reference` |
+| `implicit_lifetime` | `object`, `non_reference` |
+| `aggregate` | `object`, `non_reference`, `compound` |
+| `empty` | `class_type`, `object`, `non_reference`, `compound` |
+| `polymorphic` | `class_type`, `object`, `non_reference`, `compound` |
+| `abstract` | `polymorphic`, `class_type`, `object`, `non_reference`, `compound` |
+| `final` | ограничение `class_type<T> || union_type<T>`, `object`, `non_reference`, `compound` |
+
+- **Концепты категорий.** Если в стандарте каждый тип категории отнесён к типам с некоторым
+  свойством, ограничение концепта категории строже ограничения концепта этого свойства. Так,
+  ограничение концепта `scalar` строже ограничений концептов `trivially_copyable`
+  и `standard_layout`, и для типа `int` компилятор выбирает шаблон функции, ограниченный концептом
+  `scalar`, а не шаблон, ограниченный концептом `trivially_copyable`. Ограничение концепта `array`
+  строже ограничения концепта `aggregate`. Если макрос `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+  раскрывается в `1`, ограничения концептов `scalar` и `array` также строже ограничения концепта
+  `implicit_lifetime`.
+- **Концепт `final`.** Концепт `final` объявлен через дизъюнкцию концептов `class_type`
+  и `union_type`, поэтому его ограничение строже этой дизъюнкции, но не строже ограничения ни одного
+  из этих концептов в отдельности. Если один шаблон ограничен концептом `final`, а другой концептом
+  `class_type`, то для финального класса компилятор отклоняет вызов как неоднозначный.
+  То же относится к концепту `union_type` и финальному объединению.
+- **Неоднозначный выбор.** Компилятор отклоняет вызов как неоднозначный и тогда, когда тип
+  удовлетворяет двум концептам и ни одно из их ограничений не строже другого, например концептам
+  `trivially_copyable` и `standard_layout` для типа `int`, концептам `aggregate` и `class_type`
+  для класса, который является агрегатом, или концептам `aggregate` и `union_type` для объединения,
+  которое является агрегатом.
 
 ## Примеры
 
@@ -172,6 +250,11 @@ struct counter
     {}
 
     int count = 0;
+};
+
+struct record
+{
+    std::string name;
 };
 ```
 
@@ -241,6 +324,18 @@ static_assert(!scl::concepts::aggregate<counter>);
 static_assert(!scl::concepts::aggregate<int>);
 ```
 
+Проверка возможности неявного создания объектов, если макрос `SCL_HAS_IMPLICIT_LIFETIME_CONCEPT`
+раскрывается в `1`:
+
+<!-- snippet: example/concepts/type_property/concepts_type_property_example.cpp implicit_lifetime -->
+```cpp
+static_assert(scl::concepts::implicit_lifetime<sample>);
+static_assert(scl::concepts::implicit_lifetime<record>);
+static_assert(scl::concepts::implicit_lifetime<int[3]>);
+static_assert(!scl::concepts::implicit_lifetime<std::string>);
+static_assert(!scl::concepts::implicit_lifetime<square>);
+```
+
 Побайтное копирование объекта, допустимое только для типа, который удовлетворяет концепту
 `trivially_copyable`:
 
@@ -253,12 +348,41 @@ void copy_bytes(Value & target, Value const & source) noexcept
 }
 ```
 
+Выбор перегрузки по свойствам класса. Ограничение концепта `abstract` строже ограничения концепта
+`polymorphic`, а ограничения обоих строже ограничения концепта `class_type`. Для каждого класса
+компилятор выбирает перегрузку с самым строгим ограничением, которому удовлетворяет класс:
+
+<!-- snippet: example/concepts/type_property/concepts_type_property_example.cpp describe -->
+```cpp
+template <scl::concepts::class_type Class>
+constexpr std::string_view describe()
+{
+    return "class";
+}
+
+template <scl::concepts::polymorphic Class>
+constexpr std::string_view describe()
+{
+    return "polymorphic class";
+}
+
+template <scl::concepts::abstract Class>
+constexpr std::string_view describe()
+{
+    return "abstract class";
+}
+```
+
 <!-- snippet: example/concepts/type_property/concepts_type_property_example.cpp use -->
 ```cpp
     sample const source{7, 2.5};
     sample target{};
     copy_bytes(target, source);
     std::cout << target.id << ' ' << target.value << '\n'; // 7 2.5
+
+    std::cout << describe<sample>() << '\n'; // class
+    std::cout << describe<square>() << '\n'; // polymorphic class
+    std::cout << describe<shape>() << '\n';  // abstract class
 ```
 
 ## Смотрите также
@@ -267,5 +391,6 @@ void copy_bytes(Value & target, Value const & source) noexcept
 
 ---
 
-Назад: [Концепты категорий типов](type_category.md) | [К группе](index.md) |
+Назад: [Концепты категорий типов](type_category.md) |
+Далее: [Концепты отношений между типами](type_relation.md) | [К группе](index.md) |
 [К главной странице](../Main.md)

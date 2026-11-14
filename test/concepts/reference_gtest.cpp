@@ -45,3 +45,99 @@ TEST(Reference, non_reference)
     STATIC_EXPECT_FALSE(non_reference<int &&>);
     STATIC_EXPECT_FALSE(non_reference<int volatile &&>);
 }
+
+namespace
+{
+    template <compound Type>
+    constexpr int reference_over_compound()
+    {
+        return 1;
+    }
+
+    template <reference Type>
+    constexpr int reference_over_compound()
+    {
+        return 2;
+    }
+
+    template <reference Type>
+    constexpr int lvalue_reference_over_reference()
+    {
+        return 1;
+    }
+
+    template <lvalue_reference Type>
+    constexpr int lvalue_reference_over_reference()
+    {
+        return 2;
+    }
+
+    template <reference Type>
+    constexpr int rvalue_reference_over_reference()
+    {
+        return 1;
+    }
+
+    template <rvalue_reference Type>
+    constexpr int rvalue_reference_over_reference()
+    {
+        return 2;
+    }
+} // namespace
+
+TEST(Reference, reference_subsumes_compound)
+{
+    STATIC_EXPECT_EQ(reference_over_compound<int &>(), 2);
+    STATIC_EXPECT_EQ(reference_over_compound<int *>(), 1);
+}
+
+TEST(Reference, lvalue_reference_subsumes_reference)
+{
+    STATIC_EXPECT_EQ(lvalue_reference_over_reference<int &>(), 2);
+    STATIC_EXPECT_EQ(lvalue_reference_over_reference<int &&>(), 1);
+}
+
+TEST(Reference, rvalue_reference_subsumes_reference)
+{
+    STATIC_EXPECT_EQ(rvalue_reference_over_reference<int &&>(), 2);
+    STATIC_EXPECT_EQ(rvalue_reference_over_reference<int &>(), 1);
+}
+
+namespace
+{
+    template <compound Type>
+    constexpr int lvalue_reference_over_compound()
+    {
+        return 1;
+    }
+
+    template <lvalue_reference Type>
+    constexpr int lvalue_reference_over_compound()
+    {
+        return 2;
+    }
+
+    template <compound Type>
+    constexpr int rvalue_reference_over_compound()
+    {
+        return 1;
+    }
+
+    template <rvalue_reference Type>
+    constexpr int rvalue_reference_over_compound()
+    {
+        return 2;
+    }
+} // namespace
+
+TEST(Reference, lvalue_reference_subsumes_compound)
+{
+    STATIC_EXPECT_EQ(lvalue_reference_over_compound<int &>(), 2);
+    STATIC_EXPECT_EQ(lvalue_reference_over_compound<int &&>(), 1);
+}
+
+TEST(Reference, rvalue_reference_subsumes_compound)
+{
+    STATIC_EXPECT_EQ(rvalue_reference_over_compound<int &&>(), 2);
+    STATIC_EXPECT_EQ(rvalue_reference_over_compound<int &>(), 1);
+}

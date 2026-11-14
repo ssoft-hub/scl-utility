@@ -29,6 +29,30 @@ namespace
     {
         return 2;
     }
+
+    template <non_reference Type>
+    constexpr int non_reference_rank_const()
+    {
+        return 0;
+    }
+
+    template <const_qualified Type>
+    constexpr int non_reference_rank_const()
+    {
+        return 1;
+    }
+
+    template <non_reference Type>
+    constexpr int non_reference_rank_volatile()
+    {
+        return 0;
+    }
+
+    template <volatile_qualified Type>
+    constexpr int non_reference_rank_volatile()
+    {
+        return 1;
+    }
 } // namespace
 
 TEST(Qualifier, const_qualified)
@@ -94,4 +118,16 @@ TEST(Qualifier, cv_qualified_subsumes_volatile_qualified)
 {
     STATIC_EXPECT_EQ(volatile_rank<int const volatile>(), 2);
     STATIC_EXPECT_EQ(volatile_rank<int volatile>(), 1);
+}
+
+TEST(Qualifier, const_qualified_subsumes_non_reference)
+{
+    STATIC_EXPECT_EQ(non_reference_rank_const<int const>(), 1);
+    STATIC_EXPECT_EQ(non_reference_rank_const<int>(), 0);
+}
+
+TEST(Qualifier, volatile_qualified_subsumes_non_reference)
+{
+    STATIC_EXPECT_EQ(non_reference_rank_volatile<int volatile>(), 1);
+    STATIC_EXPECT_EQ(non_reference_rank_volatile<int>(), 0);
 }

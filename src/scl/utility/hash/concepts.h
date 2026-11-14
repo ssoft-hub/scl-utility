@@ -7,7 +7,6 @@
  */
 
 #include <scl/utility/concepts/type_category.h>
-#include <scl/utility/concepts/type_property.h>
 
 #include <concepts>
 #include <ranges>

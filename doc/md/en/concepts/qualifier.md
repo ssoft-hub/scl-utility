@@ -10,10 +10,10 @@ a reference refers to does not count.
 namespace scl::concepts
 {
     template <typename T>
-    concept const_qualified = ::std::is_const_v<T>;
+    concept const_qualified = ::scl::concepts::non_reference<T> && ::std::is_const_v<T>;
 
     template <typename T>
-    concept volatile_qualified = ::std::is_volatile_v<T>;
+    concept volatile_qualified = ::scl::concepts::non_reference<T> && ::std::is_volatile_v<T>;
 
     template <typename T>
     concept cv_qualified = ::scl::concepts::const_qualified<T> && ::scl::concepts::volatile_qualified<T>;
@@ -33,8 +33,12 @@ namespace scl::concepts
   qualifiers of its own.
 - **Standard-library trait.** The result of the check equals the value of the trait
   `std::is_const_v<T>`.
-- **Choice of an overload.** The concept is declared through no other concept, so its constraint is
-  not stricter than the constraint of any other concept of the group.
+- **Choice of an overload.** A reference type cannot carry cv-qualifiers, so every `const` type
+  satisfies the concept [`non_reference`](reference.md), and the concept `const_qualified` is
+  declared through the concept `non_reference`. The constraint of `const_qualified` is therefore
+  stricter than the constraint of `non_reference`, and for a `const` type the compiler chooses
+  a function template constrained by the concept `const_qualified` over one constrained by
+  the concept `non_reference`.
 
 ### `volatile_qualified<T>`
 
@@ -44,8 +48,11 @@ namespace scl::concepts
   `int volatile *` and `int volatile &` do not.
 - **Standard-library trait.** The result of the check equals the value of the trait
   `std::is_volatile_v<T>`.
-- **Choice of an overload.** The concept is declared through no other concept, so its constraint is
-  not stricter than the constraint of any other concept of the group.
+- **Choice of an overload.** For the same reason the concept `volatile_qualified` is declared
+  through the concept [`non_reference`](reference.md), so the constraint of `volatile_qualified` is
+  stricter than the constraint of `non_reference`. For a `volatile` type the compiler chooses
+  a function template constrained by the concept `volatile_qualified` over one constrained by
+  the concept `non_reference`.
 
 ### `cv_qualified<T>`
 
@@ -53,10 +60,10 @@ namespace scl::concepts
   as `int const volatile`. A type with only one of them does not satisfy the concept.
 - **Standard-library trait.** The standard library has no trait for this check.
 - **Choice of an overload.** The concept is declared through the concepts `const_qualified` and
-  `volatile_qualified`, so its constraint is stricter than the constraints of those concepts. For
-  a type with both qualifiers the compiler chooses a function template constrained by the concept
-  `cv_qualified` over one constrained by the concept `const_qualified` or `volatile_qualified`. If
-  no template constrained by
+  `volatile_qualified`, so its constraint is stricter than the constraints of those concepts and of
+  the concept `non_reference`. For a type with both qualifiers the compiler chooses a function
+  template constrained by the concept `cv_qualified` over one constrained by the concept
+  `const_qualified`, `volatile_qualified` or `non_reference`. If no template constrained by
   the concept `cv_qualified` is declared, and both a template constrained by the concept
   `const_qualified` and a template constrained by the concept `volatile_qualified` accept such
   a type, the compiler rejects the call as ambiguous.
