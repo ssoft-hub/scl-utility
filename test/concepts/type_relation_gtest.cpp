@@ -2,357 +2,578 @@
 
 #include <scl/utility/concepts/type_relation.h>
 
-using namespace scl::concepts;
-
 namespace
 {
-    struct Base
+    struct base
     {};
 
-    struct Plain : Base
+    struct derived : base
     {};
 
-    struct PrivatePlain : private Base
+    struct indirect_derived : derived
     {};
 
-    struct Virtual : virtual Base
+    struct private_derived : private base
     {};
 
-    struct PrivateVirtual : private virtual Base
+    struct virtual_derived : virtual base
     {};
 
-    struct Indirect : Virtual
+    struct private_virtual_derived : private virtual base
     {};
 
-    struct Left : Base
+    struct indirect_virtual_derived : virtual_derived
     {};
 
-    struct Right : Base
+    struct left : base
     {};
 
-    struct Twice
-        : Left
-        , Right
+    struct right : base
     {};
 
-    struct Unrelated
+    struct twice
+        : left
+        , right
     {};
 
-    union Union
+    struct unrelated
+    {};
+
+    union plain_union
     {
-        int i;
+        int integer;
     };
 
-    template <typename Type>
-        requires class_type<Type>
+    template <::scl::concepts::class_type Type>
     constexpr int base_of_over_class_type_of_base()
     {
         return 1;
     }
 
     template <typename Type>
-        requires base_of<Type, Plain>
+        requires ::scl::concepts::base_of<Type, derived>
     constexpr int base_of_over_class_type_of_base()
     {
         return 2;
     }
 
-    template <typename Type>
-        requires class_type<Type>
+    template <::scl::concepts::class_type Type>
     constexpr int base_of_over_class_type_of_derived()
     {
         return 1;
     }
 
     template <typename Type>
-        requires base_of<Base, Type>
+        requires ::scl::concepts::base_of<base, Type>
     constexpr int base_of_over_class_type_of_derived()
     {
         return 2;
     }
 
-    template <typename Type>
-        requires non_reference<Type>
-    constexpr int base_of_over_non_reference()
-    {
-        return 1;
-    }
-
-    template <typename Type>
-        requires base_of<Type, Plain>
-    constexpr int base_of_over_non_reference()
-    {
-        return 2;
-    }
-
-    template <typename Type>
-        requires object<Type>
+    template <::scl::concepts::object Type>
     constexpr int base_of_over_object_of_base()
     {
         return 1;
     }
 
     template <typename Type>
-        requires base_of<Type, Plain>
+        requires ::scl::concepts::base_of<Type, derived>
     constexpr int base_of_over_object_of_base()
     {
         return 2;
     }
 
-    template <typename Type>
-        requires compound<Type>
-    constexpr int base_of_over_compound_of_base()
-    {
-        return 1;
-    }
-
-    template <typename Type>
-        requires base_of<Type, Plain>
-    constexpr int base_of_over_compound_of_base()
-    {
-        return 2;
-    }
-
-    template <typename Type>
-        requires object<Type>
+    template <::scl::concepts::object Type>
     constexpr int base_of_over_object_of_derived()
     {
         return 1;
     }
 
     template <typename Type>
-        requires base_of<Base, Type>
+        requires ::scl::concepts::base_of<base, Type>
     constexpr int base_of_over_object_of_derived()
     {
         return 2;
     }
 
+    template <::scl::concepts::compound Type>
+    constexpr int base_of_over_compound_of_base()
+    {
+        return 1;
+    }
+
     template <typename Type>
-        requires compound<Type>
+        requires ::scl::concepts::base_of<Type, derived>
+    constexpr int base_of_over_compound_of_base()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
     constexpr int base_of_over_compound_of_derived()
     {
         return 1;
     }
 
     template <typename Type>
-        requires base_of<Base, Type>
+        requires ::scl::concepts::base_of<base, Type>
     constexpr int base_of_over_compound_of_derived()
     {
         return 2;
     }
 
+    template <::scl::concepts::non_reference Type>
+    constexpr int base_of_over_non_reference_of_base()
+    {
+        return 1;
+    }
+
     template <typename Type>
-        requires non_reference<Type>
+        requires ::scl::concepts::base_of<Type, derived>
+    constexpr int base_of_over_non_reference_of_base()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
     constexpr int base_of_over_non_reference_of_derived()
     {
         return 1;
     }
 
     template <typename Type>
-        requires base_of<Base, Type>
+        requires ::scl::concepts::base_of<base, Type>
     constexpr int base_of_over_non_reference_of_derived()
     {
         return 2;
     }
 
-    template <base_of<Plain> Type>
-    constexpr bool base_of_plain()
+    template <::scl::concepts::base_of<derived> Base>
+    constexpr bool base_of_derived()
     {
         return true;
     }
+
+    template <typename Type>
+    constexpr bool accepted_as_base_of_derived = requires { base_of_derived<Type>(); };
 } // namespace
 
-TEST(TypeRelation, base_of)
+TEST(ConceptsBaseOf, HoldsForAPublicBaseClass)
 {
-    STATIC_EXPECT_TRUE((base_of<Base, Plain>));
-    STATIC_EXPECT_TRUE((base_of<Base, Base>));
-    STATIC_EXPECT_TRUE((base_of<Base, PrivatePlain>));
-    STATIC_EXPECT_TRUE((base_of<Base, Virtual>));
-    STATIC_EXPECT_TRUE((base_of<Base, Indirect>));
-    STATIC_EXPECT_TRUE((base_of<Base, Twice>));
-    STATIC_EXPECT_TRUE((base_of<Base const, Plain volatile>));
-    STATIC_EXPECT_FALSE((base_of<Plain, Base>));
-    STATIC_EXPECT_FALSE((base_of<Unrelated, Plain>));
-    STATIC_EXPECT_FALSE((base_of<Base &, Plain>));
-    STATIC_EXPECT_FALSE((base_of<Base, Plain &>));
-    STATIC_EXPECT_FALSE((base_of<Union, Union>));
-    STATIC_EXPECT_FALSE((base_of<int, int>));
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base, derived>));
 }
 
-TEST(TypeRelation, base_of_constrains_a_template_parameter)
+TEST(ConceptsBaseOf, HoldsForAClassAndItself)
 {
-    STATIC_EXPECT_TRUE(base_of_plain<Base>());
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base, base>));
 }
 
-TEST(TypeRelation, base_of_subsumes_class_type)
+TEST(ConceptsBaseOf, HoldsForAPrivateBaseClass)
 {
-    STATIC_EXPECT_EQ(base_of_over_class_type_of_base<Base>(), 2);
-    STATIC_EXPECT_EQ(base_of_over_class_type_of_base<Unrelated>(), 1);
-    STATIC_EXPECT_EQ(base_of_over_class_type_of_derived<Plain>(), 2);
-    STATIC_EXPECT_EQ(base_of_over_class_type_of_derived<Unrelated>(), 1);
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base, private_derived>));
 }
 
-TEST(TypeRelation, base_of_subsumes_non_reference)
+TEST(ConceptsBaseOf, HoldsForAnIndirectBaseClass)
 {
-    STATIC_EXPECT_EQ(base_of_over_non_reference<Base>(), 2);
-    STATIC_EXPECT_EQ(base_of_over_non_reference<int>(), 1);
-    STATIC_EXPECT_EQ(base_of_over_non_reference_of_derived<Plain>(), 2);
-    STATIC_EXPECT_EQ(base_of_over_non_reference_of_derived<int>(), 1);
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base, indirect_derived>));
 }
 
-TEST(TypeRelation, base_of_subsumes_object_and_compound)
+TEST(ConceptsBaseOf, HoldsForAVirtualBaseClass)
 {
-    STATIC_EXPECT_EQ(base_of_over_object_of_base<Base>(), 2);
-    STATIC_EXPECT_EQ(base_of_over_object_of_base<int>(), 1);
-    STATIC_EXPECT_EQ(base_of_over_compound_of_base<Base>(), 2);
-    STATIC_EXPECT_EQ(base_of_over_compound_of_base<Unrelated>(), 1);
-    STATIC_EXPECT_EQ(base_of_over_object_of_derived<Plain>(), 2);
-    STATIC_EXPECT_EQ(base_of_over_object_of_derived<int>(), 1);
-    STATIC_EXPECT_EQ(base_of_over_compound_of_derived<Plain>(), 2);
-    STATIC_EXPECT_EQ(base_of_over_compound_of_derived<Unrelated>(), 1);
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base, virtual_derived>));
 }
 
-TEST(TypeRelation, scl_has_virtual_base_of_concept)
+TEST(ConceptsBaseOf, HoldsForABaseClassHeldMoreThanOnce)
 {
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base, twice>));
+}
+
+TEST(ConceptsBaseOf, HoldsForCvQualifiedTypesWhereTheUnqualifiedTypesSatisfyIt)
+{
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base const, derived>));
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base, derived volatile>));
+    STATIC_EXPECT_TRUE((::scl::concepts::base_of<base const volatile, derived const>));
+}
+
+TEST(ConceptsBaseOf, FailsForCvQualifiedTypesWhereTheUnqualifiedTypesDoNot)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<derived const, base>));
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<derived, base volatile>));
+}
+
+TEST(ConceptsBaseOf, FailsForADerivedClassInPlaceOfTheBase)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<derived, base>));
+}
+
+TEST(ConceptsBaseOf, FailsForUnrelatedClasses)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<unrelated, derived>));
+}
+
+TEST(ConceptsBaseOf, FailsForAUnion)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<plain_union, plain_union>));
+}
+
+TEST(ConceptsBaseOf, FailsForATypeThatIsNotAClass)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<int, int>));
+}
+
+TEST(ConceptsBaseOf, FailsForAReferenceInEitherPosition)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<base &, derived>));
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<base, derived &>));
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<base &&, derived>));
+    STATIC_EXPECT_FALSE((::scl::concepts::base_of<base, derived &&>));
+}
+
+TEST(ConceptsBaseOf, ConstrainsATemplateParameterInPlaceOfTheBase)
+{
+    STATIC_EXPECT_TRUE(accepted_as_base_of_derived<base>);
+    STATIC_EXPECT_FALSE(accepted_as_base_of_derived<indirect_derived>);
+}
+
+TEST(ConceptsBaseOf, SubsumesClassTypeOfTheBase)
+{
+    STATIC_EXPECT_EQ(base_of_over_class_type_of_base<base>(), 2);
+}
+
+TEST(ConceptsBaseOf, SubsumesClassTypeOfTheDerivedClass)
+{
+    STATIC_EXPECT_EQ(base_of_over_class_type_of_derived<derived>(), 2);
+}
+
+TEST(ConceptsBaseOf, SubsumesObjectOfTheBase)
+{
+    STATIC_EXPECT_EQ(base_of_over_object_of_base<base>(), 2);
+}
+
+TEST(ConceptsBaseOf, SubsumesObjectOfTheDerivedClass)
+{
+    STATIC_EXPECT_EQ(base_of_over_object_of_derived<derived>(), 2);
+}
+
+TEST(ConceptsBaseOf, SubsumesCompoundOfTheBase)
+{
+    STATIC_EXPECT_EQ(base_of_over_compound_of_base<base>(), 2);
+}
+
+TEST(ConceptsBaseOf, SubsumesCompoundOfTheDerivedClass)
+{
+    STATIC_EXPECT_EQ(base_of_over_compound_of_derived<derived>(), 2);
+}
+
+TEST(ConceptsBaseOf, SubsumesNonReferenceOfTheBase)
+{
+    STATIC_EXPECT_EQ(base_of_over_non_reference_of_base<base>(), 2);
+}
+
+TEST(ConceptsBaseOf, SubsumesNonReferenceOfTheDerivedClass)
+{
+    STATIC_EXPECT_EQ(base_of_over_non_reference_of_derived<derived>(), 2);
+}
+
+#ifndef SCL_HAS_VIRTUAL_BASE_OF_CONCEPT
+#error "SCL_HAS_VIRTUAL_BASE_OF_CONCEPT must always be defined, so that #if catches a misspelling"
+#endif
+
 #if defined(__cpp_lib_is_virtual_base_of) && __cpp_lib_is_virtual_base_of >= 202406L
+TEST(ConceptsSclHasVirtualBaseOfConcept, ExpandsToOneWhereTheLibraryDeclaresTheTraitOrTheCompilerHasTheBuiltIn)
+{
     STATIC_EXPECT_EQ(SCL_HAS_VIRTUAL_BASE_OF_CONCEPT, 1);
+}
 #elif defined(__has_builtin)
 #if __has_builtin(__builtin_is_virtual_base_of)
+TEST(ConceptsSclHasVirtualBaseOfConcept, ExpandsToOneWhereTheLibraryDeclaresTheTraitOrTheCompilerHasTheBuiltIn)
+{
     STATIC_EXPECT_EQ(SCL_HAS_VIRTUAL_BASE_OF_CONCEPT, 1);
-#else
-    STATIC_EXPECT_EQ(SCL_HAS_VIRTUAL_BASE_OF_CONCEPT, 0);
-#endif
-#else
-    STATIC_EXPECT_EQ(SCL_HAS_VIRTUAL_BASE_OF_CONCEPT, 0);
-#endif
 }
+#else
+TEST(ConceptsSclHasVirtualBaseOfConcept, ExpandsToZeroElsewhere)
+{
+    STATIC_EXPECT_EQ(SCL_HAS_VIRTUAL_BASE_OF_CONCEPT, 0);
+}
+#endif
+#else
+TEST(ConceptsSclHasVirtualBaseOfConcept, ExpandsToZeroElsewhere)
+{
+    STATIC_EXPECT_EQ(SCL_HAS_VIRTUAL_BASE_OF_CONCEPT, 0);
+}
+#endif
+
+#if !SCL_HAS_VIRTUAL_BASE_OF_CONCEPT
+namespace scl::concepts
+{
+    template <typename Base, typename Derived>
+    concept virtual_base_of = false;
+} // namespace scl::concepts
+
+TEST(ConceptsSclHasVirtualBaseOfConcept, LeavesTheConceptUndeclaredWhereItExpandsToZero)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base, virtual_derived>));
+}
+#endif
 
 #if SCL_HAS_VIRTUAL_BASE_OF_CONCEPT
 namespace
 {
-    struct Mixed
-        : Virtual
-        , Plain
+    struct mixed
+        : virtual_derived
+        , derived
     {};
 
     template <typename Type>
-        requires base_of<Base, Type>
+        requires ::scl::concepts::base_of<base, Type>
     constexpr int virtual_base_of_over_base_of()
     {
         return 1;
     }
 
     template <typename Type>
-        requires virtual_base_of<Base, Type>
+        requires ::scl::concepts::virtual_base_of<base, Type>
     constexpr int virtual_base_of_over_base_of()
     {
         return 2;
     }
 
-    template <typename Type>
-        requires class_type<Type>
-    constexpr int virtual_base_of_over_class_type()
-    {
-        return 1;
-    }
-
-    template <typename Type>
-        requires virtual_base_of<Base, Type>
-    constexpr int virtual_base_of_over_class_type()
-    {
-        return 2;
-    }
-
-    template <typename Type>
-        requires class_type<Type>
+    template <::scl::concepts::class_type Type>
     constexpr int virtual_base_of_over_class_type_of_base()
     {
         return 1;
     }
 
     template <typename Type>
-        requires virtual_base_of<Type, Virtual>
+        requires ::scl::concepts::virtual_base_of<Type, virtual_derived>
     constexpr int virtual_base_of_over_class_type_of_base()
     {
         return 2;
     }
 
-    template <typename Type>
-        requires object<Type>
-    constexpr int virtual_base_of_over_object()
+    template <::scl::concepts::class_type Type>
+    constexpr int virtual_base_of_over_class_type_of_derived()
     {
         return 1;
     }
 
     template <typename Type>
-        requires virtual_base_of<Type, Virtual>
-    constexpr int virtual_base_of_over_object()
+        requires ::scl::concepts::virtual_base_of<base, Type>
+    constexpr int virtual_base_of_over_class_type_of_derived()
     {
         return 2;
     }
 
-    template <typename Type>
-        requires compound<Type>
-    constexpr int virtual_base_of_over_compound()
+    template <::scl::concepts::object Type>
+    constexpr int virtual_base_of_over_object_of_base()
     {
         return 1;
     }
 
     template <typename Type>
-        requires virtual_base_of<Base, Type>
-    constexpr int virtual_base_of_over_compound()
+        requires ::scl::concepts::virtual_base_of<Type, virtual_derived>
+    constexpr int virtual_base_of_over_object_of_base()
     {
         return 2;
     }
 
-    template <virtual_base_of<Virtual> Type>
-    constexpr bool virtual_base_of_virtual()
+    template <::scl::concepts::object Type>
+    constexpr int virtual_base_of_over_object_of_derived()
+    {
+        return 1;
+    }
+
+    template <typename Type>
+        requires ::scl::concepts::virtual_base_of<base, Type>
+    constexpr int virtual_base_of_over_object_of_derived()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
+    constexpr int virtual_base_of_over_compound_of_base()
+    {
+        return 1;
+    }
+
+    template <typename Type>
+        requires ::scl::concepts::virtual_base_of<Type, virtual_derived>
+    constexpr int virtual_base_of_over_compound_of_base()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::compound Type>
+    constexpr int virtual_base_of_over_compound_of_derived()
+    {
+        return 1;
+    }
+
+    template <typename Type>
+        requires ::scl::concepts::virtual_base_of<base, Type>
+    constexpr int virtual_base_of_over_compound_of_derived()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
+    constexpr int virtual_base_of_over_non_reference_of_base()
+    {
+        return 1;
+    }
+
+    template <typename Type>
+        requires ::scl::concepts::virtual_base_of<Type, virtual_derived>
+    constexpr int virtual_base_of_over_non_reference_of_base()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::non_reference Type>
+    constexpr int virtual_base_of_over_non_reference_of_derived()
+    {
+        return 1;
+    }
+
+    template <typename Type>
+        requires ::scl::concepts::virtual_base_of<base, Type>
+    constexpr int virtual_base_of_over_non_reference_of_derived()
+    {
+        return 2;
+    }
+
+    template <::scl::concepts::virtual_base_of<virtual_derived> Base>
+    constexpr bool virtual_base_of_virtual_derived()
     {
         return true;
     }
+
+    template <typename Type>
+    constexpr bool accepted_as_virtual_base_of_virtual_derived =
+        requires { virtual_base_of_virtual_derived<Type>(); };
 } // namespace
 
-TEST(TypeRelation, virtual_base_of)
+TEST(ConceptsVirtualBaseOf, HoldsForAVirtualBaseClass)
 {
-    STATIC_EXPECT_TRUE((virtual_base_of<Base, Virtual>));
-    STATIC_EXPECT_TRUE((virtual_base_of<Base const, Virtual volatile>));
-    STATIC_EXPECT_TRUE((virtual_base_of<Base, PrivateVirtual>));
-    STATIC_EXPECT_TRUE((virtual_base_of<Base, Indirect>));
-    STATIC_EXPECT_TRUE((virtual_base_of<Base, Mixed>));
-    STATIC_EXPECT_FALSE((virtual_base_of<Base, Plain>));
-    STATIC_EXPECT_FALSE((virtual_base_of<Base, PrivatePlain>));
-    STATIC_EXPECT_FALSE((virtual_base_of<Base, Base>));
-    STATIC_EXPECT_FALSE((virtual_base_of<Virtual, Base>));
-    STATIC_EXPECT_FALSE((virtual_base_of<Base &, Virtual>));
-    STATIC_EXPECT_FALSE((virtual_base_of<Base, Virtual &>));
-    STATIC_EXPECT_FALSE((virtual_base_of<Union, Union>));
-    STATIC_EXPECT_FALSE((virtual_base_of<int, int>));
+    STATIC_EXPECT_TRUE((::scl::concepts::virtual_base_of<base, virtual_derived>));
 }
 
-TEST(TypeRelation, virtual_base_of_constrains_a_template_parameter)
+TEST(ConceptsVirtualBaseOf, HoldsForAPrivateVirtualBaseClass)
 {
-    STATIC_EXPECT_TRUE(virtual_base_of_virtual<Base>());
+    STATIC_EXPECT_TRUE((::scl::concepts::virtual_base_of<base, private_virtual_derived>));
 }
 
-TEST(TypeRelation, virtual_base_of_subsumes_base_of)
+TEST(ConceptsVirtualBaseOf, HoldsForAnIndirectVirtualBaseClass)
 {
-    STATIC_EXPECT_EQ(virtual_base_of_over_base_of<Virtual>(), 2);
-    STATIC_EXPECT_EQ(virtual_base_of_over_base_of<Plain>(), 1);
+    STATIC_EXPECT_TRUE((::scl::concepts::virtual_base_of<base, indirect_virtual_derived>));
 }
 
-TEST(TypeRelation, virtual_base_of_subsumes_class_type)
+TEST(ConceptsVirtualBaseOf, HoldsBesideABaseClassOfTheSameTypeThatIsNotVirtual)
 {
-    STATIC_EXPECT_EQ(virtual_base_of_over_class_type<Virtual>(), 2);
-    STATIC_EXPECT_EQ(virtual_base_of_over_class_type<Plain>(), 1);
-    STATIC_EXPECT_EQ(virtual_base_of_over_class_type_of_base<Base>(), 2);
-    STATIC_EXPECT_EQ(virtual_base_of_over_class_type_of_base<Unrelated>(), 1);
+    STATIC_EXPECT_TRUE((::scl::concepts::virtual_base_of<base, mixed>));
 }
 
-TEST(TypeRelation, virtual_base_of_subsumes_object_and_compound)
+TEST(ConceptsVirtualBaseOf, HoldsForCvQualifiedTypesWhereTheUnqualifiedTypesSatisfyIt)
 {
-    STATIC_EXPECT_EQ(virtual_base_of_over_object<Base>(), 2);
-    STATIC_EXPECT_EQ(virtual_base_of_over_object<int>(), 1);
-    STATIC_EXPECT_EQ(virtual_base_of_over_compound<Virtual>(), 2);
-    STATIC_EXPECT_EQ(virtual_base_of_over_compound<Plain>(), 1);
+    STATIC_EXPECT_TRUE((::scl::concepts::virtual_base_of<base const, virtual_derived>));
+    STATIC_EXPECT_TRUE((::scl::concepts::virtual_base_of<base, virtual_derived volatile>));
+    STATIC_EXPECT_TRUE((::scl::concepts::virtual_base_of<base const volatile, virtual_derived const>));
+}
+
+TEST(ConceptsVirtualBaseOf, FailsForCvQualifiedTypesWhereTheUnqualifiedTypesDoNot)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<virtual_derived const, base>));
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<virtual_derived, base volatile>));
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base const, derived>));
+}
+
+TEST(ConceptsVirtualBaseOf, FailsForABaseClassThatIsNotVirtual)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base, derived>));
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base, private_derived>));
+}
+
+TEST(ConceptsVirtualBaseOf, FailsForAClassAndItself)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base, base>));
+}
+
+TEST(ConceptsVirtualBaseOf, FailsForADerivedClassInPlaceOfTheBase)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<virtual_derived, base>));
+}
+
+TEST(ConceptsVirtualBaseOf, FailsForUnrelatedClasses)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<unrelated, virtual_derived>));
+}
+
+TEST(ConceptsVirtualBaseOf, FailsForAUnion)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<plain_union, plain_union>));
+}
+
+TEST(ConceptsVirtualBaseOf, FailsForATypeThatIsNotAClass)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<int, int>));
+}
+
+TEST(ConceptsVirtualBaseOf, FailsForAReferenceInEitherPosition)
+{
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base &, virtual_derived>));
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base, virtual_derived &>));
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base &&, virtual_derived>));
+    STATIC_EXPECT_FALSE((::scl::concepts::virtual_base_of<base, virtual_derived &&>));
+}
+
+TEST(ConceptsVirtualBaseOf, ConstrainsATemplateParameterInPlaceOfTheBase)
+{
+    STATIC_EXPECT_TRUE(accepted_as_virtual_base_of_virtual_derived<base>);
+    STATIC_EXPECT_FALSE(accepted_as_virtual_base_of_virtual_derived<indirect_virtual_derived>);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesBaseOf)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_base_of<virtual_derived>(), 2);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesClassTypeOfTheBase)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_class_type_of_base<base>(), 2);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesClassTypeOfTheDerivedClass)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_class_type_of_derived<virtual_derived>(), 2);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesObjectOfTheBase)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_object_of_base<base>(), 2);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesObjectOfTheDerivedClass)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_object_of_derived<virtual_derived>(), 2);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesCompoundOfTheBase)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_compound_of_base<base>(), 2);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesCompoundOfTheDerivedClass)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_compound_of_derived<virtual_derived>(), 2);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesNonReferenceOfTheBase)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_non_reference_of_base<base>(), 2);
+}
+
+TEST(ConceptsVirtualBaseOf, SubsumesNonReferenceOfTheDerivedClass)
+{
+    STATIC_EXPECT_EQ(virtual_base_of_over_non_reference_of_derived<virtual_derived>(), 2);
 }
 #endif
