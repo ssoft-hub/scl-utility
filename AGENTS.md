@@ -105,6 +105,8 @@ bash script/lint/clang_format.sh    # one of them, when only formatting is in qu
 ```
 
 - Lint scripts need no build tree
+- `cppcheck.sh` keeps its analysis in `build/lint/cppcheck` and checks again only what
+  changed; removing the directory forces a full run
 
 ## Building
 

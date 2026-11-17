@@ -53,6 +53,11 @@ cppcheck:
   stage: lint
   image: ubuntu:24.04
   extends: .lint_rules
+  # cppcheck.sh checks again only the headers whose code or includes changed since the
+  # analysis it keeps here.
+  cache:
+    key: cppcheck
+    paths: [build/lint/cppcheck/]
   before_script:
     - apt-get update && apt-get install -y cppcheck
     - cppcheck --version
