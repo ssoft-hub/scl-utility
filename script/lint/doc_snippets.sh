@@ -40,42 +40,149 @@ case "${1:-}" in
 *) echo "usage: $(basename "$0") [--write]" >&2; exit 2 ;;
 esac
 
-# The region of a source file between its two markers. Exits non-zero when the file does
-# not hold exactly the opening and the closing one.
+# The region of a source file between its two markers, for the diff of a block that does not
+# match it.
 extract_region() {
     awk -v marker="//! [$2]" '
         index($0, marker) { ++seen; next }
         seen == 1 { print }
-        END { if (seen != 2) exit 1 }
     ' "$1"
 }
 
-# The first fenced code block that follows a given line. Exits non-zero when that block is
-# never opened or never closed.
+# The first fenced code block that follows a given line, for the same diff.
 extract_block() {
     awk -v start="$2" '
         NR <= start { next }
-        /^```/ { if (fenced) { closed = 1; exit } fenced = 1; next }
+        /^```/ { if (fenced) exit; fenced = 1; next }
         fenced { print }
-        END { if (!closed) exit 1 }
     ' "$1"
 }
 
-# The page with the block that follows a given line replaced by the given text. The text
-# travels through the environment rather than `awk -v`, which would read `\n` in the code
-# as an escape and put a line break where the program has a character literal.
-replace_block() {
-    replacement="$3" awk -v start="$2" '
-        NR <= start { print; next }
-        !fenced { print; if (/^```/) { fenced = 1; printf "%s", ENVIRON["replacement"] } next }
-        !closed { if (/^```/) { closed = 1; print } next }
-        { print }
-    ' "$1"
-}
+# One awk process reads every page and every source it names. It prints one record per
+# finding, tab-separated, and the record "C <count>" last:
+#   E <message>                     a marker that cannot be checked
+#   M <page> <line> <path> <region> a block that differs from its source
+#   W <page> <line> <path> <region> a block rewritten under --write
+#   F <page>                        a page whose rewrite waits in <page>.snippet
+check_pages() {
+    awk -v write="$write" '
+        # The region between the two markers of a source file, cached per file and region.
+        # The state is "ok", "missing" for a file that cannot be read, or "incomplete" when
+        # the file does not hold exactly the opening and the closing marker.
+        function region(path, name,    key, marker, line, result, seen, count, text) {
+            key = path SUBSEP name
+            if (key in region_state)
+                return region_state[key]
+            marker = "//! [" name "]"
+            seen = 0
+            count = 0
+            text = ""
+            while ((result = (getline line < path)) > 0) {
+                if (index(line, marker)) {
+                    ++seen
+                    continue
+                }
+                if (seen == 1) {
+                    text = count == 0 ? line : text "\n" line
+                    ++count
+                }
+            }
+            close(path)
+            region_text[key] = drop_trailing_newlines(text)
+            if (result < 0)
+                region_state[key] = "missing"
+            else if (seen != 2)
+                region_state[key] = "incomplete"
+            else
+                region_state[key] = "ok"
+            return region_state[key]
+        }
 
-status=0
-checked=0
-written=0
+        function drop_trailing_newlines(text) {
+            while (text ~ /\n$/)
+                sub(/\n$/, "", text)
+            return text
+        }
+
+        function check_page(page,    i, rest, words, count, path, name, state, opening, closing,
+                            k, text, rewrites) {
+            rewrites = 0
+            split("", replaced)
+            for (i = 1; i <= lines; ++i) {
+                if (!index(line_of[i], "<!-- snippet:"))
+                    continue
+                rest = substr(line_of[i], index(line_of[i], "<!-- snippet:") + 13)
+                if (index(rest, "-->"))
+                    rest = substr(rest, 1, index(rest, "-->") - 1)
+                gsub(/^[ \t]+|[ \t]+$/, "", rest)
+                count = split(rest, words, /[ \t]+/)
+                path = count >= 1 ? words[1] : ""
+                name = count >= 2 ? words[2] : "quick_start"
+
+                state = path == "" ? "missing" : region(path, name)
+                if (state == "missing") {
+                    printf "E\t%s:%d: snippet source does not exist: %s\n", page, i, path
+                    continue
+                }
+                ++checked
+                if (state == "incomplete") {
+                    printf "E\t%s:%d: %s holds no complete [%s] region\n", page, i, path, name
+                    continue
+                }
+
+                opening = 0
+                closing = 0
+                for (k = i + 1; k <= lines; ++k)
+                    if (line_of[k] ~ /^```/) {
+                        if (opening) {
+                            closing = k
+                            break
+                        }
+                        opening = k
+                    }
+                if (!closing) {
+                    printf "E\t%s:%d: the snippet marker is followed by no complete code block\n", page, i
+                    continue
+                }
+
+                text = ""
+                for (k = opening + 1; k < closing; ++k)
+                    text = k == opening + 1 ? line_of[k] : text "\n" line_of[k]
+                if (drop_trailing_newlines(text) "" == region_text[path SUBSEP name] "")
+                    continue
+
+                if (write) {
+                    replaced[opening] = closing
+                    replacement[opening] = region_text[path SUBSEP name]
+                    ++rewrites
+                    printf "W\t%s\t%d\t%s\t%s\n", page, i, path, name
+                } else
+                    printf "M\t%s\t%d\t%s\t%s\n", page, i, path, name
+            }
+
+            if (!rewrites)
+                return
+            for (i = 1; i <= lines; ++i) {
+                print line_of[i] > (page ".snippet")
+                if (i in replaced) {
+                    print replacement[i] > (page ".snippet")
+                    i = replaced[i] - 1
+                }
+            }
+            close(page ".snippet")
+            printf "F\t%s\n", page
+        }
+
+        FNR == 1 && NR > 1 { check_page(page) }
+        FNR == 1 { page = FILENAME; lines = 0 }
+        { line_of[++lines] = $0 }
+        END {
+            if (NR > 0)
+                check_page(page)
+            printf "C\t%d\n", checked
+        }
+    ' "$@"
+}
 
 dirs=()
 for dir in $SCL_DOC_DIRS; do
@@ -84,55 +191,49 @@ done
 
 [ "${#dirs[@]}" -ne 0 ] || { echo "No documentation ($SCL_DOC_DIRS), skipping."; exit 0; }
 
-while IFS= read -r page; do
-    # A rewrite shifts the line numbers below it, so the markers of one page are handled
-    # from the bottom up and every one of them keeps the position grep reported.
-    while IFS= read -r hit; do
-        line="${hit%%:*}"
-        rest="${hit#*<!-- snippet:}"
-        rest="${rest%%-->*}"
-        # shellcheck disable=SC2086 # deliberate word splitting: "<path> [region]"
-        set -- $rest
-        source_path="${1:-}"
-        region="${2:-quick_start}"
+pages=()
+while IFS= read -r -d '' page; do
+    pages+=("$page")
+done < <(find "${dirs[@]}" -name '*.md' -not -path './.git/*' -not -path './doc/doxygen/*' -print0 |
+    sort -z)
 
-        if [ ! -f "$source_path" ]; then
-            echo "$page:$line: snippet source does not exist: $source_path"
-            status=1
-            continue
-        fi
+status=0
+finished=0
+checked=0
+written=0
 
-        checked=$((checked + 1))
-
-        if ! source_text=$(extract_region "$source_path" "$region"); then
-            echo "$page:$line: $source_path holds no complete [$region] region"
-            status=1
-            continue
-        fi
-
-        if ! block_text=$(extract_block "$page" "$line"); then
-            echo "$page:$line: the snippet marker is followed by no complete code block"
-            status=1
-            continue
-        fi
-
-        [ "$source_text" = "$block_text" ] && continue
-
-        if [ "$write" -eq 0 ]; then
-            diff -u \
-                --label "$source_path [$region]" <(printf '%s\n' "$source_text") \
-                --label "$page:$line" <(printf '%s\n' "$block_text")
-            echo "$page:$line: block does not match $source_path [$region]"
-            status=1
-            continue
-        fi
-
-        replace_block "$page" "$line" "$source_text
-" > "$page.snippet" && mv -- "$page.snippet" "$page"
+while IFS=$'\t' read -r kind page line source_path region; do
+    case "$kind" in
+    E)
+        echo "$page"
+        status=1
+        ;;
+    M)
+        diff -u \
+            --label "$source_path [$region]" <(extract_region "$source_path" "$region") \
+            --label "$page:$line" <(extract_block "$page" "$line")
+        echo "$page:$line: block does not match $source_path [$region]"
+        status=1
+        ;;
+    W)
         echo "$page:$line: filled in from $source_path [$region]"
         written=$((written + 1))
-    done < <(grep -n -- '<!-- snippet:' "$page" | sort -rn -t: -k1,1 || true)
-done < <(find "${dirs[@]}" -name '*.md' -not -path './.git/*' -not -path './doc/doxygen/*')
+        ;;
+    F)
+        mv -- "$page.snippet" "$page"
+        ;;
+    C)
+        checked="$page"
+        finished=1
+        ;;
+    esac
+done < <([ "${#pages[@]}" -eq 0 ] || check_pages "${pages[@]}")
+
+if [ "${#pages[@]}" -ne 0 ] && [ "$finished" -eq 0 ]; then
+    echo
+    echo "Documentation snippet check did not finish."
+    exit 1
+fi
 
 if [ "$status" -ne 0 ]; then
     echo

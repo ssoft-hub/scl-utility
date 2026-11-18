@@ -360,6 +360,13 @@ of the images the CI uses: another version of clang-format formats differently.
   there and in the configuration files.
 - `bash script/lint/doc_snippets.sh --write` refills the snippet blocks after an example
   changes.
+- `script/lint/lint.sh` runs the five scripts at once, at the lowest priority, so they take
+  only the cores no other work needs. `SCL_LINT_NICE` sets another niceness.
+- clang-tidy, cppcheck and clang-format each spread their files over the cores the run may
+  use. `SCL_LINT_JOBS` sets another number of jobs.
+- `script/lint/cppcheck.sh` keeps its analysis in `build/lint/cppcheck` between runs and
+  checks again only the headers whose code or whose includes have changed. `SCL_CPPCHECK_DIR`
+  sets another directory.
 
 ## Benchmarks
 
